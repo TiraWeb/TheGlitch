@@ -1,0 +1,23 @@
+[Unit]
+Description=The Glitch - Purpur Minecraft server
+Documentation=https://github.com/TiraWeb/TheGlitch
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=minecraft
+Group=minecraft
+WorkingDirectory=/opt/theglitch/server
+ExecStart=/usr/bin/screen -dmS theglitch /opt/theglitch/server/start.sh
+# Graceful stop: send 'stop' into the console, then wait for the world save.
+ExecStop=/bin/bash -c '/usr/bin/screen -S theglitch -p 0 -X stuff "stop$(printf \\r)"'
+TimeoutStopSec=120
+# Restart=always doubles as crash recovery AND makes an in-console 'stop'
+# act as a restart. To actually keep it down, use: systemctl stop theglitch
+Restart=always
+RestartSec=15
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

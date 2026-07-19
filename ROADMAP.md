@@ -3,7 +3,7 @@
 A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft server.
 
 **Target hardware:** Oracle Cloud Always Free — Ampere A1, 2 OCPUs / 12GB RAM, Ubuntu 24.04 (ARM64)
-**Stack:** Purpur (Java 21) · GeyserMC + Floodgate (Bedrock cross-play) · single instance, three zones via coordinate offsetting
+**Stack:** Purpur (Java 25 — required by Minecraft 26.x) · GeyserMC + Floodgate (Bedrock cross-play) · single instance, three zones via coordinate offsetting
 **Capacity target:** ~10–20 players comfortable, ~25–30 with tuning
 
 Check items off as they're completed. Each numbered topic is sized to roughly one working session.
@@ -17,7 +17,7 @@ Check items off as they're completed. Each numbered topic is sized to roughly on
 
 ## Phase 1 — Server core online
 
-- [ ] **1.1 Java runtime** — OpenJDK 21 (ARM64) from Ubuntu 24.04 repos.
+- [ ] **1.1 Java runtime** — OpenJDK 25 (ARM64) from Ubuntu 24.04 repos (Minecraft 26.x raised the requirement from Java 21).
 - [ ] **1.2 Purpur installation** — Latest stable Purpur jar, EULA acceptance, directory layout, `start.sh` with Aikar's flags (**8GB heap** — leaves ~4GB for JVM off-heap + Geyser + OS), systemd unit for boot persistence and clean restarts.
 - [ ] **1.3 First boot** — Minimal `server.properties`, whitelist on, first vanilla login test.
 
