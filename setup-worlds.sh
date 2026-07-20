@@ -87,39 +87,55 @@ fi
 # Multiverse-created worlds use minecraft:<name>.
 log "Applying gamerules"
 
-apply_rule() { mc "execute in minecraft:$3 run gamerule $1 $2" >/dev/null; }
+# Minecraft 26.x (snapshot 25w44a / MC 1.21.11+) renamed all gamerules from
+# camelCase to snake_case registry ids. The OLD names error as "unknown" and
+# silently do nothing. apply_rule SURFACES a rejection loudly so a wrong name
+# can never again quietly break the whole ruleset.
+#   doMobSpawning->spawn_mobs  keepInventory->keep_inventory
+#   doDaylightCycle->advance_time  doWeatherCycle->advance_weather
+#   mobGriefing->mob_griefing  doTraderSpawning->spawn_wandering_traders
+#   doInsomnia->spawn_phantoms  doFireTick->REMOVED (use
+#   fire_spread_radius_around_player 0)  spawnChunkRadius->REMOVED (dropped)
+apply_rule() {
+  local rule="$1" val="$2" dim="$3" out
+  out="$(mc "execute in minecraft:${dim} run gamerule ${rule} ${val}" 2>&1 || true)"
+  if echo "${out}" | grep -qiE 'unknown|incomplete|<--'; then
+    warn "gamerule '${rule}' REJECTED in ${dim} (wrong name for this MC version?): ${out}"
+  fi
+}
 
 # hub (dim overworld) — safe, frozen, silent
-for rule in "doDaylightCycle false" "doWeatherCycle false" "doMobSpawning false" \
-            "mobGriefing false" "doFireTick false" "keepInventory true" \
-            "doTraderSpawning false" "spawnChunkRadius 2"; do
+for rule in "advance_time false" "advance_weather false" "spawn_mobs false" \
+            "mob_griefing false" "fire_spread_radius_around_player 0" \
+            "keep_inventory true" "spawn_wandering_traders false"; do
   apply_rule ${rule} overworld
 done
 mc "execute in minecraft:overworld run time set midnight" >/dev/null
 mc "execute in minecraft:overworld run weather clear" >/dev/null
 
-# glitch_pve — keepInventory ON (design), all spawning is MythicMobs-driven
-for rule in "keepInventory true" "doMobSpawning false" "doDaylightCycle false" \
-            "doWeatherCycle false" "mobGriefing false" "doFireTick false" \
-            "doTraderSpawning false" "spawnChunkRadius 0"; do
+# glitch_pve — keep_inventory ON (design), no natural spawns (MythicMobs only;
+# spawn_mobs false blocks NATURAL spawns but not plugin/command/egg spawns)
+for rule in "keep_inventory true" "spawn_mobs false" "advance_time false" \
+            "advance_weather false" "mob_griefing false" \
+            "fire_spread_radius_around_player 0" "spawn_wandering_traders false"; do
   apply_rule ${rule} glitch_pve
 done
 mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null
 mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
 
-# glitch_red (dim glitch_red) — full-loot rules, natural spawns ON, no phantoms
-for rule in "keepInventory false" "doInsomnia false" "mobGriefing false" \
-            "doFireTick false" "doWeatherCycle false" "doTraderSpawning false" \
-            "spawnChunkRadius 0"; do
+# glitch_red (dim glitch_red) — full-loot, natural spawns ON, no phantoms.
+# (spawn_mobs left at default true — this is the survival PvP zone.)
+for rule in "keep_inventory false" "spawn_phantoms false" "mob_griefing false" \
+            "fire_spread_radius_around_player 0" "advance_weather false" \
+            "spawn_wandering_traders false"; do
   apply_rule ${rule} glitch_red
 done
 mc "execute in minecraft:glitch_red run weather clear" >/dev/null
 
 # --- clear leftover hostile mobs (one-time cleanup, safe to repeat) ---------
-# Mobs that spawned in hub/glitch_pve during world generation — before the
-# doMobSpawning gamerule above took effect — persist until removed. This kills
-# only hostile types, never players, villagers (future NPCs), armor stands,
-# or animals. Scoped per-dimension via 'execute in'.
+# Mobs that spawned in hub/glitch_pve before spawn_mobs was correctly set to
+# false persist until removed. This kills only hostile types, never players,
+# villagers (future NPCs), armor stands, or animals. Scoped via 'execute in'.
 log "Clearing leftover hostile mobs from hub and glitch_pve"
 HOSTILES="zombie husk zombie_villager skeleton stray bogged creeper spider cave_spider enderman witch slime phantom drowned silverfish"
 for dim in overworld glitch_pve; do
@@ -154,7 +170,7 @@ flag() { mc "rg flag -w $1 __global__ $2 $3" >/dev/null; }
 # hub — total lockdown.
 # deny-spawn lists ONLY hostiles (Phase 5 NPCs are villagers/armor stands,
 # which are absent from the list, so they're unaffected) — this makes the hub
-# hostile-free even if the doMobSpawning gamerule ever reverts, blocking every
+# hostile-free even if the spawn_mobs gamerule ever reverts, blocking every
 # spawn reason incl. spawn eggs. Explosion + mob-damage denies mean nothing
 # can grief the city or hurt players even in an edge case.
 flag hub passthrough deny
@@ -188,15 +204,16 @@ flag glitch_red item-drop allow
 flag glitch_red item-pickup allow
 
 # --- verify the gamerules that actually matter for safety -------------------
-# Read back via Multiverse ('mv gamerule list <world>'). NOTE: the vanilla
-# query form 'execute in <dim> run gamerule <rule>' (no value) is NOT valid
-# under 'execute run', so we use MV's per-world listing instead. Uses world
-# NAMES (hub/glitch_pve/glitch_red), not dimension keys.
-log "Verifying gamerules (paste this back if anything looks off):"
+# Read back the two gameplay-critical rules per world via Multiverse's filtered
+# listing (--filter avoids pagination). Expected: spawn_mobs false in
+# hub+glitch_pve / true in glitch_red; keep_inventory true in hub+glitch_pve /
+# false in glitch_red. (Primary safety net is apply_rule's rejection warning
+# above — this is the visible confirmation.)
+log "Verifying critical gamerules (paste this back):"
 for w in hub glitch_pve glitch_red; do
   echo "  == ${w} =="
-  mc "mv gamerule list ${w}" 2>/dev/null | grep -iE "doMobSpawning|keepInventory" \
-    || echo "     (could not read — run '/mv gamerule list ${w}' in console)"
+  mc "mv gamerule list ${w} --filter spawn_mobs"     2>/dev/null | grep -i "spawn_mobs:"     || echo "     spawn_mobs: (unreadable)"
+  mc "mv gamerule list ${w} --filter keep_inventory" 2>/dev/null | grep -i "keep_inventory:" || echo "     keep_inventory: (unreadable)"
 done
 
 # --- Red Zone pre-generation (border 2000 + margin) --------------------------
