@@ -36,19 +36,42 @@ done
 mc "mv version" 2>/dev/null | grep -qi "multiverse" || die "Multiverse-Core is not loaded — run bootstrap.sh, then: sudo systemctl restart theglitch"
 mc "wg version" 2>/dev/null | grep -qi "worldguard"  || die "WorldGuard is not loaded — run bootstrap.sh, then: sudo systemctl restart theglitch"
 
-# --- world creation (skipped when the world folder already exists) ---------
-if [[ ! -f "${SERVER_DIR}/glitch_pve/level.dat" ]]; then
-  log "Creating glitch_pve (flat, no structures) — a few seconds"
-  mc "mv create glitch_pve normal --world-type flat --no-structures --no-adjust-spawn"
-else
-  log "glitch_pve already exists"
-fi
+# --- world creation / ghost recovery ----------------------------------------
+# Trust the DISK, not Multiverse's registry. A world listed in worlds.yml but
+# missing its level.dat is a "ghost": 'mv create' refuses it ("already
+# exists") while no real world exists. 'mv remove' clears the stale registry
+# entry — it runs immediately (no confirm/OTP in MV5) and tolerates a missing
+# folder — then 'mv create' builds it fresh.
+ensure_world() {
+  local name="$1"; shift              # remaining args: mv create <env> [flags]
+  local dir="${SERVER_DIR}/${name}"
+  if [[ -f "${dir}/level.dat" ]]; then
+    log "${name}: present on disk"
+    mc "mv load ${name}" >/dev/null 2>&1 || true   # no-op if already loaded
+    return 0
+  fi
+  warn "${name}: no level.dat on disk — clearing ghost registry entry + phantom folder, creating fresh"
+  mc "mv remove ${name}" >/dev/null 2>&1 || true
+  rm -rf "${dir:?}"
+  mc "mv create ${name} $*"
+  for _ in 1 2 3 4 5; do [[ -f "${dir}/level.dat" ]] && break; sleep 1; done
+  [[ -f "${dir}/level.dat" ]] || die "${name}: 'mv create' produced no level.dat. Run 'sudo ./console.sh' and check for errors."
+  log "${name}: created"
+}
 
-if [[ ! -f "${SERVER_DIR}/glitch_red/level.dat" ]]; then
-  log "Creating glitch_red (normal terrain, seed ${RED_SEED}) — up to a minute"
-  mc "mv create glitch_red normal --seed ${RED_SEED}"
-else
-  log "glitch_red already exists"
+ensure_world glitch_pve normal --world-type flat --no-structures --no-adjust-spawn
+ensure_world glitch_red normal --seed "${RED_SEED}"
+
+# --- per-world Paper override (into the REAL folder, post-create) -----------
+# glitch_pve's dungeon-trash fast-despawn tuning. Placed here (not in
+# bootstrap) so it lands in the actual world folder rather than creating a
+# phantom one. Takes effect on the next server restart (Paper reads
+# paper-world.yml at world load).
+PW_SRC="${REPO_DIR}/server/world-overrides/glitch_pve/paper-world.yml"
+if [[ -f "${PW_SRC}" ]]; then
+  install -o "${MC_USER:-minecraft}" -g "${MC_USER:-minecraft}" -m 644 \
+    "${PW_SRC}" "${SERVER_DIR}/glitch_pve/paper-world.yml"
+  log "Placed glitch_pve/paper-world.yml (applies on next restart)"
 fi
 
 # --- gamerules (per world; re-applied every run) ----------------------------
@@ -172,22 +195,22 @@ for w in hub glitch_pve glitch_red; do
 done
 
 # --- Red Zone pre-generation (border 2000 + margin) --------------------------
-# Guarded so a re-run doesn't restart the ~18-min job. Pass SKIP_PREGEN=true
-# to force-skip; the marker below makes subsequent runs skip automatically.
+# Guarded by a marker INSIDE the world folder. A freshly (re)created glitch_red
+# has no marker, so it always pre-generates; an already-generated world skips.
+# No env override — skipping pre-gen on an empty Red Zone would defeat the
+# purpose (terrain would generate mid-gameplay on 2 cores).
 PREGEN_MARKER="${SERVER_DIR}/glitch_red/.pregen-started"
 if [[ -f "${PREGEN_MARKER}" ]]; then
   log "Red Zone pre-generation already done (marker present) — skipping (delete ${PREGEN_MARKER} to redo)"
-elif [[ "${SKIP_PREGEN:-false}" == "true" ]]; then
-  log "SKIP_PREGEN set — skipping pre-generation and marking it done"
-  touch "${PREGEN_MARKER}"
 else
-  log "Starting Red Zone pre-generation (radius 1050 around 0,0)"
+  log "Starting Red Zone pre-generation (radius 1050 around 0,0) — ~18 min on 2 cores, runs in background"
   mc "chunky world glitch_red" >/dev/null
   mc "chunky shape square"     >/dev/null
   mc "chunky center 0 0"       >/dev/null
   mc "chunky radius 1050"      >/dev/null
   mc "chunky start"            >/dev/null
   touch "${PREGEN_MARKER}"
+  chown "${MC_USER:-minecraft}:${MC_USER:-minecraft}" "${PREGEN_MARKER}" 2>/dev/null || true
 fi
 
 cat <<'EOF'
@@ -200,11 +223,16 @@ cat <<'EOF'
            glitch_red (border 2000, seed 20260719)
 
   If pre-generation started, it runs in the background —
-  expect elevated CPU and TPS dips for ~10-20 minutes.
+  expect elevated CPU and TPS dips for ~15-20 minutes.
     progress:  sudo ./console.sh   (chunky prints updates)
     pause:     scripts/mc-cmd.py 'chunky pause'
     resume:    scripts/mc-cmd.py 'chunky continue'
-  (Re-run with SKIP_PREGEN=true once pre-gen has finished.)
+  (Re-running this script skips pre-gen automatically once done.)
+
+  Recommended after pre-gen finishes:
+    sudo systemctl restart theglitch   # applies per-world paper-world.yml
+  then confirm the worlds persisted across the restart:
+    sudo find /opt/theglitch/server -maxdepth 2 -name level.dat
 
   Get around as op:
     scripts/mc-cmd.py 'mv tp YourName glitch_red'
