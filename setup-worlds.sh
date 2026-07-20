@@ -160,13 +160,15 @@ flag glitch_red item-drop allow
 flag glitch_red item-pickup allow
 
 # --- verify the gamerules that actually matter for safety -------------------
-# Prints current values so a bad apply is caught immediately (paste back if
-# any 'doMobSpawning' is true outside glitch_red, or keepInventory is wrong).
-log "Verifying gamerules:"
-for dim in overworld glitch_pve glitch_red; do
-  ms="$(mc "execute in minecraft:${dim} run gamerule doMobSpawning" 2>/dev/null | tail -1)"
-  ki="$(mc "execute in minecraft:${dim} run gamerule keepInventory" 2>/dev/null | tail -1)"
-  echo "    ${dim}:  ${ms}  |  ${ki}"
+# Read back via Multiverse ('mv gamerule list <world>'). NOTE: the vanilla
+# query form 'execute in <dim> run gamerule <rule>' (no value) is NOT valid
+# under 'execute run', so we use MV's per-world listing instead. Uses world
+# NAMES (hub/glitch_pve/glitch_red), not dimension keys.
+log "Verifying gamerules (paste this back if anything looks off):"
+for w in hub glitch_pve glitch_red; do
+  echo "  == ${w} =="
+  mc "mv gamerule list ${w}" 2>/dev/null | grep -iE "doMobSpawning|keepInventory" \
+    || echo "     (could not read — run '/mv gamerule list ${w}' in console)"
 done
 
 # --- Red Zone pre-generation (border 2000 + margin) --------------------------
