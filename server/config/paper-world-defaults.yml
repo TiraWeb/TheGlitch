@@ -1,0 +1,67 @@
+# The Glitch — paper-world-defaults.yml
+# Synced from the repo by bootstrap.sh on every run: edit HERE, not on the box.
+# Missing keys are filled with defaults by the server at boot; per-world
+# overrides go in <world-folder>/paper-world.yml (none needed yet).
+# Key paths verified against docs.papermc.io (2026-07).
+
+chunks:
+  # Smooth out autosave IO spikes (default 24/tick) — trades spike for spread.
+  max-auto-save-chunks-per-tick: 8
+  # Never let a player force a synchronous chunk load by walking off the
+  # loaded edge — on 2 cores a sync load is a visible TPS stutter.
+  prevent-moving-into-unloaded-chunks: true
+
+collisions:
+  # Entity-cramming collision resolution is O(n²)-ish in dense mob packs
+  # (dungeon waves!). 2 is enough for gameplay feel.
+  max-entity-collisions: 2
+
+entities:
+  spawning:
+    # Dungeon trash items vanish in 15s instead of 5min.
+    alt-item-despawn-rate:
+      enabled: true
+      items:
+        cobblestone: 300
+        cobbled_deepslate: 300
+        netherrack: 300
+        dirt: 300
+        gravel: 300
+        rotten_flesh: 600
+        string: 600
+    # Tighter despawn keeps the live-monster population bounded to the
+    # space players actually fight in (sim distance is 4 chunks = 64 blocks).
+    despawn-ranges:
+      monster:
+        hard:
+          horizontal: 72
+          vertical: 72
+        soft:
+          horizontal: 28
+          vertical: 28
+
+hopper:
+  cooldown-when-full: true
+
+misc:
+  # Alternate Current: same redstone behavior, fraction of the update cost.
+  redstone-implementation: ALTERNATE_CURRENT
+  # The pathfinding throttle: mobs re-path on their own schedule instead of
+  # on every nearby block change. Biggest single lever for wave dungeons.
+  update-pathfinding-on-block-update: false
+
+tick-rates:
+  mob-spawner: 2
+  grass-spread: 4
+  sensor:
+    villager:
+      secondarypoisensor: 80
+  behavior:
+    villager:
+      validatenearbypoi: 60
+
+environment:
+  optimize-explosions: true
+  # Villager treasure-map trades trigger expensive structure searches.
+  treasure-maps:
+    enabled: false

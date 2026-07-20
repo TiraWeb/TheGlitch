@@ -1,0 +1,47 @@
+# The Glitch — spigot.yml
+# Synced from the repo by bootstrap.sh on every run: edit HERE, not on the box.
+# Missing keys are filled with defaults by the server at boot.
+#
+# Tuning rationale (2 OCPU Ampere A1):
+# - entity-activation-range is the single biggest spigot-side lever: entities
+#   outside these ranges tick at a reduced rate. Ranges are tight but chosen
+#   so dungeon mobs (monsters 24) still path at players from outside melee.
+# - entity-tracking-range.players stays generous (96): in a full-loot PvP
+#   zone, players silently popping out of existence at short range would be
+#   a gameplay bug, not an optimization.
+# - nerf-spawner-mobs only affects vanilla spawner blocks (dungeon trash),
+#   NOT MythicMobs plugin spawns.
+# - merge-radius consolidates death-pile drops in the Red Zone into fewer
+#   item entities.
+
+settings:
+  save-user-cache-on-stop-only: true
+  log-villager-deaths: false
+
+world-settings:
+  default:
+    mob-spawn-range: 3
+    entity-activation-range:
+      animals: 16
+      monsters: 24
+      raiders: 48
+      misc: 8
+      water: 8
+      villagers: 16
+      flying-monsters: 32
+    entity-tracking-range:
+      players: 96
+      animals: 48
+      monsters: 48
+      misc: 32
+      display: 64
+      other: 64
+    tick-inactive-villagers: false
+    nerf-spawner-mobs: true
+    merge-radius:
+      item: 3.5
+      exp: 4.0
+    item-despawn-rate: 6000
+    arrow-despawn-rate: 300
+    trident-despawn-rate: 300
+    max-tnt-per-tick: 10

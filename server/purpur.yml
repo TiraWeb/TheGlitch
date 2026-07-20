@@ -1,0 +1,41 @@
+# The Glitch — purpur.yml
+# Synced from the repo by bootstrap.sh on every run: edit HERE, not on the box.
+# Missing keys are filled with defaults by the server at boot.
+# Key names verified against purpurmc.org/docs (2026-07).
+
+settings:
+  # Mobile/Bedrock connections survive wifi hiccups: keepalive once per
+  # second, kick only after 30s of silence (default kicks much faster).
+  use-alternate-keepalive: true
+  # After a lag spike, do NOT sprint ticks to catch up — on 2 cores that
+  # just prolongs CPU saturation. Skipped ticks stay skipped.
+  tps-catchup: false
+
+world-settings:
+  default:
+    gameplay-mechanics:
+      player:
+        idle-timeout:
+          # Pairs with player-idle-timeout=10 in server.properties:
+          # AFK players are marked idle after 10 min but NOT kicked —
+          # entities around them simply stop ticking.
+          kick-if-idle: false
+          tick-nearby-entities: false
+    mobs:
+      dolphin:
+        disable-treasure-searching: true
+      villager:
+        # Villagers stuck in place (hub shop NPCs, trapped ones) tick cheaply;
+        # trading still works.
+        lobotomize:
+          enabled: true
+        # POI scanning is one of the biggest villager costs anywhere — these
+        # default to 48 blocks.
+        search-radius:
+          acquire-poi: 16
+          nearest-bed-sensor: 16
+      zombie:
+        aggressive-towards-villager-when-lagging: false
+      squid:
+        # Squids are exempt from entity-activation-range by default; don't be.
+        immune-to-EAR: false

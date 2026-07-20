@@ -1,0 +1,28 @@
+# The Glitch — Geyser config (NEW post-2.9.0 structure, config-version 7).
+# Seeded ONCE by bootstrap.sh; after first boot the box's copy wins and
+# Geyser fills in every omitted key with its defaults.
+
+bedrock:
+  # Listen on all interfaces, standard Bedrock port (already open in firewall)
+  address: 0.0.0.0
+  port: 19132
+
+java:
+  # Floodgate handles Bedrock authentication — Bedrock players don't need
+  # Java accounts. The Floodgate key is auto-located (same-server plugin).
+  auth-type: floodgate
+
+motd:
+  # Show the real Java MOTD and player counts to Bedrock clients.
+  passthrough-motd: true
+  passthrough-player-counts: true
+
+gameplay:
+  # Bedrock has no attack-cooldown indicator; render Java's cooldown as a
+  # crosshair overlay so Bedrock players can time hits fairly ("hotbar" and
+  # "disabled" are the alternatives).
+  cooldown-type: crosshair
+  # Bedrock's F3-equivalent; useful for coordinate callouts in the Red Zone.
+  show-coordinates: true
+
+config-version: 7

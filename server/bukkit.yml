@@ -1,0 +1,38 @@
+# The Glitch — bukkit.yml
+# Synced from the repo by bootstrap.sh on every run: edit HERE, not on the box.
+# Missing keys are filled with defaults by the server at boot.
+#
+# Tuning rationale (2 OCPU Ampere A1, ~20-30 players):
+# - spawn-limits cut hard: the hub and PvE world spawn nothing naturally
+#   (gamerule), so these caps only really govern the Red Zone. 20 monsters
+#   per player's spawnable area is plenty of ambient danger.
+# - monster-spawns every 10 ticks instead of every tick: the spawner attempt
+#   loop is a top-5 tick cost on low-core boxes; 2/sec attempts are ample.
+# - allow-end false: the End is dead weight for this design (nether is
+#   disabled in server.properties).
+
+settings:
+  allow-end: false
+  shutdown-message: "The Glitch is rebooting — back in ~30s."
+
+spawn-limits:
+  monsters: 20
+  animals: 8
+  water-animals: 3
+  water-ambient: 4
+  water-underground-creature: 3
+  axolotls: 3
+  ambient: 2
+
+ticks-per:
+  animal-spawns: 400
+  monster-spawns: 10
+  water-spawns: 400
+  water-ambient-spawns: 400
+  water-underground-creature-spawns: 400
+  axolotl-spawns: 400
+  ambient-spawns: 400
+  autosave: 6000
+
+chunk-gc:
+  period-in-ticks: 600
