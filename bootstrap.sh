@@ -237,10 +237,10 @@ sync_cfg spigot.yml                        spigot.yml
 sync_cfg purpur.yml                        purpur.yml
 sync_cfg config/paper-global.yml           config/paper-global.yml
 sync_cfg config/paper-world-defaults.yml   config/paper-world-defaults.yml
-# Per-world override (docs.papermc.io): lives inside the world's own folder,
-# not config/. Safe to pre-create before the world exists — Multiverse's
-# world creation populates the same folder without touching other files in it.
-sync_cfg world-overrides/glitch_pve/paper-world.yml   glitch_pve/paper-world.yml
+# NOTE: per-world overrides (e.g. glitch_pve/paper-world.yml) are intentionally
+# NOT synced here — 'install -D' would create the world folder before the world
+# exists, producing a phantom folder that confuses Multiverse. setup-worlds.sh
+# places those into the real world folder AFTER creating the world.
 
 # ---------------------------------------------------------------------------
 # Phase 3.1 — seed plugin configs (once; after that the box's copy wins)
