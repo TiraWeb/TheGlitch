@@ -51,11 +51,19 @@ ensure_world() {
     return 0
   fi
   warn "${name}: no level.dat on disk — clearing ghost registry entry + phantom folder, creating fresh"
+  # Unload first so the live server isn't holding the world and can't rewrite
+  # the folder on its next tick (that race is what breaks a naive rm+create).
+  mc "mv unload ${name}" >/dev/null 2>&1 || true
   mc "mv remove ${name}" >/dev/null 2>&1 || true
+  sleep 1
   rm -rf "${dir:?}"
+  sleep 1
+  if [[ -e "${dir}" ]]; then
+    die "${name}: folder reappeared after deletion — the server is recreating it. Run 'sudo ./recover-worlds.sh' (stops the server for a clean purge), then re-run this script."
+  fi
   mc "mv create ${name} $*"
   for _ in 1 2 3 4 5; do [[ -f "${dir}/level.dat" ]] && break; sleep 1; done
-  [[ -f "${dir}/level.dat" ]] || die "${name}: 'mv create' produced no level.dat. Run 'sudo ./console.sh' and check for errors."
+  [[ -f "${dir}/level.dat" ]] || die "${name}: 'mv create' produced no level.dat (folder may already exist). Run 'sudo ./recover-worlds.sh', then re-run this script."
   log "${name}: created"
 }
 
