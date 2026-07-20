@@ -25,10 +25,23 @@ Do this **twice** and save both profiler links in this file:
 2. **Load baseline** — after Phase 4: stand in the Red Zone, fly around to
    force chunk loading.
 
-| Date | Scenario | TPS | MSPT (median/95%) | Profiler link |
+| Date | Scenario | TPS | MSPT (median/95%/max) | Profiler link |
 |---|---|---|---|---|
-| _fill me_ | idle, hub | | | |
-| _fill me_ | red zone flight | | | |
+| 2026-07-20 | idle, post-pregen | 20.00 | 0.6 / 0.7 / 0.8 ms | https://spark.lucko.me/h9quWf0opg |
+| _pending_ | red zone, live play | | | |
+
+**Idle baseline context (2026-07-20):** CPU ~1% (system + process, 1m window),
+heap 3.6 GB / 8 GB, disk 7.7 GB / 95.8 GB. Nothing online but the operator,
+Chunky pre-gen finished. This is the floor: the full plugin stack loaded,
+median tick using ~1% of the 50ms budget. (The profiler's 7.77ms max and the
+15m CPU ~19% both reflect the Chunky pre-gen tail still in the rolling window,
+not steady state — the health report taken minutes later shows max 0.8ms and
+CPU falling toward ~1%.)
+
+The **live-play** row is still to capture: once there are entities and players
+in the Red Zone (Phase 5+), profile again there. Flying the Red Zone now only
+measures disk chunk-loading (terrain is pre-generated), so it's not a
+meaningful load test until there's actual gameplay to tick.
 
 Every later phase (MythicMobs, dungeons, classes) gets measured against these
 numbers. If median MSPT doubles after installing something, we found the

@@ -23,21 +23,25 @@ Check items off as they're completed. Each numbered topic is sized to roughly on
 
 ## Phase 2 — Performance tuning
 
-- [ ] **2.1 Config pass** — `server.properties`, `bukkit.yml`, `spigot.yml`, `paper-global.yml`, `paper-world-defaults.yml`, `purpur.yml` tuned for 2-core ARM: view distance ~5, simulation distance ~3–4, entity ticking/activation ranges, pathfinding throttles, network compression threshold for mobile clients.
-- [ ] **2.2 World pre-generation** — World borders per zone + full pre-gen with Chunky (mandatory on 2 cores; terrain gen mid-game would tank TPS).
-- [ ] **2.3 Monitoring baseline** — spark profiler installed, baseline TPS/MSPT recorded so every later phase can be measured against it.
+- [x] **2.1 Config pass** — `server.properties`, `bukkit.yml`, `spigot.yml`, `paper-global.yml`, `paper-world-defaults.yml`, `purpur.yml` tuned for 2-core ARM: view distance ~5, simulation distance ~3–4, entity ticking/activation ranges, pathfinding throttles, network compression threshold for mobile clients.
+- [x] **2.2 World pre-generation** — World borders per zone + full pre-gen with Chunky (mandatory on 2 cores; terrain gen mid-game would tank TPS). _Red Zone: 17,689 chunks pre-generated._
+- [x] **2.3 Monitoring baseline** — spark profiler installed, baseline TPS/MSPT recorded so every later phase can be measured against it. _Idle baseline: 20 TPS, 0.6ms median MSPT, ~1% CPU, 3.6GB heap — see docs/PERFORMANCE.md._
 
 ## Phase 3 — Bedrock cross-play
 
-- [ ] **3.1 GeyserMC + Floodgate** — Install/config, UDP 19132 verified, Floodgate key linkage, username prefix policy.
-- [ ] **3.2 Bedrock UX tuning** — Combat/cooldown translation settings, emulated off-hand behavior, forms support check, join test from a Bedrock client (phone/console).
+- [x] **3.1 GeyserMC + Floodgate** — Install/config, UDP 19132 verified, Floodgate key linkage, username prefix policy. _Installed + configured (new 2.9+ config structure); loads clean. Join-test from a real Bedrock client deferred (user's call)._
+- [ ] **3.2 Bedrock UX tuning** — Combat/cooldown translation settings, emulated off-hand behavior, forms support check, join test from a Bedrock client (phone/console). _Cooldown-type=crosshair configured; live verification pending._
 
 ## Phase 4 — World architecture (the three zones)
 
-- [ ] **4.1 Zone layout blueprint** — Concrete coordinate offsets for Hub / Standard Glitch / Red Zone in one world (or minimal world set), world borders per zone, teleport routing between zones.
-- [ ] **4.2 Hub City** — Build or import spawn; WorldGuard total lockdown: PvP off, block break/place off, hunger off, mob spawning off.
-- [ ] **4.3 Standard Glitch (PvE)** — Dungeon region layout + instancing blueprint: parallel co-op runs via coordinate-offset dungeon slots, no per-run world folders. Keep-inventory for brought gear; shard-drop-on-death rule.
-- [ ] **4.4 The Red Zone (PvPvE)** — Open extraction map, full-loot PvP flags, friendly fire ON, 6+ rotating entry coordinates, Tier 4/5 loot zones marked, extraction beacon sites placed.
+Structure, rules, borders, and protection are applied and pre-generated. The
+worlds are currently **empty shells** — the actual builds (hub city, dungeon
+rooms) and content (loot, bosses) are later work, tracked under Phases 5–6.
+
+- [x] **4.1 Zone layout blueprint** — Concrete coordinate offsets for Hub / Standard Glitch / Red Zone in one world (or minimal world set), world borders per zone, teleport routing between zones. _Three worlds created (hub/glitch_pve/glitch_red); see docs/ZONES.md._
+- [ ] **4.2 Hub City** — WorldGuard total lockdown **applied** (PvP/hunger/block-changes off, invincible on); the city **build** is still to come. _Empty flat world at spawn 0,-60,0._
+- [ ] **4.3 Standard Glitch (PvE)** — World + per-world gamerules (keepInventory on, no natural spawns) + dungeon-slot instancing **blueprint** done; the dungeon **builds** are still to come.
+- [ ] **4.4 The Red Zone (PvPvE)** — World + full-loot PvP flags + 6 entry coordinates + pre-gen **done**; Tier 4/5 loot tables and bosses come with Phases 5–6.
 
 ## Phase 5 — Core plugin stack
 
