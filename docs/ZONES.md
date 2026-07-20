@@ -31,8 +31,11 @@ dimensions to tick.
 - World border **512** centered on 0,0 — a city plaza, not a continent.
 - Time frozen at midnight (neon-city aesthetic), weather off, mobs off.
 - WorldGuard `__global__` lockdown (Phase 4.2): no PvP, no block changes, no
-  hunger drain, players invincible, no ender pearls. Shops/class NPCs come in
-  Phase 5.
+  hunger drain, players invincible, no ender pearls. Also hardened against
+  explosions (creeper/other/tnt all `deny`) and `mob-damage deny`, with
+  `deny-spawn` blocking every hostile type — so the city can't be griefed or
+  its visitors hurt even if a mob slips in. NPCs (villagers/armor stands) are
+  not in the deny-spawn list, so Phase 5 shops/class selectors are unaffected.
 
 ## The Standard Glitch (`glitch_pve`) — dungeon slot grid
 

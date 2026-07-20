@@ -52,17 +52,20 @@ else
 fi
 
 # --- gamerules (per world; re-applied every run) ----------------------------
-# NOTE: the main world 'hub' has dimension key minecraft:overworld — custom
-# Multiverse worlds get minecraft:<name>. 'mv gamerule' takes bukkit names.
+# Applied via vanilla 'execute in <dimension> run gamerule' — the SAME
+# mechanism as the time/weather commands, which are confirmed working on this
+# box. This does NOT depend on Multiverse having imported each world.
+# NOTE: the main world 'hub' has dimension key minecraft:overworld; the
+# Multiverse-created worlds use minecraft:<name>.
 log "Applying gamerules"
 
-apply_rule() { mc "mv gamerule set $1 $2 $3" >/dev/null; }
+apply_rule() { mc "execute in minecraft:$3 run gamerule $1 $2" >/dev/null; }
 
-# hub — safe, frozen, silent
+# hub (dim overworld) — safe, frozen, silent
 for rule in "doDaylightCycle false" "doWeatherCycle false" "doMobSpawning false" \
             "mobGriefing false" "doFireTick false" "keepInventory true" \
             "doTraderSpawning false" "spawnChunkRadius 2"; do
-  apply_rule ${rule} hub
+  apply_rule ${rule} overworld
 done
 mc "execute in minecraft:overworld run time set midnight" >/dev/null
 mc "execute in minecraft:overworld run weather clear" >/dev/null
@@ -76,13 +79,26 @@ done
 mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null
 mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
 
-# glitch_red — full-loot rules, natural spawns ON, no phantom spam
+# glitch_red (dim glitch_red) — full-loot rules, natural spawns ON, no phantoms
 for rule in "keepInventory false" "doInsomnia false" "mobGriefing false" \
             "doFireTick false" "doWeatherCycle false" "doTraderSpawning false" \
             "spawnChunkRadius 0"; do
   apply_rule ${rule} glitch_red
 done
 mc "execute in minecraft:glitch_red run weather clear" >/dev/null
+
+# --- clear leftover hostile mobs (one-time cleanup, safe to repeat) ---------
+# Mobs that spawned in hub/glitch_pve during world generation — before the
+# doMobSpawning gamerule above took effect — persist until removed. This kills
+# only hostile types, never players, villagers (future NPCs), armor stands,
+# or animals. Scoped per-dimension via 'execute in'.
+log "Clearing leftover hostile mobs from hub and glitch_pve"
+HOSTILES="zombie husk zombie_villager skeleton stray bogged creeper spider cave_spider enderman witch slime phantom drowned silverfish"
+for dim in overworld glitch_pve; do
+  for mob in ${HOSTILES}; do
+    mc "execute in minecraft:${dim} run kill @e[type=minecraft:${mob}]" >/dev/null
+  done
+done
 
 # --- spawns & borders --------------------------------------------------------
 log "Setting spawns and world borders"
@@ -107,14 +123,21 @@ log "Applying WorldGuard flags"
 
 flag() { mc "rg flag -w $1 __global__ $2 $3" >/dev/null; }
 
-# hub — total lockdown. NO mob-spawning flag here: WorldGuard's flag also
-# intercepts plugin-spawned entities (e.g. Citizens NPCs), which Phase 5's
-# shop/class NPCs will need; the doMobSpawning gamerule already suppresses
-# natural spawns without that side effect.
+# hub — total lockdown.
+# deny-spawn lists ONLY hostiles (Phase 5 NPCs are villagers/armor stands,
+# which are absent from the list, so they're unaffected) — this makes the hub
+# hostile-free even if the doMobSpawning gamerule ever reverts, blocking every
+# spawn reason incl. spawn eggs. Explosion + mob-damage denies mean nothing
+# can grief the city or hurt players even in an edge case.
 flag hub passthrough deny
 flag hub pvp deny
 flag hub natural-hunger-drain deny
 flag hub invincible allow
+flag hub mob-damage deny
+flag hub creeper-explosion deny
+flag hub other-explosion deny
+flag hub tnt deny
+flag hub deny-spawn zombie,husk,zombie_villager,skeleton,stray,bogged,creeper,spider,cave_spider,enderman,witch,slime,phantom,drowned,silverfish
 flag hub item-drop deny
 flag hub enderpearl deny
 flag hub chorus-fruit-teleport deny
@@ -136,13 +159,31 @@ flag glitch_red chest-access allow
 flag glitch_red item-drop allow
 flag glitch_red item-pickup allow
 
+# --- verify the gamerules that actually matter for safety -------------------
+# Prints current values so a bad apply is caught immediately (paste back if
+# any 'doMobSpawning' is true outside glitch_red, or keepInventory is wrong).
+log "Verifying gamerules:"
+for dim in overworld glitch_pve glitch_red; do
+  ms="$(mc "execute in minecraft:${dim} run gamerule doMobSpawning" 2>/dev/null | tail -1)"
+  ki="$(mc "execute in minecraft:${dim} run gamerule keepInventory" 2>/dev/null | tail -1)"
+  echo "    ${dim}:  ${ms}  |  ${ki}"
+done
+
 # --- Red Zone pre-generation (border 2000 + margin) --------------------------
-log "Starting Red Zone pre-generation (radius 1050 around 0,0)"
-mc "chunky world glitch_red" >/dev/null
-mc "chunky shape square"     >/dev/null
-mc "chunky center 0 0"       >/dev/null
-mc "chunky radius 1050"      >/dev/null
-mc "chunky start"            >/dev/null
+# Guarded so a re-run doesn't restart the ~18-min job. Pass SKIP_PREGEN=true
+# to force-skip; the marker below makes subsequent runs skip automatically.
+PREGEN_MARKER="${SERVER_DIR}/glitch_red/.pregen-started"
+if [[ -f "${PREGEN_MARKER}" || "${SKIP_PREGEN:-false}" == "true" ]]; then
+  log "Red Zone pre-generation already handled — skipping (delete ${PREGEN_MARKER} to redo)"
+else
+  log "Starting Red Zone pre-generation (radius 1050 around 0,0)"
+  mc "chunky world glitch_red" >/dev/null
+  mc "chunky shape square"     >/dev/null
+  mc "chunky center 0 0"       >/dev/null
+  mc "chunky radius 1050"      >/dev/null
+  mc "chunky start"            >/dev/null
+  touch "${PREGEN_MARKER}"
+fi
 
 cat <<'EOF'
 
@@ -153,11 +194,12 @@ cat <<'EOF'
   Worlds:  hub (main, border 512) | glitch_pve (border 4096)
            glitch_red (border 2000, seed 20260719)
 
-  Red Zone pre-generation is running in the background —
+  If pre-generation started, it runs in the background —
   expect elevated CPU and TPS dips for ~10-20 minutes.
     progress:  sudo ./console.sh   (chunky prints updates)
     pause:     scripts/mc-cmd.py 'chunky pause'
     resume:    scripts/mc-cmd.py 'chunky continue'
+  (Re-run with SKIP_PREGEN=true once pre-gen has finished.)
 
   Get around as op:
     scripts/mc-cmd.py 'mv tp YourName glitch_red'
