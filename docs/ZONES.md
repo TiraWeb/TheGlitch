@@ -23,6 +23,15 @@ folder is orphaned by this switch and can be deleted. The nether and end are
 disabled entirely (`allow-nether=false`, `allow-end=false`) — three fewer
 dimensions to tick.
 
+> **Where the worlds live on disk (Paper 26.x gotcha).** Multiverse creates
+> its worlds with namespaced keys (`minecraft:glitch_pve`), and Paper 26.x
+> stores those as **dimensions of the main world**:
+> `server/hub/dimensions/minecraft/glitch_pve/`, `.../glitch_red/`, etc. They
+> share `hub/level.dat` and have **no per-world `level.dat`** — only
+> `region/`, `entities/`, `data/`, `poi/`. So a world's existence is detected
+> by its `region/` folder, and an existing-but-unregistered world is attached
+> with `/mv import <name> <env>`, not rebuilt. (`setup-worlds.sh` handles this.)
+
 ---
 
 ## Hub City (`hub`)

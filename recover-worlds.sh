@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
 #
-# The Glitch — one-time ghost-world recovery.
+# The Glitch — DESTRUCTIVE world reset (rarely needed).
 #
-# Purges the phantom/ghost glitch_pve and glitch_red so setup-worlds.sh can
-# recreate them cleanly. Does the cleanup with the server STOPPED, so nothing
-# can recreate a folder mid-operation (the race that made a live cleanup fail).
+# Wipes glitch_pve and glitch_red completely — region data AND Multiverse
+# registry — so setup-worlds.sh rebuilds them from scratch (glitch_red then
+# re-runs the ~18-min pre-gen). Done with the server STOPPED so nothing can
+# rewrite a folder mid-cleanup.
+#
+# You usually DON'T need this: setup-worlds.sh imports existing worlds and
+# only creates missing ones. Use this only to deliberately start the two game
+# worlds over (e.g. to change the Red Zone seed).
 #
 #   sudo ./recover-worlds.sh
 #   # then, once the server is back up:
 #   sudo ./setup-worlds.sh
 #
-# Safe: backs up worlds.yml, and only removes the two game-world entries —
-# hub and its nether are left untouched.
+# Safe for the hub: backs up worlds.yml and only removes the two game worlds.
 
 set -euo pipefail
 
 SERVER_DIR="/opt/theglitch/server"
 WORLDS_YML="${SERVER_DIR}/plugins/Multiverse-Core/worlds.yml"
 MC_USER="minecraft"
+# Paper 26.x stores custom worlds as dimensions of the main world.
+DIM_DIR="${SERVER_DIR}/hub/dimensions/minecraft"
 
 log() { echo -e "\033[1;36m[recover]\033[0m $*"; }
 [[ ${EUID} -eq 0 ]] || exec sudo "$0" "$@"
@@ -27,7 +33,9 @@ systemctl stop theglitch
 # systemd Type=forking + screen: give the JVM a moment to fully release files.
 sleep 5
 
-log "Removing phantom/ghost world folders (glitch_pve, glitch_red)..."
+log "Removing glitch_pve / glitch_red world data (at the dimension path)..."
+rm -rf "${DIM_DIR}/glitch_pve" "${DIM_DIR}/glitch_red"
+# also clear any legacy top-level folders from earlier (mistaken) layouts
 rm -rf "${SERVER_DIR}/glitch_pve" "${SERVER_DIR}/glitch_red"
 
 if [[ -f "${WORLDS_YML}" ]]; then
@@ -61,7 +69,7 @@ systemctl start theglitch
 cat <<EOF
 
 ============================================================
-  Ghost worlds purged. Clean slate for glitch_pve/glitch_red.
+  glitch_pve / glitch_red wiped. Clean slate.
 ============================================================
   Wait ~30s for the server to finish booting, then run:
 

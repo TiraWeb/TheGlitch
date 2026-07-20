@@ -16,6 +16,14 @@ set -euo pipefail
 SERVER_DIR="/opt/theglitch/server"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RED_SEED="20260719"
+MC_USER="minecraft"
+# Paper 26.x stores custom (non-main) worlds as DIMENSIONS of the main world,
+# under <main-world>/dimensions/<namespace>/<name>/ — NOT as top-level folders,
+# and WITHOUT a per-world level.dat (they share the main world's). This is why
+# a world is detected by its region/ folder, and registered with 'mv import'
+# rather than rebuilt.
+MAIN_WORLD="hub"
+DIM_DIR="${SERVER_DIR}/${MAIN_WORLD}/dimensions/minecraft"
 
 log()  { echo -e "\033[1;32m[worlds]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[worlds]\033[0m $*"; }
@@ -36,49 +44,38 @@ done
 mc "mv version" 2>/dev/null | grep -qi "multiverse" || die "Multiverse-Core is not loaded — run bootstrap.sh, then: sudo systemctl restart theglitch"
 mc "wg version" 2>/dev/null | grep -qi "worldguard"  || die "WorldGuard is not loaded — run bootstrap.sh, then: sudo systemctl restart theglitch"
 
-# --- world creation / ghost recovery ----------------------------------------
-# Trust the DISK, not Multiverse's registry. A world listed in worlds.yml but
-# missing its level.dat is a "ghost": 'mv create' refuses it ("already
-# exists") while no real world exists. 'mv remove' clears the stale registry
-# entry — it runs immediately (no confirm/OTP in MV5) and tolerates a missing
-# folder — then 'mv create' builds it fresh.
+# --- world registration ------------------------------------------------------
+# A world's data is its region/ folder at the dimension path (no per-world
+# level.dat on Paper 26.x). If that exists, the world just needs to be
+# REGISTERED with Multiverse via 'mv import' (idempotent — harmless if already
+# managed). If it doesn't exist, 'mv create' builds it (Paper puts it at the
+# dimension path automatically).
 ensure_world() {
-  local name="$1"; shift              # remaining args: mv create <env> [flags]
-  local dir="${SERVER_DIR}/${name}"
-  if [[ -f "${dir}/level.dat" ]]; then
-    log "${name}: present on disk"
-    mc "mv load ${name}" >/dev/null 2>&1 || true   # no-op if already loaded
-    return 0
+  local name="$1"; shift              # remaining args: <env> [create flags]
+  local env="$1"                      # environment is always the first
+  if [[ -d "${DIM_DIR}/${name}/region" ]]; then
+    log "${name}: world data present — registering with Multiverse (import)"
+    mc "mv import ${name} ${env}" >/dev/null 2>&1 || true
+  else
+    log "${name}: no world data — creating fresh"
+    mc "mv create ${name} $*"
+    for _ in $(seq 1 10); do [[ -d "${DIM_DIR}/${name}/region" ]] && break; sleep 1; done
+    [[ -d "${DIM_DIR}/${name}/region" ]] || die "${name}: create produced no region data at ${DIM_DIR}/${name}. Run 'sudo ./console.sh' and check for errors."
   fi
-  warn "${name}: no level.dat on disk — clearing ghost registry entry + phantom folder, creating fresh"
-  # Unload first so the live server isn't holding the world and can't rewrite
-  # the folder on its next tick (that race is what breaks a naive rm+create).
-  mc "mv unload ${name}" >/dev/null 2>&1 || true
-  mc "mv remove ${name}" >/dev/null 2>&1 || true
-  sleep 1
-  rm -rf "${dir:?}"
-  sleep 1
-  if [[ -e "${dir}" ]]; then
-    die "${name}: folder reappeared after deletion — the server is recreating it. Run 'sudo ./recover-worlds.sh' (stops the server for a clean purge), then re-run this script."
-  fi
-  mc "mv create ${name} $*"
-  for _ in 1 2 3 4 5; do [[ -f "${dir}/level.dat" ]] && break; sleep 1; done
-  [[ -f "${dir}/level.dat" ]] || die "${name}: 'mv create' produced no level.dat (folder may already exist). Run 'sudo ./recover-worlds.sh', then re-run this script."
-  log "${name}: created"
+  mc "mv load ${name}" >/dev/null 2>&1 || true   # no-op if already loaded
 }
 
 ensure_world glitch_pve normal --world-type flat --no-structures --no-adjust-spawn
 ensure_world glitch_red normal --seed "${RED_SEED}"
 
-# --- per-world Paper override (into the REAL folder, post-create) -----------
-# glitch_pve's dungeon-trash fast-despawn tuning. Placed here (not in
-# bootstrap) so it lands in the actual world folder rather than creating a
-# phantom one. Takes effect on the next server restart (Paper reads
-# paper-world.yml at world load).
+# --- per-world Paper override (into the REAL dimension folder) --------------
+# glitch_pve's dungeon-trash fast-despawn tuning, placed at the actual world
+# path. Takes effect on the next server restart (Paper reads paper-world.yml
+# at world load).
 PW_SRC="${REPO_DIR}/server/world-overrides/glitch_pve/paper-world.yml"
-if [[ -f "${PW_SRC}" ]]; then
-  install -o "${MC_USER:-minecraft}" -g "${MC_USER:-minecraft}" -m 644 \
-    "${PW_SRC}" "${SERVER_DIR}/glitch_pve/paper-world.yml"
+if [[ -f "${PW_SRC}" && -d "${DIM_DIR}/glitch_pve" ]]; then
+  install -o "${MC_USER}" -g "${MC_USER}" -m 644 \
+    "${PW_SRC}" "${DIM_DIR}/glitch_pve/paper-world.yml"
   log "Placed glitch_pve/paper-world.yml (applies on next restart)"
 fi
 
@@ -203,13 +200,17 @@ for w in hub glitch_pve glitch_red; do
 done
 
 # --- Red Zone pre-generation (border 2000 + margin) --------------------------
-# Guarded by a marker INSIDE the world folder. A freshly (re)created glitch_red
-# has no marker, so it always pre-generates; an already-generated world skips.
-# No env override — skipping pre-gen on an empty Red Zone would defeat the
-# purpose (terrain would generate mid-gameplay on 2 cores).
-PREGEN_MARKER="${SERVER_DIR}/glitch_red/.pregen-started"
-if [[ -f "${PREGEN_MARKER}" ]]; then
-  log "Red Zone pre-generation already done (marker present) — skipping (delete ${PREGEN_MARKER} to redo)"
+# Skip if already pre-generated. Detected two ways: an explicit marker, OR a
+# healthy count of region files already on disk (the ~1050-radius area is ~20+
+# .mca files; a fresh world has 0-2). This avoids redoing the ~18-min job when
+# the chunks are already present (e.g. after re-importing an existing world).
+PREGEN_MARKER="${DIM_DIR}/glitch_red/.pregen-started"
+RED_REGION="${DIM_DIR}/glitch_red/region"
+mca_count=$(find "${RED_REGION}" -name '*.mca' 2>/dev/null | wc -l)
+if [[ -f "${PREGEN_MARKER}" || "${mca_count}" -gt 8 ]]; then
+  log "Red Zone already pre-generated (${mca_count} region files) — skipping (delete ${PREGEN_MARKER} + region to redo)"
+  touch "${PREGEN_MARKER}" 2>/dev/null || true
+  chown "${MC_USER}:${MC_USER}" "${PREGEN_MARKER}" 2>/dev/null || true
 else
   log "Starting Red Zone pre-generation (radius 1050 around 0,0) — ~18 min on 2 cores, runs in background"
   mc "chunky world glitch_red" >/dev/null
@@ -217,8 +218,8 @@ else
   mc "chunky center 0 0"       >/dev/null
   mc "chunky radius 1050"      >/dev/null
   mc "chunky start"            >/dev/null
-  touch "${PREGEN_MARKER}"
-  chown "${MC_USER:-minecraft}:${MC_USER:-minecraft}" "${PREGEN_MARKER}" 2>/dev/null || true
+  touch "${PREGEN_MARKER}" 2>/dev/null || true
+  chown "${MC_USER}:${MC_USER}" "${PREGEN_MARKER}" 2>/dev/null || true
 fi
 
 cat <<'EOF'
@@ -239,8 +240,10 @@ cat <<'EOF'
 
   Recommended after pre-gen finishes:
     sudo systemctl restart theglitch   # applies per-world paper-world.yml
-  then confirm the worlds persisted across the restart:
-    sudo find /opt/theglitch/server -maxdepth 2 -name level.dat
+  then confirm all three worlds are registered across the restart:
+    scripts/mc-cmd.py 'mv list'        # expect hub, glitch_pve, glitch_red
+  (Paper 26.x stores them as dimensions of hub, so there is no per-world
+   level.dat — 'mv list' is the right check, not a find for level.dat.)
 
   Get around as op:
     scripts/mc-cmd.py 'mv tp YourName glitch_red'
