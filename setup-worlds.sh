@@ -173,8 +173,11 @@ done
 # Guarded so a re-run doesn't restart the ~18-min job. Pass SKIP_PREGEN=true
 # to force-skip; the marker below makes subsequent runs skip automatically.
 PREGEN_MARKER="${SERVER_DIR}/glitch_red/.pregen-started"
-if [[ -f "${PREGEN_MARKER}" || "${SKIP_PREGEN:-false}" == "true" ]]; then
-  log "Red Zone pre-generation already handled — skipping (delete ${PREGEN_MARKER} to redo)"
+if [[ -f "${PREGEN_MARKER}" ]]; then
+  log "Red Zone pre-generation already done (marker present) — skipping (delete ${PREGEN_MARKER} to redo)"
+elif [[ "${SKIP_PREGEN:-false}" == "true" ]]; then
+  log "SKIP_PREGEN set — skipping pre-generation and marking it done"
+  touch "${PREGEN_MARKER}"
 else
   log "Starting Red Zone pre-generation (radius 1050 around 0,0)"
   mc "chunky world glitch_red" >/dev/null
