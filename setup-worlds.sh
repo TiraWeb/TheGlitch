@@ -87,6 +87,9 @@ mc "execute in minecraft:glitch_red run weather clear" >/dev/null
 # --- spawns & borders --------------------------------------------------------
 log "Setting spawns and world borders"
 mc "execute in minecraft:overworld run setworldspawn 0 -60 0" >/dev/null
+# Multiverse tracks its own per-world spawn for respawns, independently of
+# the vanilla level spawn above — set both so they can't silently diverge.
+mc "mv setspawn hub:0,-60,0" >/dev/null
 mc "mv setspawn glitch_pve:0,-60,0" >/dev/null
 
 mc "execute in minecraft:overworld run worldborder center 0 0" >/dev/null
@@ -104,10 +107,12 @@ log "Applying WorldGuard flags"
 
 flag() { mc "rg flag -w $1 __global__ $2 $3" >/dev/null; }
 
-# hub — total lockdown
+# hub — total lockdown. NO mob-spawning flag here: WorldGuard's flag also
+# intercepts plugin-spawned entities (e.g. Citizens NPCs), which Phase 5's
+# shop/class NPCs will need; the doMobSpawning gamerule already suppresses
+# natural spawns without that side effect.
 flag hub passthrough deny
 flag hub pvp deny
-flag hub mob-spawning deny
 flag hub natural-hunger-drain deny
 flag hub invincible allow
 flag hub item-drop deny

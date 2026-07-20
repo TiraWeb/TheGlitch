@@ -18,24 +18,21 @@ collisions:
 
 entities:
   spawning:
-    # Dungeon trash items vanish in 15s instead of 5min.
-    alt-item-despawn-rate:
-      enabled: true
-      items:
-        cobblestone: 300
-        cobbled_deepslate: 300
-        netherrack: 300
-        dirt: 300
-        gravel: 300
-        rotten_flesh: 600
-        string: 600
-    # Tighter despawn keeps the live-monster population bounded to the
-    # space players actually fight in (sim distance is 4 chunks = 64 blocks).
+    # alt-item-despawn-rate deliberately NOT set here: it keys off material,
+    # not drop source, so a global rule can't distinguish dungeon trash from
+    # a dead player's dropped inventory. Scoped to glitch_pve only, in
+    # server/world-overrides/glitch_pve/paper-world.yml — hub and the
+    # full-loot Red Zone keep the standard 5-minute despawn for everything.
+    #
+    # Hard despawn range must stay <= simulation-distance's tick radius (4
+    # chunks = 64 blocks): a mob beyond that radius is in an unticked chunk
+    # and never gets evaluated for despawn, so a hard range past 64 is dead
+    # config, not a real ceiling.
     despawn-ranges:
       monster:
         hard:
-          horizontal: 72
-          vertical: 72
+          horizontal: 64
+          vertical: 64
         soft:
           horizontal: 28
           vertical: 28

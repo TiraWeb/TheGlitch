@@ -201,12 +201,24 @@ install_plugin() {
   fetch_jar "${url}" "${dest}" || warn "download failed for ${name} — skipped (re-run bootstrap to retry)"
 }
 
+install_modrinth_plugin() {
+  # install_modrinth_plugin <dest-name> <modrinth-slug>
+  # Defers the Modrinth API lookup until AFTER the cache check, so a routine
+  # idempotent re-run doesn't hit the API for jars already on disk.
+  local name="$1" slug="$2" dest="${PLUGIN_DIR}/$1"
+  if [[ -f "${dest}" && "${UPDATE_PLUGINS}" != "true" ]]; then
+    log "Phase 3/4 — ${name} already present (UPDATE_PLUGINS=true to refresh)"
+    return 0
+  fi
+  install_plugin "${name}" "$(modrinth_url "${slug}")"
+}
+
 install_plugin "Geyser-Spigot.jar"    "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot"
 install_plugin "floodgate-spigot.jar" "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot"
-install_plugin "worldedit-bukkit.jar"  "$(modrinth_url worldedit)"
-install_plugin "worldguard-bukkit.jar" "$(modrinth_url worldguard)"
-install_plugin "multiverse-core.jar"   "$(modrinth_url multiverse-core)"
-install_plugin "chunky-bukkit.jar"     "$(modrinth_url chunky)"
+install_modrinth_plugin "worldedit-bukkit.jar"  worldedit
+install_modrinth_plugin "worldguard-bukkit.jar" worldguard
+install_modrinth_plugin "multiverse-core.jar"   multiverse-core
+install_modrinth_plugin "chunky-bukkit.jar"     chunky
 
 # ---------------------------------------------------------------------------
 # Phase 2.1 — tuning configs: always synced from the repo (config-as-code)
@@ -225,6 +237,10 @@ sync_cfg spigot.yml                        spigot.yml
 sync_cfg purpur.yml                        purpur.yml
 sync_cfg config/paper-global.yml           config/paper-global.yml
 sync_cfg config/paper-world-defaults.yml   config/paper-world-defaults.yml
+# Per-world override (docs.papermc.io): lives inside the world's own folder,
+# not config/. Safe to pre-create before the world exists — Multiverse's
+# world creation populates the same folder without touching other files in it.
+sync_cfg world-overrides/glitch_pve/paper-world.yml   glitch_pve/paper-world.yml
 
 # ---------------------------------------------------------------------------
 # Phase 3.1 — seed plugin configs (once; after that the box's copy wins)
@@ -254,15 +270,28 @@ fi
 # ---------------------------------------------------------------------------
 log "Phase 2/4 — converging server.properties keys"
 PROPS="${SERVER_DIR}/server.properties"
+# Tighten permissions BEFORE anything below writes the RCON secret — closes
+# the window where a fresh/pre-existing 644 file could be read by any local
+# user while the password is briefly in plaintext.
+chmod 640 "${PROPS}"
+
+escape_re()   { printf '%s' "$1" | sed -e 's/[.[\*^$]/\\&/g'; }
+escape_repl() { printf '%s' "$1" | sed -e 's/[\\&]/\\&/g'; }
 set_prop() {
-  local key="$1" val="$2"
-  if grep -q "^${key}=" "${PROPS}"; then
-    sed -i "s|^${key}=.*|${key}=${val}|" "${PROPS}"
+  local key="$1" val="$2" key_re val_esc
+  key_re="$(escape_re "${key}")"
+  val_esc="$(escape_repl "${val}")"
+  if grep -q "^${key_re}=" "${PROPS}"; then
+    sed -i "s|^${key_re}=.*|${key}=${val_esc}|" "${PROPS}"
   else
     echo "${key}=${val}" >> "${PROPS}"
   fi
 }
-get_prop() { grep "^${1}=" "${PROPS}" 2>/dev/null | head -1 | cut -d= -f2- || true; }
+get_prop() {
+  local key_re
+  key_re="$(escape_re "$1")"
+  grep "^${key_re}=" "${PROPS}" 2>/dev/null | head -1 | cut -d= -f2- || true
+}
 
 # Performance (Phase 2): view 7 / sim 4 — chunks render far, but entities
 # only tick within 4 chunks. Compression 256 balances CPU vs mobile bandwidth.
@@ -273,6 +302,12 @@ set_prop sync-chunk-writes false
 # Pairs with purpur.yml idle-timeout: AFK players are marked idle after
 # 10 min (not kicked) and stop keeping nearby entities ticking.
 set_prop player-idle-timeout 10
+# Always converged (not seed-once): fixes a mojibake bug in the original
+# Phase 0-1 template — raw multi-byte UTF-8 section signs corrupt into
+# 'Â§...' if the Java properties loader falls back to Latin-1 byte-wise
+# parsing (MC-2215). Written as \uXXXX escapes instead of literal glyphs
+# (both the section sign U+00A7 and the guillemet U+00BB).
+set_prop motd '\u00A75The Glitch \u00A78\u00BB \u00A77rogue-lite extraction \u00A78[\u00A7dalpha\u00A78]'
 
 # World architecture (Phase 4): 'hub' flat world becomes the main world;
 # nether/end are disabled (bukkit.yml handles the end).
@@ -288,7 +323,6 @@ if [[ -z "$(get_prop rcon.password)" ]]; then
   set_prop rcon.password "$(openssl rand -hex 16)"
   log "Phase 2 — generated RCON password (stored only in server.properties, mode 640)"
 fi
-chmod 640 "${PROPS}"
 
 chown -R "${MC_USER}:${MC_USER}" "${BASE_DIR}"
 

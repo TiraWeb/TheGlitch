@@ -43,7 +43,8 @@ problem *that day*, not at launch.
 | entity-activation-range | spigot.yml | distant entities tick at reduced rates |
 | no pathfinding on block update | paper-world-defaults.yml | mobs re-path on schedule, not on every block change — biggest single lever for wave dungeons |
 | Alternate Current redstone | paper-world-defaults.yml | same behavior, fraction of the update cost |
-| despawn tightening + trash item fast-despawn | paper-world-defaults.yml | bounds live entity population |
+| monster despawn tightening | paper-world-defaults.yml | bounds live entity population |
+| dungeon trash item fast-despawn | glitch_pve/paper-world.yml (per-world) | scoped to glitch_pve only — applying it server-wide would also fast-despawn a dead player's building-material drops in the Red Zone's full-loot PvP |
 | villager POI radius 16, lobotomize | purpur.yml | villager AI is shockingly expensive at defaults |
 | tps-catchup off | purpur.yml | lag spikes end instead of smearing |
 | AFK players stop ticking entities | purpur.yml + player-idle-timeout | idle players cost ~nothing after 10 min |

@@ -52,8 +52,10 @@ Slot 6 (-1024,  1024)   Slot 7 (0,  1024)   Slot 8 (1024,  1024)
   = the run manager (Phase 6) assigns a party to a free slot, resets its
   spawners/objectives, and teleports the party in. 8 concurrent runs ≫ what a
   2-core box can tick anyway — the CPU budget, not the map, is the real limit.
-- Expansion is formulaic: the border (4096) leaves a second ring at ±2048 for
-  up to 16 more slots with zero migration.
+- Expansion is formulaic: `worldborder set <size>` takes a diameter, so
+  border 4096 gives a playable half-width of 2048. A second ring centered at
+  ±1792 (128-block margin to the wall, matching the ≤256×256 slot footprint)
+  fits up to 16 more slots inside the existing border with zero migration.
 - Natural mob spawning **off** at the gamerule level — every hostile in a
   dungeon is a deliberate MythicMobs spawn. This is also why the PvE world is
   nearly free when nobody is mid-run.

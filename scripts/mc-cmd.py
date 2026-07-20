@@ -8,6 +8,14 @@ Reads the RCON port/password straight from the live server.properties, so
 there is no second place for credentials to drift. RCON is bound to the
 box and never opened in the firewall; this is an on-host admin bridge,
 not a remote one.
+
+server.properties is mode 640 (owner: minecraft). This script self-elevates
+via sudo when not already root, so it works for any operator account
+without needing group membership.
+
+GLITCH_RCON_TIMEOUT overrides the response-wait timeout in seconds
+(default 120) — world creation ('mv create' on real terrain) can take up
+to a minute on a 2-core box, so the default has margin above that.
 """
 import os
 import socket
@@ -15,9 +23,15 @@ import struct
 import sys
 
 PROPS_PATH = os.environ.get("GLITCH_PROPS", "/opt/theglitch/server/server.properties")
+COMMAND_TIMEOUT = int(os.environ.get("GLITCH_RCON_TIMEOUT", "120"))
 
 SERVERDATA_AUTH = 3
 SERVERDATA_EXECCOMMAND = 2
+
+
+def ensure_root():
+    if os.geteuid() != 0:
+        os.execvp("sudo", ["sudo", "-E", sys.executable, os.path.abspath(__file__), *sys.argv[1:]])
 
 
 def read_props(path):
@@ -57,7 +71,7 @@ def run_command(sock, command):
     send_packet(sock, 2, SERVERDATA_EXECCOMMAND, command)
     # Vanilla replies in a single packet; drain briefly in case of fragments.
     parts = []
-    sock.settimeout(10)
+    sock.settimeout(COMMAND_TIMEOUT)
     req_id, _, body = recv_packet(sock)
     if req_id == -1:
         raise ConnectionError("RCON rejected the command (auth lost?)")
@@ -70,7 +84,7 @@ def run_command(sock, command):
     except (TimeoutError, socket.timeout):
         pass
     finally:
-        sock.settimeout(10)
+        sock.settimeout(COMMAND_TIMEOUT)
     return "".join(parts).strip()
 
 
@@ -78,6 +92,7 @@ def main():
     if len(sys.argv) < 2:
         print(__doc__.strip(), file=sys.stderr)
         return 2
+    ensure_root()
     try:
         props = read_props(PROPS_PATH)
     except OSError as exc:

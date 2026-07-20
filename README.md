@@ -52,7 +52,7 @@ Live server data (worlds, edited configs) is never overwritten; `start.sh` and t
 | Stop | `sudo systemctl stop theglitch` — the only way to keep it down; typing `stop` in the console auto-restarts it after 15s by design |
 | Update Purpur | `UPDATE_SERVER=true sudo -E ./bootstrap.sh` then restart |
 | Update plugins | `UPDATE_PLUGINS=true sudo -E ./bootstrap.sh` then restart |
-| Console command from shell | `scripts/mc-cmd.py 'say hello'` (local RCON) |
+| Console command from shell | `scripts/mc-cmd.py 'say hello'` (local RCON; auto-elevates via sudo if needed) |
 
 First join: open the console and run `whitelist add YourName`, then `op YourName`.
 
