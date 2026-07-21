@@ -6,7 +6,9 @@ A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft ser
 **Stack:** Purpur (Java 25 — required by Minecraft 26.x) · GeyserMC + Floodgate (Bedrock cross-play) · single instance, three zones via coordinate offsetting
 **Capacity target:** ~10–20 players comfortable, ~25–30 with tuning
 
-Check items off as they're completed. Each numbered topic is sized to roughly one working session.
+Check items off as they're completed. Each numbered topic is sized to roughly one working session — except the Phase 4 building block, which is flagged as bigger.
+
+**Status as of 2026-07-20:** Phases 0–2 done and verified. Phase 3.1 (Geyser/Floodgate) installed, live Bedrock join test still pending. Phase 4 mechanics (worlds, rules, protection, pre-gen) done and verified live; physical building (4.5–4.7) hasn't started. Next up: Phase 5.
 
 ---
 
@@ -34,25 +36,38 @@ Check items off as they're completed. Each numbered topic is sized to roughly on
 
 ## Phase 4 — World architecture (the three zones)
 
-Structure, rules, borders, and protection are applied and pre-generated. The
-worlds are currently **empty shells** — the actual builds (hub city, dungeon
-rooms) and content (loot, bosses) are later work, tracked under Phases 5–6.
+Everything below is *mechanics* — worlds, gamerules, protection flags, borders,
+pre-generation. All scriptable, all done and verified live. **The worlds are
+still empty shells** — physical construction is a separate, much larger body
+of work, split out into its own checklist further down so it isn't buried in
+a parenthetical.
 
 - [x] **4.1 Zone layout blueprint** — Concrete coordinate offsets for Hub / Standard Glitch / Red Zone in one world (or minimal world set), world borders per zone, teleport routing between zones. _Three worlds created (hub/glitch_pve/glitch_red); see docs/ZONES.md._
-- [ ] **4.2 Hub City** — WorldGuard total lockdown **applied** (PvP/hunger/block-changes off, invincible on); the city **build** is still to come. _Empty flat world at spawn 0,-60,0._
-- [ ] **4.3 Standard Glitch (PvE)** — World + per-world gamerules (keepInventory on, no natural spawns) + dungeon-slot instancing **blueprint** done; the dungeon **builds** are still to come.
-- [ ] **4.4 The Red Zone (PvPvE)** — World + full-loot PvP flags + 6 entry coordinates + pre-gen **done**; Tier 4/5 loot tables and bosses come with Phases 5–6.
+- [x] **4.2 Hub City — mechanics** — WorldGuard total lockdown (PvP/hunger/block-changes off, invincible on, explosion/mob-damage denied, hostile deny-spawn), `spawn_mobs false` / `keep_inventory true`, spawn set to 0,-60,0. _Verified live: worlds registered via `mv import`, correct MC 26.x gamerule names (see docs/ZONES.md)._
+- [x] **4.3 Standard Glitch (PvE) — mechanics** — World registered, `keep_inventory true`, natural spawns off (MythicMobs-only design), 8-slot dungeon instancing blueprint. _Verified live._
+- [x] **4.4 The Red Zone (PvPvE) — mechanics** — World registered, full-loot PvP flags, 6 entry coordinates + 3 extraction sites documented, terrain pre-generated (17,689 chunks, seed `20260719`). _Verified live._
+
+### Physical world building — NOT started, sizable on its own
+
+Nobody has built anything inside these worlds yet. Unlike Phases 0–4 above,
+none of this can be scripted the way server config was — it's manual
+(hand-built or WorldEdit/schematic-assisted) construction inside the game,
+and each item below likely spans several sessions on its own, not one.
+
+- [ ] **4.5 Hub City build** — the actual city: spawn plaza, shop stalls, class-selector area, cosmetic look and feel. Decide the approach when we start: hand-build, WorldEdit-assisted, or an imported schematic.
+- [ ] **4.6 Dungeon room builds (glitch_pve)** — at least one real dungeon shell (of the 8 planned slots, docs/ZONES.md) with rooms, MythicMobs spawn points, and objective structures (e.g. a data-core to repair). The first becomes the template for the rest. _Pairs with 5.3 (MythicMobs) and 6.1 (dungeon objectives) — those need somewhere to place mobs/objectives._
+- [ ] **4.7 Red Zone points of interest** — physical structures at the Core (0,0 — Tier 4/5 loot), the 6 entry points, and the 3 extraction beacon sites. Currently just coordinates on paper (docs/ZONES.md), nothing built.
 
 ## Phase 5 — Core plugin stack
 
 - [ ] **5.1 Foundation plugins** — LuckPerms (groups/tracks), Vault, EssentialsX core (spawn, no homes/tpa policy inside game zones).
 - [ ] **5.2 Glitch Shards economy** — Run-currency implementation, extraction = banking to persistent balance, zone-specific death rules (PvE: lose carried shards only; Red Zone: full loot).
-- [ ] **5.3 MythicMobs** — "Glitch Stalker" dungeon mob (Bedrock-safe vanilla particles/effects), first custom boss for the Red Zone.
+- [ ] **5.3 MythicMobs** — "Glitch Stalker" dungeon mob (Bedrock-safe vanilla particles/effects), first custom boss for the Red Zone. _Mob definitions don't need a finished dungeon to write, but testing them "for real" needs 4.6._
 - [ ] **5.4 Classes** — Vanguard (tank, Ground Slam), Scout (agility, Glitch Dash), Warden (support, Tech Totem) via MMOItems/EcoSkills; abilities mapped to custom tools; UI kept Bedrock-friendly.
 
 ## Phase 6 — Game loops
 
-- [ ] **6.1 Dungeon objectives** — Wave-clear and data-core-repair objectives, tier scaling, completion rewards.
+- [ ] **6.1 Dungeon objectives** — Wave-clear and data-core-repair objectives, tier scaling, completion rewards. _Needs 4.6 (a built dungeon room) to actually place objectives in._
 - [ ] **6.2 Extraction beacons** — Timed channel mechanic, server-wide/zone broadcast on activation, shard banking on success.
 - [ ] **6.3 Gear-score gating** — Item-attribute scoring on Red Zone entry, distribution across rotating drop points to prevent spawn-camping.
 - [ ] **6.4 Progression sinks** — Hub skill-point shop: shards → permanent class upgrades (+HP %, cooldown reduction), costs curve.
