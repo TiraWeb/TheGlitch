@@ -10,7 +10,7 @@ SSH into the instance, then:
 
 ```bash
 sudo apt-get update && sudo apt-get install -y git
-git clone -b claude/glitch-minecraft-server-arch-29w1m8 https://github.com/TiraWeb/TheGlitch.git
+git clone https://github.com/TiraWeb/TheGlitch.git
 cd TheGlitch
 sudo ./bootstrap.sh
 ```

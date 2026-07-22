@@ -74,6 +74,32 @@ Slot 6 (-1024,  1024)   Slot 7 (0,  1024)   Slot 8 (1024,  1024)
 - `keepInventory ON` protects brought-in gear per the design; the
   Glitch-Shards-drop-on-death rule is economy logic (Phase 5.2), not a gamerule.
 
+### Protecting a built dungeon slot (Phase 4.6)
+
+`glitch_pve`'s `__global__` WorldGuard flags (above) deliberately don't touch
+`block-break`/`block-place` — WorldGuard's docs recommend leaving those alone
+at the global level (denying `build` globally breaks pistons and other
+block-updates). But a curated dungeon shell still needs to be grief-proof
+once it's built, so each slot gets its **own** region with those two flags
+set, which override `__global__` only inside the box:
+
+```
+//pos1 <slot-x - 128>,-64,<slot-z - 128>
+//pos2 <slot-x + 128>,320,<slot-z + 128>
+/rg define pve_slot<N> -w glitch_pve
+/rg flag pve_slot<N> block-break deny
+/rg flag pve_slot<N> block-place deny
+```
+
+Bounds are the slot's ≤256×256 footprint (full world height, `-64` to `320`)
+centered on its grid coordinate — tighten to the actual build's extents once
+placed. Everything not explicitly set on the region (`pvp`, `use`,
+`chest-access`, `enderpearl`) still inherits from `__global__`, so PvE
+combat/loot is unaffected. **Must run in-game as a real player** — like
+`//paste`/`//copy` (see Hard-won lessons in HANDOFF.md), WorldEdit's
+selection commands and WorldGuard's `/rg define` are tied to a player actor,
+not the console/RCON.
+
 ## The Red Zone (`glitch_red`)
 
 Natural terrain, fixed seed `20260719` (fixed = the box is rebuildable and POI
