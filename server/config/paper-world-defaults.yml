@@ -1,0 +1,64 @@
+# The Glitch — paper-world-defaults.yml
+# Synced from the repo by bootstrap.sh on every run: edit HERE, not on the box.
+# Missing keys are filled with defaults by the server at boot; per-world
+# overrides go in <world-folder>/paper-world.yml (none needed yet).
+# Key paths verified against docs.papermc.io (2026-07).
+
+chunks:
+  # Smooth out autosave IO spikes (default 24/tick) — trades spike for spread.
+  max-auto-save-chunks-per-tick: 8
+  # Never let a player force a synchronous chunk load by walking off the
+  # loaded edge — on 2 cores a sync load is a visible TPS stutter.
+  prevent-moving-into-unloaded-chunks: true
+
+collisions:
+  # Entity-cramming collision resolution is O(n²)-ish in dense mob packs
+  # (dungeon waves!). 2 is enough for gameplay feel.
+  max-entity-collisions: 2
+
+entities:
+  spawning:
+    # alt-item-despawn-rate deliberately NOT set here: it keys off material,
+    # not drop source, so a global rule can't distinguish dungeon trash from
+    # a dead player's dropped inventory. Scoped to glitch_pve only, in
+    # server/world-overrides/glitch_pve/paper-world.yml — hub and the
+    # full-loot Red Zone keep the standard 5-minute despawn for everything.
+    #
+    # Hard despawn range must stay <= simulation-distance's tick radius (4
+    # chunks = 64 blocks): a mob beyond that radius is in an unticked chunk
+    # and never gets evaluated for despawn, so a hard range past 64 is dead
+    # config, not a real ceiling.
+    despawn-ranges:
+      monster:
+        hard:
+          horizontal: 64
+          vertical: 64
+        soft:
+          horizontal: 28
+          vertical: 28
+
+hopper:
+  cooldown-when-full: true
+
+misc:
+  # Alternate Current: same redstone behavior, fraction of the update cost.
+  redstone-implementation: ALTERNATE_CURRENT
+  # The pathfinding throttle: mobs re-path on their own schedule instead of
+  # on every nearby block change. Biggest single lever for wave dungeons.
+  update-pathfinding-on-block-update: false
+
+tick-rates:
+  mob-spawner: 2
+  grass-spread: 4
+  sensor:
+    villager:
+      secondarypoisensor: 80
+  behavior:
+    villager:
+      validatenearbypoi: 60
+
+environment:
+  optimize-explosions: true
+  # Villager treasure-map trades trigger expensive structure searches.
+  treasure-maps:
+    enabled: false

@@ -1,0 +1,21 @@
+# The Glitch — per-world Paper override for glitch_pve ONLY.
+# Synced by bootstrap.sh to <world-folder>/paper-world.yml, which overrides
+# paper-world-defaults.yml for this world alone (docs.papermc.io).
+#
+# Dungeon trash items vanish in 15s instead of 5min. Deliberately scoped to
+# this world only — alt-item-despawn-rate keys off material, not drop
+# source, so applying it globally would also fast-despawn a dead player's
+# building-material drops in the Red Zone's full-loot PvP, silently
+# breaking that design promise. hub and glitch_red keep the standard rate.
+entities:
+  spawning:
+    alt-item-despawn-rate:
+      enabled: true
+      items:
+        cobblestone: 300
+        cobbled_deepslate: 300
+        netherrack: 300
+        dirt: 300
+        gravel: 300
+        rotten_flesh: 600
+        string: 600

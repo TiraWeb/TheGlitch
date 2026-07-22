@@ -1,0 +1,7 @@
+# The Glitch — paper-global.yml (deliberate keys only; server merges defaults)
+# Synced from the repo by bootstrap.sh on every run: edit HERE, not on the box.
+
+# spark profiler ships inside Paper/Purpur — no plugin jar needed.
+# Baseline procedure: docs/PERFORMANCE.md
+spark:
+  enabled: true
