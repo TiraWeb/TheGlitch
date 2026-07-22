@@ -2,29 +2,38 @@
 # Seeded once by bootstrap.sh — box's copy wins after first boot.
 # Wiki: https://github.com/TheMrEnginE/hCaptureEvent
 
-# Global settings
-general:
+# Prefix for all messages
+prefix: "&8[&5Extraction&8] "
+
+# Messages
+messages:
+  capturing: "&7Capturing... &e{progress}%"
+  success: "&aCapture complete! &7+{reward} shards banked."
+  failed: "&cCapture failed!"
+  already-capturing: "&cYou are already capturing!"
+  interrupted: "&cCapture interrupted!"
+  no-permission: "&cYou don't have permission to capture here."
+
+# Capture settings
+capture:
   # Use WorldGuard regions for capture zones
   use-worldguard: true
   # Check interval (ticks)
   check-interval: 5
   # Minimum players in zone to start capture
   min-players: 1
-
-# Capture settings
-capture:
   # Time in seconds to capture/extract
-  capture-time: 8
+  capture-time: 10
   # Show boss bar during extraction
   boss-bar:
     enabled: true
     color: PURPLE
     style: SEGMENTED_10
-    title: "<purple>Extracting..."
+    title: "&5Extracting..."
   # Show action bar progress
   action-bar:
     enabled: true
-    message: "<purple>Extracting... <white>{progress}%</white>"
+    message: "&5Extracting... &f{progress}%"
   # Particles during extraction
   particles:
     enabled: true
@@ -41,7 +50,7 @@ reward:
   # Broadcast message
   broadcast:
     enabled: true
-    message: "<gold>{player}</gold> <gray>has extracted from the Glitch!</gray>"
+    message: "&6{player} &7has extracted from the Glitch!"
 
 # Per-zone configs go in captures/ folder
 # Each file = one extraction point
