@@ -221,6 +221,7 @@ install_modrinth_plugin "worldguard-bukkit.jar" worldguard
 install_modrinth_plugin "multiverse-core.jar"   multiverse-core
 install_modrinth_plugin "chunky-bukkit.jar"     chunky
 install_modrinth_plugin "LuckPerms.jar"          luckperms
+install_modrinth_plugin "EssentialsX.jar"        essentialsx
 install_modrinth_plugin "VaultUnlocked.jar"      vaultunlocked
 install_modrinth_plugin "Coins.jar"              coinsplugin
 

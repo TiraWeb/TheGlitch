@@ -69,7 +69,9 @@ spawner-drop: false
 
 percentage-player-hit: 0.50
 limit-for-location: 0
+location-limit-hours: 1.0
 drop-chance: 1.00
+drop-with-any-death: false
 
 # Boss multipliers — MythicMobs will override these for custom mobs
 mob-multiplier:
