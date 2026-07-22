@@ -1,10 +1,10 @@
 # The Glitch — Session Handoff
 
 Paste this whole file into a new chat (any model) to resume work with full
-context. It reflects state as of **2026-07-21**. The repo (`TiraWeb/TheGlitch`,
-branch `claude/glitch-minecraft-server-arch-29w1m8`) is the single source of
-truth — this doc is a guide to it, not a replacement for reading `ROADMAP.md`,
-`docs/ZONES.md`, and `docs/PERFORMANCE.md`.
+context. It reflects state as of **2026-07-22**. The repo (`TiraWeb/TheGlitch`,
+branch `main`) is the single source of truth — this doc is a guide to it, not
+a replacement for reading `ROADMAP.md`, `docs/ZONES.md`, and
+`docs/PERFORMANCE.md`.
 
 ## What this project is
 
@@ -53,59 +53,75 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
   registered with Multiverse, correct gamerules, WorldGuard flags, borders,
   Red Zone pre-generated (17,689 chunks). Verify anytime with
   `scripts/mc-cmd.py 'mv list'`.
-- **Phase 4 physical building (4.5-4.7): NOT started.** This is the current
-  focus — see "Where we left off" below.
+- **Phase 4.5 (Hub City build): done.** See "Where we left off" below.
+- **Phase 4.6-4.7 (dungeon builds, Red Zone POIs): NOT started.** 4.6 is the
+  current focus — see "Where we left off" below.
 - **Phases 5-8:** not started (LuckPerms/economy/MythicMobs/classes, game
   loops, monetization, ops/launch).
 
-## Where we left off — importing the hub build
+## Where we left off — hub build done, starting the first dungeon shell
 
-User downloaded a free-for-commercial-use spawn build, **"Sakura Spawn" by
-ArtillexStudios**, to import into the already-configured `hub` world (rather
-than hand-building it). The zip contains both a raw world save AND a
-`SakuraSpawn.schematic` (legacy MCEdit format) — **we're using the schematic**,
-pasted via WorldEdit directly into the live `hub` world, because that avoids
-creating a fourth Multiverse world (multi-world juggling caused most of this
-session's pain — see "Hard-won lessons" below).
+**4.5 is done.** The free-for-commercial-use spawn build, **"Sakura Spawn" by
+ArtillexStudios**, was pasted via WorldEdit directly into the live `hub`
+world (in-game, since `//paste` needs a player position that RCON/console
+doesn't have — see Hard-won lessons below). It **fit inside the existing 512
+border with no resize**, and the build's natural entry point lines up with
+the existing spawn — **(0, -60, 0) needed no changes** to either
+`setworldspawn` or `mv setspawn`. WorldGuard's existing `__global__` flags on
+`hub` (no PvP, no block changes, invincible, hostile-proofed) automatically
+cover the new build, nothing extra needed there.
+`SakuraSpawn.schematic` was **not** committed into the repo — skipped as a
+nice-to-have for reproducibility, not blocking; revisit if it becomes
+important later.
 
-**Verified procedure (confirmed against WorldEdit source, not guessed):**
+**Next: 4.6 — the first dungeon shell in `glitch_pve`.** Same
+find-a-free-build-and-WorldEdit-paste pattern as the hub, applied to **Slot 1
+at (-1024, -1024)** (the 8-slot grid in `docs/ZONES.md`) — it becomes the
+template the other 7 slots reuse once it works. Nothing has been built there
+yet.
 
-1. File placed at `/opt/theglitch/server/plugins/WorldEdit/schematics/SakuraSpawn.schematic`
-   (owned `minecraft:minecraft`, mode 644) — **last known status: copy command
-   ran, but the verification `ls` failed because it lacked `sudo`** (the
-   `/opt/theglitch` tree isn't traversable by the plain `ubuntu` user). Next
-   step: re-run `sudo ls -la /opt/theglitch/server/plugins/WorldEdit/schematics/`
-   to actually confirm it landed before doing anything in-game.
-2. A backup of `hub`'s overworld data (excluding `dimensions/`) was
-   recommended before pasting:
+**Recommended sequence for Slot 1:**
+
+1. Find/prepare a dungeon-shell build (free schematic, or hand-build) —
+   footprint ≤256×256 to fit the slot margin (`docs/ZONES.md`).
+2. Backup `glitch_pve`'s dimension folder first (same pattern as the hub
+   backup, adjusted for Paper 26.x's dimension-folder storage):
    ```bash
    sudo mkdir -p /opt/theglitch/backups
-   sudo tar --exclude='dimensions' -czf /opt/theglitch/backups/hub-overworld-pre-sakura-$(date +%Y%m%d-%H%M%S).tar.gz -C /opt/theglitch/server/hub .
+   sudo tar -czf /opt/theglitch/backups/glitch_pve-pre-slot1-$(date +%Y%m%d-%H%M%S).tar.gz \
+     -C /opt/theglitch/server/hub/dimensions/minecraft glitch_pve
    ```
-3. **In-game** (must be a real player — `//paste` needs a player position,
-   RCON/console has none):
+3. **In-game** (real player, same reason as the hub paste):
    ```
-   //schem load SakuraSpawn.schematic mcedit
-   /mv tp YourName hub
-   /tp @s 0 -60 0
+   /mv tp YourName glitch_pve
+   /tp @s -1024 -60 -1024
+   //schem load <YourSchematic> mcedit
    //paste
    ```
-   `//paste` pastes air too (intentional — clears the flat pad). If it lands
-   wrong: `//undo`, reposition, retry — free and instant, no need to worry
-   about mistakes.
-4. **After it looks right, not yet done:**
-   - Confirm the build fits inside hub's border (currently 512 @ 0,0); widen
-     with `/execute in minecraft:overworld run worldborder set <n>` if not.
-   - If the build's natural entry point isn't exactly (0,-60,0), update both
-     spawns to match: `/execute in minecraft:overworld run setworldspawn <x> <y> <z>`
-     and `/mv setspawn hub:<x>,<y>,<z>`.
-   - Commit `SakuraSpawn.schematic` into the repo (e.g. `assets/hub-build/`)
-     so a from-scratch rebuild isn't dependent on the user's laptop. **Not
-     done yet** — offered, not yet actioned.
+4. **Protect the build once it's placed.** Unlike `hub`, `glitch_pve`'s
+   `__global__` flags don't deny block-break/place (WorldGuard's own
+   guidance — denying `build` globally breaks pistons/block-updates), so a
+   curated dungeon shell needs its own region. Full procedure and rationale:
+   `docs/ZONES.md` → "Protecting a built dungeon slot". Short version,
+   in-game:
+   ```
+   //pos1 -1152,-64,-1152
+   //pos2 -896,320,-896
+   /rg define pve_slot1 -w glitch_pve
+   /rg flag pve_slot1 block-break deny
+   /rg flag pve_slot1 block-place deny
+   ```
+5. Repeat for slots 2-8 as each gets built (`docs/ZONES.md` has all 8 center
+   coordinates) — one dungeon at a time is fine, 4.6 only needs the first.
+6. Tick off `ROADMAP.md` 4.6 once slot 1 looks right and is protected.
 
-WorldGuard's existing `__global__` flags on `hub` automatically cover the new
-build (no PvP, no block changes, invincible, hostile-proofed) — nothing
-extra needed there.
+**Deliberately not automated:** region definition isn't in `setup-worlds.sh`.
+WorldEdit's selection commands (`//pos1`/`//pos2`) and WorldGuard's
+`/rg define` are tied to a player actor in the versions this server runs —
+same restriction already hit the hard way for `//paste`/`//copy` (lesson 6
+below). Automating it via RCON would mean guessing at console behavior
+neither of us can verify without live testing, so — like the hub paste — it
+stays a documented in-game procedure.
 
 ## Hard-won lessons (read before touching worlds/gamerules again)
 
@@ -148,23 +164,27 @@ extra needed there.
    from blocking pulls at all — but keep committing scripts as `755`.
 
 6. RCON commands run with no player context — anything needing "current
-   position" (`//paste`, `//copy`) must be run in-game, not via
-   `scripts/mc-cmd.py`.
+   position" or a player-tied selection (`//paste`, `//copy`, `//pos1`/
+   `//pos2`, `/rg define`) must be run in-game, not via `scripts/mc-cmd.py`.
+   This is also why dungeon-slot WorldGuard regions (Phase 4.6) are a
+   documented in-game procedure rather than something added to
+   `setup-worlds.sh`.
 
 ## Immediate next steps (pick up here)
 
-1. Confirm the schematic file actually landed: `sudo ls -la
-   /opt/theglitch/server/plugins/WorldEdit/schematics/`.
-2. Do the backup, then the in-game paste (steps above).
-3. Fix up border/spawn to match wherever the build actually lands.
-4. Commit the schematic into the repo for reproducibility.
-5. Tick off ROADMAP.md 4.5 (Hub City build) once it's placed and looks right.
-6. Then: 4.6 (dungeon room builds for `glitch_pve`) and 4.7 (Red Zone POIs) —
-   same "download a free build, paste via WorldEdit into the right world"
-   pattern, or hand-build if nothing suitable is found.
-7. Eventually: Phase 5 (LuckPerms, Glitch Shards economy, MythicMobs, the
+1. Find/prepare a dungeon-shell build for Slot 1 (-1024, -1024) in
+   `glitch_pve` — free schematic (established preference) or hand-build.
+2. Backup, then the in-game paste, then protect the region — steps above.
+3. Tick off ROADMAP.md 4.6 once Slot 1 looks right and is protected.
+4. Then: 4.7 (Red Zone POIs) — same download-a-free-build-or-hand-build
+   pattern, applied to the Core (0,0) and the entry/extraction coordinates
+   already documented in `docs/ZONES.md`. Slots 2-8 in `glitch_pve` can also
+   be filled in any time once Slot 1's template works.
+5. Eventually: Phase 5 (LuckPerms, Glitch Shards economy, MythicMobs, the
    three classes) — the point where this becomes an actual game rather than
-   three configured, decorated worlds.
+   three configured, decorated worlds. MythicMobs (5.3) and dungeon
+   objectives (6.1) both need a built dungeon room to place anything into,
+   so 4.6 unblocks them.
 
 ## Working agreements worth preserving
 

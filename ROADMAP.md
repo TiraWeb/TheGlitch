@@ -8,7 +8,7 @@ A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft ser
 
 Check items off as they're completed. Each numbered topic is sized to roughly one working session — except the Phase 4 building block, which is flagged as bigger.
 
-**Status as of 2026-07-20:** Phases 0–2 done and verified. Phase 3.1 (Geyser/Floodgate) installed, live Bedrock join test still pending. Phase 4 mechanics (worlds, rules, protection, pre-gen) done and verified live; physical building (4.5–4.7) hasn't started. Next up: Phase 5.
+**Status as of 2026-07-22:** Phases 0–2 done and verified. Phase 3.1 (Geyser/Floodgate) installed, live Bedrock join test still pending. Phase 4 mechanics (worlds, rules, protection, pre-gen) done and verified live. Phase 4.5 (Hub City build) done — see HANDOFF.md. Next up: 4.6, the first dungeon shell in `glitch_pve`.
 
 ---
 
@@ -54,7 +54,7 @@ none of this can be scripted the way server config was — it's manual
 (hand-built or WorldEdit/schematic-assisted) construction inside the game,
 and each item below likely spans several sessions on its own, not one.
 
-- [ ] **4.5 Hub City build** — the actual city: spawn plaza, shop stalls, class-selector area, cosmetic look and feel. Decide the approach when we start: hand-build, WorldEdit-assisted, or an imported schematic.
+- [x] **4.5 Hub City build** — the actual city: spawn plaza, shop stalls, class-selector area, cosmetic look and feel. _Done: "Sakura Spawn" by ArtillexStudios pasted into the live `hub` world via a WorldEdit schematic paste, in-game. Fit inside the existing 512 border and lines up with the existing (0, -60, 0) spawn — neither needed changing. WorldGuard's existing `__global__` hub lockdown already covers it, no extra flags needed._
 - [ ] **4.6 Dungeon room builds (glitch_pve)** — at least one real dungeon shell (of the 8 planned slots, docs/ZONES.md) with rooms, MythicMobs spawn points, and objective structures (e.g. a data-core to repair). The first becomes the template for the rest. _Pairs with 5.3 (MythicMobs) and 6.1 (dungeon objectives) — those need somewhere to place mobs/objectives._
 - [ ] **4.7 Red Zone points of interest** — physical structures at the Core (0,0 — Tier 4/5 loot), the 6 entry points, and the 3 extraction beacon sites. Currently just coordinates on paper (docs/ZONES.md), nothing built.
 
