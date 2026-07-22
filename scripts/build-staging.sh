@@ -39,6 +39,10 @@ X1=$((CX - HALF)); X2=$((CX + HALF - 1))  # -20 to 19
 Z1=$((CZ - HALF)); Z2=$((CZ + HALF - 1))  # -20 to 19
 
 # --- build -------------------------------------------------------------------
+log "Force-loading chunks at staging area"
+mc "forceload add ${X1} ${Z1} ${X2} ${Z2}"
+sleep 2
+
 log "Building staging platform (${X1},${Z1}) to (${X2},${Z2}) at Y=${YFLOOR}"
 
 # Floor: deepslate_tiles (40x40 = 1600 blocks, under 32768 limit)
@@ -93,6 +97,9 @@ for entry in "${SLOT_COORDS[@]}"; do
   # Place a weighted pressure plate on the floor as a subtle marker
   mc "setblock ${mx} $((YFLOOR+1)) ${mz} light_weighted_pressure_plate"
 done
+
+# Unload chunks after build (no need to keep them loaded)
+mc "forceload remove ${X1} ${Z1} ${X2} ${Z2}"
 
 log "Staging platform complete."
 cat <<'EOF'

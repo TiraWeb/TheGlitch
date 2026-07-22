@@ -56,6 +56,11 @@ log "Building dungeon shell 'The Echoing Vault' at Slot 1"
 log "  Footprint: (${X1},${Z1}) to (${X2},${Z2})"
 log "  Interior:  (${IX1},${IZ1}) to (${IX2},${IZ2})"
 
+# Force-load chunks before building
+log "Force-loading chunks at Slot 1"
+mc "forceload add ${X1} ${Z1} ${X2} ${Z2}"
+sleep 2
+
 # ===========================================================================
 # STEP 1: FLOOR
 # ===========================================================================
@@ -170,6 +175,9 @@ mc "setblock $((IX1 + 2)) $((YFLOOR + 5)) $((CZ)) soul_lantern"
 mc "setblock $((IX2 - 2)) $((YFLOOR + 5)) $((CZ)) soul_lantern"
 
 # --- done --------------------------------------------------------------------
+# Unload chunks after build
+mc "forceload remove ${X1} ${Z1} ${X2} ${Z2}"
+
 log "Dungeon shell complete."
 cat <<'EOF'
 
