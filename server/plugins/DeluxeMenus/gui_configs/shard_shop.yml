@@ -1,0 +1,57 @@
+# The Glitch — DeluxeMenus: Shard Shop GUI
+# Open with: /dm open shard_shop <player>
+
+shard_shop:
+  size: 27
+  title: "<gradient:#5B00FF:#FF00FF>Glitch Shard Shop</gradient>"
+  items:
+    # Heal Potion
+    heal:
+      material: SPLASH_POTION
+      slot: 11
+      displayname: "<green>Instant Heal</green>"
+      lore:
+        - "<gray>Restores 4 hearts instantly.</gray>"
+        - ""
+        - "<yellow>Cost: 25 Shards</yellow>"
+      actions:
+        left_click:
+          - "condition:check_balance{amount=25}"
+          - "eco take {player} 25"
+          - "give {player} splash_potion{potion_contents={potion:\"minecraft:strong_healing\"}} 1"
+          - "msg <green>Purchased Instant Heal!"
+          - "close"
+
+    # Speed Boost
+    speed:
+      material: SUGAR
+      slot: 13
+      displayname: "<aqua>Speed Boost</aqua>"
+      lore:
+        - "<gray>Speed II for 30 seconds.</gray>"
+        - ""
+        - "<yellow>Cost: 15 Shards</yellow>"
+      actions:
+        left_click:
+          - "condition:check_balance{amount=15}"
+          - "eco take {player} 15"
+          - "effect give {player} speed 30 1"
+          - "msg <green>Purchased Speed Boost!"
+          - "close"
+
+    # Ender Pearl
+    pearl:
+      material: ENDER_PEARL
+      slot: 15
+      displayname: "<light_purple>Ender Pearl</light_purple>"
+      lore:
+        - "<gray>Instant teleportation.</gray>"
+        - ""
+        - "<yellow>Cost: 10 Shards</yellow>"
+      actions:
+        left_click:
+          - "condition:check_balance{amount=10}"
+          - "eco take {player} 10"
+          - "give {player} ender_pearl 1"
+          - "msg <green>Purchased Ender Pearl!"
+          - "close"

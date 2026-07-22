@@ -1,0 +1,39 @@
+# The Glitch — MythicMobs: Glitch Core (Red Zone boss)
+# The first boss. Lives at the Core (0,0) in glitch_red.
+# High HP, area attacks, summons minions. Tier 4/5 loot.
+
+GlitchCore:
+  Type: WARDEN
+  Display: '<bold><dark_purple>Glitch Core'
+  Health: 1000
+  Damage: 20
+  Options:
+    MovementSpeed: 0.18
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 40
+    KnockbackResistance: 0.8
+    CombatReady: true
+  AIGoalSelectors:
+    - clear
+    - meleeattack
+    - lookatplayers
+  AITargetSelectors:
+    - clear
+    - players
+    - attacker
+  Skills:
+    - effect:sound{s=entity.warden.roar;v=0.8;p=0.7} @self ~onSpawn 1
+    - effect:sound{s=entity.warden.hurt;v=0.9;p=0.8} @self ~onDamaged 0.3
+    - effect:sound{s=entity.warden.death;v=1;p=0.5} @self ~onDeath 1
+    # Ground slam — AoE damage around the boss
+    - damage{amount=15} @NearestPlayer{r=5} ~onTimer:100 0.6
+    - effect:sound{s=entity.generic.explode;v=0.6;p=0.4} @self ~onTimer:100 0.6
+    # Summon adds at 50% HP
+    - summon{m=GlitchStalker;a=3;r=5} @self ~onHealth:50 1
+    # Enrage at 20% HP — damage boost
+    - modifier{d=1.5;type=MULTIPLY;duration=999999} @self ~onHealth:20 1
+    - effect:sound{s=entity.warden.sonic_boom;v=1;p=0.6} @self ~onHealth:20 1
+  Drops:
+    - GlitchCoreLoot

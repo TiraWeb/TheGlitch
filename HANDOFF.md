@@ -22,7 +22,7 @@ Chunky. Server lives at `/opt/theglitch/server`, runs as systemd service
 ## Repo layout
 
 ```
-bootstrap.sh              Phases 0-5.2: firewall, JDK, Purpur, plugins, configs, systemd
+bootstrap.sh              Phases 0-5.8: firewall, JDK, Purpur, plugins, configs, systemd
 setup-worlds.sh           Phase 4: creates/imports the 3 worlds, gamerules, WorldGuard, pre-gen
 setup-luckperms.sh        Phase 5.1: creates LuckPerms groups, hierarchy, prefixes, tracks
 recover-worlds.sh         DESTRUCTIVE reset for glitch_pve/glitch_red (rarely needed)
@@ -34,6 +34,13 @@ server/world-overrides/   per-world Paper config (glitch_pve trash-despawn tunin
 server/plugins/Geyser-Spigot/config.yml   seeded once
 server/plugins/LuckPerms/config.yml       seeded once
 server/plugins/Coins/config.yml           seeded once (Glitch Shards economy)
+server/plugins/MythicMobs/Mobs/*.yml      seeded once (custom mob definitions)
+server/plugins/MythicMobs/Skills/*.yml    seeded once (mob abilities)
+server/plugins/MythicMobs/DropTables/*.yml seeded once (loot tables)
+server/plugins/TAB/config.yml             seeded once (scoreboard + tab list)
+server/plugins/DeluxeMenus/gui_configs/   seeded once (class selector, shard shop)
+server/plugins/hCaptureEvent/config.yml   seeded once (extraction zones)
+server/plugins/hCaptureEvent/captures/    seeded once (3 extraction points)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 ROADMAP.md                THE phased checklist — check here first for status
@@ -66,8 +73,22 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 5.2 (Glitch Shards economy): done.** Eli's Coins plugin added to
   bootstrap.sh, config seeded. Echo Shard items with enchanted glow, disabled
   in hub, drop-on-death enabled in game worlds. MythicMobs handles loot tables.
-- **Phases 5.3-8:** not started (MythicMobs/classes, game loops,
-  monetization, ops/launch).
+- **Phase 5.3 (MythicMobs): done.** Plugin added to bootstrap.sh. 4 mob
+  definitions seeded: Glitch Stalker (basic), Glitch Brute (tank), Glitch
+  Phantom (ranged), Glitch Core (Red Zone boss, 1000HP). Drop tables use
+  `COINS` type for Glitch Shards. Configs in `server/plugins/MythicMobs/`.
+- **Phase 5.4 (Dungeon/Party): custom plugin planned.** Development plan in
+  ROADMAP.md. Existing plugins don't fit the 8-slot grid system well.
+- **Phase 5.5 (Hub NPCs): done.** FancyNpcs (packet-based) + DeluxeMenus
+  installed. Class selector GUI and shard shop GUI seeded.
+- **Phase 5.6 (Classes): needs premium plugin.** MMOCore+MMOItems or EcoSkills
+  not on Modrinth. eco framework installed as base. Deferred until premium
+  plugin is manually installed.
+- **Phase 5.7 (Scoreboard/HUD): done.** TAB + PlaceholderAPI installed. TAB
+  config seeded with sidebar (shards/zone/class), tab list header/footer.
+- **Phase 5.8 (Extraction): done.** hCaptureEvent installed. 3 extraction
+  points configured for Red Zone (X1/X2/X3). WorldGuard regions needed.
+- **Phases 6-8:** not started (game loops, monetization, ops/launch).
 
 ## Where we left off — hub build done, starting the first dungeon shell
 

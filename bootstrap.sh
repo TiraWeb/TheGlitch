@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# The Glitch — one-shot server bootstrap (Roadmap Phases 0–5.2)
+# The Glitch — one-shot server bootstrap (Roadmap Phases 0–5.8)
 # Target: Oracle Cloud Ampere A1 (ARM64), Ubuntu 24.04, 2 OCPU / 12GB RAM
 #
 # Usage:
@@ -224,6 +224,13 @@ install_modrinth_plugin "LuckPerms.jar"          luckperms
 install_modrinth_plugin "EssentialsX.jar"        essentialsx
 install_modrinth_plugin "VaultUnlocked.jar"      vaultunlocked
 install_modrinth_plugin "Coins.jar"              coinsplugin
+install_modrinth_plugin "MythicMobs.jar"         mythicmobs
+install_modrinth_plugin "FancyNpcs.jar"          fancynpcs
+install_modrinth_plugin "DeluxeMenus.jar"        deluxemenus
+install_modrinth_plugin "TAB.jar"                tab-was-taken
+install_modrinth_plugin "PlaceholderAPI.jar"     placeholderapi
+install_modrinth_plugin "hCaptureEvent.jar"      hcaptureevent
+install_modrinth_plugin "eco.jar"                eco-plugin
 
 # ---------------------------------------------------------------------------
 # Phase 2.1 — tuning configs: always synced from the repo (config-as-code)
@@ -269,6 +276,61 @@ fi
 if [[ -f "${REPO_DIR}/server/plugins/Coins/config.yml" && ! -f "${PLUGIN_DIR}/Coins/config.yml" ]]; then
   log "Phase 5.2 — seeding Coins (Glitch Shards) config"
   install -D -m 644 "${REPO_DIR}/server/plugins/Coins/config.yml" "${PLUGIN_DIR}/Coins/config.yml"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 5.3 — seed MythicMobs configs (once; box's copy wins after first boot)
+# Mob definitions, skills, and drop tables are synced from the repo.
+# If the operator edits them in-game (or via /mm reload), the box's copy
+# becomes the source of truth — bootstrap won't overwrite.
+# ---------------------------------------------------------------------------
+if [[ -d "${REPO_DIR}/server/plugins/MythicMobs" && ! -d "${PLUGIN_DIR}/MythicMobs/Mobs" ]]; then
+  log "Phase 5.3 — seeding MythicMobs configs"
+  install -d -m 755 "${PLUGIN_DIR}/MythicMobs"
+  for subdir in Mobs Skills DropTables; do
+    if [[ -d "${REPO_DIR}/server/plugins/MythicMobs/${subdir}" ]]; then
+      install -d -m 755 "${PLUGIN_DIR}/MythicMobs/${subdir}"
+      for f in "${REPO_DIR}/server/plugins/MythicMobs/${subdir}"/*.yml; do
+        [[ -f "${f}" ]] || continue
+        install -m 644 "${f}" "${PLUGIN_DIR}/MythicMobs/${subdir}/"
+      done
+    fi
+  done
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 5.5 — seed FancyNpcs + DeluxeMenus configs (once; box's copy wins)
+# ---------------------------------------------------------------------------
+if [[ -f "${REPO_DIR}/server/plugins/DeluxeMenus/gui_configs/class_selector.yml" && ! -d "${PLUGIN_DIR}/DeluxeMenus/gui_configs" ]]; then
+  log "Phase 5.5 — seeding DeluxeMenus GUI configs"
+  install -d -m 755 "${PLUGIN_DIR}/DeluxeMenus/gui_configs"
+  for f in "${REPO_DIR}/server/plugins/DeluxeMenus/gui_configs"/*.yml; do
+    [[ -f "${f}" ]] || continue
+    install -m 644 "${f}" "${PLUGIN_DIR}/DeluxeMenus/gui_configs/"
+  done
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 5.7 — seed TAB config (once; box's copy wins)
+# ---------------------------------------------------------------------------
+if [[ -f "${REPO_DIR}/server/plugins/TAB/config.yml" && ! -f "${PLUGIN_DIR}/TAB/config.yml" ]]; then
+  log "Phase 5.7 — seeding TAB config"
+  install -D -m 644 "${REPO_DIR}/server/plugins/TAB/config.yml" "${PLUGIN_DIR}/TAB/config.yml"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 5.8 — seed hCaptureEvent configs (once; box's copy wins)
+# ---------------------------------------------------------------------------
+if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/config.yml" && ! -f "${PLUGIN_DIR}/hCaptureEvent/config.yml" ]]; then
+  log "Phase 5.8 — seeding hCaptureEvent config"
+  install -D -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/config.yml" "${PLUGIN_DIR}/hCaptureEvent/config.yml"
+fi
+if [[ -d "${REPO_DIR}/server/plugins/hCaptureEvent/captures" && ! -d "${PLUGIN_DIR}/hCaptureEvent/captures" ]]; then
+  install -d -m 755 "${PLUGIN_DIR}/hCaptureEvent/captures"
+  for f in "${REPO_DIR}/server/plugins/hCaptureEvent/captures"/*.yml; do
+    [[ -f "${f}" ]] || continue
+    install -m 644 "${f}" "${PLUGIN_DIR}/hCaptureEvent/captures/"
+  done
 fi
 
 # ---------------------------------------------------------------------------
@@ -374,30 +436,30 @@ cat <<EOF
   The Glitch — bootstrap complete (Purpur ${MC_VERSION})
 ============================================================
 
-  Next steps, in order:
+  Plugins installed:
+    Core:      Purpur, GeyserMC, Floodgate, WorldEdit, WorldGuard,
+               Multiverse-Core, Chunky
+    Economy:   LuckPerms, EssentialsX, VaultUnlocked, Coins (Glitch Shards)
+    Gameplay:  MythicMobs, FancyNpcs, DeluxeMenus, TAB, PlaceholderAPI,
+               hCaptureEvent, eco
 
-  1) Restart to load plugins + new configs:
-       ${RESTART_HINT}
-     First boot of the 'hub' world takes a minute. NOTE: switching the
-     main world to 'hub' resets player positions/inventories (whitelist
-     and op status are kept). The old 'world' folder is unused now —
-     delete it later if you want the disk back:
-       sudo rm -rf ${SERVER_DIR}/world ${SERVER_DIR}/world_nether ${SERVER_DIR}/world_the_end
+  Restart to load everything:
+    ${RESTART_HINT}
 
-  2) Create the game worlds, rules, and protections (Phase 4):
-       sudo ./setup-worlds.sh
-     This also kicks off Red Zone pre-generation (~10-20 min on 2 cores;
-     the server stays usable, TPS dips are expected while it runs).
+  After restart, set up LuckPerms groups (one-time):
+    sudo ./setup-luckperms.sh
 
-  3) Record the performance baseline (Phase 2.3): see docs/PERFORMANCE.md
-
-  Firewall reminder (only if not done in Phase 0/1):
-    OCI console ingress rules needed — TCP 25565 (Java), UDP 19132 (Bedrock).
+  If this is a fresh install or worlds were changed:
+    sudo ./setup-worlds.sh
 
   Connect (Java):     ${PUBLIC_IP}:25565
-  Connect (Bedrock):  ${PUBLIC_IP} port 19132 (after step 1 restart)
+  Connect (Bedrock):  ${PUBLIC_IP} port 19132
   Bedrock players join with a '.' username prefix via Floodgate.
 
-  Console commands from shell scripts:  scripts/mc-cmd.py 'say hello'
+  First join: open console and run:
+    whitelist add <YourName>
+    op <YourName>
+
+  Console commands from shell:  scripts/mc-cmd.py 'say hello'
 ============================================================
 EOF

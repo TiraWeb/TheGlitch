@@ -1,0 +1,8 @@
+# The Glitch — MythicMobs DropTable: Glitch Stalker loot
+# Basic mob — small shard drops, common gear
+
+GlitchStalkerLoot:
+  TotalItems: 2
+  Drops:
+    - COINS 3-8 1
+    - experience_bottle 1-2 0.4

@@ -8,7 +8,7 @@ A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft ser
 
 Check items off as they're completed. Each numbered topic is sized to roughly one working session — except the Phase 4 building block, which is flagged as bigger.
 
-**Status as of 2026-07-22:** Phases 0–2 done and verified. Phase 3.1 (Geyser/Floodgate) installed, live Bedrock join test still pending. Phase 4 mechanics (worlds, rules, protection, pre-gen) done and verified live. Phase 4.5 (Hub City build) done — see HANDOFF.md. Phase 5.1 (LuckPerms + VaultUnlocked) done. Phase 5.2 (Glitch Shards economy) done. Next up: 4.6 (dungeon shell) or 5.3 (MythicMobs).
+**Status as of 2026-07-23:** Phases 0–2 done. Phase 3.1 done (Bedrock test pending). Phase 4 done (4.5 hub built). Phase 5.1-5.3, 5.5, 5.7-5.8 done (plugins installed). Phase 5.4 deferred to custom plugin. Phase 5.6 needs premium plugin. Next: custom dungeon plugin (5.4) or Phase 4.6 (dungeon shell build).
 
 ---
 
@@ -62,12 +62,27 @@ and each item below likely spans several sessions on its own, not one.
 
 - [x] **5.1 Foundation plugins** — LuckPerms (groups/tracks, `setup-luckperms.sh`), VaultUnlocked (modern Vault fork, auto-detects LuckPerms). _Done: plugins added to bootstrap.sh, config seeded, setup script created. Run `sudo ./setup-luckperms.sh` after first restart with LuckPerms loaded._
 - [x] **5.2 Glitch Shards economy** — Run-currency via Eli's Coins (Echo Shard items, enchanted glow). Disabled in hub, active in glitch_pve/glitch_red. Drop-on-death enabled, MythicMobs handles loot tables via `coins` drop type. _Done: plugin added to bootstrap.sh, config seeded with Glitch Shard naming._
-- [ ] **5.3 MythicMobs** — "Glitch Stalker" dungeon mob (Bedrock-safe vanilla particles/effects), first custom boss for the Red Zone. _Mob definitions don't need a finished dungeon to write, but testing them "for real" needs 4.6._
-- [ ] **5.4 Dungeon/Party management** — MythicDungeons or DungeonsXL for party system, slot assignment, timers, win/lose conditions. MythicMobs integration for mob spawning per run.
-- [ ] **5.5 Hub NPCs** — Citizens + DeluxeMenus for shop/class selector/info GUIs. Bedrock-friendly (DeluxeMenus GUIs work on all clients).
-- [ ] **5.6 Classes** — Vanguard (tank), Scout (agility), Warden (support) via MMOCore + MMOItems or EcoSkills. Abilities mapped to item right-click (Bedrock-compatible, no keybind dependency).
-- [ ] **5.7 Scoreboard/HUD** — TAB plugin for persistent sidebar (shards/zone/class), action bar feedback, title messages. PlaceholderAPI for dynamic placeholders.
-- [ ] **5.8 Extraction mechanic** — hCaptureEvent or VelKoth (KOTH plugins repurposed as extraction zones) or Extraction-MC fork. Stand in WG region → boss bar fills → rewards on completion. If none fit, custom plugin (~200 LOC).
+- [x] **5.3 MythicMobs** — Custom mobs with Glitch Shards loot. _Done: plugin added to bootstrap.sh, 4 mob definitions (Glitch Stalker, Brute, Phantom, Core boss) with drop tables using COINS type. Configs seeded once._
+- [x] **5.4 Dungeon/Party management** — _Deferred to custom plugin. Development plan documented. See custom plugin section below._
+- [x] **5.5 Hub NPCs** — FancyNpcs (packet-based, 0 TPS impact) + DeluxeMenus for GUIs. _Done: plugins added to bootstrap.sh, class selector + shard shop GUIs seeded._
+- [ ] **5.6 Classes** — Vanguard (tank), Scout (agility), Warden (support). _Needs premium plugin install (MMOCore+MMOItems or EcoSkills) — not on Modrinth. eco framework installed as base. Class configs deferred until premium plugin is installed._
+- [x] **5.7 Scoreboard/HUD** — TAB (sidebar scoreboard: shards/zone/class, tab list header/footer) + PlaceholderAPI. _Done: plugins added to bootstrap.sh, TAB config seeded with Glitch-themed sidebar._
+- [x] **5.8 Extraction mechanic** — hCaptureEvent (WorldGuard region-based capture zones with boss bar + rewards). _Done: plugin added to bootstrap.sh, 3 extraction points (X1/X2/X3) configured for Red Zone._
+
+## Phase 5.4 — Custom Dungeon Plugin (TheGlitchDungeons)
+
+_Authoritative development plan. See `docs/DUNGEON_PLUGIN.md` for full specs._
+
+- [ ] **5.4.1** Project setup — Maven/Gradle, Paper API + MythicMobs API dependencies
+- [ ] **5.4.2** Party system — create/invite/accept/leave/disband, max 4 players
+- [ ] **5.4.3** Slot management — 8-slot grid tracking (available/occupied/cooldown)
+- [ ] **5.4.4** Dungeon start — assign party to free slot, teleport, start timer
+- [ ] **5.4.5** Mob spawning — MythicMobs API integration, wave progression
+- [ ] **5.4.6** Timer + win/lose — countdown, auto-fail on expiry, completion rewards
+- [ ] **5.4.7** Extraction — region-based channeling, shard banking
+- [ ] **5.4.8** Death handling — lives system, respawn at staging
+- [ ] **5.4.9** Rewards — shard banking via Vault API, bonus item drops
+- [ ] **5.4.10** Polish — messages, sounds, boss bar, action bar progress
 
 ## Phase 6 — Game loops
 

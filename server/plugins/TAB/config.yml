@@ -1,0 +1,36 @@
+# The Glitch — TAB config (scoreboard + tab list)
+# Seeded once by bootstrap.sh — box's copy wins after first boot.
+# Wiki: https://github.com/NEZNAMY/TAB/wiki
+
+# Header/footer in tab list
+tablist-header-footer:
+  enabled: true
+  header: "\n<gradient:#5B00FF:#FF00FF>The Glitch</gradient> <gray>rogue-lite extraction</gray>\n"
+  footer: "\n<gradient:#5B00FF:#FF00FF>Players: </gradient><white>%server_online%</white><gray>/</gray><white>%server_max_players%</white>\n"
+
+# Name tags (prefix + suffix above player heads)
+nametag:
+  enabled: true
+  collision-rule: never
+
+# Sidebar scoreboard
+scoreboard:
+  enabled: true
+  title: "<gradient:#5B00FF:#FF00FF>The Glitch</gradient>"
+  lines:
+    - ""
+    - "<gray>Zone:</gray> <white>%luckperms_meta_zone%</white>"
+    - "<gray>Shards:</gray> <white>%coins_balance%</white>"
+    - "<gray>Class:</gray> <white>%luckperms_meta_class%</white>"
+    - ""
+    - "<gray>──────────</gray>"
+    - "<gray>Players:</gray> <white>%server_online%</white>"
+    - ""
+  update-interval: 20
+
+# Per-group scoreboard (optional — different sidebar for staff)
+# group-scoreboard:
+#   admin:
+#     title: "<red>Staff Panel</red>"
+#     lines:
+#       - "<red>Admin mode</red>"

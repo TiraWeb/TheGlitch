@@ -1,0 +1,34 @@
+# The Glitch — MythicMobs: Glitch Brute (tank mob)
+# Slow, heavy hitter with knockback resistance. Appears in later dungeon waves.
+
+GlitchBrute:
+  Type: ZOMBIE
+  Display: '<dark_red>Glitch Brute'
+  Health: 200
+  Damage: 12
+  Options:
+    MovementSpeed: 0.22
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 20
+    KnockbackResistance: 0.6
+  Equipment:
+    - NETHERITE_SWORD HAND
+    - NETHERITE_CHESTPLATE CHEST
+    - NETHERITE_LEGGINGS LEGS
+    - NETHERITE_BOOTS FEET
+  AIGoalSelectors:
+    - clear
+    - meleeattack
+    - lookatplayers
+  AITargetSelectors:
+    - clear
+    - players
+    - attacker
+  Skills:
+    - effect:sound{s=entity.iron_golem.attack;v=0.7;p=0.9} @self ~onDamaged 0.3
+    - effect:sound{s=entity.iron_golem.death;v=1;p=0.5} @self ~onDeath 1
+    - throw{velocity=4;velocityY=2} @target ~onDamaged 0.2
+  Drops:
+    - GlitchBruteLoot

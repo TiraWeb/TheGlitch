@@ -1,0 +1,67 @@
+# The Glitch — DeluxeMenus: Class Selector GUI
+# Seeded once by bootstrap.sh — box's copy wins after first boot.
+# Open with: /dm open class_selector <player>
+
+class_selector:
+  size: 27
+  title: "<gradient:#5B00FF:#FF00FF>Select Your Class</gradient>"
+  items:
+    # Vanguard (Tank)
+    vanguard:
+      material: NETHERITE_CHESTPLATE
+      slot: 11
+      displayname: "<red><bold>Vanguard</bold>"
+      lore:
+        - ""
+        - "<gray>The front line. Absorbs damage,</gray>"
+        - "<gray>controls the battlefield.</gray>"
+        - ""
+        - "<yellow>Ability: Ground Slam</yellow>"
+        - "<gray>AoE damage around you.</gray>"
+        - ""
+        - "<green>Click to select</green>"
+      actions:
+        left_click:
+          - "lp meta set class Vanguard"
+          - "msg <green>You are now a Vanguard!"
+          - "close"
+
+    # Scout (Agility)
+    scout:
+      material: FEATHER
+      slot: 13
+      displayname: "<aqua><bold>Scout</bold>"
+      lore:
+        - ""
+        - "<gray>Fast and evasive. Flanks enemies,</gray>"
+        - "<gray>escapes danger quickly.</gray>"
+        - ""
+        - "<yellow>Ability: Glitch Dash</yellow>"
+        - "<gray>Blink forward instantly.</gray>"
+        - ""
+        - "<green>Click to select</green>"
+      actions:
+        left_click:
+          - "lp meta set class Scout"
+          - "msg <green>You are now a Scout!"
+          - "close"
+
+    # Warden (Support)
+    warden:
+      material: TRIDENT
+      slot: 15
+      displayname: "<green><bold>Warden</bold>"
+      lore:
+        - ""
+        - "<gray>Support specialist. Heals allies,</gray>"
+        - "<gray>deploys tech totems.</gray>"
+        - ""
+        - "<yellow>Ability: Tech Totem</yellow>"
+        - "<gray>Places a healing totem.</gray>"
+        - ""
+        - "<green>Click to select</green>"
+      actions:
+        left_click:
+          - "lp meta set class Warden"
+          - "msg <green>You are now a Warden!"
+          - "close"

@@ -1,0 +1,12 @@
+# The Glitch — MythicMobs DropTable: Glitch Core (boss) loot
+# Boss mob — large shard drops, rare high-tier loot
+
+GlitchCoreLoot:
+  TotalItems: 5
+  Drops:
+    - COINS 50-100 1
+    - COINS 25-50 0.5
+    - diamond 2-4 0.4
+    - netherite_scrap 1-2 0.2
+    - nether_star 1 0.05
+    - experience_bottle 10-20 1

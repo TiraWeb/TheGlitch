@@ -1,0 +1,35 @@
+# The Glitch — MythicMobs: Glitch Stalker (basic dungeon mob)
+# Fast, aggressive zombie variant. The bread-and-butter of dungeon encounters.
+
+GlitchStalker:
+  Type: ZOMBIE
+  Display: '<red>Glitch Stalker'
+  Health: 80
+  Damage: 6
+  Options:
+    MovementSpeed: 0.32
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 24
+    KnockbackResistance: 0.1
+  Equipment:
+    - IRON_SWORD HAND
+    - CHAINMAIL_CHESTPLATE CHEST
+    - CHAINMAIL_LEGGINGS LEGS
+    - CHAINMAIL_BOOTS FEET
+  AIGoalSelectors:
+    - clear
+    - meleeattack
+    - lookatplayers
+    - randomstroll
+  AITargetSelectors:
+    - clear
+    - players
+    - attacker
+  Skills:
+    - effect:sound{s=entity.zombie.ambient;v=0.6;p=1.2} @self ~onSpawn 1
+    - effect:sound{s=entity.zombie.hurt;v=0.8;p=0.8} @self ~onDamaged 0.4
+    - effect:sound{s=entity.zombie.death;v=1;p=0.6} @self ~onDeath 1
+  Drops:
+    - GlitchStalkerLoot

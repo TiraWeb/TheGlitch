@@ -1,0 +1,10 @@
+# The Glitch — MythicMobs DropTable: Glitch Brute loot
+# Tank mob — medium shard drops, chance at gear
+
+GlitchBruteLoot:
+  TotalItems: 3
+  Drops:
+    - COINS 8-15 1
+    - diamond 1 0.15
+    - netherite_scrap 1 0.05
+    - experience_bottle 2-4 0.6

@@ -1,0 +1,27 @@
+# The Glitch — Extraction Point X1 (450, -250) in glitch_red
+# Players stand in this WorldGuard region to channel extraction
+
+X1:
+  # WorldGuard region name (must match /rg define output)
+  region: "extraction_x1"
+  world: "glitch_red"
+  # Capture time (seconds)
+  capture-time: 10
+  # Boss bar during capture
+  boss-bar:
+    enabled: true
+    color: PURPLE
+    style: SEGMENTED_10
+    title: "<purple>Extracting from X1..."
+  # Action bar
+  action-bar:
+    enabled: true
+    message: "<purple>Extracting... <white>{progress}%</white>"
+  # Reward on completion
+  commands:
+    - "eco give {player} 50"
+    - "msg {player} &aExtraction complete! +50 Glitch Shards banked."
+  # Cancel if player leaves region
+  cancel-on-leave: true
+  # Cancel on damage
+  cancel-on-damage: false

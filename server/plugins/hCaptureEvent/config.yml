@@ -1,0 +1,47 @@
+# The Glitch — hCaptureEvent: extraction zone config
+# Seeded once by bootstrap.sh — box's copy wins after first boot.
+# Wiki: https://github.com/TheMrEnginE/hCaptureEvent
+
+# Global settings
+general:
+  # Use WorldGuard regions for capture zones
+  use-worldguard: true
+  # Check interval (ticks)
+  check-interval: 5
+  # Minimum players in zone to start capture
+  min-players: 1
+
+# Capture settings
+capture:
+  # Time in seconds to capture/extract
+  capture-time: 8
+  # Show boss bar during extraction
+  boss-bar:
+    enabled: true
+    color: PURPLE
+    style: SEGMENTED_10
+    title: "<purple>Extracting..."
+  # Show action bar progress
+  action-bar:
+    enabled: true
+    message: "<purple>Extracting... <white>{progress}%</white>"
+  # Particles during extraction
+  particles:
+    enabled: true
+    type: END_ROD
+    count: 5
+    radius: 1.5
+
+# Reward on capture completion
+reward:
+  # Execute commands on completion
+  commands:
+    - "eco give {player} 50"
+    - "msg {player} &aExtraction complete! +50 Glitch Shards"
+  # Broadcast message
+  broadcast:
+    enabled: true
+    message: "<gold>{player}</gold> <gray>has extracted from the Glitch!</gray>"
+
+# Per-zone configs go in captures/ folder
+# Each file = one extraction point
