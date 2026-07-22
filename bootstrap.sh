@@ -460,6 +460,12 @@ cat <<EOF
     whitelist add <YourName>
     op <YourName>
 
+  Build staging platform + first dungeon shell (Phase 4.6):
+    sudo ./scripts/build-staging.sh
+    sudo ./scripts/build-dungeon-slot1.sh
+    sudo ./scripts/setup-dungeon-regions.sh
+    (see docs/DUNGEON_SHELL.md for details)
+
   Console commands from shell:  scripts/mc-cmd.py 'say hello'
 ============================================================
 EOF

@@ -28,6 +28,9 @@ setup-luckperms.sh        Phase 5.1: creates LuckPerms groups, hierarchy, prefix
 recover-worlds.sh         DESTRUCTIVE reset for glitch_pve/glitch_red (rarely needed)
 console.sh                attach to the live server console (self-elevates via sudo)
 scripts/mc-cmd.py         local RCON client (self-elevates via sudo)
+scripts/build-staging.sh  Phase 4.6: builds staging platform at (0,0) in glitch_pve
+scripts/build-dungeon-slot1.sh  Phase 4.6: builds dungeon shell at Slot 1
+scripts/setup-dungeon-regions.sh Phase 4.6: WorldGuard regions + MythicMobs spawners
 server/*.yml              bukkit/spigot/purpur.yml — synced every bootstrap run
 server/config/*.yml       paper-global / paper-world-defaults — synced every run
 server/world-overrides/   per-world Paper config (glitch_pve trash-despawn tuning)
@@ -37,12 +40,15 @@ server/plugins/Coins/config.yml           seeded once (Glitch Shards economy)
 server/plugins/MythicMobs/Mobs/*.yml      seeded once (custom mob definitions)
 server/plugins/MythicMobs/Skills/*.yml    seeded once (mob abilities)
 server/plugins/MythicMobs/DropTables/*.yml seeded once (loot tables)
+server/plugins/MythicMobs/Spawners/*.yml  seeded once (dungeon mob spawners)
+server/plugins/MythicMobs/SpawnAreas/*.yml seeded once (spawn zone definitions)
 server/plugins/TAB/config.yml             seeded once (scoreboard + tab list)
 server/plugins/DeluxeMenus/gui_configs/   seeded once (class selector, shard shop)
 server/plugins/hCaptureEvent/config.yml   seeded once (extraction zones)
-server/plugins/hCaptureEvent/captures/    seeded once (3 extraction points)
+server/plugins/hCaptureEvent/captures/    seeded once (4 extraction points)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
+docs/DUNGEON_SHELL.md     dungeon shell blueprint: Slot 1 layout, blocks, mobs
 ROADMAP.md                THE phased checklist — check here first for status
 HANDOFF.md                this file
 ```
@@ -64,8 +70,13 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
   Red Zone pre-generated (17,689 chunks). Verify anytime with
   `scripts/mc-cmd.py 'mv list'`.
 - **Phase 4.5 (Hub City build): done.** See "Where we left off" below.
-- **Phase 4.6-4.7 (dungeon builds, Red Zone POIs): NOT started.** 4.6 is the
-  current focus — see "Where we left off" below.
+- **Phase 4.6 (Dungeon shell build): done.** "The Echoing Vault" at Slot 1
+  (-1024, -1024) in glitch_pve. 48x48 shell with main hall, boss room, side
+  alcoves, mob spawn platforms, 8 loot chests, extraction beacon. WorldGuard
+  regions + MythicMobs spawners + hCaptureEvent configured. Build scripts:
+  `build-staging.sh`, `build-dungeon-slot1.sh`, `setup-dungeon-regions.sh`.
+  Docs: `docs/DUNGEON_SHELL.md`.
+- **Phase 4.7 (Red Zone POIs): NOT started.** Next after dungeon plugin.
 - **Phase 5.1 (LuckPerms + VaultUnlocked): done.** Plugins added to
   bootstrap.sh, config seeded, `setup-luckperms.sh` creates group hierarchy.
   **5.1 needs a server restart + running `sudo ./setup-luckperms.sh`** to
@@ -90,69 +101,24 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
   points configured for Red Zone (X1/X2/X3). WorldGuard regions needed.
 - **Phases 6-8:** not started (game loops, monetization, ops/launch).
 
-## Where we left off — hub build done, starting the first dungeon shell
+## Where we left off — dungeon shell built, next is custom plugin
 
-**4.5 is done.** The free-for-commercial-use spawn build, **"Sakura Spawn" by
-ArtillexStudios**, was pasted via WorldEdit directly into the live `hub`
-world (in-game, since `//paste` needs a player position that RCON/console
-doesn't have — see Hard-won lessons below). It **fit inside the existing 512
-border with no resize**, and the build's natural entry point lines up with
-the existing spawn — **(0, -60, 0) needed no changes** to either
-`setworldspawn` or `mv setspawn`. WorldGuard's existing `__global__` flags on
-`hub` (no PvP, no block changes, invincible, hostile-proofed) automatically
-cover the new build, nothing extra needed there.
-`SakuraSpawn.schematic` was **not** committed into the repo — skipped as a
-nice-to-have for reproducibility, not blocking; revisit if it becomes
-important later.
+**4.6 is done.** The first dungeon shell, **"The Echoing Vault"**, was built
+at Slot 1 (-1024, -1024) in `glitch_pve` using RCON fill commands. The 48x48
+shell includes: main hall with mob spawn alcoves, boss room with extraction
+beacon, 8 loot chests, atmospheric lighting. WorldGuard regions (`pve_slot1`,
+`staging`), MythicMobs spawners (Stalker/Phantom/Brute), and hCaptureEvent
+extraction point configured. Build scripts: `build-staging.sh`,
+`build-dungeon-slot1.sh`, `setup-dungeon-regions.sh`. Docs: `DUNGEON_SHELL.md`.
 
-**Next: 4.6 — the first dungeon shell in `glitch_pve`.** Same
-find-a-free-build-and-WorldEdit-paste pattern as the hub, applied to **Slot 1
-at (-1024, -1024)** (the 8-slot grid in `docs/ZONES.md`) — it becomes the
-template the other 7 slots reuse once it works. Nothing has been built there
-yet.
+**Next: Phase 5.4 — custom dungeon plugin (TheGlitchDungeons).** This is the
+run manager that handles party formation, slot assignment, mob wave progression,
+timer, win/lose conditions, and shard banking. Existing plugins don't fit the
+8-slot grid system well. Development plan in ROADMAP.md.
 
-**Recommended sequence for Slot 1:**
-
-1. Find/prepare a dungeon-shell build (free schematic, or hand-build) —
-   footprint ≤256×256 to fit the slot margin (`docs/ZONES.md`).
-2. Backup `glitch_pve`'s dimension folder first (same pattern as the hub
-   backup, adjusted for Paper 26.x's dimension-folder storage):
-   ```bash
-   sudo mkdir -p /opt/theglitch/backups
-   sudo tar -czf /opt/theglitch/backups/glitch_pve-pre-slot1-$(date +%Y%m%d-%H%M%S).tar.gz \
-     -C /opt/theglitch/server/hub/dimensions/minecraft glitch_pve
-   ```
-3. **In-game** (real player, same reason as the hub paste):
-   ```
-   /mv tp YourName glitch_pve
-   /tp @s -1024 -60 -1024
-   //schem load <YourSchematic> mcedit
-   //paste
-   ```
-4. **Protect the build once it's placed.** Unlike `hub`, `glitch_pve`'s
-   `__global__` flags don't deny block-break/place (WorldGuard's own
-   guidance — denying `build` globally breaks pistons/block-updates), so a
-   curated dungeon shell needs its own region. Full procedure and rationale:
-   `docs/ZONES.md` → "Protecting a built dungeon slot". Short version,
-   in-game:
-   ```
-   //pos1 -1152,-64,-1152
-   //pos2 -896,320,-896
-   /rg define pve_slot1 -w glitch_pve
-   /rg flag pve_slot1 block-break deny
-   /rg flag pve_slot1 block-place deny
-   ```
-5. Repeat for slots 2-8 as each gets built (`docs/ZONES.md` has all 8 center
-   coordinates) — one dungeon at a time is fine, 4.6 only needs the first.
-6. Tick off `ROADMAP.md` 4.6 once slot 1 looks right and is protected.
-
-**Deliberately not automated:** region definition isn't in `setup-worlds.sh`.
-WorldEdit's selection commands (`//pos1`/`//pos2`) and WorldGuard's
-`/rg define` are tied to a player actor in the versions this server runs —
-same restriction already hit the hard way for `//paste`/`//copy` (lesson 6
-below). Automating it via RCON would mean guessing at console behavior
-neither of us can verify without live testing, so — like the hub paste — it
-stays a documented in-game procedure.
+**Alternative next step: Phase 4.7 — Red Zone POIs.** Physical structures at
+the Core (0,0), 6 entry points, and 3 extraction beacon sites. Currently just
+coordinates on paper.
 
 ## Hard-won lessons (read before touching worlds/gamerules again)
 
