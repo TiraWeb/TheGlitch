@@ -18,6 +18,11 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 
+# All build commands must target glitch_pve, not the main world (hub).
+# RCON 'fill'/'setblock' default to the main world — prefix with execute to
+# target the correct dimension.
+gcmd() { mc "execute in minecraft:glitch_pve run $*"; }
+
 log()  { echo -e "\033[1;36m[staging]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[staging]\033[0m $*" >&2; exit 1; }
 
@@ -39,67 +44,57 @@ X1=$((CX - HALF)); X2=$((CX + HALF - 1))  # -20 to 19
 Z1=$((CZ - HALF)); Z2=$((CZ + HALF - 1))  # -20 to 19
 
 # --- build -------------------------------------------------------------------
-log "Force-loading chunks at staging area"
-mc "forceload add ${X1} ${Z1} ${X2} ${Z2}"
+log "Force-loading chunks at staging area in glitch_pve"
+gcmd "forceload add ${X1} ${Z1} ${X2} ${Z2}"
 sleep 2
 
 log "Building staging platform (${X1},${Z1}) to (${X2},${Z2}) at Y=${YFLOOR}"
 
 # Floor: deepslate_tiles (40x40 = 1600 blocks, under 32768 limit)
-mc "fill ${X1} ${YFLOOR} ${Z1} ${X2} ${YFLOOR} ${Z2} deepslate_tiles"
+gcmd "fill ${X1} ${YFLOOR} ${Z1} ${X2} ${YFLOOR} ${Z2} deepslate_tiles"
 
 # Glowstone border ring (replace edge blocks)
-# North edge
-mc "fill ${X1} ${YFLOOR} ${Z1} ${X2} ${YFLOOR} ${Z1} glowstone"
-# South edge
-mc "fill ${X1} ${YFLOOR} ${Z2} ${X2} ${YFLOOR} ${Z2} glowstone"
-# West edge
-mc "fill ${X1} ${YFLOOR} ${Z1} ${X1} ${YFLOOR} ${Z2} glowstone"
-# East edge
-mc "fill ${X2} ${YFLOOR} ${Z1} ${X2} ${YFLOOR} ${Z2} glowstone"
+gcmd "fill ${X1} ${YFLOOR} ${Z1} ${X2} ${YFLOOR} ${Z1} glowstone"
+gcmd "fill ${X1} ${YFLOOR} ${Z2} ${X2} ${YFLOOR} ${Z2} glowstone"
+gcmd "fill ${X1} ${YFLOOR} ${Z1} ${X1} ${YFLOOR} ${Z2} glowstone"
+gcmd "fill ${X2} ${YFLOOR} ${Z1} ${X2} ${YFLOOR} ${Z2} glowstone"
 
 # Corner pillars: polished_andesite + end_rod
 for cx in $X1 $X2; do
   for cz in $Z1 $Z2; do
-    mc "fill ${cx} $((YFLOOR+1)) ${cz} ${cx} ${YWALL} ${cz} polished_andesite"
-    mc "setblock ${cx} ${YEYES} ${cz} end_rod"
+    gcmd "fill ${cx} $((YFLOOR+1)) ${cz} ${cx} ${YWALL} ${cz} polished_andesite"
+    gcmd "setblock ${cx} ${YEYES} ${cz} end_rod"
   done
 done
 
 # Center marker: sea lantern
-mc "setblock ${CX} ${YFLOOR} ${CZ} sea_lantern"
+gcmd "setblock ${CX} ${YFLOOR} ${CZ} sea_lantern"
 
-# --- slot direction signs (simplified: glowstone markers at grid positions) ---
-# Each marker is a 3x3 glowstone pad at the slot's direction from center.
-# Actual sign text needs to be set in-game; these are visual anchors.
+# --- slot direction markers (pressure plates at platform edge) ---
 SLOT_COORDS=(
-  "slot1:-1024:-1024"   # NW
-  "slot2:0:-1024"       # N
-  "slot3:1024:-1024"    # NE
-  "slot4:-1024:0"       # W
-  "slot5:1024:0"        # E
-  "slot6:-1024:1024"    # SW
-  "slot7:0:1024"        # S
-  "slot8:1024:1024"     # SE
+  "slot1:-1024:-1024"
+  "slot2:0:-1024"
+  "slot3:1024:-1024"
+  "slot4:-1024:0"
+  "slot5:1024:0"
+  "slot6:-1024:1024"
+  "slot7:0:1024"
+  "slot8:1024:1024"
 )
 
 log "Placing slot direction markers"
 for entry in "${SLOT_COORDS[@]}"; do
   IFS=: read -r name sx sz <<< "$entry"
-  # Place a 1x1 marker at the edge of the platform, pointing toward the slot
-  # Direction from center
   dx=0; dz=0
   (( sx < 0 )) && dx=-1; (( sx > 0 )) && dx=1
   (( sz < 0 )) && dz=-1; (( sz > 0 )) && dz=1
-  # Marker position: edge of platform in that direction
   mx=$((CX + dx * (HALF - 2)))
   mz=$((CZ + dz * (HALF - 2)))
-  # Place a weighted pressure plate on the floor as a subtle marker
-  mc "setblock ${mx} $((YFLOOR+1)) ${mz} light_weighted_pressure_plate"
+  gcmd "setblock ${mx} $((YFLOOR+1)) ${mz} light_weighted_pressure_plate"
 done
 
-# Unload chunks after build (no need to keep them loaded)
-mc "forceload remove ${X1} ${Z1} ${X2} ${Z2}"
+# Unload chunks after build
+gcmd "forceload remove ${X1} ${Z1} ${X2} ${Z2}"
 
 log "Staging platform complete."
 cat <<'EOF'
