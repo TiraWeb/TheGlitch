@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# The Glitch — one-shot server bootstrap (Roadmap Phases 0–4)
+# The Glitch — one-shot server bootstrap (Roadmap Phases 0–5.2)
 # Target: Oracle Cloud Ampere A1 (ARM64), Ubuntu 24.04, 2 OCPU / 12GB RAM
 #
 # Usage:
@@ -14,8 +14,9 @@
 # the repo's state. Three kinds of files, three rules:
 #   - live data (worlds, whitelist, plugin data):        never touched
 #   - tuning configs (bukkit/spigot/purpur/paper yml):   always synced from repo
-#   - seeded configs (server.properties, Geyser config): copied once, then the
-#     box's copy wins (bootstrap only converges specific keys via set_prop)
+#   - seeded configs (server.properties, Geyser config, LuckPerms config,
+#     Coins config): copied once, then the box's copy wins (bootstrap only
+#     converges specific keys via set_prop)
 
 set -euo pipefail
 
@@ -219,6 +220,9 @@ install_modrinth_plugin "worldedit-bukkit.jar"  worldedit
 install_modrinth_plugin "worldguard-bukkit.jar" worldguard
 install_modrinth_plugin "multiverse-core.jar"   multiverse-core
 install_modrinth_plugin "chunky-bukkit.jar"     chunky
+install_modrinth_plugin "LuckPerms.jar"          luckperms
+install_modrinth_plugin "VaultUnlocked.jar"      vaultunlocked
+install_modrinth_plugin "Coins.jar"              coinsplugin
 
 # ---------------------------------------------------------------------------
 # Phase 2.1 — tuning configs: always synced from the repo (config-as-code)
@@ -248,6 +252,22 @@ sync_cfg config/paper-world-defaults.yml   config/paper-world-defaults.yml
 if [[ -f "${REPO_DIR}/server/plugins/Geyser-Spigot/config.yml" && ! -f "${PLUGIN_DIR}/Geyser-Spigot/config.yml" ]]; then
   log "Phase 3.1 — seeding Geyser config"
   install -D -m 644 "${REPO_DIR}/server/plugins/Geyser-Spigot/config.yml" "${PLUGIN_DIR}/Geyser-Spigot/config.yml"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 5.1 — seed LuckPerms config (once; after that the box's copy wins)
+# ---------------------------------------------------------------------------
+if [[ -f "${REPO_DIR}/server/plugins/LuckPerms/config.yml" && ! -f "${PLUGIN_DIR}/LuckPerms/config.yml" ]]; then
+  log "Phase 5.1 — seeding LuckPerms config"
+  install -D -m 644 "${REPO_DIR}/server/plugins/LuckPerms/config.yml" "${PLUGIN_DIR}/LuckPerms/config.yml"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 5.2 — seed Coins (Glitch Shards) config (once; box's copy wins)
+# ---------------------------------------------------------------------------
+if [[ -f "${REPO_DIR}/server/plugins/Coins/config.yml" && ! -f "${PLUGIN_DIR}/Coins/config.yml" ]]; then
+  log "Phase 5.2 — seeding Coins (Glitch Shards) config"
+  install -D -m 644 "${REPO_DIR}/server/plugins/Coins/config.yml" "${PLUGIN_DIR}/Coins/config.yml"
 fi
 
 # ---------------------------------------------------------------------------

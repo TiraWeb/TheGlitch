@@ -1,0 +1,15 @@
+# LuckPerms config for The Glitch
+# Seeded once by bootstrap.sh — box's copy wins after first boot.
+# https://luckperms.net/wiki/Configuration
+
+# Use embedded H2 database (no external DB needed at this scale)
+storage-method: h2
+
+# Notify admins about LuckPerms updates
+update-notifications: true
+
+# Log all changes to a file for audit
+logging: true
+
+# Suppress plugin loaded message
+suppress-minor-version-warnings: false

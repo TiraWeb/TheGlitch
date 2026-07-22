@@ -22,8 +22,9 @@ Chunky. Server lives at `/opt/theglitch/server`, runs as systemd service
 ## Repo layout
 
 ```
-bootstrap.sh              Phases 0-3: firewall, JDK, Purpur, plugins, configs, systemd
+bootstrap.sh              Phases 0-5.2: firewall, JDK, Purpur, plugins, configs, systemd
 setup-worlds.sh           Phase 4: creates/imports the 3 worlds, gamerules, WorldGuard, pre-gen
+setup-luckperms.sh        Phase 5.1: creates LuckPerms groups, hierarchy, prefixes, tracks
 recover-worlds.sh         DESTRUCTIVE reset for glitch_pve/glitch_red (rarely needed)
 console.sh                attach to the live server console (self-elevates via sudo)
 scripts/mc-cmd.py         local RCON client (self-elevates via sudo)
@@ -31,6 +32,8 @@ server/*.yml              bukkit/spigot/purpur.yml — synced every bootstrap ru
 server/config/*.yml       paper-global / paper-world-defaults — synced every run
 server/world-overrides/   per-world Paper config (glitch_pve trash-despawn tuning)
 server/plugins/Geyser-Spigot/config.yml   seeded once
+server/plugins/LuckPerms/config.yml       seeded once
+server/plugins/Coins/config.yml           seeded once (Glitch Shards economy)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 ROADMAP.md                THE phased checklist — check here first for status
@@ -56,8 +59,15 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 4.5 (Hub City build): done.** See "Where we left off" below.
 - **Phase 4.6-4.7 (dungeon builds, Red Zone POIs): NOT started.** 4.6 is the
   current focus — see "Where we left off" below.
-- **Phases 5-8:** not started (LuckPerms/economy/MythicMobs/classes, game
-  loops, monetization, ops/launch).
+- **Phase 5.1 (LuckPerms + VaultUnlocked): done.** Plugins added to
+  bootstrap.sh, config seeded, `setup-luckperms.sh` creates group hierarchy.
+  **5.1 needs a server restart + running `sudo ./setup-luckperms.sh`** to
+  actually create the groups in LuckPerms' database.
+- **Phase 5.2 (Glitch Shards economy): done.** Eli's Coins plugin added to
+  bootstrap.sh, config seeded. Echo Shard items with enchanted glow, disabled
+  in hub, drop-on-death enabled in game worlds. MythicMobs handles loot tables.
+- **Phases 5.3-8:** not started (MythicMobs/classes, game loops,
+  monetization, ops/launch).
 
 ## Where we left off — hub build done, starting the first dungeon shell
 

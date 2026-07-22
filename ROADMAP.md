@@ -8,7 +8,7 @@ A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft ser
 
 Check items off as they're completed. Each numbered topic is sized to roughly one working session — except the Phase 4 building block, which is flagged as bigger.
 
-**Status as of 2026-07-22:** Phases 0–2 done and verified. Phase 3.1 (Geyser/Floodgate) installed, live Bedrock join test still pending. Phase 4 mechanics (worlds, rules, protection, pre-gen) done and verified live. Phase 4.5 (Hub City build) done — see HANDOFF.md. Next up: 4.6, the first dungeon shell in `glitch_pve`.
+**Status as of 2026-07-22:** Phases 0–2 done and verified. Phase 3.1 (Geyser/Floodgate) installed, live Bedrock join test still pending. Phase 4 mechanics (worlds, rules, protection, pre-gen) done and verified live. Phase 4.5 (Hub City build) done — see HANDOFF.md. Phase 5.1 (LuckPerms + VaultUnlocked) done. Phase 5.2 (Glitch Shards economy) done. Next up: 4.6 (dungeon shell) or 5.3 (MythicMobs).
 
 ---
 
@@ -60,17 +60,21 @@ and each item below likely spans several sessions on its own, not one.
 
 ## Phase 5 — Core plugin stack
 
-- [ ] **5.1 Foundation plugins** — LuckPerms (groups/tracks), Vault, EssentialsX core (spawn, no homes/tpa policy inside game zones).
-- [ ] **5.2 Glitch Shards economy** — Run-currency implementation, extraction = banking to persistent balance, zone-specific death rules (PvE: lose carried shards only; Red Zone: full loot).
+- [x] **5.1 Foundation plugins** — LuckPerms (groups/tracks, `setup-luckperms.sh`), VaultUnlocked (modern Vault fork, auto-detects LuckPerms). _Done: plugins added to bootstrap.sh, config seeded, setup script created. Run `sudo ./setup-luckperms.sh` after first restart with LuckPerms loaded._
+- [x] **5.2 Glitch Shards economy** — Run-currency via Eli's Coins (Echo Shard items, enchanted glow). Disabled in hub, active in glitch_pve/glitch_red. Drop-on-death enabled, MythicMobs handles loot tables via `coins` drop type. _Done: plugin added to bootstrap.sh, config seeded with Glitch Shard naming._
 - [ ] **5.3 MythicMobs** — "Glitch Stalker" dungeon mob (Bedrock-safe vanilla particles/effects), first custom boss for the Red Zone. _Mob definitions don't need a finished dungeon to write, but testing them "for real" needs 4.6._
-- [ ] **5.4 Classes** — Vanguard (tank, Ground Slam), Scout (agility, Glitch Dash), Warden (support, Tech Totem) via MMOItems/EcoSkills; abilities mapped to custom tools; UI kept Bedrock-friendly.
+- [ ] **5.4 Dungeon/Party management** — MythicDungeons or DungeonsXL for party system, slot assignment, timers, win/lose conditions. MythicMobs integration for mob spawning per run.
+- [ ] **5.5 Hub NPCs** — Citizens + DeluxeMenus for shop/class selector/info GUIs. Bedrock-friendly (DeluxeMenus GUIs work on all clients).
+- [ ] **5.6 Classes** — Vanguard (tank), Scout (agility), Warden (support) via MMOCore + MMOItems or EcoSkills. Abilities mapped to item right-click (Bedrock-compatible, no keybind dependency).
+- [ ] **5.7 Scoreboard/HUD** — TAB plugin for persistent sidebar (shards/zone/class), action bar feedback, title messages. PlaceholderAPI for dynamic placeholders.
+- [ ] **5.8 Extraction mechanic** — hCaptureEvent or VelKoth (KOTH plugins repurposed as extraction zones) or Extraction-MC fork. Stand in WG region → boss bar fills → rewards on completion. If none fit, custom plugin (~200 LOC).
 
 ## Phase 6 — Game loops
 
-- [ ] **6.1 Dungeon objectives** — Wave-clear and data-core-repair objectives, tier scaling, completion rewards. _Needs 4.6 (a built dungeon room) to actually place objectives in._
-- [ ] **6.2 Extraction beacons** — Timed channel mechanic, server-wide/zone broadcast on activation, shard banking on success.
-- [ ] **6.3 Gear-score gating** — Item-attribute scoring on Red Zone entry, distribution across rotating drop points to prevent spawn-camping.
-- [ ] **6.4 Progression sinks** — Hub skill-point shop: shards → permanent class upgrades (+HP %, cooldown reduction), costs curve.
+- [ ] **6.1 Dungeon objectives** — Wave-clear and data-core-repair objectives, tier scaling, completion rewards via MythicDungeons triggers. _Needs 4.6 (a built dungeon room) to actually place objectives in._
+- [ ] **6.2 Extraction beacons** — Timed channel mechanic via hCaptureEvent/VelKoth, server-wide/zone broadcast on activation, shard banking on success.
+- [ ] **6.3 Gear-score gating** — Item-attribute scoring on Red Zone entry via MMOItems stats, distribution across rotating drop points to prevent spawn-camping.
+- [ ] **6.4 Progression sinks** — Hub skill-point shop via DeluxeMenus: shards → permanent class upgrades (+HP %, cooldown reduction), costs curve.
 
 ## Phase 7 — Monetization (EULA-safe, Hypixel model)
 

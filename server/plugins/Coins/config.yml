@@ -1,0 +1,119 @@
+#  The Glitch — Glitch Shards economy config
+#  Powered by Eli's Coins v1.16.3
+#  Seeded once by bootstrap.sh — box's copy wins after first boot.
+#  Wiki: https://github.com/justEli/Coins/wiki
+
+#  +---------------------+
+#  |   Formatting        |
+#  +---------------------+
+
+locale: 'en-US'
+currency-symbol: ''
+
+pickup-message: '<up> <+green>↑ +white{amount} <shard>Shard</shard>'
+pickup-message-position: 'actionbar'
+
+money-decimals: 0
+digit-decimal-separator: '.'
+digit-group-separator: ','
+
+#  +---------------------+
+#  |   Coin Properties   |
+#  +---------------------+
+
+# Glitch Shards — crystallized glitch energy dropped by anomalous entities
+dropped-coin-name: '<shard>Glitch Shard'
+withdrawn-coin-names:
+  singular: '<var>{amount} <shard>Glitch Shard'
+  plural: '<var>{amount} <shard>Glitch Shards'
+
+# Echo Shard — visually distinct, fits the "glitch anomaly" theme
+coin-item: 'minecraft:echo_shard'
+skull-texture: ''
+enchanted-coin: true
+custom-model-data: 0
+
+#  +---------------------+
+#  |   Coin Behavior     |
+#  +---------------------+
+
+# Each shard drop = 1 shard (no decimals, whole numbers only)
+money-amount:
+  from: 1
+  to: 1
+
+disable-hoppers: true
+drop-each-coin: false
+stack-coins: true
+
+pickup-sound: true
+sound-name: 'minecraft:block.amethyst_block.hit'
+sound-pitch: 1.2
+sound-volume: 0.4
+
+# Coins disabled entirely in hub — shards are a game-world currency
+disabled-worlds: [hub]
+
+allow-name-change: false
+allow-modification: false
+enchant-increment: 0.05
+
+#  +---------------------+
+#  |   Coin Drops        |
+#  +---------------------+
+
+# Mob drops enabled — MythicMobs controls specific amounts via loot tables
+hostile-drop: true
+passive-drop: false
+spawner-drop: false
+
+percentage-player-hit: 0.50
+limit-for-location: 0
+drop-chance: 1.00
+
+# Boss multipliers — MythicMobs will override these for custom mobs
+mob-multiplier:
+  'minecraft:ender_dragon': 50
+  'minecraft:wither': 30
+  'minecraft:warden': 20
+
+prevent-splits: true
+player-drop: true
+prevent-alts: true
+
+# No mining drops — this is an extraction game, not a mining game
+block-drops: {}
+mine-percentage: 0
+
+#  +---------------------+
+#  |   Withdraw          |
+#  +---------------------+
+
+enable-withdraw: true
+max-withdraw-amount: 999999
+
+withdraw-message: '<shard>→ <var>{amount} <shard>Glitch Shard'
+withdraw-message-position: 'actionbar'
+
+#  +---------------------+
+#  |   Hooks             |
+#  +---------------------+
+
+# MythicMobs handles its own loot tables — disable Coins' default mob handling
+# so we don't get double drops. MythicMobs drops use: - coins <min> <max>
+disable-mythic-mob-handling: true
+
+#  +---------------------+
+#  |   Player Death      |
+#  +---------------------+
+
+# Shards drop on death in glitch_pve and glitch_red (hub is disabled entirely)
+lose-on-death: true
+money-taken:
+  from: 0
+  to: 0
+take-percentage: false
+drop-on-death: true
+
+death-message: '<down> <+red>↓ +white{amount} <shard>Shard</shard> lost'
+death-message-position: 'subtitle'
