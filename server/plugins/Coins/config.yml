@@ -73,6 +73,7 @@ location-limit-hours: 1.0
 locationLimitHours: 1.0
 drop-chance: 1.00
 drop-with-any-death: false
+dropWithAnyDeath: false
 
 # Boss multipliers — MythicMobs will override these for custom mobs
 mob-multiplier:

@@ -320,12 +320,12 @@ fi
 
 # ---------------------------------------------------------------------------
 # Phase 5.8 — seed hCaptureEvent configs (once; box's copy wins)
+# NOTE: config.yml is NOT seeded — the plugin must generate its own default
+# on first boot (our custom config caused an NPE crash). Only captures/ zone
+# files are seeded from the repo.
 # ---------------------------------------------------------------------------
-if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/config.yml" && ! -f "${PLUGIN_DIR}/hCaptureEvent/config.yml" ]]; then
-  log "Phase 5.8 — seeding hCaptureEvent config"
-  install -D -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/config.yml" "${PLUGIN_DIR}/hCaptureEvent/config.yml"
-fi
 if [[ -d "${REPO_DIR}/server/plugins/hCaptureEvent/captures" && ! -d "${PLUGIN_DIR}/hCaptureEvent/captures" ]]; then
+  log "Phase 5.8 — seeding hCaptureEvent capture zones"
   install -d -m 755 "${PLUGIN_DIR}/hCaptureEvent/captures"
   for f in "${REPO_DIR}/server/plugins/hCaptureEvent/captures"/*.yml; do
     [[ -f "${f}" ]] || continue
