@@ -25,6 +25,16 @@ Chunky. Server lives at `/opt/theglitch/server`, runs as systemd service
 bootstrap.sh              Phases 0-5.8: firewall, JDK, Purpur, plugins, configs, systemd
 setup-worlds.sh           Phase 4: creates/imports the 3 worlds, gamerules, WorldGuard, pre-gen
 setup-luckperms.sh        Phase 5.1: creates LuckPerms groups, hierarchy, prefixes, tracks
+setup-essentials.sh       Phase 5.2: spawn, warps, starter kit, economy permissions
+setup-tab.sh              Phase 5.7: TAB reload + LuckPerms meta defaults for scoreboard
+setup-papi.sh             Phase 5.7: downloads LuckPerms + Vault PAPI expansions
+setup-mythicmobs.sh       Phase 5.3: reloads mob configs, verifies registration
+setup-coins.sh            Phase 5.2: reloads Glitch Shards economy, verifies Vault link
+setup-hcaptureevent.sh    Phase 5.8: reloads extraction points, sets permissions
+setup-deluxemenus.sh      Phase 5.5: reloads GUI menus, sets permissions
+setup-fancynpcs.sh        Phase 5.5: reloads NPC system, sets permissions
+setup-geyser.sh           Phase 3.1: verifies Bedrock bridge (does NOT reload)
+setup-all-plugins.sh      Master runner: runs all setup scripts in order
 recover-worlds.sh         DESTRUCTIVE reset for glitch_pve/glitch_red (rarely needed)
 console.sh                attach to the live server console (self-elevates via sudo)
 scripts/mc-cmd.py         local RCON client (self-elevates via sudo)
@@ -34,6 +44,7 @@ server/world-overrides/   per-world Paper config (glitch_pve trash-despawn tunin
 server/plugins/Geyser-Spigot/config.yml   seeded once
 server/plugins/LuckPerms/config.yml       seeded once
 server/plugins/Coins/config.yml           seeded once (Glitch Shards economy)
+server/plugins/Essentials/kits.yml        seeded by setup-essentials.sh
 server/plugins/MythicMobs/Mobs/*.yml      seeded once (custom mob definitions)
 server/plugins/MythicMobs/Skills/*.yml    seeded once (mob abilities)
 server/plugins/MythicMobs/DropTables/*.yml seeded once (loot tables)
@@ -108,6 +119,9 @@ sudo ./setup-worlds.sh
 
 # Wait for pre-gen to finish (~15-20 min), then set up permissions
 sudo ./setup-luckperms.sh
+
+# Configure all plugins (EssentialsX, TAB, PAPI, MythicMobs, etc.)
+sudo ./setup-all-plugins.sh
 ```
 
 After reset:
@@ -115,6 +129,9 @@ After reset:
 - glitch_pve is flat, empty — dungeon shells deferred
 - glitch_red is natural terrain, pre-generated — extraction points configured
 - All plugins loaded, economy ready, mobs configured
+- EssentialsX has spawn + warps set, starter kit ready
+- PAPI expansions installed (LuckPerms + Vault placeholders work)
+- TAB scoreboard renders all lines
 
 ## Where we left off — scripts complete, physical builds deferred
 
