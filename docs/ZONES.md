@@ -1,19 +1,18 @@
 # The Glitch — Zone Architecture Blueprint (Phase 4.1)
 
 Three worlds on one server. Multi-world beats raw coordinate-offsetting inside a
-single world because gamerules (`keepInventory`!), world borders, time/weather,
+single world because gamerules (`keep_inventory`!), world borders, time/weather,
 and Paper per-world configs are all **per-world** — we get zone-specific rules
-for free instead of re-implementing them with plugins. With
-`spawnChunkRadius 0` on the game worlds, an idle world costs almost nothing;
-only chunks near actual players are loaded. The *instancing* requirement is
-solved by coordinate offsetting **inside** the PvE world (dungeon slot grid,
-below) — no per-run world folders, ever.
+for free instead of re-implementing them with plugins. An idle world costs
+almost nothing; only chunks near actual players are loaded. The *instancing*
+requirement is solved by coordinate offsetting **inside** the PvE world (dungeon
+slot grid, below) — no per-run world folders, ever.
 
 | World | Purpose | Terrain | Border | Key gamerules |
 |---|---|---|---|---|
-| `hub` | Hub City (safe) | Flat (main world) | 512 @ 0,0 | no mobs, no hunger*, frozen midnight, `keepInventory on` |
-| `glitch_pve` | The Standard Glitch — instanced dungeons | Flat | 4096 @ 0,0 | **`keepInventory ON`**, no natural mob spawns (MythicMobs only), frozen midnight |
-| `glitch_red` | The Deep Glitch / Red Zone — open PvPvE extraction | Normal, seed `20260719` | 2000 @ 0,0 | **`keepInventory OFF`** (full loot), day/night cycle on, no phantoms |
+| `hub` | Hub City (safe) | Flat (main world) | 512 @ 0,0 | no mobs, no hunger*, frozen midnight, `keep_inventory on` |
+| `glitch_pve` | The Standard Glitch — instanced dungeons | Flat | 4096 @ 0,0 | **`keep_inventory ON`**, no natural mob spawns (MythicMobs only), frozen midnight |
+| `glitch_red` | The Deep Glitch / Red Zone — open PvPvE extraction | Normal, seed `20260719` | 2000 @ 0,0 | **`keep_inventory OFF`** (full loot), day/night cycle on, no phantoms |
 
 \* hunger-off in the hub is a WorldGuard region flag, not a gamerule.
 
@@ -71,7 +70,7 @@ Slot 6 (-1024,  1024)   Slot 7 (0,  1024)   Slot 8 (1024,  1024)
 - Natural mob spawning **off** at the gamerule level — every hostile in a
   dungeon is a deliberate MythicMobs spawn. This is also why the PvE world is
   nearly free when nobody is mid-run.
-- `keepInventory ON` protects brought-in gear per the design; the
+- `keep_inventory ON` protects brought-in gear per the design; the
   Glitch-Shards-drop-on-death rule is economy logic (Phase 5.2), not a gamerule.
 
 ### Protecting a built dungeon slot (Phase 4.6)
@@ -156,8 +155,6 @@ Until the run-manager plugin exists, ops can move around with
 
 ## Per-world performance notes
 
-- `spawnChunkRadius 0` on `glitch_pve`/`glitch_red`: no always-loaded chunks;
-  `hub` keeps radius 2 so logins land in warm chunks.
 - Only `glitch_red` needs pre-generation (real terrain): radius 1050 covers
   border + margin. Flat worlds generate ~free on demand.
 - Anti-xray is deliberately **off** everywhere: loot lives in chests/drops,

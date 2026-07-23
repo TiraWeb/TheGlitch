@@ -30,8 +30,14 @@ for i in {1..30}; do
   sleep 5
 done
 
-# Verify LuckPerms is loaded
-mc "lp info" 2>/dev/null | grep -qi "luckperms" || die "LuckPerms is not loaded — run bootstrap.sh, then: sudo systemctl restart theglitch"
+# Verify LuckPerms is loaded (plugins load asynchronously after RCON is up)
+log "Waiting for LuckPerms to load..."
+for i in {1..60}; do
+  if mc "lp info" 2>/dev/null | grep -qi "luckperms"; then break; fi
+  [[ $i -eq 60 ]] && die "LuckPerms not responding after 300s — check server logs: sudo journalctl -u theglitch --since '5 min ago' | grep -i luckperms"
+  sleep 5
+done
+log "LuckPerms confirmed loaded."
 
 # --- groups ----------------------------------------------------------------
 log "Creating permission groups"

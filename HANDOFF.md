@@ -75,13 +75,15 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 5.3 (MythicMobs): done.** 4 mob definitions seeded (Stalker, Brute,
   Phantom, Core boss). Drop tables use COINS type.
 - **Phase 5.4 (Dungeon/Party): custom plugin planned.** Development plan in
-  ROADMAP.md.
+  Phase 5.9.
 - **Phase 5.5 (Hub NPCs): done.** FancyNpcs + DeluxeMenus installed.
 - **Phase 5.6 (Classes): needs premium plugin.** MMOCore+MMOItems or EcoSkills
   not on Modrinth. Deferred.
 - **Phase 5.7 (Scoreboard/HUD): done.** TAB + PlaceholderAPI installed.
 - **Phase 5.8 (Extraction): done.** hCaptureEvent installed, 3 extraction
   points configured for Red Zone.
+- **Phase 5.9 (Custom plugins): designed.** GlitchStash, GlitchRaid,
+  GlitchInsurance, GlitchHideout, GlitchEvents, GlitchLoot planned.
 - **Phases 6-8:** not started.
 
 ## Full instance reset (nuke and recreate)
@@ -183,8 +185,9 @@ until the operator is ready to do in-game WorldEdit work.
    → `setup-luckperms.sh`.
 2. **Physical builds** (when ready): paste Sakura Spawn in hub, build dungeon
    shells in glitch_pve, add Red Zone POIs. Requires in-game WorldEdit.
-3. **Custom dungeon plugin** (Phase 5.4): party system, slot assignment, wave
-   progression. Development plan in ROADMAP.md.
+3. **Custom plugins** (Phase 5.9): GlitchStash + GlitchRaid are highest impact
+   (grid inventory + raid timer + post-raid summary). GlitchInsurance,
+   GlitchHideout, GlitchEvents, GlitchLoot follow.
 4. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
    Geyser/Floodgate work correctly.
 

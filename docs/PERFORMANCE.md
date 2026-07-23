@@ -61,7 +61,7 @@ problem *that day*, not at launch.
 | villager POI radius 16, lobotomize | purpur.yml | villager AI is shockingly expensive at defaults |
 | tps-catchup off | purpur.yml | lag spikes end instead of smearing |
 | AFK players stop ticking entities | purpur.yml + player-idle-timeout | idle players cost ~nothing after 10 min |
-| no nether, no end, spawnChunkRadius 0 on game worlds | multiple | fewer dimensions and zero always-loaded chunks |
+| no nether, no end | multiple | fewer dimensions to tick |
 | full Red Zone pre-generation | Chunky | terrain gen never competes with gameplay |
 
 ## Reading trouble later

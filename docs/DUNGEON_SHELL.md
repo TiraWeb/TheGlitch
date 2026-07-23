@@ -14,7 +14,7 @@ Slot 6 (-1024,  1024)   Slot 7 (0,  1024)   Slot 8 (1024,  1024)
 
 ## Slot 1: "The Echoing Vault"
 
-**Status:** Shell built, regions defined, spawners configured.
+**Status:** Deferred — requires in-game WorldEdit. Build scripts exist in `scripts/`.
 
 **Location:** `glitch_pve` at (-1024, -1024)
 **Footprint:** 48x48 blocks (-1048 to -1001 on X and Z)
