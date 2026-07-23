@@ -8,7 +8,7 @@ A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft ser
 
 Check items off as they're completed. Each numbered topic is sized to roughly one working session — except the Phase 4 building block, which is flagged as bigger.
 
-**Status as of 2026-07-23:** Phases 0–2 done. Phase 3.1 done (Bedrock test pending). Phase 4 done (4.5 hub built, 4.6 dungeon shell built). Phase 5.1-5.3, 5.5, 5.7-5.8 done (plugins installed). Phase 5.4 deferred to custom plugin. Phase 5.6 needs premium plugin. Next: custom dungeon plugin (5.4) or Phase 4.7 (Red Zone POIs).
+**Status as of 2026-07-23:** Phases 0–2 done. Phase 3.1 done (Bedrock test pending). Phase 4 mechanics done (4.5-4.7 physical builds deferred). Phase 5.1-5.3, 5.5, 5.7-5.8 done (plugins installed). Phase 5.4 deferred to custom plugin. Phase 5.6 needs premium plugin. All scripts handle fresh instance reset. Next: custom dungeon plugin (5.4) or physical builds when ready.
 
 ---
 
@@ -47,15 +47,15 @@ a parenthetical.
 - [x] **4.3 Standard Glitch (PvE) — mechanics** — World registered, `keep_inventory true`, natural spawns off (MythicMobs-only design), 8-slot dungeon instancing blueprint. _Verified live._
 - [x] **4.4 The Red Zone (PvPvE) — mechanics** — World registered, full-loot PvP flags, 6 entry coordinates + 3 extraction sites documented, terrain pre-generated (17,689 chunks, seed `20260719`). _Verified live._
 
-### Physical world building — NOT started, sizable on its own
+### Physical world building — DEFERRED
 
-Nobody has built anything inside these worlds yet. Unlike Phases 0–4 above,
-none of this can be scripted the way server config was — it's manual
-(hand-built or WorldEdit/schematic-assisted) construction inside the game,
-and each item below likely spans several sessions on its own, not one.
+Physical builds (Sakura Spawn hub, dungeon shells, Red Zone POIs) are deferred.
+The world mechanics (gamerules, flags, borders, pre-gen) are all scripted and
+work on a fresh install. Physical builds require in-game WorldEdit and are
+documented in `docs/DUNGEON_SHELL.md` for when the operator is ready.
 
-- [x] **4.5 Hub City build** — the actual city: spawn plaza, shop stalls, class-selector area, cosmetic look and feel. _Done: "Sakura Spawn" by ArtillexStudios pasted into the live `hub` world via a WorldEdit schematic paste, in-game. Fit inside the existing 512 border and lines up with the existing (0, -60, 0) spawn — neither needed changing. WorldGuard's existing `__global__` hub lockdown already covers it, no extra flags needed._
-- [x] **4.6 Dungeon room builds (glitch_pve)** — First dungeon shell "The Echoing Vault" at Slot 1 (-1024, -1024). 48x48 footprint with main hall, boss room, side alcoves, mob spawn platforms, 8 loot chests, extraction beacon. WorldGuard regions + MythicMobs spawners + hCaptureEvent extraction point configured. _Done: build scripts created (build-staging.sh, build-dungeon-slot1.sh, setup-dungeon-regions.sh), docs/DUNGEON_SHELL.md written. Run scripts on server to build._
+- [ ] **4.5 Hub City build** — the actual city: spawn plaza, shop stalls, class-selector area, cosmetic look and feel. _Deferred: requires in-game WorldEdit paste. See docs/DUNGEON_SHELL.md._
+- [ ] **4.6 Dungeon room builds (glitch_pve)** — First dungeon shell "The Echoing Vault" at Slot 1 (-1024, -1024). _Deferred: build scripts exist but require in-game execution. See docs/DUNGEON_SHELL.md._
 - [ ] **4.7 Red Zone points of interest** — physical structures at the Core (0,0 — Tier 4/5 loot), the 6 entry points, and the 3 extraction beacon sites. Currently just coordinates on paper (docs/ZONES.md), nothing built.
 
 ## Phase 5 — Core plugin stack

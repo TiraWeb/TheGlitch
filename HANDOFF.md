@@ -1,7 +1,7 @@
 # The Glitch — Session Handoff
 
 Paste this whole file into a new chat (any model) to resume work with full
-context. It reflects state as of **2026-07-22**. The repo (`TiraWeb/TheGlitch`,
+context. It reflects state as of **2026-07-23**. The repo (`TiraWeb/TheGlitch`,
 branch `main`) is the single source of truth — this doc is a guide to it, not
 a replacement for reading `ROADMAP.md`, `docs/ZONES.md`, and
 `docs/PERFORMANCE.md`.
@@ -28,9 +28,6 @@ setup-luckperms.sh        Phase 5.1: creates LuckPerms groups, hierarchy, prefix
 recover-worlds.sh         DESTRUCTIVE reset for glitch_pve/glitch_red (rarely needed)
 console.sh                attach to the live server console (self-elevates via sudo)
 scripts/mc-cmd.py         local RCON client (self-elevates via sudo)
-scripts/build-staging.sh  Phase 4.6: builds staging platform at (0,0) in glitch_pve
-scripts/build-dungeon-slot1.sh  Phase 4.6: builds dungeon shell at Slot 1
-scripts/setup-dungeon-regions.sh Phase 4.6: WorldGuard regions + MythicMobs spawners
 server/*.yml              bukkit/spigot/purpur.yml — synced every bootstrap run
 server/config/*.yml       paper-global / paper-world-defaults — synced every run
 server/world-overrides/   per-world Paper config (glitch_pve trash-despawn tuning)
@@ -44,11 +41,10 @@ server/plugins/MythicMobs/Spawners/*.yml  seeded once (dungeon mob spawners)
 server/plugins/MythicMobs/SpawnAreas/*.yml seeded once (spawn zone definitions)
 server/plugins/TAB/config.yml             seeded once (scoreboard + tab list)
 server/plugins/DeluxeMenus/gui_configs/   seeded once (class selector, shard shop)
-server/plugins/hCaptureEvent/config.yml   seeded once (extraction zones)
-server/plugins/hCaptureEvent/captures/    seeded once (4 extraction points)
+server/plugins/hCaptureEvent/captures/    seeded once (extraction points)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
-docs/DUNGEON_SHELL.md     dungeon shell blueprint: Slot 1 layout, blocks, mobs
+docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
 ROADMAP.md                THE phased checklist — check here first for status
 HANDOFF.md                this file
 ```
@@ -65,60 +61,66 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 3.1: done** (Geyser/Floodgate installed, config correct for the
   *new* 2.9+ Geyser config format). **3.2 live Bedrock join-test: not done**
   — deliberately deferred, user's call.
-- **Phase 4 mechanics (4.1-4.4): done and verified live.** All three worlds
-  registered with Multiverse, correct gamerules, WorldGuard flags, borders,
-  Red Zone pre-generated (17,689 chunks). Verify anytime with
-  `scripts/mc-cmd.py 'mv list'`.
-- **Phase 4.5 (Hub City build): done.** See "Where we left off" below.
-- **Phase 4.6 (Dungeon shell build): done.** "The Echoing Vault" at Slot 1
-  (-1024, -1024) in glitch_pve. 48x48 shell with main hall, boss room, side
-  alcoves, mob spawn platforms, 8 loot chests, extraction beacon. WorldGuard
-  regions + MythicMobs spawners + hCaptureEvent configured. Build scripts:
-  `build-staging.sh`, `build-dungeon-slot1.sh`, `setup-dungeon-regions.sh`.
-  Docs: `docs/DUNGEON_SHELL.md`.
-- **Phase 4.7 (Red Zone POIs): NOT started.** Next after dungeon plugin.
-- **Phase 5.1 (LuckPerms + VaultUnlocked): done.** Plugins added to
-  bootstrap.sh, config seeded, `setup-luckperms.sh` creates group hierarchy.
-  **5.1 needs a server restart + running `sudo ./setup-luckperms.sh`** to
-  actually create the groups in LuckPerms' database.
-- **Phase 5.2 (Glitch Shards economy): done.** Eli's Coins plugin added to
-  bootstrap.sh, config seeded. Echo Shard items with enchanted glow, disabled
-  in hub, drop-on-death enabled in game worlds. MythicMobs handles loot tables.
-- **Phase 5.3 (MythicMobs): done.** Plugin added to bootstrap.sh. 4 mob
-  definitions seeded: Glitch Stalker (basic), Glitch Brute (tank), Glitch
-  Phantom (ranged), Glitch Core (Red Zone boss, 1000HP). Drop tables use
-  `COINS` type for Glitch Shards. Configs in `server/plugins/MythicMobs/`.
+- **Phase 4 mechanics (4.1-4.4): done.** All three worlds created with
+  Multiverse, correct gamerules, WorldGuard flags, borders, Red Zone
+  pre-generated (17,689 chunks). All scripted — survives fresh instance reset.
+- **Phase 4.5 (Hub City build): DEFERRED.** Requires in-game WorldEdit.
+- **Phase 4.6 (Dungeon shell build): DEFERRED.** Build scripts exist but
+  require in-game execution. See `docs/DUNGEON_SHELL.md`.
+- **Phase 4.7 (Red Zone POIs): DEFERRED.** Not started.
+- **Phase 5.1 (LuckPerms + VaultUnlocked): done.** `setup-luckperms.sh`
+  creates group hierarchy. Run after first restart.
+- **Phase 5.2 (Glitch Shards economy): done.** Eli's Coins plugin, config
+  seeded. Echo Shard items, disabled in hub, drop-on-death in game worlds.
+- **Phase 5.3 (MythicMobs): done.** 4 mob definitions seeded (Stalker, Brute,
+  Phantom, Core boss). Drop tables use COINS type.
 - **Phase 5.4 (Dungeon/Party): custom plugin planned.** Development plan in
-  ROADMAP.md. Existing plugins don't fit the 8-slot grid system well.
-- **Phase 5.5 (Hub NPCs): done.** FancyNpcs (packet-based) + DeluxeMenus
-  installed. Class selector GUI and shard shop GUI seeded.
+  ROADMAP.md.
+- **Phase 5.5 (Hub NPCs): done.** FancyNpcs + DeluxeMenus installed.
 - **Phase 5.6 (Classes): needs premium plugin.** MMOCore+MMOItems or EcoSkills
-  not on Modrinth. eco framework installed as base. Deferred until premium
-  plugin is manually installed.
-- **Phase 5.7 (Scoreboard/HUD): done.** TAB + PlaceholderAPI installed. TAB
-  config seeded with sidebar (shards/zone/class), tab list header/footer.
-- **Phase 5.8 (Extraction): done.** hCaptureEvent installed. 3 extraction
-  points configured for Red Zone (X1/X2/X3). WorldGuard regions needed.
-- **Phases 6-8:** not started (game loops, monetization, ops/launch).
+  not on Modrinth. Deferred.
+- **Phase 5.7 (Scoreboard/HUD): done.** TAB + PlaceholderAPI installed.
+- **Phase 5.8 (Extraction): done.** hCaptureEvent installed, 3 extraction
+  points configured for Red Zone.
+- **Phases 6-8:** not started.
 
-## Where we left off — dungeon shell built, next is custom plugin
+## Full instance reset (nuke and recreate)
 
-**4.6 is done.** The first dungeon shell, **"The Echoing Vault"**, was built
-at Slot 1 (-1024, -1024) in `glitch_pve` using RCON fill commands. The 48x48
-shell includes: main hall with mob spawn alcoves, boss room with extraction
-beacon, 8 loot chests, atmospheric lighting. WorldGuard regions (`pve_slot1`,
-`staging`), MythicMobs spawners (Stalker/Phantom/Brute), and hCaptureEvent
-extraction point configured. Build scripts: `build-staging.sh`,
-`build-dungeon-slot1.sh`, `setup-dungeon-regions.sh`. Docs: `DUNGEON_SHELL.md`.
+All mechanics are scripted. To reset the entire instance from scratch:
 
-**Next: Phase 5.4 — custom dungeon plugin (TheGlitchDungeons).** This is the
-run manager that handles party formation, slot assignment, mob wave progression,
-timer, win/lose conditions, and shard banking. Existing plugins don't fit the
-8-slot grid system well. Development plan in ROADMAP.md.
+```bash
+# On the Oracle Cloud instance:
+sudo systemctl stop theglitch
+sudo rm -rf /opt/theglitch
 
-**Alternative next step: Phase 4.7 — Red Zone POIs.** Physical structures at
-the Core (0,0), 6 entry points, and 3 extraction beacon sites. Currently just
-coordinates on paper.
+# Re-run bootstrap (installs Java, Purpur, plugins, configs, systemd)
+cd ~/TheGlitch
+sudo git pull
+sudo ./bootstrap.sh
+
+# Wait for server to fully start (~30s after bootstrap finishes)
+sleep 30
+
+# Create worlds, apply gamerules/flags/borders, start Red Zone pre-gen
+sudo ./setup-worlds.sh
+
+# Wait for pre-gen to finish (~15-20 min), then set up permissions
+sudo ./setup-luckperms.sh
+```
+
+After reset:
+- Hub is a flat world at spawn (0, -60, 0) — re-paste Sakura Spawn with WorldEdit
+- glitch_pve is flat, empty — dungeon shells deferred
+- glitch_red is natural terrain, pre-generated — extraction points configured
+- All plugins loaded, economy ready, mobs configured
+
+## Where we left off — scripts complete, physical builds deferred
+
+All server mechanics are fully scripted and survive a fresh instance reset.
+Physical builds (Sakura Spawn hub, dungeon shells, Red Zone POIs) are deferred
+until the operator is ready to do in-game WorldEdit work.
+
+**Next when ready:** Phase 5.4 (custom dungeon plugin) or physical builds.
 
 ## Hard-won lessons (read before touching worlds/gamerules again)
 
@@ -167,21 +169,24 @@ coordinates on paper.
    documented in-game procedure rather than something added to
    `setup-worlds.sh`.
 
+7. **RCON `fill`/`setblock`/`forceload` commands execute in the main world
+   (hub) by default.** To target another dimension, prefix with
+   `execute in minecraft:<world> run`. The build scripts use a `gcmd()`
+   helper for this. Without this prefix, blocks get placed in the hub world
+   instead of the intended target — which is exactly what happened and
+   prompted the instance reset.
+
 ## Immediate next steps (pick up here)
 
-1. Find/prepare a dungeon-shell build for Slot 1 (-1024, -1024) in
-   `glitch_pve` — free schematic (established preference) or hand-build.
-2. Backup, then the in-game paste, then protect the region — steps above.
-3. Tick off ROADMAP.md 4.6 once Slot 1 looks right and is protected.
-4. Then: 4.7 (Red Zone POIs) — same download-a-free-build-or-hand-build
-   pattern, applied to the Core (0,0) and the entry/extraction coordinates
-   already documented in `docs/ZONES.md`. Slots 2-8 in `glitch_pve` can also
-   be filled in any time once Slot 1's template works.
-5. Eventually: Phase 5 (LuckPerms, Glitch Shards economy, MythicMobs, the
-   three classes) — the point where this becomes an actual game rather than
-   three configured, decorated worlds. MythicMobs (5.3) and dungeon
-   objectives (6.1) both need a built dungeon room to place anything into,
-   so 4.6 unblocks them.
+1. **Full instance reset** if needed: follow the "Full instance reset" section
+   above. All mechanics are scripted — just `bootstrap.sh` → `setup-worlds.sh`
+   → `setup-luckperms.sh`.
+2. **Physical builds** (when ready): paste Sakura Spawn in hub, build dungeon
+   shells in glitch_pve, add Red Zone POIs. Requires in-game WorldEdit.
+3. **Custom dungeon plugin** (Phase 5.4): party system, slot assignment, wave
+   progression. Development plan in ROADMAP.md.
+4. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
+   Geyser/Floodgate work correctly.
 
 ## Working agreements worth preserving
 
