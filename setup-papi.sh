@@ -41,13 +41,35 @@ log "PlaceholderAPI confirmed loaded."
 log "Refreshing PAPI eCloud..."
 mc "papi ecloud refresh"
 
+# --- check if eCloud is reachable ------------------------------------------
+if ! mc "papi ecloud list" 2>/dev/null | grep -qi "expansion\|name"; then
+  warn "PAPI eCloud appears blocked (Oracle Cloud firewall)."
+  warn ""
+  warn "Option 1: Open firewall for eCloud (one-time):"
+  warn "  sudo ufw allow out to api.extendedclip.com port 443"
+  warn "  Then re-run this script."
+  warn ""
+  warn "Option 2: Download expansion JARs manually:"
+  warn "  LuckPerms: https://api.extendedclip.com/home/expansion/luckperms/"
+  warn "  Vault:     https://api.extendedclip.com/home/expansion/vault/"
+  warn "  Server:    https://api.extendedclip.com/home/expansion/server/"
+  warn "  Place .jar files in: server/plugins/PlaceholderAPI/expansions/"
+  warn "  Then run: sudo ./setup-papi.sh"
+  warn ""
+fi
+
 # --- install expansions ----------------------------------------------------
 log "Installing required expansions..."
 
 EXPANSIONS=("LuckPerms" "Vault" "Server")
 for exp in "${EXPANSIONS[@]}"; do
   log "  Downloading: ${exp}"
-  mc "papi ecloud download ${exp}" || warn "  Failed to download ${exp} — may already be installed"
+  mc "papi ecloud download ${exp}" 2>/dev/null
+  if mc "papi ecloud list installed" 2>/dev/null | grep -qi "${exp}"; then
+    log "  ${exp} installed successfully."
+  else
+    warn "  ${exp} failed — eCloud blocked or expansion unavailable."
+  fi
 done
 
 # --- reload PAPI -----------------------------------------------------------

@@ -38,30 +38,31 @@ log "EssentialsX confirmed loaded."
 
 # --- hub spawn -------------------------------------------------------------
 log "Setting hub spawn point (0, -60, 0)..."
-mc "essentials setspawn"
+mc "setspawn default"
 
 # --- zone warps ------------------------------------------------------------
 log "Creating zone-transition warps..."
 
 # PvE staging area — center of the 8-slot dungeon grid
-mc "essentials setwarp pve_staging 0 -60 0 glitch_pve"
+mc "setwarp pve_staging 0 -60 0 glitch_pve"
 
 # Red Zone entry points — radius 700, 60 degrees apart
-mc "essentials setwarp red_e1 700 -60 0 glitch_red"
-mc "essentials setwarp red_e2 350 -60 606 glitch_red"
-mc "essentials setwarp red_e3 -350 -60 606 glitch_red"
-mc "essentials setwarp red_e4 -700 -60 0 glitch_red"
-mc "essentials setwarp red_e5 -350 -60 -606 glitch_red"
-mc "essentials setwarp red_e6 350 -60 -606 glitch_red"
+mc "setwarp red_e1 700 -60 0 glitch_red"
+mc "setwarp red_e2 350 -60 606 glitch_red"
+mc "setwarp red_e3 -350 -60 606 glitch_red"
+mc "setwarp red_e4 -700 -60 0 glitch_red"
+mc "setwarp red_e5 -350 -60 -606 glitch_red"
+mc "setwarp red_e6 350 -60 -606 glitch_red"
 
 # Red Zone extraction beacons
-mc "essentials setwarp extract_x1 450 -60 -250 glitch_red"
-mc "essentials setwarp extract_x2 -520 -60 180 glitch_red"
-mc "essentials setwarp extract_x3 60 -60 540 glitch_red"
+mc "setwarp extract_x1 450 -60 -250 glitch_red"
+mc "setwarp extract_x2 -520 -60 180 glitch_red"
+mc "setwarp extract_x3 60 -60 540 glitch_red"
 
 # --- starting kit ----------------------------------------------------------
-log "Creating starter kit (Glitch Kit)..."
-# Kit is defined in Essentials kits.yml — seed it from repo
+log "Configuring starter kit (Glitch Kit)..."
+# Kit is defined in Essentials kits.yml — seed it from repo (already done by bootstrap)
+# setkit requires a player inventory, so we configure it via config.yml instead
 KIT_DIR="${REPO_DIR}/server/plugins/Essentials"
 mkdir -p "${KIT_DIR}"
 if [[ ! -f "${KIT_DIR}/kits.yml" ]]; then
@@ -85,8 +86,8 @@ else
   warn "kits.yml already exists — skipping seed (box copy wins)."
 fi
 
-# Tell Essentials to use the starter kit for new players
-mc "essentials setkit glitch-starter"
+# Tell Essentials to use the starter kit for new players (set via config)
+mc "essentials setnewbieskit glitch-starter"
 
 # --- permissions -----------------------------------------------------------
 log "Granting default player permissions..."
