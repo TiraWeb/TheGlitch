@@ -30,7 +30,7 @@ done
 # Verify TAB is loaded
 log "Waiting for TAB to load..."
 for i in {1..60}; do
-  if mc "tab version" 2>/dev/null | grep -qi "tab"; then break; fi
+  if mc "tab" 2>/dev/null | grep -qi "tab"; then break; fi
   [[ $i -eq 60 ]] && die "TAB not responding after 300s — check: sudo journalctl -u theglitch | grep -i tab"
   sleep 5
 done

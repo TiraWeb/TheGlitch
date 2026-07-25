@@ -31,7 +31,7 @@ done
 # Verify PAPI is loaded
 log "Waiting for PlaceholderAPI to load..."
 for i in {1..60}; do
-  if mc "papi version" 2>/dev/null | grep -qi "placeholder"; then break; fi
+  if mc "papi" 2>/dev/null | grep -qi "placeholder\|papi"; then break; fi
   [[ $i -eq 60 ]] && die "PlaceholderAPI not responding after 300s."
   sleep 5
 done

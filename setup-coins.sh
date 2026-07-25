@@ -30,7 +30,7 @@ done
 # Verify Coins is loaded
 log "Waiting for Coins to load..."
 for i in {1..60}; do
-  if mc "coins version" 2>/dev/null | grep -qi "coins"; then break; fi
+  if mc "coins" 2>/dev/null | grep -qi "coin"; then break; fi
   [[ $i -eq 60 ]] && die "Coins not responding after 300s."
   sleep 5
 done
