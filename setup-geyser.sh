@@ -30,7 +30,7 @@ done
 # Verify Geyser is loaded
 log "Waiting for GeyserMC to load..."
 for i in {1..60}; do
-  if mc "geyser version" 2>/dev/null | grep -qi "geyser"; then break; fi
+  if mc "plugins" 2>/dev/null | grep -qi "Geyser"; then break; fi
   [[ $i -eq 60 ]] && die "GeyserMC not responding after 300s."
   sleep 5
 done

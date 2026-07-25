@@ -31,7 +31,7 @@ done
 # Verify FancyNpcs is loaded
 log "Waiting for FancyNpcs to load..."
 for i in {1..60}; do
-  if mc "fancynpcs" 2>/dev/null | grep -qi "fancy"; then break; fi
+  if mc "plugins" 2>/dev/null | grep -qi "FancyNpcs"; then break; fi
   [[ $i -eq 60 ]] && die "FancyNpcs not responding after 300s."
   sleep 5
 done

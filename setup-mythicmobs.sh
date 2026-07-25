@@ -30,7 +30,7 @@ done
 # Verify MythicMobs is loaded
 log "Waiting for MythicMobs to load..."
 for i in {1..60}; do
-  if mc "mm" 2>/dev/null | grep -qi "mythic"; then break; fi
+  if mc "plugins" 2>/dev/null | grep -qi "MythicMobs"; then break; fi
   [[ $i -eq 60 ]] && die "MythicMobs not responding after 300s."
   sleep 5
 done

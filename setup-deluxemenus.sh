@@ -30,7 +30,7 @@ done
 # Verify DeluxeMenus is loaded
 log "Waiting for DeluxeMenus to load..."
 for i in {1..60}; do
-  if mc "dm" 2>/dev/null | grep -qi "menu\|deluxe\|dm"; then break; fi
+  if mc "plugins" 2>/dev/null | grep -qi "DeluxeMenus"; then break; fi
   [[ $i -eq 60 ]] && die "DeluxeMenus not responding after 300s."
   sleep 5
 done

@@ -30,7 +30,7 @@ done
 # Verify EssentialsX is loaded
 log "Waiting for EssentialsX to load..."
 for i in {1..60}; do
-  if mc "ess version" 2>/dev/null | grep -qi "essentials"; then break; fi
+  if mc "plugins" 2>/dev/null | grep -qi "Essentials"; then break; fi
   [[ $i -eq 60 ]] && die "EssentialsX not responding after 300s — check: sudo journalctl -u theglitch | grep -i essentials"
   sleep 5
 done
