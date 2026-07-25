@@ -284,7 +284,7 @@ fi
 # If the operator edits them in-game (or via /mm reload), the box's copy
 # becomes the source of truth — bootstrap won't overwrite.
 # ---------------------------------------------------------------------------
-if [[ -d "${REPO_DIR}/server/plugins/MythicMobs" && ! -d "${PLUGIN_DIR}/MythicMobs/Mobs" ]]; then
+if [[ -d "${REPO_DIR}/server/plugins/MythicMobs" ]]; then
   log "Phase 5.3 — seeding MythicMobs configs"
   install -d -m 755 "${PLUGIN_DIR}/MythicMobs"
   for subdir in Mobs Skills DropTables; do
@@ -301,7 +301,7 @@ fi
 # ---------------------------------------------------------------------------
 # Phase 5.5 — seed FancyNpcs + DeluxeMenus configs (once; box's copy wins)
 # ---------------------------------------------------------------------------
-if [[ -f "${REPO_DIR}/server/plugins/DeluxeMenus/gui_configs/class_selector.yml" && ! -d "${PLUGIN_DIR}/DeluxeMenus/gui_configs" ]]; then
+if [[ -f "${REPO_DIR}/server/plugins/DeluxeMenus/gui_configs/class_selector.yml" ]]; then
   log "Phase 5.5 — seeding DeluxeMenus GUI configs"
   install -d -m 755 "${PLUGIN_DIR}/DeluxeMenus/gui_configs"
   for f in "${REPO_DIR}/server/plugins/DeluxeMenus/gui_configs"/*.yml; do
@@ -324,7 +324,7 @@ fi
 # on first boot (our custom config caused an NPE crash). Only captures/ zone
 # files are seeded from the repo.
 # ---------------------------------------------------------------------------
-if [[ -d "${REPO_DIR}/server/plugins/hCaptureEvent/captures" && ! -d "${PLUGIN_DIR}/hCaptureEvent/captures" ]]; then
+if [[ -d "${REPO_DIR}/server/plugins/hCaptureEvent/captures" ]]; then
   log "Phase 5.8 — seeding hCaptureEvent capture zones"
   install -d -m 755 "${PLUGIN_DIR}/hCaptureEvent/captures"
   for f in "${REPO_DIR}/server/plugins/hCaptureEvent/captures"/*.yml; do

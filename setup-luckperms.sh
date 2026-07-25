@@ -58,10 +58,10 @@ mc "lp group admin parent add moderator"
 # --- weights (higher = higher priority in display/lookup) -------------------
 log "Setting group weights"
 
-mc "lp group default meta setweight 0"
-mc "lp group donor meta setweight 100"
-mc "lp group moderator meta setweight 500"
-mc "lp group admin meta setweight 1000"
+mc "lp group default setweight 0"
+mc "lp group donor setweight 100"
+mc "lp group moderator setweight 500"
+mc "lp group admin setweight 1000"
 
 # --- prefixes (shown in chat/tab/name tag via TAB plugin later) ------------
 log "Setting group prefixes"
