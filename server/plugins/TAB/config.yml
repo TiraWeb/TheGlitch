@@ -1,36 +1,67 @@
-# The Glitch — TAB config (scoreboard + tab list)
-# Seeded once by bootstrap.sh — box's copy wins after first boot.
+# The Glitch — TAB v6 config
+# Seeded by bootstrap.sh — box's copy wins after first boot.
 # Wiki: https://github.com/NEZNAMY/TAB/wiki
 
-# Header/footer in tab list
-tablist-header-footer:
+header-footer:
   enabled: true
   header: "\n<gradient:#5B00FF:#FF00FF>The Glitch</gradient> <gray>rogue-lite extraction</gray>\n"
   footer: "\n<gradient:#5B00FF:#FF00FF>Players: </gradient><white>%server_online%</white><gray>/</gray><white>%server_max_players%</white>\n"
 
-# Name tags (prefix + suffix above player heads)
-nametag:
+tablist-name-formatting:
   enabled: true
-  collision-rule: never
 
-# Sidebar scoreboard
+scoreboard-teams:
+  enabled: true
+
 scoreboard:
   enabled: true
-  title: "<gradient:#5B00FF:#FF00FF>The Glitch</gradient>"
-  lines:
-    - ""
-    - "<gray>Zone:</gray> <white>%luckperms_meta_zone%</white>"
-    - "<gray>Shards:</gray> <white>%coins_balance%</white>"
-    - "<gray>Class:</gray> <white>%luckperms_meta_class%</white>"
-    - ""
-    - "<gray>──────────</gray>"
-    - "<gray>Players:</gray> <white>%server_online%</white>"
-    - ""
-  update-interval: 20
-
-# Per-group scoreboard (optional — different sidebar for staff)
-# group-scoreboard:
-#   admin:
-#     title: "<red>Staff Panel</red>"
-#     lines:
-#       - "<red>Admin mode</red>"
+  toggle-command: /sb
+  remember-toggle-choice: false
+  hidden-by-default: false
+  delay-on-join-milliseconds: 0
+  scoreboards:
+    glitch-hub:
+      display-condition: "%world%=hub"
+      title: "<gradient:#5B00FF:#FF00FF>The Glitch</gradient>"
+      lines:
+        - ""
+        - "<gray>Zone:</gray> <white>Hub</white>"
+        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%luckperms_meta_class%</white>"
+        - ""
+        - "<gray>──────────</gray>"
+        - "<gray>Players:</gray> <white>%server_online%</white>"
+        - ""
+    glitch-pve:
+      display-condition: "%world%=glitch_pve"
+      title: "<gradient:#5B00FF:#FF00FF>The Glitch</gradient>"
+      lines:
+        - ""
+        - "<gray>Zone:</gray> <white>Standard Glitch</white>"
+        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%luckperms_meta_class%</white>"
+        - ""
+        - "<gray>──────────</gray>"
+        - "<gray>Players:</gray> <white>%server_online%</white>"
+        - ""
+    glitch-red:
+      display-condition: "%world%=glitch_red"
+      title: "<gradient:#FF0000:#FF00FF>The Red Zone</gradient>"
+      lines:
+        - ""
+        - "<red>Zone: Red Zone</red>"
+        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%luckperms_meta_class%</white>"
+        - ""
+        - "<red>⚠ Full Loot PvP ⚠</red>"
+        - "<gray>──────────</gray>"
+        - "<gray>Players:</gray> <white>%server_online%</white>"
+        - ""
+    default:
+      title: "<gradient:#5B00FF:#FF00FF>The Glitch</gradient>"
+      lines:
+        - ""
+        - "<gray>Zone:</gray> <white>%world%</white>"
+        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
+        - "<gray>Players:</gray> <white>%server_online%</white>"
+        - ""
