@@ -45,15 +45,9 @@ mc "papi ecloud refresh"
 if ! mc "papi ecloud list" 2>/dev/null | grep -qi "expansion\|name"; then
   warn "PAPI eCloud appears blocked (Oracle Cloud firewall)."
   warn ""
-  warn "Option 1: Open firewall for eCloud (one-time):"
-  ELOUD_IP=$(getent hosts api.extendedclip.com 2>/dev/null | awk '{print $1}' || true)
-  if [[ -n "${ELOUD_IP}" ]]; then
-    warn "  sudo ufw allow out to ${ELOUD_IP} port 443"
-    warn "  (Resolved api.extendedclip.com → ${ELOUD_IP})"
-  else
-    warn "  sudo ufw allow out to <ecloud-ip> port 443"
-    warn "  (Run: getent hosts api.extendedclip.com to find the IP)"
-  fi
+  warn "Option 1: Open firewall for eCloud (run these two commands):"
+  warn "  sudo ufw allow out to 172.67.187.160 port 443"
+  warn "  sudo ufw allow out to 104.18.22.33 port 443"
   warn "  Then re-run this script."
   warn ""
   warn "Option 2: Download expansion JARs manually:"
