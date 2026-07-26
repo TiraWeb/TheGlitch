@@ -1,5 +1,6 @@
 package com.theglitch.glitchstash;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
@@ -44,9 +45,41 @@ public final class StashManager {
 
     /**
      * Save a player's inventory to their stash.
+     * If a stash already exists, items are MERGED (appended) — not replaced.
+     * This allows multiple extractions to accumulate items.
      */
     public void saveStash(UUID uuid, String playerName, ItemStack[] contents, ItemStack[] armor, ItemStack offhand) {
-        StashData data = new StashData(uuid, playerName, contents, armor, offhand, System.currentTimeMillis());
+        StashData existing = stashes.get(uuid);
+
+        ItemStack[] mergedContents;
+        ItemStack[] mergedArmor;
+        ItemStack mergedOffhand;
+
+        if (existing != null) {
+            // Merge: combine existing stash contents with new extraction
+            // Use a temporary inventory to handle stacking automatically
+            org.bukkit.inventory.Inventory temp = Bukkit.createInventory(null, 54);
+
+            // Add existing stash items first
+            for (ItemStack item : existing.contents()) {
+                if (item != null) temp.addItem(item.clone());
+            }
+            // Add new extraction items
+            for (ItemStack item : contents) {
+                if (item != null) temp.addItem(item.clone());
+            }
+            mergedContents = temp.getContents();
+
+            // Keep existing armor (player had empty armor after last extraction)
+            mergedArmor = existing.armor();
+            mergedOffhand = existing.offhand();
+        } else {
+            mergedContents = contents;
+            mergedArmor = armor;
+            mergedOffhand = offhand;
+        }
+
+        StashData data = new StashData(uuid, playerName, mergedContents, mergedArmor, mergedOffhand, System.currentTimeMillis());
         stashes.put(uuid, data);
         saveToFile(uuid, data);
     }

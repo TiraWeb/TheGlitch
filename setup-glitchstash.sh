@@ -36,16 +36,6 @@ for i in {1..60}; do
 done
 log "GlitchStash confirmed loaded."
 
-# --- configure VelKoth extraction rewards -----------------------------------
-log "Setting up extraction rewards for VelKoth arenas..."
-
-# Add auto-teleport reward to all extraction arenas
-for arena in extraction_x1 extraction_x2 extraction_x3; do
-  # Check if reward already exists before adding
-  mc "koth reward add ${arena} COMMAND:warp hub" 2>/dev/null || true
-  log "  Added warp hub reward to ${arena}"
-done
-
 # --- verify ----------------------------------------------------------------
 log "Verifying VelKoth arenas:"
 mc "koth list"
@@ -58,13 +48,9 @@ cat <<'EOF'
 
   Extraction flow (fully automatic):
     1. Player extracts (holds zone for 300s)
-    2. Inventory auto-saved to stash (YAML storage)
-    3. Player teleported to hub spawn
+    2. Inventory auto-saved to stash (YAML storage, accumulates)
+    3. Player teleported to hub via Multiverse-Core
     4. Player retrieves items with /stash
-
-  Stash chest in hub:
-    Place a chest at hub spawn and right-click to open stash.
-    (Command-based for now: /stash)
 
   Commands:
     /stash              — open stash GUI (click items to retrieve)
@@ -78,12 +64,10 @@ cat <<'EOF'
     plugins/GlitchStash/messages.yml
     plugins/GlitchStash/stashes/    (auto-created per-player)
 
-  Troubleshooting:
-    - If extraction doesn't save inventory, check:
-      /plugins — GlitchStash must be green
-      /stashadmin list — should show stash count
-    - If GUI doesn't open, check LuckPerms:
-      /lp group default permission set glitchstash.use true
+  Notes:
+    - Teleport uses Multiverse-Core (mv tp), NOT EssentialsX
+    - EssentialsX is incompatible with MC 26.x
+    - Stash accumulates across multiple extractions
 
 ============================================================
 EOF
