@@ -69,22 +69,25 @@ if [[ ! -f "${OUTPUT_JAR}" ]]; then
 fi
 log "Build successful: ${OUTPUT_JAR}"
 
-# Deploy to server
-DEPLOY_DIR="${SERVER_DIR}/plugins"
-mkdir -p "${DEPLOY_DIR}"
-cp "${OUTPUT_JAR}" "${DEPLOY_DIR}/GlitchStash.jar"
-log "Deployed: ${DEPLOY_DIR}/GlitchStash.jar"
+# Deploy to LIVE server (not repo copy)
+LIVE_PLUGIN_DIR="/opt/theglitch/server/plugins"
+mkdir -p "${LIVE_PLUGIN_DIR}"
+cp "${OUTPUT_JAR}" "${LIVE_PLUGIN_DIR}/GlitchStash.jar"
+log "Deployed: ${LIVE_PLUGIN_DIR}/GlitchStash.jar"
 
-# Also seed config if not present
-STASH_CONFIG="${SERVER_DIR}/plugins/GlitchStash/config.yml"
-STASH_MESSAGES="${SERVER_DIR}/plugins/GlitchStash/messages.yml"
-mkdir -p "${SERVER_DIR}/plugins/GlitchStash"
-if [[ ! -f "${STASH_CONFIG}" ]]; then
-    cp "${PLUGIN_DIR}/src/main/resources/config.yml" "${STASH_CONFIG}"
+# Also copy to repo for bootstrap future runs
+REPO_DEPLOY="${SERVER_DIR}/plugins"
+mkdir -p "${REPO_DEPLOY}"
+cp "${OUTPUT_JAR}" "${REPO_DEPLOY}/GlitchStash.jar"
+
+# Seed config on LIVE server if not present
+mkdir -p "${LIVE_PLUGIN_DIR}/GlitchStash"
+if [[ ! -f "${LIVE_PLUGIN_DIR}/GlitchStash/config.yml" ]]; then
+    cp "${PLUGIN_DIR}/src/main/resources/config.yml" "${LIVE_PLUGIN_DIR}/GlitchStash/config.yml"
     log "Config seeded."
 fi
-if [[ ! -f "${STASH_MESSAGES}" ]]; then
-    cp "${PLUGIN_DIR}/src/main/resources/messages.yml" "${STASH_MESSAGES}"
+if [[ ! -f "${LIVE_PLUGIN_DIR}/GlitchStash/messages.yml" ]]; then
+    cp "${PLUGIN_DIR}/src/main/resources/messages.yml" "${LIVE_PLUGIN_DIR}/GlitchStash/messages.yml"
     log "Messages seeded."
 fi
 

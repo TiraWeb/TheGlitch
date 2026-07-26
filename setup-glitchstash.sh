@@ -42,8 +42,8 @@ log "Setting up extraction rewards for VelKoth arenas..."
 # Add auto-teleport reward to all extraction arenas
 for arena in extraction_x1 extraction_x2 extraction_x3; do
   # Check if reward already exists before adding
-  mc "koth reward add ${arena} COMMAND:spawn" 2>/dev/null || true
-  log "  Added spawn reward to ${arena}"
+  mc "koth reward add ${arena} COMMAND:warp hub" 2>/dev/null || true
+  log "  Added warp hub reward to ${arena}"
 done
 
 # --- verify ----------------------------------------------------------------

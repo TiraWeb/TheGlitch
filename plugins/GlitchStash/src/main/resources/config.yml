@@ -9,8 +9,8 @@ extra-slots: 9
 # Stash expiry in hours (0 = never expires)
 stash-expiry-hours: 0
 
-# Where players spawn after extraction (EssentialsX spawn)
-extract-teleport: spawn
+# Where players teleport after extraction (EssentialsX warp)
+extract-teleport: "warp hub"
 
 # Display settings
 display-name: "<dark_purple><bold>YOUR STASH</bold></dark_purple>"
