@@ -185,45 +185,22 @@ chown "${MC_USER}:${MC_USER}" "${MM_AREAS_DIR}/Slot1_SpawnAreas.yml"
 chmod 644 "${MM_AREAS_DIR}/Slot1_SpawnAreas.yml"
 log "Spawn areas written"
 
-# --- hCaptureEvent extraction point for dungeon -----------------------------
+# --- VelKoth extraction point for dungeon -----------------------------
 log "Configuring dungeon extraction point"
 
-CAPTURE_DIR="${SERVER_DIR}/plugins/hCaptureEvent/captures"
-mkdir -p "${CAPTURE_DIR}"
+KOTH_DIR="${SERVER_DIR}/plugins/VelKoth"
+mkdir -p "${KOTH_DIR}"
 
-cat > "${CAPTURE_DIR}/dungeon_x1_slot1.yml" <<'YAML'
-# The Glitch — Extraction Point for Slot 1: The Echoing Vault
-# Located in the boss room center, players channel to bank shards
+# Note: VelKoth arenas are created in-game with /koth wand + /koth create.
+# The arenas.yml below is a REFERENCE — actual creation requires player context.
+# Run these commands in-game after the server starts:
+#   /koth wand
+#   (select boss room area with left/right click)
+#   /koth create dungeon_x1_slot1
+#   /koth set time dungeon_x1_slot1 8
+#   /koth set graceperiod dungeon_x1_slot1 3
 
-DungeonX1:
-  # WorldGuard region name (must match /rg define output)
-  region: "dungeon_x1_slot1"
-  world: "glitch_pve"
-  # Capture time (seconds) — shorter than Red Zone (easier dungeon)
-  capture-time: 8
-  # Boss bar during capture
-  boss-bar:
-    enabled: true
-    color: PURPLE
-    style: SEGMENTED_8
-    title: "<purple>Extracting from the Vault..."
-  # Action bar
-  action-bar:
-    enabled: true
-    message: "<purple>Extracting... <white>{progress}%</white>"
-  # Reward on completion
-  commands:
-    - "eco give {player} 30"
-    - "msg {player} &aVault extraction complete! +30 Glitch Shards banked."
-  # Cancel if player leaves region
-  cancel-on-leave: true
-  # Cancel on damage
-  cancel-on-damage: false
-YAML
-
-chown "${MC_USER}:${MC_USER}" "${CAPTURE_DIR}/dungeon_x1_slot1.yml"
-chmod 644 "${CAPTURE_DIR}/dungeon_x1_slot1.yml"
-log "Dungeon extraction point configured"
+log "Dungeon extraction point: create in-game with /koth wand"
 
 # --- Summary -----------------------------------------------------------------
 cat <<'EOF'
@@ -243,8 +220,9 @@ cat <<'EOF'
     Slot1_MainHall_East:  GlitchPhantom x1 (45s cooldown)
     Slot1_BossRoom:       GlitchBrute x1 (120s cooldown)
 
-  hCaptureEvent:
+  VelKoth:
     DungeonX1: Boss room extraction beacon (8s channel, 30 shards)
+    Create in-game: /koth wand → select → /koth create dungeon_x1_slot1
 
   IMPORTANT: Restart the server to load the new regions:
     sudo systemctl restart theglitch

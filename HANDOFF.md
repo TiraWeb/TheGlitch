@@ -1,7 +1,7 @@
 # The Glitch — Session Handoff
 
 Paste this whole file into a new chat (any model) to resume work with full
-context. It reflects state as of **2026-07-23**. The repo (`TiraWeb/TheGlitch`,
+context. It reflects state as of **2026-07-24**. The repo (`TiraWeb/TheGlitch`,
 branch `main`) is the single source of truth — this doc is a guide to it, not
 a replacement for reading `ROADMAP.md`, `docs/ZONES.md`, and
 `docs/PERFORMANCE.md`.
@@ -30,7 +30,7 @@ setup-tab.sh              Phase 5.7: TAB reload + LuckPerms meta defaults for sc
 setup-papi.sh             Phase 5.7: downloads LuckPerms + Vault PAPI expansions
 setup-mythicmobs.sh       Phase 5.3: reloads mob configs, verifies registration
 setup-coins.sh            Phase 5.2: reloads Glitch Shards economy, verifies Vault link
-setup-hcaptureevent.sh    Phase 5.8: reloads extraction points, sets permissions
+setup-velkoth.sh         Phase 5.8: reloads extraction arenas, verifies VelKoth
 setup-deluxemenus.sh      Phase 5.5: reloads GUI menus, sets permissions
 setup-fancynpcs.sh        Phase 5.5: reloads NPC system, sets permissions
 setup-geyser.sh           Phase 3.1: verifies Bedrock bridge (does NOT reload)
@@ -52,7 +52,9 @@ server/plugins/MythicMobs/Spawners/*.yml  seeded once (dungeon mob spawners)
 server/plugins/MythicMobs/SpawnAreas/*.yml seeded once (spawn zone definitions)
 server/plugins/TAB/config.yml             seeded once (scoreboard + tab list)
 server/plugins/DeluxeMenus/gui_configs/   seeded once (class selector, shard shop)
-server/plugins/hCaptureEvent/captures/    seeded once (extraction points)
+server/plugins/VelKoth/config.yml      seeded once (extraction settings)
+server/plugins/VelKoth/messages.yml    seeded once (extraction-themed messages)
+server/plugins/VelKoth/arenas.yml      seeded once (3 extraction arenas)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
@@ -91,8 +93,9 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 5.6 (Classes): needs premium plugin.** MMOCore+MMOItems or EcoSkills
   not on Modrinth. Deferred.
 - **Phase 5.7 (Scoreboard/HUD): done.** TAB + PlaceholderAPI installed.
-- **Phase 5.8 (Extraction): done.** hCaptureEvent installed, 3 extraction
-  points configured for Red Zone.
+- **Phase 5.8 (Extraction): done.** VelKoth installed, 3 extraction arenas
+  configured for glitch_pve (extraction_x1/x2/x3). Players hold zone for
+  300s to extract.
 - **Phase 5.9 (Custom plugins): designed.** GlitchStash, GlitchRaid,
   GlitchInsurance, GlitchHideout, GlitchEvents, GlitchLoot planned.
 - **Phases 6-8:** not started.
@@ -127,7 +130,7 @@ sudo ./setup-all-plugins.sh
 After reset:
 - Hub is a flat world at spawn (0, -60, 0) — re-paste Sakura Spawn with WorldEdit
 - glitch_pve is flat, empty — dungeon shells deferred
-- glitch_red is natural terrain, pre-generated — extraction points configured
+- glitch_red is natural terrain, pre-generated — extraction arenas configured
 - All plugins loaded, economy ready, mobs configured
 - EssentialsX has spawn + warps set, starter kit ready
 - PAPI expansions installed (LuckPerms + Vault placeholders work)
@@ -139,7 +142,7 @@ All server mechanics are fully scripted and survive a fresh instance reset.
 Physical builds (Sakura Spawn hub, dungeon shells, Red Zone POIs) are deferred
 until the operator is ready to do in-game WorldEdit work.
 
-**Next when ready:** Phase 5.4 (custom dungeon plugin) or physical builds.
+**Next when ready:** Physical builds or custom plugins (Phase 5.9).
 
 ## Hard-won lessons (read before touching worlds/gamerules again)
 
@@ -207,6 +210,8 @@ until the operator is ready to do in-game WorldEdit work.
    GlitchHideout, GlitchEvents, GlitchLoot follow.
 4. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
    Geyser/Floodgate work correctly.
+5. **Extraction testing**: VelKoth arenas are pre-seeded. After full reset,
+   test with `/koth start extraction_x1` and walk into the zone.
 
 ## Working agreements worth preserving
 

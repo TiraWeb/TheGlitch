@@ -67,7 +67,7 @@ documented in `docs/DUNGEON_SHELL.md` for when the operator is ready.
 - [x] **5.5 Hub NPCs** — FancyNpcs (packet-based, 0 TPS impact) + DeluxeMenus for GUIs. _Done: plugins added to bootstrap.sh, class selector + shard shop GUIs seeded._
 - [ ] **5.6 Classes** — Vanguard (tank), Scout (agility), Warden (support). _Needs premium plugin install (MMOCore+MMOItems or EcoSkills) — not on Modrinth. eco framework installed as base. Class configs deferred until premium plugin is installed._
 - [x] **5.7 Scoreboard/HUD** — TAB (sidebar scoreboard: shards/zone/class, tab list header/footer) + PlaceholderAPI. _Done: plugins added to bootstrap.sh, TAB config seeded with Glitch-themed sidebar._
-- [x] **5.8 Extraction mechanic** — hCaptureEvent (WorldGuard region-based capture zones with boss bar + rewards). _Done: plugin added to bootstrap.sh, 3 extraction points (X1/X2/X3) configured for Red Zone._
+- [x] **5.8 Extraction mechanic** — VelKoth (KOTH plugin in CAPTURE mode for extraction zones). _Done: plugin added to bootstrap.sh, 3 extraction arenas (X1/X2/X3) in glitch_pve with 300s hold-to-extract._
 
 ## Phase 5.4 — Custom Dungeon Plugin (TheGlitchDungeons)
 
@@ -98,7 +98,7 @@ _Six custom plugins designed for Arc Raiders/Marathon-style extraction gameplay.
 ## Phase 6 — Game loops
 
 - [ ] **6.1 Dungeon objectives** — Wave-clear and data-core-repair objectives, tier scaling, completion rewards. _Needs 4.6 (a built dungeon room) to actually place objectives in._
-- [ ] **6.2 Extraction beacons** — Timed channel mechanic via hCaptureEvent/VelKoth, server-wide/zone broadcast on activation, shard banking on success.
+- [ ] **6.2 Extraction beacons** — Timed channel mechanic via VelKoth, server-wide/zone broadcast on activation, shard banking on success.
 - [ ] **6.3 Gear-score gating** — Item-attribute scoring on Red Zone entry, distribution across rotating drop points to prevent spawn-camping.
 - [ ] **6.4 Progression sinks** — Hub skill-point shop via DeluxeMenus: shards → permanent class upgrades (+HP %, cooldown reduction), costs curve.
 

@@ -37,7 +37,7 @@ echo "  3. PlaceholderAPI (LuckPerms + Vault expansions)"
 echo "  4. TAB (sidebar scoreboard + tab list)"
 echo "  5. MythicMobs (reload + verify mobs)"
 echo "  6. Coins (reload + verify Glitch Shards)"
-echo "  7. hCaptureEvent (reload + verify extraction points)"
+echo "  7. VelKoth (reload + verify extraction arenas)"
 echo "  8. DeluxeMenus (reload + verify menus)"
 echo "  9. FancyNpcs (reload + verify NPC system)"
 echo "  10. GeyserMC (verify Bedrock bridge)"
@@ -88,8 +88,8 @@ run_step "5" "setup-mythicmobs.sh"
 # 6. Coins (reload economy)
 run_step "6" "setup-coins.sh"
 
-# 7. hCaptureEvent (reload extraction points)
-run_step "7" "setup-hcaptureevent.sh"
+# 7. VelKoth (reload extraction arenas)
+run_step "7" "setup-velkoth.sh"
 
 # 8. DeluxeMenus (reload GUIs)
 run_step "8" "setup-deluxemenus.sh"
@@ -112,7 +112,7 @@ echo "  Remaining setup (requires in-game WorldEdit):"
 echo "    - Paste Sakura Spawn hub (docs/DUNGEON_SHELL.md)"
 echo "    - Build dungeon shells in glitch_pve"
 echo "    - Create Red Zone POIs"
-echo "    - Create WorldGuard regions for extraction points"
+echo "    - Create extraction arenas with /koth wand + /koth create"
 echo "    - Create FancyNpcs in hub"
 echo ""
 echo "  Remaining setup (requires premium plugins):"

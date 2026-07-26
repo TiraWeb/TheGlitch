@@ -1,0 +1,55 @@
+# VelKoth Messages — The Glitch (extraction-themed)
+# Uses MiniMessage format: <green>, <gold>, <bold>, <gradient:...>, etc.
+
+prefix: "<gradient:#9b59b6:#8e44ad><bold>[GLITCH]</bold></gradient> <dark_gray>»</dark_gray> "
+
+# Arena lifecycle
+event-start: "<purple>The extraction beacon <gold><arena></gold> has <green>activated</green>! Get to the zone!"
+event-stop: "<purple>The extraction beacon <gold><arena></gold> has <red>deactivated</red>."
+event-paused: "<yellow>The extraction beacon <gold><arena></gold> has been paused."
+event-resumed: "<green>The extraction beacon <gold><arena></gold> has resumed."
+
+# Capture
+capture-start: "<green><player> is extracting from <gold><arena></gold>!"
+capture-contested: "<yellow>The extraction zone is contested!"
+capture-win: "<gold><bold>★</bold></gold> <green><player></green> has completed extraction from <gold><arena></gold>! <gold><bold>★</bold></gold>"
+score-point: "<gray>+1 point <dark_gray>(<aqua><score></aqua>/<aqua><max></aqua>)</dark_gray>"
+
+# Titles
+title-start: "<purple><bold>EXTRACTION</bold></purple>"
+subtitle-start: "<gray>Hold the zone to extract..."
+title-win: "<green><bold>EXTRACTED!</bold></green>"
+subtitle-win: "<gray>You completed the extraction!"
+title-contested: "<yellow><bold>CONTESTED</bold></yellow>"
+subtitle-contested: "<gray>Someone else is in the zone!"
+
+# BossBar
+boss-bar-capturing: "<purple><arena></purple> <dark_gray>|</dark_gray> <green><player></green> extracting <dark_gray>(<time>)</dark_gray>"
+boss-bar-contested: "<purple><arena></purple> <dark_gray>|</dark_gray> <yellow>Contested!</yellow>"
+boss-bar-idle: "<purple><arena></purple> <dark_gray>|</dark_gray> <gray>Waiting for extraction..."
+
+# ActionBar
+action-bar-capturing: "<green>Extracting: <white><time></white> remaining"
+
+# Hologram (disabled by default)
+hologram-lines:
+  - "<gradient:#9b59b6:#8e44ad><bold><arena> Extraction</bold></gradient>"
+  - "<white>Status: <yellow><capturer></yellow>"
+  - "<white>Time: <green><time></green>"
+
+# Admin messages
+arena-created: "<green>Arena <gold><arena></gold> has been created."
+arena-deleted: "<red>Arena <gold><arena></gold> has been deleted."
+arena-not-found: "<red>Arena <gold><arena></gold> not found."
+arena-exists: "<red>Arena <gold><arena></gold> already exists."
+arena-already-active: "<red>Arena <gold><arena></gold> is already running."
+arena-not-active: "<red>Arena <gold><arena></gold> is not running."
+selection-incomplete: "<red>You must set both positions first! Use <gold>/koth wand</gold>."
+position-set: "<green>Position <gold><pos></gold> set at <aqua><x></aqua>, <aqua><y></aqua>, <aqua><z></aqua>."
+wand-given: "<green>Extraction zone selector given! <gray>Left-click for pos1, right-click for pos2."
+reloaded: "<green>Configuration reloaded."
+no-permission: "<red>You don't have permission to do that."
+player-only: "<red>This command can only be run by a player."
+next-scheduled: "<green>The next <gold><arena></gold> extraction starts in <aqua><time></aqua>."
+no-next-scheduled: "<red>There are no scheduled events for <gold><arena></gold>."
+arena-modified: "<green>Arena <gold><arena></gold> property <yellow><property></yellow> set to <white><value></white>."

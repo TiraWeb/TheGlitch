@@ -229,7 +229,7 @@ install_modrinth_plugin "FancyNpcs.jar"          fancynpcs
 install_modrinth_plugin "DeluxeMenus.jar"        deluxemenus
 install_modrinth_plugin "TAB.jar"                tab-was-taken
 install_modrinth_plugin "PlaceholderAPI.jar"     placeholderapi
-install_modrinth_plugin "hCaptureEvent.jar"      hcaptureevent
+install_modrinth_plugin "VelKoth.jar"             velkoth
 install_modrinth_plugin "eco.jar"                eco-plugin
 
 # ---------------------------------------------------------------------------
@@ -319,20 +319,18 @@ if [[ -f "${REPO_DIR}/server/plugins/TAB/config.yml" && ! -f "${PLUGIN_DIR}/TAB/
 fi
 
 # ---------------------------------------------------------------------------
-# Phase 5.8 — seed hCaptureEvent capture zones
-# The plugin loads ALL .yml files in captures/ — zone ID = filename.
-# We place our extraction zones as SEPARATE files (extraction_x1/x2/x3.yml).
-# We do NOT touch the JAR-generated defaults (default.yml, clan.yml).
-# We do NOT seed messages.yml — let the plugin generate its own.
+# Phase 5.8 — seed VelKoth configs (extraction zones)
+# VelKoth generates config.yml, arenas.yml, messages.yml on first boot.
+# We seed our custom messages.yml (extraction-themed) and config.yml.
+# Arenas are created in-game with /koth wand + /koth create.
 # ---------------------------------------------------------------------------
-if [[ -d "${REPO_DIR}/server/plugins/hCaptureEvent/captures" ]]; then
-  log "Phase 5.8 — seeding hCaptureEvent extraction zones"
-  install -d -m 755 "${PLUGIN_DIR}/hCaptureEvent/captures"
-
-  for zone_file in extraction_x1.yml extraction_x2.yml extraction_x3.yml; do
-    if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/captures/${zone_file}" ]]; then
-      install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/captures/${zone_file}" \
-        "${PLUGIN_DIR}/hCaptureEvent/captures/${zone_file}"
+if [[ -d "${REPO_DIR}/server/plugins/VelKoth" ]]; then
+  log "Phase 5.8 — seeding VelKoth configs"
+  install -d -m 755 "${PLUGIN_DIR}/VelKoth"
+  for cfg in config.yml messages.yml arenas.yml; do
+    if [[ -f "${REPO_DIR}/server/plugins/VelKoth/${cfg}" ]]; then
+      install -m 644 "${REPO_DIR}/server/plugins/VelKoth/${cfg}" \
+        "${PLUGIN_DIR}/VelKoth/${cfg}"
     fi
   done
 fi
@@ -445,7 +443,7 @@ cat <<EOF
                Multiverse-Core, Chunky
     Economy:   LuckPerms, EssentialsX, VaultUnlocked, Coins (Glitch Shards)
     Gameplay:  MythicMobs, FancyNpcs, DeluxeMenus, TAB, PlaceholderAPI,
-               hCaptureEvent, eco
+               VelKoth, eco
 
   Restart to load everything:
     ${RESTART_HINT}
