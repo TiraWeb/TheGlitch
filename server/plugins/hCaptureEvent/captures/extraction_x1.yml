@@ -1,34 +1,33 @@
 settings:
   world: "glitch_red"
   region: "extraction_x1"
-  capture-time: 10
+  capture-time: 300
 
 bossbar:
   enable: true
-  title: "&5&lExtracting X1 &7| &f{progress}% &7| &f{timeLeft}s left"
+  title: "&5&lExtract X1 &7| &f{leader} &7| &f{progress}% &7| &f{timeLeft}s"
   color: "PURPLE"
-  style: "SEGMENTED_10"
+  style: "SEGMENTED_20"
 
 messages:
   start:
     - "&r"
-    - "&5&l[GLITCH] &7Extraction beacon &5X1 &7activated! &fGet to the zone."
+    - "&5&l[GLITCH] &fExtraction beacon &5X1 &7activated!"
+    - "&5&l[GLITCH] &7Get to the zone — &f/hcaptureevent start"
     - "&r"
   end:
     - "&r"
-    - "&5&l[GLITCH] &7Extraction beacon &5X1 &7deactivated."
+    - "&5&l[GLITCH] &fExtraction beacon &5X1 &7complete!"
+    - "&5&l[GLITCH] &7Winner: &5{leader} &7({progress}%)"
     - "&r"
   progress:
-    - "&5Extracting &7progress: &f{progress}%"
+    - "&5Extraction &7progress: &f{progress}%"
   leader-change:
     - "&5&l[GLITCH] &fNew leader: &5{leader} &7({progress}%)"
   region-enter:
-    - "&5&l[EXTRACTION] &fYou entered the extraction zone! Stay to channel."
+    - "&5&l[EXTRACTION] &fYou entered the extraction zone!"
   region-leave:
-    - "&c&l[EXTRACTION] &fYou left the zone - progress reset!"
-
-time:
-  enable: false
+    - "&c&l[EXTRACTION] &fYou left the zone!"
 
 sounds:
   start: "BLOCK_BEACON_ACTIVATE"
@@ -39,21 +38,22 @@ sounds:
 particles:
   enable: true
   type: FLAME
-  count: 200
+  count: 300
 
 rewards:
   winner:
     - "eco give %player% 50"
   other-players: []
   seconds:
-    10:
-      - "eco give %player% 50"
-
-actions:
-  enter:
-    - "[Message] &5&l[EXTRACTION] &fStay in the zone to extract. &7{progress}%"
-  exit:
-    - "[Message] &c&l[EXTRACTION] &fExtraction interrupted! You left the zone."
-  seconds:
-    5:
-      - "[Sound] BLOCK_NOTE_BLOCK_PLING:1:1.5"
+    30:
+      - "eco give %player% 10"
+    60:
+      - "eco give %player% 10"
+    120:
+      - "eco give %player% 10"
+    180:
+      - "eco give %player% 10"
+    240:
+      - "eco give %player% 10"
+    300:
+      - "eco give %player% 10"

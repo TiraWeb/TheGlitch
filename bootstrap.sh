@@ -319,32 +319,22 @@ if [[ -f "${REPO_DIR}/server/plugins/TAB/config.yml" && ! -f "${PLUGIN_DIR}/TAB/
 fi
 
 # ---------------------------------------------------------------------------
-# Phase 5.8 — seed hCaptureEvent configs
-# NOTE: config.yml is NOT seeded — the plugin must generate its own default
-# on first boot (our custom config caused an NPE crash).
-# The plugin regenerates default.yml/clan.yml/towny.yml from the JAR on
-# every reload, so we overwrite them with our extraction configs.
-# Custom-named files (extraction_x1.yml etc.) are NOT loaded by the plugin.
+# Phase 5.8 — seed hCaptureEvent capture zones
+# The plugin loads ALL .yml files in captures/ — zone ID = filename.
+# We place our extraction zones as SEPARATE files (extraction_x1/x2/x3.yml).
+# We do NOT touch the JAR-generated defaults (default.yml, clan.yml).
+# We do NOT seed messages.yml — let the plugin generate its own.
 # ---------------------------------------------------------------------------
 if [[ -d "${REPO_DIR}/server/plugins/hCaptureEvent/captures" ]]; then
-  log "Phase 5.8 — seeding hCaptureEvent capture zones"
+  log "Phase 5.8 — seeding hCaptureEvent extraction zones"
   install -d -m 755 "${PLUGIN_DIR}/hCaptureEvent/captures"
 
-  # Overwrite plugin-generated defaults with our extraction configs
-  for mapping in "default.yml:extraction_x1.yml" "clan.yml:extraction_x2.yml" "towny.yml:extraction_x3.yml"; do
-    target="${mapping%%:*}"
-    source="${mapping##*:}"
-    if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/captures/${source}" ]]; then
-      install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/captures/${source}" \
-        "${PLUGIN_DIR}/hCaptureEvent/captures/${target}"
+  for zone_file in extraction_x1.yml extraction_x2.yml extraction_x3.yml; do
+    if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/captures/${zone_file}" ]]; then
+      install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/captures/${zone_file}" \
+        "${PLUGIN_DIR}/hCaptureEvent/captures/${zone_file}"
     fi
   done
-
-  # Seed English messages
-  if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" ]]; then
-    install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" \
-      "${PLUGIN_DIR}/hCaptureEvent/messages.yml"
-  fi
 fi
 
 # ---------------------------------------------------------------------------

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
 # The Glitch — hCaptureEvent reload & verification.
-# The plugin regenerates default.yml/clan.yml/towny.yml from the JAR on
-# every reload. Instead of deleting them, we OVERWRITE them with our
-# extraction configs immediately after reload. Then reload again so the
-# plugin reads our overwritten versions.
+#
+# Zone files (extraction_x1/x2/x3.yml) are placed as SEPARATE zones.
+# The plugin loads ALL .yml files in captures/ — zone ID = filename.
+# We do NOT touch the JAR-generated defaults (default.yml, clanity.yml).
+# We do NOT seed messages.yml — let the plugin generate its own.
 #
 # Run: sudo ./setup-hcaptureevent.sh
 
@@ -39,47 +40,32 @@ for i in {1..60}; do
 done
 log "hCaptureEvent confirmed loaded."
 
-# --- stop events & first reload (triggers JAR extraction of defaults) ------
+# --- stop any running events ------------------------------------------------
 log "Stopping all active events..."
 mc "hcaptureevent stop all" 2>/dev/null || true
 
-log "Initial reload (plugin will extract default zones from JAR)..."
-mc "hcaptureevent reload"
+# --- place extraction zone files -------------------------------------------
+# These are SEPARATE zone files — the plugin scans captures/ and loads all .yml
+log "Placing extraction zone files..."
+install -d -m 755 "${HCE_DIR}/captures"
 
-# --- overwrite plugin defaults with our extraction configs -----------------
-# The plugin always regenerates default.yml/clan.yml/towny.yml from the JAR.
-# We overwrite them with our content AFTER extraction.
-log "Overwriting plugin defaults with extraction zone configs..."
-for mapping in "default.yml:extraction_x1.yml" "clan.yml:extraction_x2.yml" "towny.yml:extraction_x3.yml"; do
-  target="${mapping%%:*}"
-  source="${mapping##*:}"
-  if [[ -f "${REPO_CAPTURES}/${source}" ]]; then
-    log "  ${target} <- ${source}"
-    install -m 644 "${REPO_CAPTURES}/${source}" "${HCE_DIR}/captures/${target}"
+for zone_file in extraction_x1.yml extraction_x2.yml extraction_x3.yml; do
+  if [[ -f "${REPO_CAPTURES}/${zone_file}" ]]; then
+    log "  Installing ${zone_file}"
+    install -m 644 "${REPO_CAPTURES}/${zone_file}" "${HCE_DIR}/captures/${zone_file}"
   else
-    warn "  Source ${source} not found in repo!"
+    warn "  ${zone_file} not found in repo!"
   fi
 done
 
-# --- delete our custom-named files (they never get loaded) ----------------
-for f in extraction_x1.yml extraction_x2.yml extraction_x3.yml; do
-  rm -f "${HCE_DIR}/captures/${f}"
-done
+# --- verify files on disk ---------------------------------------------------
+log "Files in captures/ folder:"
+ls -la "${HCE_DIR}/captures/" 2>/dev/null || warn "(directory missing)"
 
-# --- seed messages.yml (English translations) ------------------------------
-if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" ]]; then
-  log "Seeding messages.yml (English)..."
-  install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" \
-    "${HCE_DIR}/messages.yml"
-fi
-
-# --- second reload (reads our overwritten files) ---------------------------
-log "Final reload..."
+# --- reload plugin ----------------------------------------------------------
+log "Reloading hCaptureEvent..."
 mc "hcaptureevent reload"
-
-# --- verify ----------------------------------------------------------------
-log "Live captures/ contents:"
-ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "(empty)"
+sleep 2
 
 # --- LuckPerms permissions -------------------------------------------------
 log "Setting hCaptureEvent permissions..."
@@ -87,30 +73,34 @@ mc "lp group default permission set hcaptureevent.capture true"
 mc "lp group moderator permission set hcaptureevent.admin true"
 mc "lp group admin permission set hcaptureevent.admin true"
 
+# --- final status -----------------------------------------------------------
 cat <<'EOF'
 
 ============================================================
-  Phase 5.8 — hCaptureEvent reloaded & verified.
+  hCaptureEvent — extraction zones installed
 ============================================================
 
-  Extraction points (Red Zone) — mapped to plugin zone IDs:
-    default  (was X1) — region: extraction_x1
-    clan     (was X2) — region: extraction_x2
-    towny    (was X3) — region: extraction_x3
+  Zone IDs (use these with /hcaptureevent start <id>):
+    extraction_x1   — Extraction Point X1 (region: extraction_x1)
+    extraction_x2   — Extraction Point X2 (region: extraction_x2)
+    extraction_x3   — Extraction Point X3 (region: extraction_x3)
 
-  IMPORTANT: WorldGuard regions MUST exist before zones work.
-  Create them in-game (choose any 3 spots in glitch_red):
+  JAR defaults (untouched):
+    default         — Plugin example zone (region: default)
+    clan            — Plugin clan example (region: clan)
+
+  NEXT STEP — Create WorldGuard regions in-game:
     /mv tp glitch_red
-    //pos1 <x1>,-64,<z1>
-    //pos2 <x2>,320,<z2>
+    //pos1 <x1>,-64,<z1>    (select corner 1)
+    //pos2 <x2>,320,<z2>    (select corner 2)
     /rg define extraction_x1 -w glitch_red
-    (repeat for x2, x3)
-    /hcaptureevent reload
+    /rg define extraction_x2 -w glitch_red
+    /rg define extraction_x3 -w glitch_red
 
   Test in-game:
-    /hcaptureevent start default   (start X1)
-    /hcaptureevent start clan      (start X2)
-    /hcaptureevent start towny     (start X3)
-    /hcaptureevent stop all        (stop all)
+    /hcaptureevent start extraction_x1
+    /hcaptureevent start extraction_x2
+    /hcaptureevent start extraction_x3
+    /hcaptureevent stop all
 ============================================================
 EOF
