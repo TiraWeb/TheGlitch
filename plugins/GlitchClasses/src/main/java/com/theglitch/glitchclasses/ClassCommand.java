@@ -39,9 +39,20 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                     return true;
                 }
                 classManager.setClass(player.getUniqueId(), className);
+                plugin.getAbilityItemManager().giveClassItems(player, className);
                 player.sendMessage(plugin.getComponent("class-selected", "<class>",
                         className.substring(0, 1).toUpperCase() + className.substring(1)));
                 player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
+                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
+            }
+            case "kit" -> {
+                ClassData data = classManager.getClassData(player.getUniqueId());
+                if (data.className().equals("none")) {
+                    player.sendMessage(Component.text("Select a class first!", NamedTextColor.RED));
+                    return true;
+                }
+                plugin.getAbilityItemManager().giveClassItems(player, data.className());
+                player.sendMessage(Component.text("Ability items given!", NamedTextColor.GREEN));
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
             }
             case "info" -> {
@@ -69,7 +80,7 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                         "<shards>", "check TODO"));
             }
             default -> {
-                player.sendMessage(Component.text("Usage: /class [select <class>|info|reset]", NamedTextColor.RED));
+                player.sendMessage(Component.text("Usage: /class [select <class>|info|reset|kit]", NamedTextColor.RED));
             }
         }
         return true;

@@ -9,7 +9,7 @@ softdepend:
 commands:
   class:
     description: Open class selection GUI or view class info
-    usage: /class [select <class>|info|reset|set <player> <class>]
+    usage: /class [select <class>|info|reset|kit]
     permission: glitchclasses.use
   classadmin:
     description: Admin commands for GlitchClasses
