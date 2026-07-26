@@ -4,7 +4,8 @@
 # Run AFTER `bootstrap.sh` + server restart (hCaptureEvent must be loaded):
 #   sudo ./setup-hcaptureevent.sh
 #
-# Reloads extraction point configs and verifies capture zones are registered.
+# Syncs extraction zone files from repo to live server, deletes plugin
+# generated default zones, seeds English messages, and reloads.
 # Safe to re-run.
 
 set -euo pipefail
@@ -12,6 +13,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="/opt/theglitch/server"
 HCE_DIR="${SERVER_DIR}/plugins/hCaptureEvent"
+REPO_CAPTURES="${REPO_DIR}/server/plugins/hCaptureEvent/captures"
 
 log()  { echo -e "\033[1;32m[hce]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[hce]\033[0m $*"; }
@@ -42,14 +44,32 @@ log "hCaptureEvent confirmed loaded."
 log "Stopping all active events..."
 mc "hcaptureevent stop all" 2>/dev/null || true
 
-# --- delete plugin default zones -------------------------------------------
+# --- show BEFORE state -----------------------------------------------------
+log "=== BEFORE cleanup ==="
+log "Live captures/ contents:"
+ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "(empty or missing)"
+log "Repo captures/ contents:"
+ls -1 "${REPO_CAPTURES}/" 2>/dev/null || warn "(empty or missing)"
+
+# --- delete plugin default zones from live server ---------------------------
 # The plugin generates default.yml, clan.yml, towny.yml on first boot.
 # These conflict with our custom extraction zones. Delete them.
+log "Removing plugin default zones from live server..."
 for stale in default.yml clan.yml towny.yml; do
   if [[ -f "${HCE_DIR}/captures/${stale}" ]]; then
-    log "Removing plugin default zone: ${stale}"
+    log "  Deleting: ${HCE_DIR}/captures/${stale}"
     rm -f "${HCE_DIR}/captures/${stale}"
   fi
+done
+
+# --- sync our extraction files from repo to live server --------------------
+log "Syncing extraction zone files from repo to live server..."
+install -d -m 755 "${HCE_DIR}/captures"
+for f in "${REPO_CAPTURES}"/*.yml; do
+  [[ -f "${f}" ]] || continue
+  fname="$(basename "${f}")"
+  log "  Installing: ${fname}"
+  install -m 644 "${f}" "${HCE_DIR}/captures/${fname}"
 done
 
 # --- seed messages.yml (English translations) ------------------------------
@@ -63,17 +83,34 @@ fi
 log "Reloading hCaptureEvent configs..."
 mc "hcaptureevent reload"
 
-# --- verify capture points -------------------------------------------------
-log "Capture point config files:"
-ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "No capture files found!"
+# --- delete defaults AGAIN (plugin may regenerate on reload) ---------------
+log "Checking for regenerating default zones..."
+sleep 1
+for stale in default.yml clan.yml towny.yml; do
+  if [[ -f "${HCE_DIR}/captures/${stale}" ]]; then
+    warn "Plugin regenerated ${stale} — deleting again"
+    rm -f "${HCE_DIR}/captures/${stale}"
+  fi
+done
+
+# --- show AFTER state ------------------------------------------------------
+log "=== AFTER cleanup ==="
+log "Live captures/ contents:"
+ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "(empty or missing)"
+
+# --- second reload to pick up clean state ----------------------------------
+log "Final reload..."
+mc "hcaptureevent reload"
+
+# --- verify with console command -------------------------------------------
+log "Testing zone load (start all)..."
+mc "hcaptureevent start all" 2>/dev/null || true
+sleep 2
+mc "hcaptureevent stop all" 2>/dev/null || true
 
 # --- LuckPerms permissions -------------------------------------------------
 log "Setting hCaptureEvent permissions..."
-
-# All players can participate in extractions
 mc "lp group default permission set hcaptureevent.capture true"
-
-# Staff can admin events
 mc "lp group moderator permission set hcaptureevent.admin true"
 mc "lp group admin permission set hcaptureevent.admin true"
 
@@ -84,28 +121,21 @@ cat <<'EOF'
 ============================================================
 
   Extraction points (Red Zone):
-    X1 — (450, -250)   region: extraction_x1
-    X2 — (-520, 180)   region: extraction_x2
-    X3 — (60, 540)     region: extraction_x3
+    X1 — region: extraction_x1
+    X2 — region: extraction_x2
+    X3 — region: extraction_x3
 
-  Mechanics:
-    - Stand in the WorldGuard region to channel (10s)
-    - Boss bar shows progress
-    - On success: +50 Glitch Shards banked
-    - Cancel if player leaves the region
-    - Particles highlight zone boundaries
+  Plugin default zones have been DELETED.
 
   IMPORTANT: WorldGuard regions MUST exist before zones work.
-  Create them in-game:
+  Create them in-game (choose any 3 spots in glitch_red):
     /mv tp glitch_red
     //pos1 <x1>,-64,<z1>
     //pos2 <x2>,320,<z2>
     /rg define extraction_x1 -w glitch_red
-    (repeat for x2, x3 at your chosen locations)
+    (repeat for x2, x3)
     /hcaptureevent reload
-
-  Plugin default zones (default.yml, clan.yml, towny.yml)
-  have been deleted — only our extraction zones remain.
+    /hcaptureevent start extraction_x1
 
   Test in-game:
     /hcaptureevent start extraction_x1  (start one zone)
