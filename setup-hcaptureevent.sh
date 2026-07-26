@@ -10,6 +10,8 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVER_DIR="/opt/theglitch/server"
+HCE_DIR="${SERVER_DIR}/plugins/hCaptureEvent"
 
 log()  { echo -e "\033[1;32m[hce]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[hce]\033[0m $*"; }
@@ -43,11 +45,10 @@ mc "hcaptureevent stop all" 2>/dev/null || true
 # --- delete plugin default zones -------------------------------------------
 # The plugin generates default.yml, clan.yml, towny.yml on first boot.
 # These conflict with our custom extraction zones. Delete them.
-PLUGIN_DIR="${REPO_DIR}/server/plugins/hCaptureEvent"
 for stale in default.yml clan.yml towny.yml; do
-  if [[ -f "${PLUGIN_DIR}/captures/${stale}" ]]; then
+  if [[ -f "${HCE_DIR}/captures/${stale}" ]]; then
     log "Removing plugin default zone: ${stale}"
-    rm -f "${PLUGIN_DIR}/captures/${stale}"
+    rm -f "${HCE_DIR}/captures/${stale}"
   fi
 done
 
@@ -55,7 +56,7 @@ done
 if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" ]]; then
   log "Seeding messages.yml (English translations)..."
   install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" \
-    "${PLUGIN_DIR}/messages.yml"
+    "${HCE_DIR}/messages.yml"
 fi
 
 # --- reload ----------------------------------------------------------------
@@ -64,7 +65,7 @@ mc "hcaptureevent reload"
 
 # --- verify capture points -------------------------------------------------
 log "Capture point config files:"
-ls -1 "${PLUGIN_DIR}/captures/" 2>/dev/null || warn "No capture files found!"
+ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "No capture files found!"
 
 # --- LuckPerms permissions -------------------------------------------------
 log "Setting hCaptureEvent permissions..."
