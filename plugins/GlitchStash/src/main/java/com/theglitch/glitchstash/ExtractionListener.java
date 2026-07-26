@@ -15,7 +15,7 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
 
     @EventHandler
     public void onExtractionWin(KothWinEvent event) {
-        Player player = event.getPlayer();
+        Player player = event.getWinner();
 
         // Save full inventory to stash
         ItemStack[] contents = player.getInventory().getContents();
@@ -49,7 +49,7 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
                     player.sendMessage(plugin.getComponent("stash-saved"));
                     player.sendMessage(net.kyori.adventure.text.Component.text(
                             "Use /stash to retrieve your items",
-                            net.kyori.adventure.text.Color.NamedTextColor.GRAY));
+                            net.kyori.adventure.text.format.NamedTextColor.GRAY));
                 }
             }, 40L); // 2 second delay
         }
