@@ -161,7 +161,7 @@ public class AbilityListener implements Listener {
         tauntActive.put(player.getUniqueId(), true);
 
         // Apply effects to player
-        player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, duration, 0)); // 20% DR
+        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 0)); // 20% DR
 
         // Make mobs target the player — apply glowing to nearby hostile mobs
         for (Entity entity : player.getNearbyEntities(range, range, range)) {
@@ -171,7 +171,7 @@ public class AbilityListener implements Listener {
 
                 // Slow enemies if level 9
                 if (data.level() >= 9) {
-                    mob.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, duration, 1));
+                    mob.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 1));
                 }
             }
         }
@@ -349,7 +349,7 @@ public class AbilityListener implements Listener {
 
         // Create turret — armor stand with dispenser head
         ArmorStand turret = player.getWorld().spawn(turretLoc, ArmorStand.class);
-        turret.setCustomName(Component.text("TURRET", NamedTextColor.AQUA));
+        turret.setCustomName("§bTURRET");
         turret.setCustomNameVisible(true);
         turret.setGravity(false);
         turret.setInvulnerable(true);
@@ -402,11 +402,10 @@ public class AbilityListener implements Listener {
                 Arrow arrow = turret.getWorld().spawnArrow(eyeLoc, dir, 2.0f, 0.0f);
                 arrow.setShooter(player);
                 arrow.setDamage(damage);
-                arrow.setTicksOnGround(100);
 
                 turret.getWorld().spawnParticle(Particle.SMOKE, turret.getLocation().add(0, 2.2, 0),
                         3, 0.1, 0.1, 0.1, 0.02);
-                turret.getWorld().playSound(turret.getLocation(), Sound.SHOOT_ARROW, 0.5f, 1.5f);
+                turret.getWorld().playSound(turret.getLocation(), Sound.ENTITY_ARROW_SHOOT, 0.5f, 1.5f);
             }
         }, 1L, 1L);
 
@@ -482,7 +481,7 @@ public class AbilityListener implements Listener {
             if (lastUsed == null || now - lastUsed > 60000) { // 60s cooldown
                 lastStandCooldown.put(uuid, now);
                 int duration = 100 + (data.level() >= 6 ? 40 : 0); // 5s base, +2s at level 6
-                player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, duration, 1));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 1));
                 player.sendActionBar(Component.text("LAST STAND", NamedTextColor.RED));
                 player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.5f);
             }
@@ -586,7 +585,7 @@ public class AbilityListener implements Listener {
         if (mob instanceof Vex) return true;
         // Check for MythicMobs by display name
         if (mob.getCustomName() != null) {
-            String name = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(mob.getCustomName());
+            String name = mob.getCustomName();
             return name.contains("Glitch") || name.contains("Corrupted");
         }
         return false;
