@@ -319,19 +319,14 @@ if [[ -f "${REPO_DIR}/server/plugins/TAB/config.yml" && ! -f "${PLUGIN_DIR}/TAB/
 fi
 
 # ---------------------------------------------------------------------------
-# Phase 5.8 — seed VelKoth configs (extraction zones)
-# VelKoth generates config.yml, arenas.yml, messages.yml on first boot.
-# We seed our custom messages.yml (extraction-themed) and config.yml.
-# Arenas are created in-game with /koth wand + /koth create.
+# Phase 5.8 — seed VelKoth configs
+# VelKoth generates arenas.yml on first boot (NEVER overwrite — in-game data).
+# We only seed config.yml and messages.yml with our extraction theme.
 # ---------------------------------------------------------------------------
 if [[ -d "${REPO_DIR}/server/plugins/VelKoth" ]]; then
   log "Phase 5.8 — seeding VelKoth configs"
   install -d -m 755 "${PLUGIN_DIR}/VelKoth"
-  for cfg in config.yml messages.yml arenas.yml; do
-    # Don't overwrite arenas.yml — preserve in-game /koth create results
-    if [[ "${cfg}" == "arenas.yml" && -f "${PLUGIN_DIR}/VelKoth/arenas.yml" ]]; then
-      continue
-    fi
+  for cfg in config.yml messages.yml; do
     if [[ -f "${REPO_DIR}/server/plugins/VelKoth/${cfg}" ]]; then
       install -m 644 "${REPO_DIR}/server/plugins/VelKoth/${cfg}" \
         "${PLUGIN_DIR}/VelKoth/${cfg}"
