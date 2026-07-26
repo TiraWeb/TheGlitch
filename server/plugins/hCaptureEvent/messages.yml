@@ -1,0 +1,31 @@
+# hCaptureEvent — English messages
+# Plugin by dsad12d | Localization for The Glitch server
+
+prefix: "&5&l[GLITCH] &r"
+
+# Event lifecycle messages
+start: "&5&l[GLITCH] &7A capture event has &5started&7!"
+stop: "&5&l[GLITCH] &7A capture event has &5ended&7."
+
+# Player tracking messages
+enter: "&5&l[EXTRACTION] &fYou entered the capture zone!"
+leave: "&c&l[EXTRACTION] &fYou left the capture zone!"
+progress: "&5Progress: &f{progress}%"
+leader-change: "&5&l[GLITCH] &fNew leader: &5{leader} &7({progress}%)"
+
+# Fair play messages
+god-disabled: "&cGod mode has been disabled during the event."
+fly-disabled: "&cFlight has been disabled during the event."
+vanish-disabled: "&cVanish has been disabled during the event."
+
+# Error messages
+no-permission: "&cYou don't have permission to participate."
+not-enough-players: "&7Not enough players to start the event."
+clan-required: "&cYou must be in a clan to participate."
+already-active: "&7This event is already active."
+zone-not-found: "&cCapture zone not found."
+
+# Command messages
+reload-success: "&ahCaptureEvent reloaded successfully."
+start-success: "&aCapture event started."
+stop-success: "&aCapture event stopped."

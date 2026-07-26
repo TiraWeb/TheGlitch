@@ -319,18 +319,33 @@ if [[ -f "${REPO_DIR}/server/plugins/TAB/config.yml" && ! -f "${PLUGIN_DIR}/TAB/
 fi
 
 # ---------------------------------------------------------------------------
-# Phase 5.8 — seed hCaptureEvent configs (once; box's copy wins)
+# Phase 5.8 — seed hCaptureEvent configs
 # NOTE: config.yml is NOT seeded — the plugin must generate its own default
-# on first boot (our custom config caused an NPE crash). Only captures/ zone
-# files are seeded from the repo.
+# on first boot (our custom config caused an NPE crash).
+# Deletes plugin-generated default zones (default.yml, clan.yml, towny.yml)
+# and seeds our custom extraction zones + English messages.
 # ---------------------------------------------------------------------------
 if [[ -d "${REPO_DIR}/server/plugins/hCaptureEvent/captures" ]]; then
   log "Phase 5.8 — seeding hCaptureEvent capture zones"
   install -d -m 755 "${PLUGIN_DIR}/hCaptureEvent/captures"
+
+  # Remove plugin-generated default zones that conflict with ours
+  for stale in default.yml clan.yml towny.yml; do
+    [[ -f "${PLUGIN_DIR}/hCaptureEvent/captures/${stale}" ]] && \
+      rm -f "${PLUGIN_DIR}/hCaptureEvent/captures/${stale}"
+  done
+
+  # Seed our extraction zone files
   for f in "${REPO_DIR}/server/plugins/hCaptureEvent/captures"/*.yml; do
     [[ -f "${f}" ]] || continue
     install -m 644 "${f}" "${PLUGIN_DIR}/hCaptureEvent/captures/"
   done
+
+  # Seed English messages
+  if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" ]]; then
+    install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" \
+      "${PLUGIN_DIR}/hCaptureEvent/messages.yml"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

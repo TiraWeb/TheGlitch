@@ -5,15 +5,35 @@ settings:
   world: "glitch_red"
   region: "extraction_x3"
   capture-time: 10
-
-time:
-  enable: false
+  mode: "player"
+  min-players: 1
 
 bossbar:
   enable: true
-  title: "<purple>Extracting from X3..."
+  title: "&5&lExtracting X3 &7| &f{progress}% &7| &f{timeLeft}s left"
   color: "PURPLE"
   style: "SEGMENTED_10"
+
+messages:
+  start:
+    - "&r"
+    - "&5&l[GLITCH] &7Extraction beacon &5X3 &7activated! &fGet to the zone."
+    - "&r"
+  end:
+    - "&r"
+    - "&5&l[GLITCH] &7Extraction beacon &5X3 &7deactivated."
+    - "&r"
+  progress:
+    - "&5Extracting &7progress: &f{progress}%"
+  leader-change:
+    - "&5&l[GLITCH] &fNew leader: &5{leader} &7({progress}%)"
+  region-enter:
+    - "&5&l[EXTRACTION] &fYou entered the extraction zone! Stay to channel."
+  region-leave:
+    - "&c&l[EXTRACTION] &fYou left the zone — progress reset!"
+
+time:
+  enable: false
 
 sounds:
   start: "BLOCK_BEACON_ACTIVATE"
@@ -22,18 +42,18 @@ sounds:
   win: "UI_TOAST_CHALLENGE_COMPLETE"
 
 particles:
-  enable: false
+  enable: true
+  type: "FLAME"
+  count: 200
 
 actions:
-  start:
-    - "[ActionBar] <purple>Extracting from X3... <white>{progress}%</white>"
   enter:
-    - "[ActionBar] <purple>Extracting from X3... <white>{progress}%</white>"
+    - "[Message] &5&l[EXTRACTION] &fStay in the zone to extract. &7{progress}%"
   exit:
-    - "[ActionBar] <red>Extraction interrupted!"
-  progress:
-    - "[ActionBar] <purple>Extracting... <white>{progress}%</white>"
-  places:
-    1:
+    - "[Message] &c&l[EXTRACTION] &fExtraction interrupted! You left the zone."
+  seconds:
+    5:
+      - "[Sound] BLOCK_NOTE_BLOCK_PLING:1:1.5"
+    10:
       - "[Console] eco give {player} 50"
-      - "[Message] <green>Extraction complete! +50 Glitch Shards banked."
+      - "[Message] &5&l[EXTRACTION] &fExtraction complete! &a+50 Glitch Shards &fbanked."

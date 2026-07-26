@@ -36,13 +36,35 @@ for i in {1..60}; do
 done
 log "hCaptureEvent confirmed loaded."
 
+# --- stop any running events ------------------------------------------------
+log "Stopping all active events..."
+mc "hcaptureevent stop all" 2>/dev/null || true
+
+# --- delete plugin default zones -------------------------------------------
+# The plugin generates default.yml, clan.yml, towny.yml on first boot.
+# These conflict with our custom extraction zones. Delete them.
+PLUGIN_DIR="${REPO_DIR}/server/plugins/hCaptureEvent"
+for stale in default.yml clan.yml towny.yml; do
+  if [[ -f "${PLUGIN_DIR}/captures/${stale}" ]]; then
+    log "Removing plugin default zone: ${stale}"
+    rm -f "${PLUGIN_DIR}/captures/${stale}"
+  fi
+done
+
+# --- seed messages.yml (English translations) ------------------------------
+if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" ]]; then
+  log "Seeding messages.yml (English translations)..."
+  install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" \
+    "${PLUGIN_DIR}/messages.yml"
+fi
+
 # --- reload ----------------------------------------------------------------
 log "Reloading hCaptureEvent configs..."
 mc "hcaptureevent reload"
 
 # --- verify capture points -------------------------------------------------
 log "Capture point config files:"
-ls -1 "${REPO_DIR}/server/plugins/hCaptureEvent/captures/"
+ls -1 "${PLUGIN_DIR}/captures/" 2>/dev/null || warn "No capture files found!"
 
 # --- LuckPerms permissions -------------------------------------------------
 log "Setting hCaptureEvent permissions..."
@@ -70,13 +92,22 @@ cat <<'EOF'
     - Boss bar shows progress
     - On success: +50 Glitch Shards banked
     - Cancel if player leaves the region
+    - Particles highlight zone boundaries
 
-  Important: The WorldGuard regions (extraction_x1, etc.) must be
-  created in-game with /rg define. The capture files reference these
-  region names. Until regions exist, the capture points won't activate.
+  IMPORTANT: WorldGuard regions MUST exist before zones work.
+  Create them in-game:
+    /mv tp glitch_red
+    //pos1 <x1>,-64,<z1>
+    //pos2 <x2>,320,<z2>
+    /rg define extraction_x1 -w glitch_red
+    (repeat for x2, x3 at your chosen locations)
+    /hcaptureevent reload
+
+  Plugin default zones (default.yml, clan.yml, towny.yml)
+  have been deleted — only our extraction zones remain.
 
   Test in-game:
-    /hcaptureevent start    (start all events)
-    /hcaptureevent stop     (stop all events)
+    /hcaptureevent start extraction_x1  (start one zone)
+    /hcaptureevent stop all             (stop all events)
 ============================================================
 EOF
