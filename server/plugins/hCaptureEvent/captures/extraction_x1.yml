@@ -1,12 +1,7 @@
-# The Glitch — Extraction Point X1 (450, -250) in glitch_red
-# Players stand in this WorldGuard region to channel extraction
-
 settings:
   world: "glitch_red"
   region: "extraction_x1"
   capture-time: 10
-  mode: "player"
-  min-players: 1
 
 bossbar:
   enable: true
@@ -30,7 +25,7 @@ messages:
   region-enter:
     - "&5&l[EXTRACTION] &fYou entered the extraction zone! Stay to channel."
   region-leave:
-    - "&c&l[EXTRACTION] &fYou left the zone — progress reset!"
+    - "&c&l[EXTRACTION] &fYou left the zone - progress reset!"
 
 time:
   enable: false
@@ -43,8 +38,16 @@ sounds:
 
 particles:
   enable: true
-  type: "FLAME"
+  type: FLAME
   count: 200
+
+rewards:
+  winner:
+    - "eco give %player% 50"
+  other-players: []
+  seconds:
+    10:
+      - "eco give %player% 50"
 
 actions:
   enter:
@@ -54,6 +57,3 @@ actions:
   seconds:
     5:
       - "[Sound] BLOCK_NOTE_BLOCK_PLING:1:1.5"
-    10:
-      - "[Console] eco give {player} 50"
-      - "[Message] &5&l[EXTRACTION] &fExtraction complete! &a+50 Glitch Shards &fbanked."

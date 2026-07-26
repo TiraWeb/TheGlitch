@@ -50,6 +50,9 @@ log "Live captures/ contents:"
 ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "(empty or missing)"
 log "Repo captures/ contents:"
 ls -1 "${REPO_CAPTURES}/" 2>/dev/null || warn "(empty or missing)"
+log "--- config.yml contents ---"
+cat "${HCE_DIR}/config.yml" 2>/dev/null || warn "(no config.yml)"
+log "--- end config.yml ---"
 
 # --- delete plugin default zones from live server ---------------------------
 # The plugin generates default.yml, clan.yml, towny.yml on first boot.
