@@ -36,6 +36,7 @@ public class ClassGUI implements Listener {
     private static final NamespacedKey PAGE_KEY = new NamespacedKey(GlitchClasses.getInstance(), "page");
 
     private static final Map<UUID, String> openClassSessions = new HashMap<>();
+    private static final Set<UUID> switchingGui = new HashSet<>();
 
     private final GlitchClasses plugin;
     private final ClassManager classManager;
@@ -408,6 +409,7 @@ public class ClassGUI implements Listener {
         int[] classSlots = {10, 11, 12, 13};
         for (int i = 0; i < classSlots.length; i++) {
             if (slot == classSlots[i]) {
+                switchingGui.add(player.getUniqueId());
                 openUpgradeMenu(player, CLASS_ORDER[i]);
                 return;
             }
@@ -417,6 +419,7 @@ public class ClassGUI implements Listener {
         int[] upgradeSlots = {37, 38, 39, 40};
         for (int i = 0; i < upgradeSlots.length; i++) {
             if (slot == upgradeSlots[i]) {
+                switchingGui.add(player.getUniqueId());
                 openUpgradeMenu(player, CLASS_ORDER[i]);
                 return;
             }
@@ -431,6 +434,7 @@ public class ClassGUI implements Listener {
     private void handleUpgradeMenuClick(Player player, int slot, ClassData data, String className) {
         // Back button — slot 45
         if (slot == 45) {
+            switchingGui.add(player.getUniqueId());
             openMainMenu(player);
             return;
         }
@@ -450,6 +454,7 @@ public class ClassGUI implements Listener {
 
     private void handleClassSelect(Player player, String className) {
         classManager.setClass(player.getUniqueId(), className);
+        switchingGui.add(player.getUniqueId());
         player.closeInventory();
         player.sendMessage(plugin.getComponent("class-selected", "<class>", className.substring(0, 1).toUpperCase() + className.substring(1)));
 
@@ -469,6 +474,7 @@ public class ClassGUI implements Listener {
         // Check shards (simplified — just check inventory for echo shards)
         // In a real implementation, this would check the Coins plugin balance
         classManager.resetClass(player.getUniqueId());
+        switchingGui.add(player.getUniqueId());
         player.closeInventory();
         player.sendMessage(plugin.getComponent("class-reset"));
 
@@ -503,7 +509,9 @@ public class ClassGUI implements Listener {
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
-        openClassSessions.remove(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+        if (switchingGui.remove(uuid)) return;
+        openClassSessions.remove(uuid);
     }
 
     private String getColorName(String className) {
