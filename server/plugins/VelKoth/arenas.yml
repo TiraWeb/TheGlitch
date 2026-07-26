@@ -5,7 +5,7 @@
 arenas:
   extraction_x1:
     display-name: "Extraction Zone X1"
-    world: glitch_pve
+    world: glitch_red
     region-type: CUBOID
     pos1:
       - 150.0
@@ -24,7 +24,7 @@ arenas:
 
   extraction_x2:
     display-name: "Extraction Zone X2"
-    world: glitch_pve
+    world: glitch_red
     region-type: CUBOID
     pos1:
       - 150.0
@@ -43,7 +43,7 @@ arenas:
 
   extraction_x3:
     display-name: "Extraction Zone X3"
-    world: glitch_pve
+    world: glitch_red
     region-type: CUBOID
     pos1:
       - -150.0

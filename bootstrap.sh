@@ -328,6 +328,10 @@ if [[ -d "${REPO_DIR}/server/plugins/VelKoth" ]]; then
   log "Phase 5.8 — seeding VelKoth configs"
   install -d -m 755 "${PLUGIN_DIR}/VelKoth"
   for cfg in config.yml messages.yml arenas.yml; do
+    # Don't overwrite arenas.yml — preserve in-game /koth create results
+    if [[ "${cfg}" == "arenas.yml" && -f "${PLUGIN_DIR}/VelKoth/arenas.yml" ]]; then
+      continue
+    fi
     if [[ -f "${REPO_DIR}/server/plugins/VelKoth/${cfg}" ]]; then
       install -m 644 "${REPO_DIR}/server/plugins/VelKoth/${cfg}" \
         "${PLUGIN_DIR}/VelKoth/${cfg}"
