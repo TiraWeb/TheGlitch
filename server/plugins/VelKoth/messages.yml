@@ -1,22 +1,23 @@
 # VelKoth Messages — The Glitch (extraction-themed)
-# Uses MiniMessage format: <green>, <gold>, <bold>, <gradient:...>, etc.
+# MiniMessage format confirmed from MessagesConfig.java source
+# Uses same tags as plugin defaults: <gold>, <green>, <gray>, <dark_gray>, etc.
 
-prefix: "<gradient:#9b59b6:#8e44ad><bold>[GLITCH]</bold></gradient> <dark_gray>»</dark_gray> "
+prefix: "<dark_purple><bold>[GLITCH]</bold></dark_purple> <dark_gray>\u00bb</dark_gray> "
 
 # Arena lifecycle
-event-start: "<purple>The extraction beacon <gold><arena></gold> has <green>activated</green>! Get to the zone!"
-event-stop: "<purple>The extraction beacon <gold><arena></gold> has <red>deactivated</red>."
+event-start: "<dark_purple>The extraction beacon <gold><arena></gold> has <green>activated</green>! Get to the zone!"
+event-stop: "<dark_purple>The extraction beacon <gold><arena></gold> has <red>deactivated</red>."
 event-paused: "<yellow>The extraction beacon <gold><arena></gold> has been paused."
 event-resumed: "<green>The extraction beacon <gold><arena></gold> has resumed."
 
 # Capture
 capture-start: "<green><player> is extracting from <gold><arena></gold>!"
 capture-contested: "<yellow>The extraction zone is contested!"
-capture-win: "<gold><bold>★</bold></gold> <green><player></green> has completed extraction from <gold><arena></gold>! <gold><bold>★</bold></gold>"
+capture-win: "<gold><bold>\u2606</bold></gold> <green><player></green> has completed extraction from <gold><arena></gold>! <gold><bold>\u2606</bold></gold>"
 score-point: "<gray>+1 point <dark_gray>(<aqua><score></aqua>/<aqua><max></aqua>)</dark_gray>"
 
 # Titles
-title-start: "<purple><bold>EXTRACTION</bold></purple>"
+title-start: "<dark_purple><bold>EXTRACTION</bold></dark_purple>"
 subtitle-start: "<gray>Hold the zone to extract..."
 title-win: "<green><bold>EXTRACTED!</bold></green>"
 subtitle-win: "<gray>You completed the extraction!"
@@ -24,16 +25,31 @@ title-contested: "<yellow><bold>CONTESTED</bold></yellow>"
 subtitle-contested: "<gray>Someone else is in the zone!"
 
 # BossBar
-boss-bar-capturing: "<purple><arena></purple> <dark_gray>|</dark_gray> <green><player></green> extracting <dark_gray>(<time>)</dark_gray>"
-boss-bar-contested: "<purple><arena></purple> <dark_gray>|</dark_gray> <yellow>Contested!</yellow>"
-boss-bar-idle: "<purple><arena></purple> <dark_gray>|</dark_gray> <gray>Waiting for extraction..."
+boss-bar-capturing: "<gold><arena></gold> <dark_gray>|</dark_gray> <green><player></green> extracting <dark_gray>(<time>)</dark_gray>"
+boss-bar-contested: "<gold><arena></gold> <dark_gray>|</dark_gray> <yellow>Contested!</yellow>"
+boss-bar-idle: "<gold><arena></gold> <dark_gray>|</dark_gray> <gray>Waiting for capture..."
 
 # ActionBar
 action-bar-capturing: "<green>Extracting: <white><time></white> remaining"
 
-# Hologram (disabled by default)
+# Scoreboard (disabled — we use TAB)
+scoreboard-title: "<dark_purple><bold>The Glitch</bold></dark_purple>"
+scoreboard-lines-active:
+  - "<gray>----------------------"
+  - "<white>Arena: <gold><arena></gold>"
+  - ""
+  - "<white>Status: <yellow><capturer></yellow>"
+  - "<white>Time: <green><time></green>"
+  - "<gray>----------------------"
+scoreboard-lines-idle:
+  - "<gray>----------------------"
+  - "<white>No active events."
+  - "<gray>Waiting for next start..."
+  - "<gray>----------------------"
+
+# Hologram (disabled)
 hologram-lines:
-  - "<gradient:#9b59b6:#8e44ad><bold><arena> Extraction</bold></gradient>"
+  - "<dark_purple><bold><arena> Extraction</bold></dark_purple>"
   - "<white>Status: <yellow><capturer></yellow>"
   - "<white>Time: <green><time></green>"
 

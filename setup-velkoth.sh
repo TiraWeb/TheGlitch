@@ -53,24 +53,29 @@ cat <<'EOF'
   VelKoth is the extraction zone system for The Glitch.
   Players hold a capture zone to extract loot.
 
-  Creating extraction arenas (in-game as OP):
-    /koth wand               — get selection tool
-    /koth create extraction_x1  — create arena from selection
-    /koth set time extraction_x1 300  — 5 min extraction
-    /koth set graceperiod extraction_x1 5  — 5 sec grace
+  IMPORTANT: Creating an arena is NOT enough!
+  You must START the event for capture to work:
+    /koth start extraction_x1
 
-  Managing arenas:
-    /koth start extraction_x1    — manually start an event
-    /koth stop extraction_x1     — stop an event
-    /koth list                — list all arenas
+  Arena commands:
+    /koth wand                     — get selection tool
+    /koth create extraction_x1     — create arena from selection
+    /koth set time extraction_x1 300  — 5 min extraction
+    /koth set grace extraction_x1 5   — 5 sec grace period
+    /koth start extraction_x1      — START the event (required!)
+    /koth stop extraction_x1       — stop the event
+    /koth list                     — list all arenas
 
   Config files (seeded from repo):
-    /opt/theglitch/server/plugins/VelKoth/config.yml
-    /opt/theglitch/server/plugins/VelKoth/messages.yml
-    /opt/theglitch/server/plugins/VelKoth/arenas.yml (auto-generated)
+    plugins/VelKoth/config.yml
+    plugins/VelKoth/messages.yml
+    plugins/VelKoth/arenas.yml
 
-  After creating arenas, test extraction:
-    /koth start extraction_x1
-    Walk into the zone, hold for 300s, extract!
+  Troubleshooting:
+    - If boss bar shows %purple% or broken text, restart the server
+      to reload corrected messages.yml
+    - If capture doesn't trigger, make sure event is started:
+      /koth start extraction_x1
+    - Check server log for "VelKoth enabled in Xms — N arenas loaded"
 ============================================================
 EOF

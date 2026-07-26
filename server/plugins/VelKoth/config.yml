@@ -1,7 +1,6 @@
-# VelKoth Configuration — The Glitch (extraction zones)
-# Docs: https://github.com/Velmax-Studios/VelKoth
+# VelKoth Configuration — The Glitch
+# Generated from PluginConfig.java source
 
-# Database (SQLite for single-server)
 database:
   type: SQLITE
   host: localhost
@@ -11,7 +10,6 @@ database:
   password: ""
   pool-size: 5
 
-# Default capture settings for new arenas
 capture-defaults:
   capture-time: 300
   grace-period: 5
@@ -19,7 +17,6 @@ capture-defaults:
   max-score: 300
   contest-enabled: true
 
-# Display settings
 display:
   boss-bar-enabled: true
   action-bar-enabled: true
@@ -28,12 +25,9 @@ display:
   particles-enabled: true
   scoreboard-enabled: false
   show-idle-scoreboard: false
-  override-other-scoreboards: false
+  override-other-scoreboards: true
   hologram-enabled: false
   hologram-y-offset: 3.0
 
-# Timezone
 schedule-timezone: UTC
-
-# No automatic schedule — events started manually
 schedule: []
