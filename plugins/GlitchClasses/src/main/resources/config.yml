@@ -1,0 +1,170 @@
+# GlitchClasses — The Glitch Class System
+# 4 classes: Vanguard, Warden, Specter, Operator
+
+# Maximum class level
+max-level: 10
+
+# Cost in shards to reset class (0 = free)
+reset-cost: 500
+
+# Cooldown reduction per level (percentage)
+cooldown-reduction-per-level: 3
+
+# Class definitions
+classes:
+  vanguard:
+    display-name: "<red><bold>Vanguard</bold></red>"
+    description: "<gray>Hold the line. Protect your team.</gray>"
+    icon: "SHIELD"
+    color: "RED"
+    role: "Tank"
+  warden:
+    display-name: "<green><bold>Warden</bold></green>"
+    description: "<gray>Keep everyone alive. You are the reason they extract.</gray>"
+    icon: "GOLDEN_APPLE"
+    color: "GREEN"
+    role: "Support"
+  specter:
+    display-name: "<dark_purple><bold>Specter</bold></dark_purple>"
+    description: "<gray>Get in, get rich, get out. They never see you.</gray>"
+    icon: "ENDER_EYE"
+    color: "DARK_PURPLE"
+    role: "Stealth"
+  operator:
+    display-name: "<aqua><bold>Operator</bold></aqua>"
+    description: "<gray>Control the fight before it starts.</gray>"
+    icon: "REDSTONE"
+    color: "AQUA"
+    role: "Tech"
+
+# Ability definitions
+abilities:
+  vanguard:
+    prime:
+      name: "Shield Wall"
+      description: "Deploy a barrier that absorbs 200 damage"
+      icon: "BARRIER"
+      cooldown: 30
+    tactical:
+      name: "Taunt"
+      description: "Force mobs to target you for 5s, +20% damage reduction"
+      icon: "RED_BED"
+      cooldown: 15
+    trait1:
+      name: "Ironclad"
+      description: "Knockback resistance while holding a shield"
+      icon: "IRON_CHESTPLATE"
+    trait2:
+      name: "Last Stand"
+      description: "Below 30% HP: +40% damage resistance for 5s"
+      icon: "TOTEM_OF_UNDYING"
+  warden:
+    prime:
+      name: "Healing Pulse"
+      description: "Burst heal allies within 8 blocks for 40 HP"
+      icon: "GLISTERING_MELON_SLICE"
+      cooldown: 25
+    tactical:
+      name: "Revive Beacon"
+      description: "Place a beacon that revives downed allies"
+      icon: "BEACON"
+      cooldown: 20
+    trait1:
+      name: "Mend"
+      description: "When you eat food, nearby allies also heal 10 HP"
+      icon: "BREAD"
+    trait2:
+      name: "Vigilance"
+      description: "See ally health bars through walls within 20 blocks"
+      icon: "SPECTRAL_ARROW"
+  specter:
+    prime:
+      name: "Cloak"
+      description: "Turn invisible for 5s. Attacking or taking damage breaks it"
+      icon: "PHANTOM_MEMBRANE"
+      cooldown: 30
+    tactical:
+      name: "Shadow Step"
+      description: "Teleport 10 blocks forward (line of sight)"
+      icon: "ENDER_PEARL"
+      cooldown: 12
+    trait1:
+      name: "Lightweight"
+      description: "+15% movement speed, -10% fall damage"
+      icon: "FEATHER"
+    trait2:
+      name: "Scavenge"
+      description: "+20% loot from containers, +1 inventory slot"
+      icon: "CHEST"
+  operator:
+    prime:
+      name: "Turret Deploy"
+      description: "Place an auto-targeting turret for 15s"
+      icon: "DISPENSER"
+      cooldown: 40
+    tactical:
+      name: "EMP Grenade"
+      description: "Disable mob abilities in 6-block radius for 5s"
+      icon: "ENDER_PEARL"
+      cooldown: 15
+    trait1:
+      name: "Engineer"
+      description: "Repair turrets and barriers by right-clicking them"
+      icon: "ANVIL"
+    trait2:
+      name: "Overclock"
+      description: "Turret fires 25% faster, EMP duration +2s"
+      icon: "CLOCK"
+
+# Upgrade scaling (per level)
+upgrades:
+  vanguard:
+    - "+5% melee damage"
+    - "+10 HP"
+    - "Shield Wall cooldown -5s"
+    - "Taunt range +5 blocks"
+    - "+1 armor tier"
+    - "Last Stand duration +2s"
+    - "+10% damage while Last Stand active"
+    - "Shield Wall absorbs +100 damage"
+    - "Taunt slows enemies by 30%"
+    - "ULTIMATE: Fortress — Shield Wall becomes indestructible for 3s"
+  warden:
+    - "+5% healing potency"
+    - "+10 HP"
+    - "Healing Pulse radius +3 blocks"
+    - "Revive Beacon placement speed -1s"
+    - "Mend also gives Absorption I for 10s"
+    - "Healing Pulse cooldown -5s"
+    - "+10% healing potency (total 15%)"
+    - "Revive Beacon can revive 2 allies"
+    - "Vigilance shows enemy health bars"
+    - "ULTIMATE: Guardian Angel — prevent ally death once per 120s"
+  specter:
+    - "+5% movement speed"
+    - "+5 HP"
+    - "Cloak duration +2s"
+    - "Shadow Step range +5 blocks"
+    - "+10% loot from containers (total 30%)"
+    - "Cloak cooldown -5s"
+    - "Lightweight now +20% movement speed"
+    - "Shadow Step can be used twice before cooldown"
+    - "Scavenge now +30% loot and +2 inventory slots"
+    - "ULTIMATE: Ghost Protocol — 10s undetectable, 2x speed"
+  operator:
+    - "+5% turret damage"
+    - "+10 HP"
+    - "Turret duration +5s"
+    - "EMP Grenade radius +3 blocks"
+    - "+1 turret charge (can place 2 turrets)"
+    - "Turret damage +25% (total 30%)"
+    - "EMP Grenade slows enemies by 40% for 3s"
+    - "Turret gains 50 HP shield"
+    - "Overclock +50% turret fire rate"
+    - "ULTIMATE: Overload — Turret explodes for 80 damage, spawns new turret"
+
+# GUI settings
+gui:
+  title: "<dark_purple><bold>CHOOSE YOUR CLASS</bold></dark_purple>"
+  border-material: "BLACK_STAINED_GLASS_PANE"
+  class-selected-glow: true

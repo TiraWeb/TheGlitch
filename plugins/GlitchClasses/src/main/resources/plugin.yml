@@ -1,0 +1,25 @@
+name: GlitchClasses
+version: '${project.version}'
+main: com.theglitch.glitchclasses.GlitchClasses
+api-version: '1.21'
+description: Class system for The Glitch — Vanguard, Warden, Specter, Operator
+softdepend:
+  - LuckPerms
+
+commands:
+  class:
+    description: Open class selection GUI or view class info
+    usage: /class [select <class>|info|reset|set <player> <class>]
+    permission: glitchclasses.use
+  classadmin:
+    description: Admin commands for GlitchClasses
+    usage: /classadmin <reload|set <player> <class> <level>|reset <player>>
+    permission: glitchclasses.admin
+
+permissions:
+  glitchclasses.use:
+    description: Access class commands
+    default: true
+  glitchclasses.admin:
+    description: Admin class commands
+    default: op

@@ -1,0 +1,50 @@
+# GlitchClasses Messages — The Glitch (MiniMessage format)
+
+# Class selection
+class-selected: "<green>You are now a <class>!</green>"
+class-already: "<gray>You are already a <class>.</gray>"
+class-none: "<gray>You have not chosen a class yet. Use <gold>/class</gold> to choose.</gray>"
+class-reset: "<gold>Class reset! Choose a new class with /class</gold>"
+class-reset-cost: "<red>Class reset costs <gold><cost> shards</gold>. You have <gold><shards></gold>.</red>"
+class-not-found: "<red>Unknown class: <gold><class></gold></red>"
+
+# Upgrades
+level-up: "<green><bold>LEVEL UP!</bold></green> <gold>You are now level <level> <class></gold>!"
+upgrade-available: "<gold>Upgrade available! Use /class to view your upgrades.</gold>"
+ability-locked: "<red>Ability locked. Reach level <level> to unlock.</red>"
+ability-cooldown: "<red>Ability on cooldown: <gold><seconds>s</gold></red>"
+ability-ready: "<green><ability> is ready!</green>"
+no-class: "<red>You need a class to use abilities. Use /class to choose.</red>"
+max-level: "<dark_purple><bold>MAX LEVEL!</bold></dark_purple> <gray>You have mastered the <class>.</gray>"
+
+# Ability feedback
+shield-wall-placed: "<red><bold>SHIELD WALL DEPLOYED!</bold></red>"
+taunt-activated: "<red><bold>TAUNT!</bold></red> <gray>Mobs are targeting you!</gray>"
+healing-pulse: "<green><bold>HEALING PULSE!</bold></green> <gray>Allies healed!</gray>"
+revive-placed: "<green>Revive beacon placed. Allies will revive in 3s.</green>"
+cloak-activated: "<dark_purple><bold>INVISIBLE</bold></dark_purple>"
+shadow-step: "<dark_purple>Shadow Step!</dark_purple>"
+turret-placed: "<aqua>Turret deployed.</aqua>"
+emp-thrown: "<aqua>EMP Grenade thrown!</aqua>"
+ultimate-ready: "<gold><bold>ULTIMATE READY!</bold></gold> <gray>Press <key> to activate.</gray>"
+ultimate-activated: "<gold><bold>ULTIMATE ACTIVATED!</bold></gold>"
+
+# Admin
+admin-set: "<green>Set <player> to <class> level <level>.</green>"
+admin-reset: "<green>Reset class for <player>.</green>"
+admin-reloaded: "<green>GlitchClasses reloaded.</green>"
+admin-usage: "<red>Usage: /classadmin <set|reset|reload> [player] [class] [level]</red>"
+
+# GUI
+gui-select: "<gray>Click to select this class</gray>"
+gui-current: "<green><bold>YOUR CLASS</bold></green>"
+gui-level: "<gold>Level <level>/<max></gold>"
+gui-xp: "<gray>XP: <current>/<needed></gray>"
+gui-role: "<gray>Role: <role></gray>"
+gui-ability-locked: "<red>LOCKED</red>"
+gui-ability-unlocked: "<green>UNLOCKED</green>"
+gui-ultimate: "<gold><bold>ULTIMATE</bold></gold>"
+gui-upgrade: "<gold>Click to upgrade (<cost> shards)</gold>"
+gui-no-upgrade: "<red>Not enough shards or max level</red>"
+gui-reset: "<red>Click to reset class (<cost> shards)</red>"
+gui-back: "<gray>Back to class selection</gray>"
