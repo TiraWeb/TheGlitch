@@ -28,31 +28,46 @@ log "Building GlitchStash..."
 
 # Copy VelKoth JAR for compilation
 mkdir -p "${PLUGIN_DIR}/lib"
-VElkOTH_RESOLVED=$(ls ${VElkOTH_JAR} 2>/dev/null | head -1)
+VElkOTH_RESOLVED=$(ls ${VElkOTH_JAR} 2>/dev/null | head -1 || true)
 if [[ -z "${VElkOTH_RESOLVED}" ]]; then
     warn "VelKoth JAR not found at ${VElkOTH_JAR}"
-    warn "Downloading from Modrinth..."
-    # Download latest VelKoth from Modrinth API
-    VELKOTH_URL=$(curl -s "https://api.modrinth.com/v2/project/velkoth/version?game_versions=%5B%221.21.4%22%5D&loaders=%5B%22paper%22%5D" \
+    warn "Attempting download from Modrinth..."
+    VELKOTH_URL=$(curl -sf "https://api.modrinth.com/v2/project/velkoth/version?game_versions=%5B%221.21.4%22%5D&loaders=%5B%22paper%22%5D" \
         | python3 -c "import sys,json; vs=json.load(sys.stdin); print(vs[0]['files'][0]['url'])" 2>/dev/null || true)
     if [[ -n "${VELKOTH_URL}" ]]; then
-        curl -L -o "${PLUGIN_DIR}/lib/VelKoth.jar" "${VELKOTH_URL}"
+        curl -L -f -o "${PLUGIN_DIR}/lib/VelKoth.jar" "${VELKOTH_URL}" || die "Failed to download VelKoth"
         log "VelKoth downloaded."
     else
-        die "Cannot download VelKoth. Please manually place VelKoth.jar in ${PLUGIN_DIR}/lib/"
+        # Try without version filter
+        warn "Trying without version filter..."
+        VELKOTH_URL=$(curl -sf "https://api.modrinth.com/v2/project/velkoth/version?loaders=%5B%22paper%22%5D" \
+            | python3 -c "import sys,json; vs=json.load(sys.stdin); print(vs[0]['files'][0]['url'])" 2>/dev/null || true)
+        if [[ -n "${VELKOTH_URL}" ]]; then
+            curl -L -f -o "${PLUGIN_DIR}/lib/VelKoth.jar" "${VELKOTH_URL}" || die "Failed to download VelKoth"
+            log "VelKoth downloaded."
+        else
+            die "Cannot download VelKoth. Place VelKoth.jar manually in ${PLUGIN_DIR}/lib/"
+        fi
     fi
 else
     cp "${VElkOTH_RESOLVED}" "${PLUGIN_DIR}/lib/VelKoth.jar"
     log "VelKoth JAR copied for compilation."
 fi
 
+# Verify the JAR exists
+[[ -f "${PLUGIN_DIR}/lib/VelKoth.jar" ]] || die "VelKoth.jar not found in ${PLUGIN_DIR}/lib/"
+
 # Build
 cd "${PLUGIN_DIR}"
-mvn clean package -q -DskipTests
+log "Running Maven build..."
+if ! mvn clean package -DskipTests 2>&1; then
+    die "Maven build failed. Check output above for errors."
+fi
 
 if [[ ! -f "${OUTPUT_JAR}" ]]; then
     die "Build failed — JAR not found at ${OUTPUT_JAR}"
 fi
+log "Build successful: ${OUTPUT_JAR}"
 
 # Deploy to server
 DEPLOY_DIR="${SERVER_DIR}/plugins"
