@@ -322,23 +322,22 @@ fi
 # Phase 5.8 — seed hCaptureEvent configs
 # NOTE: config.yml is NOT seeded — the plugin must generate its own default
 # on first boot (our custom config caused an NPE crash).
-# Deletes plugin-generated default zones (default.yml, clan.yml, towny.yml)
-# and seeds our custom extraction zones + English messages.
+# The plugin regenerates default.yml/clan.yml/towny.yml from the JAR on
+# every reload, so we overwrite them with our extraction configs.
+# Custom-named files (extraction_x1.yml etc.) are NOT loaded by the plugin.
 # ---------------------------------------------------------------------------
 if [[ -d "${REPO_DIR}/server/plugins/hCaptureEvent/captures" ]]; then
   log "Phase 5.8 — seeding hCaptureEvent capture zones"
   install -d -m 755 "${PLUGIN_DIR}/hCaptureEvent/captures"
 
-  # Remove plugin-generated default zones that conflict with ours
-  for stale in default.yml clan.yml towny.yml; do
-    [[ -f "${PLUGIN_DIR}/hCaptureEvent/captures/${stale}" ]] && \
-      rm -f "${PLUGIN_DIR}/hCaptureEvent/captures/${stale}"
-  done
-
-  # Seed our extraction zone files
-  for f in "${REPO_DIR}/server/plugins/hCaptureEvent/captures"/*.yml; do
-    [[ -f "${f}" ]] || continue
-    install -m 644 "${f}" "${PLUGIN_DIR}/hCaptureEvent/captures/"
+  # Overwrite plugin-generated defaults with our extraction configs
+  for mapping in "default.yml:extraction_x1.yml" "clan.yml:extraction_x2.yml" "towny.yml:extraction_x3.yml"; do
+    target="${mapping%%:*}"
+    source="${mapping##*:}"
+    if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/captures/${source}" ]]; then
+      install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/captures/${source}" \
+        "${PLUGIN_DIR}/hCaptureEvent/captures/${target}"
+    fi
   done
 
   # Seed English messages

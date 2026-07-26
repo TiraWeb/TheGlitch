@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
 # The Glitch — hCaptureEvent reload & verification.
-# Run AFTER `bootstrap.sh` + server restart (hCaptureEvent must be loaded):
-#   sudo ./setup-hcaptureevent.sh
+# The plugin regenerates default.yml/clan.yml/towny.yml from the JAR on
+# every reload. Instead of deleting them, we OVERWRITE them with our
+# extraction configs immediately after reload. Then reload again so the
+# plugin reads our overwritten versions.
 #
-# Syncs extraction zone files from repo to live server, deletes plugin
-# generated default zones, seeds English messages, and reloads.
-# Safe to re-run.
+# Run: sudo ./setup-hcaptureevent.sh
 
 set -euo pipefail
 
@@ -31,7 +31,6 @@ for i in {1..30}; do
   sleep 5
 done
 
-# Verify hCaptureEvent is loaded
 log "Waiting for hCaptureEvent to load..."
 for i in {1..60}; do
   if mc "plugins" 2>/dev/null | grep -qi "hCaptureEvent"; then break; fi
@@ -40,76 +39,47 @@ for i in {1..60}; do
 done
 log "hCaptureEvent confirmed loaded."
 
-# --- stop any running events ------------------------------------------------
+# --- stop events & first reload (triggers JAR extraction of defaults) ------
 log "Stopping all active events..."
 mc "hcaptureevent stop all" 2>/dev/null || true
 
-# --- show BEFORE state -----------------------------------------------------
-log "=== BEFORE cleanup ==="
-log "Live captures/ contents:"
-ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "(empty or missing)"
-log "Repo captures/ contents:"
-ls -1 "${REPO_CAPTURES}/" 2>/dev/null || warn "(empty or missing)"
-log "--- config.yml contents ---"
-cat "${HCE_DIR}/config.yml" 2>/dev/null || warn "(no config.yml)"
-log "--- end config.yml ---"
+log "Initial reload (plugin will extract default zones from JAR)..."
+mc "hcaptureevent reload"
 
-# --- delete plugin default zones from live server ---------------------------
-# The plugin generates default.yml, clan.yml, towny.yml on first boot.
-# These conflict with our custom extraction zones. Delete them.
-log "Removing plugin default zones from live server..."
-for stale in default.yml clan.yml towny.yml; do
-  if [[ -f "${HCE_DIR}/captures/${stale}" ]]; then
-    log "  Deleting: ${HCE_DIR}/captures/${stale}"
-    rm -f "${HCE_DIR}/captures/${stale}"
+# --- overwrite plugin defaults with our extraction configs -----------------
+# The plugin always regenerates default.yml/clan.yml/towny.yml from the JAR.
+# We overwrite them with our content AFTER extraction.
+log "Overwriting plugin defaults with extraction zone configs..."
+for mapping in "default.yml:extraction_x1.yml" "clan.yml:extraction_x2.yml" "towny.yml:extraction_x3.yml"; do
+  target="${mapping%%:*}"
+  source="${mapping##*:}"
+  if [[ -f "${REPO_CAPTURES}/${source}" ]]; then
+    log "  ${target} <- ${source}"
+    install -m 644 "${REPO_CAPTURES}/${source}" "${HCE_DIR}/captures/${target}"
+  else
+    warn "  Source ${source} not found in repo!"
   fi
 done
 
-# --- sync our extraction files from repo to live server --------------------
-log "Syncing extraction zone files from repo to live server..."
-install -d -m 755 "${HCE_DIR}/captures"
-for f in "${REPO_CAPTURES}"/*.yml; do
-  [[ -f "${f}" ]] || continue
-  fname="$(basename "${f}")"
-  log "  Installing: ${fname}"
-  install -m 644 "${f}" "${HCE_DIR}/captures/${fname}"
+# --- delete our custom-named files (they never get loaded) ----------------
+for f in extraction_x1.yml extraction_x2.yml extraction_x3.yml; do
+  rm -f "${HCE_DIR}/captures/${f}"
 done
 
 # --- seed messages.yml (English translations) ------------------------------
 if [[ -f "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" ]]; then
-  log "Seeding messages.yml (English translations)..."
+  log "Seeding messages.yml (English)..."
   install -m 644 "${REPO_DIR}/server/plugins/hCaptureEvent/messages.yml" \
     "${HCE_DIR}/messages.yml"
 fi
 
-# --- reload ----------------------------------------------------------------
-log "Reloading hCaptureEvent configs..."
-mc "hcaptureevent reload"
-
-# --- delete defaults AGAIN (plugin may regenerate on reload) ---------------
-log "Checking for regenerating default zones..."
-sleep 1
-for stale in default.yml clan.yml towny.yml; do
-  if [[ -f "${HCE_DIR}/captures/${stale}" ]]; then
-    warn "Plugin regenerated ${stale} — deleting again"
-    rm -f "${HCE_DIR}/captures/${stale}"
-  fi
-done
-
-# --- show AFTER state ------------------------------------------------------
-log "=== AFTER cleanup ==="
-log "Live captures/ contents:"
-ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "(empty or missing)"
-
-# --- second reload to pick up clean state ----------------------------------
+# --- second reload (reads our overwritten files) ---------------------------
 log "Final reload..."
 mc "hcaptureevent reload"
 
-# --- verify with console command -------------------------------------------
-log "Testing zone load (start all)..."
-mc "hcaptureevent start all" 2>/dev/null || true
-sleep 2
-mc "hcaptureevent stop all" 2>/dev/null || true
+# --- verify ----------------------------------------------------------------
+log "Live captures/ contents:"
+ls -1 "${HCE_DIR}/captures/" 2>/dev/null || warn "(empty)"
 
 # --- LuckPerms permissions -------------------------------------------------
 log "Setting hCaptureEvent permissions..."
@@ -123,12 +93,10 @@ cat <<'EOF'
   Phase 5.8 — hCaptureEvent reloaded & verified.
 ============================================================
 
-  Extraction points (Red Zone):
-    X1 — region: extraction_x1
-    X2 — region: extraction_x2
-    X3 — region: extraction_x3
-
-  Plugin default zones have been DELETED.
+  Extraction points (Red Zone) — mapped to plugin zone IDs:
+    default  (was X1) — region: extraction_x1
+    clan     (was X2) — region: extraction_x2
+    towny    (was X3) — region: extraction_x3
 
   IMPORTANT: WorldGuard regions MUST exist before zones work.
   Create them in-game (choose any 3 spots in glitch_red):
@@ -138,10 +106,11 @@ cat <<'EOF'
     /rg define extraction_x1 -w glitch_red
     (repeat for x2, x3)
     /hcaptureevent reload
-    /hcaptureevent start extraction_x1
 
   Test in-game:
-    /hcaptureevent start extraction_x1  (start one zone)
-    /hcaptureevent stop all             (stop all events)
+    /hcaptureevent start default   (start X1)
+    /hcaptureevent start clan      (start X2)
+    /hcaptureevent start towny     (start X3)
+    /hcaptureevent stop all        (stop all)
 ============================================================
 EOF
