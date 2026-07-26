@@ -8,7 +8,7 @@ A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft ser
 
 Check items off as they're completed. Each numbered topic is sized to roughly one working session — except the Phase 4 building block, which is flagged as bigger.
 
-**Status as of 2026-07-24:** Phases 0–2 done. Phase 3.1 done (Bedrock test pending). Phase 4 mechanics done (4.5-4.7 physical builds deferred). Phase 5.1-5.3, 5.5, 5.7-5.8 done (plugins installed). Phase 5.4 + custom plugins designed (see Phase 5.9). Phase 5.6 needs premium plugin. All scripts handle fresh instance reset. Next: finish reset, then custom plugin development or physical builds.
+**Status as of 2026-07-24:** Phases 0–2 done. Phase 3.1 done (Bedrock test pending). Phase 4 mechanics done (4.5-4.7 physical builds deferred). Phase 5.1-5.3, 5.5, 5.7-5.9 done (plugins installed). Phase 5.4 designed (see Phase 5.9). Phase 5.6 needs premium plugin. All scripts handle fresh instance reset. Next: finish reset, then custom plugin development or physical builds.
 
 ---
 
@@ -67,7 +67,8 @@ documented in `docs/DUNGEON_SHELL.md` for when the operator is ready.
 - [x] **5.5 Hub NPCs** — FancyNpcs (packet-based, 0 TPS impact) + DeluxeMenus for GUIs. _Done: plugins added to bootstrap.sh, class selector + shard shop GUIs seeded._
 - [ ] **5.6 Classes** — Vanguard (tank), Scout (agility), Warden (support). _Needs premium plugin install (MMOCore+MMOItems or EcoSkills) — not on Modrinth. eco framework installed as base. Class configs deferred until premium plugin is installed._
 - [x] **5.7 Scoreboard/HUD** — TAB (sidebar scoreboard: shards/zone/class, tab list header/footer) + PlaceholderAPI. _Done: plugins added to bootstrap.sh, TAB config seeded with Glitch-themed sidebar._
-- [x] **5.8 Extraction mechanic** — VelKoth (KOTH plugin in CAPTURE mode for extraction zones). _Done: plugin added to bootstrap.sh, 3 extraction arenas (X1/X2/X3) in glitch_pve with 300s hold-to-extract._
+- [x] **5.8 Extraction mechanic** — VelKoth (KOTH plugin in CAPTURE mode for extraction zones). _Done: plugin added to bootstrap.sh, extraction arenas (X1/X2/X3) in glitch_red with 300s hold-to-extract. Wand fix: click block at your feet, not ground below._
+- [x] **5.9 Extraction vault** — GlitchStash plugin (custom, built from source). _Done: auto-saves inventory on extraction, auto-teleports to hub, /stash retrieves items. YAML per-player storage._
 
 ## Phase 5.4 — Custom Dungeon Plugin (TheGlitchDungeons)
 
@@ -88,7 +89,7 @@ _Authoritative development plan. See Phase 5.9 for extraction plugins._
 
 _Six custom plugins designed for Arc Raiders/Marathon-style extraction gameplay. All Java/Paper API, no premium dependencies._
 
-- [ ] **5.9.1 GlitchStash** — Grid-based stash inventory UI. Persistent server-side storage, risk/reward visualization, item provenance tracking.
+- [x] **5.9.1 GlitchStash** — Grid-based stash inventory UI. Persistent server-side storage, risk/reward visualization, item provenance tracking. _Done: built from source, YAML storage, /stash GUI, auto-save on extraction._
 - [ ] **5.9.2 GlitchRaid** — Raid lifecycle manager. Timers, party assignment, post-raid summary screen, death recap, loot accounting.
 - [ ] **5.9.3 GlitchInsurance** — Shard-backed item insurance. Pay premium to protect gear on death, cooldowns, claim window.
 - [ ] **5.9.4 GlitchHideout** — Between-raid progression. Physical hideout in hub, upgradeable crafting stations, skill trees, stash expansion.

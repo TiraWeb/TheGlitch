@@ -22,7 +22,7 @@ Chunky. Server lives at `/opt/theglitch/server`, runs as systemd service
 ## Repo layout
 
 ```
-bootstrap.sh              Phases 0-5.8: firewall, JDK, Purpur, plugins, configs, systemd
+bootstrap.sh              Phases 0-5.9: firewall, JDK, Purpur, plugins, configs, systemd
 setup-worlds.sh           Phase 4: creates/imports the 3 worlds, gamerules, WorldGuard, pre-gen
 setup-luckperms.sh        Phase 5.1: creates LuckPerms groups, hierarchy, prefixes, tracks
 setup-essentials.sh       Phase 5.2: spawn, warps, starter kit, economy permissions
@@ -31,6 +31,7 @@ setup-papi.sh             Phase 5.7: downloads LuckPerms + Vault PAPI expansions
 setup-mythicmobs.sh       Phase 5.3: reloads mob configs, verifies registration
 setup-coins.sh            Phase 5.2: reloads Glitch Shards economy, verifies Vault link
 setup-velkoth.sh         Phase 5.8: reloads extraction arenas, verifies VelKoth
+setup-glitchstash.sh     Phase 5.9: reloads extraction vault, verifies GlitchStash
 setup-deluxemenus.sh      Phase 5.5: reloads GUI menus, sets permissions
 setup-fancynpcs.sh        Phase 5.5: reloads NPC system, sets permissions
 setup-geyser.sh           Phase 3.1: verifies Bedrock bridge (does NOT reload)
@@ -54,7 +55,9 @@ server/plugins/TAB/config.yml             seeded once (scoreboard + tab list)
 server/plugins/DeluxeMenus/gui_configs/   seeded once (class selector, shard shop)
 server/plugins/VelKoth/config.yml      seeded once (extraction settings)
 server/plugins/VelKoth/messages.yml    seeded once (extraction-themed messages)
-server/plugins/VelKoth/arenas.yml      seeded once (3 extraction arenas)
+server/plugins/VelKoth/arenas.yml      generated in-game (NEVER overwrite)
+server/plugins/GlitchStash/config.yml  seeded once (extraction vault settings)
+server/plugins/GlitchStash/messages.yml seeded once (vault messages)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
@@ -94,8 +97,12 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
   not on Modrinth. Deferred.
 - **Phase 5.7 (Scoreboard/HUD): done.** TAB + PlaceholderAPI installed.
 - **Phase 5.8 (Extraction): done.** VelKoth installed, 3 extraction arenas
-  configured for glitch_pve (extraction_x1/x2/x3). Players hold zone for
-  300s to extract.
+  configured for glitch_red (extraction_x1/x2/x3). Players hold zone for
+  300s to extract. Wand selection bug fixed — click the block AT your feet,
+  not the ground below.
+- **Phase 5.9 (Extraction vault): done.** GlitchStash plugin built from source.
+  Auto-saves inventory on extraction win, auto-teleports to hub spawn,
+  player retrieves items with /stash. YAML-based per-player storage.
 - **Phase 5.9 (Custom plugins): designed.** GlitchStash, GlitchRaid,
   GlitchInsurance, GlitchHideout, GlitchEvents, GlitchLoot planned.
 - **Phases 6-8:** not started.
@@ -210,8 +217,11 @@ until the operator is ready to do in-game WorldEdit work.
    GlitchHideout, GlitchEvents, GlitchLoot follow.
 4. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
    Geyser/Floodgate work correctly.
-5. **Extraction testing**: VelKoth arenas are pre-seeded. After full reset,
-   test with `/koth start extraction_x1` and walk into the zone.
+5. **Extraction testing**: VelKoth arenas are in-game. Run:
+     /koth start extraction_x1
+     Walk into the zone and hold for 300s.
+     On win: inventory saved, auto-teleported to hub, /stash to retrieve.
+   Build GlitchStash first: sudo ./plugins/GlitchStash/build.sh
 
 ## Working agreements worth preserving
 

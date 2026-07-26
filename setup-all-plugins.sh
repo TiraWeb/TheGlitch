@@ -38,9 +38,10 @@ echo "  4. TAB (sidebar scoreboard + tab list)"
 echo "  5. MythicMobs (reload + verify mobs)"
 echo "  6. Coins (reload + verify Glitch Shards)"
 echo "  7. VelKoth (reload + verify extraction arenas)"
-echo "  8. DeluxeMenus (reload + verify menus)"
-echo "  9. FancyNpcs (reload + verify NPC system)"
-echo "  10. GeyserMC (verify Bedrock bridge)"
+echo "  8. GlitchStash (reload + verify extraction vault)"
+echo "  9. DeluxeMenus (reload + verify menus)"
+echo "  10. FancyNpcs (reload + verify NPC system)"
+echo "  11. GeyserMC (verify Bedrock bridge)"
 echo ""
 echo "  Estimated time: 5-10 minutes"
 echo "============================================================"
@@ -91,14 +92,17 @@ run_step "6" "setup-coins.sh"
 # 7. VelKoth (reload extraction arenas)
 run_step "7" "setup-velkoth.sh"
 
-# 8. DeluxeMenus (reload GUIs)
-run_step "8" "setup-deluxemenus.sh"
+# 8. GlitchStash (reload extraction vault)
+run_step "8" "setup-glitchstash.sh"
 
-# 9. FancyNpcs (reload NPC system)
-run_step "9" "setup-fancynpcs.sh"
+# 9. DeluxeMenus (reload GUIs)
+run_step "9" "setup-deluxemenus.sh"
 
-# 10. GeyserMC (verify only — don't reload)
-run_step "10" "setup-geyser.sh"
+# 10. FancyNpcs (reload NPC system)
+run_step "10" "setup-fancynpcs.sh"
+
+# 11. GeyserMC (verify only — don't reload)
+run_step "11" "setup-geyser.sh"
 
 END_TIME=$(date +%s)
 ELAPSED=$(( END_TIME - START_TIME ))

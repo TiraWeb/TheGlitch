@@ -1,0 +1,12 @@
+# GlitchStash Messages — The Glitch (MiniMessage format)
+
+extracted: "<green>Extraction complete! Your gear has been stored safely."
+stash-saved: "<gray>Your inventory has been saved to your stash."
+stash-opened: "<gold>Stash opened</gold> <dark_gray>|</dark_gray> <gray>Click items to retrieve"
+stash-full: "<red>Your stash is full! Retrieve items before extracting again."
+stash-empty: "<red>Your stash is empty."
+item-retrieved: "<green>+ <item></green>"
+all-retrieved: "<green>All items retrieved!"
+teleporting: "<dark_purple>Teleporting to stash..."
+admin-cleared: "<red>Stash cleared for <gold><player></gold>."
+admin-reloaded: "<green>GlitchStash configuration reloaded."

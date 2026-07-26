@@ -1,0 +1,35 @@
+name: GlitchStash
+version: '${project.version}'
+main: com.theglitch.glitchstash.GlitchStash
+api-version: '1.21'
+description: Extraction vault system for The Glitch
+depend:
+  - VelKoth
+  - Essentials
+softdepend:
+  - LuckPerms
+
+commands:
+  stash:
+    description: Open your extraction stash
+    usage: /stash [give <item> <amount>]
+    permission: glitchstash.use
+  stashtp:
+    description: Teleport to stash chest in hub
+    usage: /stashtp
+    permission: glitchstash.use
+  stashadmin:
+    description: Admin commands for GlitchStash
+    usage: /stashadmin <reload|clear <player>|list>
+    permission: glitchstash.admin
+
+permissions:
+  glitchstash.use:
+    description: Access stash commands
+    default: true
+  glitchstash.admin:
+    description: Admin stash commands
+    default: op
+  glitchstash.vip:
+    description: Extra stash slots
+    default: false

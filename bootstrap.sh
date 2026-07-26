@@ -232,6 +232,10 @@ install_modrinth_plugin "PlaceholderAPI.jar"     placeholderapi
 install_modrinth_plugin "VelKoth.jar"             velkoth
 install_modrinth_plugin "eco.jar"                eco-plugin
 
+# GlitchStash is built from source (custom plugin) — not on Modrinth.
+# Built separately via: sudo ./plugins/GlitchStash/build.sh
+# JAR is deployed to plugins/ by the build script.
+
 # ---------------------------------------------------------------------------
 # Phase 2.1 — tuning configs: always synced from the repo (config-as-code)
 # The server merges any missing keys with defaults at boot, so these files
@@ -330,6 +334,23 @@ if [[ -d "${REPO_DIR}/server/plugins/VelKoth" ]]; then
     if [[ -f "${REPO_DIR}/server/plugins/VelKoth/${cfg}" ]]; then
       install -m 644 "${REPO_DIR}/server/plugins/VelKoth/${cfg}" \
         "${PLUGIN_DIR}/VelKoth/${cfg}"
+    fi
+  done
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 5.9 — seed GlitchStash configs (once; box's copy wins)
+# GlitchStash is built from source — JAR deployed by plugins/GlitchStash/build.sh
+# ---------------------------------------------------------------------------
+if [[ -d "${REPO_DIR}/plugins/GlitchStash/src/main/resources" ]]; then
+  log "Phase 5.9 — seeding GlitchStash configs"
+  install -d -m 755 "${PLUGIN_DIR}/GlitchStash"
+  for cfg in config.yml messages.yml; do
+    if [[ -f "${REPO_DIR}/plugins/GlitchStash/src/main/resources/${cfg}" ]]; then
+      if [[ ! -f "${PLUGIN_DIR}/GlitchStash/${cfg}" ]]; then
+        install -m 644 "${REPO_DIR}/plugins/GlitchStash/src/main/resources/${cfg}" \
+          "${PLUGIN_DIR}/GlitchStash/${cfg}"
+      fi
     fi
   done
 fi
