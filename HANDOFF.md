@@ -1,7 +1,7 @@
 # The Glitch — Session Handoff
 
 Paste this whole file into a new chat (any model) to resume work with full
-context. It reflects state as of **2026-07-24**. The repo (`TiraWeb/TheGlitch`,
+context. It reflects state as of **2026-07-26**. The repo (`TiraWeb/TheGlitch`,
 branch `main`) is the single source of truth — this doc is a guide to it, not
 a replacement for reading `ROADMAP.md`, `docs/ZONES.md`, and
 `docs/PERFORMANCE.md`.
@@ -45,7 +45,7 @@ server/world-overrides/   per-world Paper config (glitch_pve trash-despawn tunin
 server/plugins/Geyser-Spigot/config.yml   seeded once
 server/plugins/LuckPerms/config.yml       seeded once
 server/plugins/Coins/config.yml           seeded once (Glitch Shards economy)
-server/plugins/Essentials/kits.yml        seeded by setup-essentials.sh
+server/plugins/Essentials/kits.yml        seeded by setup-essentials.sh (INCOMPATIBLE with MC 26.x)
 server/plugins/MythicMobs/Mobs/*.yml      seeded once (custom mob definitions)
 server/plugins/MythicMobs/Skills/*.yml    seeded once (mob abilities)
 server/plugins/MythicMobs/DropTables/*.yml seeded once (loot tables)
@@ -53,11 +53,12 @@ server/plugins/MythicMobs/Spawners/*.yml  seeded once (dungeon mob spawners)
 server/plugins/MythicMobs/SpawnAreas/*.yml seeded once (spawn zone definitions)
 server/plugins/TAB/config.yml             seeded once (scoreboard + tab list)
 server/plugins/DeluxeMenus/gui_configs/   seeded once (class selector, shard shop)
-server/plugins/VelKoth/config.yml      seeded once (extraction settings)
-server/plugins/VelKoth/messages.yml    seeded once (extraction-themed messages)
-server/plugins/VelKoth/arenas.yml      generated in-game (NEVER overwrite)
-server/plugins/GlitchStash/config.yml  seeded once (extraction vault settings)
-server/plugins/GlitchStash/messages.yml seeded once (vault messages)
+server/plugins/VelKoth/config.yml         seeded once (extraction settings)
+server/plugins/VelKoth/messages.yml       seeded once (extraction-themed messages)
+server/plugins/VelKoth/arenas.yml         generated in-game (NEVER overwrite)
+plugins/GlitchStash/                      source code (built via build.sh, deployed to live server)
+plugins/GlitchStash/src/main/resources/   config.yml + messages.yml (seeded to live server)
+plugins/GlitchStash/stashes/              per-player YAML stash files (auto-created at runtime)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
@@ -96,15 +97,14 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 5.6 (Classes): needs premium plugin.** MMOCore+MMOItems or EcoSkills
   not on Modrinth. Deferred.
 - **Phase 5.7 (Scoreboard/HUD): done.** TAB + PlaceholderAPI installed.
-- **Phase 5.8 (Extraction): done.** VelKoth installed, 3 extraction arenas
-  configured for glitch_red (extraction_x1/x2/x3). Players hold zone for
-  300s to extract. Wand selection bug fixed — click the block AT your feet,
-  not the ground below.
+- **Phase 5.8 (Extraction): done.** VelKoth installed, extraction arenas
+  in glitch_red (extraction_x1/x2/x3). Players hold zone for 300s to extract.
+  Wand selection fix: click the block AT your feet, not the ground below.
 - **Phase 5.9 (Extraction vault): done.** GlitchStash plugin built from source.
-  Auto-saves inventory on extraction win, auto-teleports to hub spawn,
-  player retrieves items with /stash. YAML-based per-player storage.
-- **Phase 5.9 (Custom plugins): designed.** GlitchStash, GlitchRaid,
-  GlitchInsurance, GlitchHideout, GlitchEvents, GlitchLoot planned.
+  Auto-saves inventory on extraction win (accumulates across multiple extractions),
+  auto-teleports to hub via Multiverse-Core, player retrieves items with /stash.
+  YAML-based per-player storage. EssentialsX is INCOMPATIBLE with MC 26.x —
+  teleport uses `mv tp` instead.
 - **Phases 6-8:** not started.
 
 ## Full instance reset (nuke and recreate)
@@ -130,7 +130,10 @@ sudo ./setup-worlds.sh
 # Wait for pre-gen to finish (~15-20 min), then set up permissions
 sudo ./setup-luckperms.sh
 
-# Configure all plugins (EssentialsX, TAB, PAPI, MythicMobs, etc.)
+# Build GlitchStash (needs Maven)
+sudo ./plugins/GlitchStash/build.sh
+
+# Configure all plugins (TAB, PAPI, MythicMobs, VelKoth, GlitchStash, etc.)
 sudo ./setup-all-plugins.sh
 ```
 
@@ -139,17 +142,21 @@ After reset:
 - glitch_pve is flat, empty — dungeon shells deferred
 - glitch_red is natural terrain, pre-generated — extraction arenas configured
 - All plugins loaded, economy ready, mobs configured
-- EssentialsX has spawn + warps set, starter kit ready
+- GlitchStash built and deployed (extraction vault working)
 - PAPI expansions installed (LuckPerms + Vault placeholders work)
 - TAB scoreboard renders all lines
+- VelKoth extraction zones active (hold zone → inventory saved → teleport to hub)
 
-## Where we left off — scripts complete, physical builds deferred
+## Where we left off — extraction loop complete, physical builds deferred
 
 All server mechanics are fully scripted and survive a fresh instance reset.
+The extraction loop is fully functional: players extract via VelKoth zones,
+inventory auto-saves to GlitchStash, teleport to hub, retrieve with `/stash`.
+
 Physical builds (Sakura Spawn hub, dungeon shells, Red Zone POIs) are deferred
 until the operator is ready to do in-game WorldEdit work.
 
-**Next when ready:** Physical builds or custom plugins (Phase 5.9).
+**Next when ready:** Physical builds or custom plugins (GlitchRaid, GlitchInsurance, etc.).
 
 ## Hard-won lessons (read before touching worlds/gamerules again)
 
@@ -178,7 +185,18 @@ until the operator is ready to do in-game WorldEdit work.
    (crosshair/hotbar/disabled). Config in this repo is already correct for
    the new format.
 
-4. When something needs verifying against current docs/source (command
+4. **EssentialsX is INCOMPATIBLE with Minecraft 26.x / Java 25.** The plugin
+   fails to load with "incompatible with this version" on startup. Commands
+   like `/spawn`, `/setspawn`, `/warp` do NOT work. Use Multiverse-Core
+   commands instead: `mv tp <player> <world>`, `mv setspawn`, etc. Warps
+   can be set with `mv modify set spawn` or by using a different plugin.
+
+5. **VelKoth wand selection requires clicking the block AT your feet**, not the
+   ground below. If you click the ground one block down, the region will be
+   offset and players won't be detected. Use F3 to verify your Y coordinate,
+   then click the block at that exact Y.
+
+6. When something needs verifying against current docs/source (command
    syntax, config key names, plugin behavior) — **verify with an Agent/
    WebFetch before writing scripts**, don't rely on general knowledge of
    "how Minecraft servers usually work." This session got burned repeatedly
@@ -186,19 +204,19 @@ until the operator is ready to do in-game WorldEdit work.
    (26.x, 2026) plus fast-moving plugins (Geyser 2.9+) means most tutorials
    and cached knowledge are describing a different, older world.
 
-5. Executable bits matter for `git pull` on the box: a script committed
+7. Executable bits matter for `git pull` on the box: a script committed
    `100644` fails as "command not found" and its later `chmod +x` blocks the
    next pull. `core.fileMode false` is set on the box now to stop mode diffs
    from blocking pulls at all — but keep committing scripts as `755`.
 
-6. RCON commands run with no player context — anything needing "current
+8. RCON commands run with no player context — anything needing "current
    position" or a player-tied selection (`//paste`, `//copy`, `//pos1`/
    `//pos2`, `/rg define`) must be run in-game, not via `scripts/mc-cmd.py`.
    This is also why dungeon-slot WorldGuard regions (Phase 4.6) are a
    documented in-game procedure rather than something added to
    `setup-worlds.sh`.
 
-7. **RCON `fill`/`setblock`/`forceload` commands execute in the main world
+9. **RCON `fill`/`setblock`/`forceload` commands execute in the main world
    (hub) by default.** To target another dimension, prefix with
    `execute in minecraft:<world> run`. The build scripts use a `gcmd()`
    helper for this. Without this prefix, blocks get placed in the hub world
@@ -209,18 +227,18 @@ until the operator is ready to do in-game WorldEdit work.
 
 1. **Full instance reset** if needed: follow the "Full instance reset" section
    above. All mechanics are scripted — just `bootstrap.sh` → `setup-worlds.sh`
-   → `setup-luckperms.sh`.
+   → `setup-luckperms.sh` → `plugins/GlitchStash/build.sh` → `setup-all-plugins.sh`.
 2. **Physical builds** (when ready): paste Sakura Spawn in hub, build dungeon
    shells in glitch_pve, add Red Zone POIs. Requires in-game WorldEdit.
-3. **Custom plugins** (Phase 5.9): GlitchStash + GlitchRaid are highest impact
-   (grid inventory + raid timer + post-raid summary). GlitchInsurance,
+3. **Custom plugins** (Phase 5.9): GlitchRaid + GlitchInsurance are next
+   highest impact (raid timer + post-raid summary + item insurance).
    GlitchHideout, GlitchEvents, GlitchLoot follow.
 4. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
    Geyser/Floodgate work correctly.
 5. **Extraction testing**: VelKoth arenas are in-game. Run:
      /koth start extraction_x1
      Walk into the zone and hold for 300s.
-     On win: inventory saved, auto-teleported to hub, /stash to retrieve.
+     On win: inventory saved (accumulates), auto-teleported to hub, /stash to retrieve.
    Build GlitchStash first: sudo ./plugins/GlitchStash/build.sh
 
 ## Working agreements worth preserving

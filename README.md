@@ -22,9 +22,9 @@ The script prints an operator checklist at the end. **One step cannot be scripte
 | `0.0.0.0/0` | TCP | `25565` | Java edition |
 | `0.0.0.0/0` | UDP | `19132` | Bedrock (Geyser, Phase 3) |
 
-## What `bootstrap.sh` does (Roadmap Phases 0–1)
+## What `bootstrap.sh` does (Roadmap Phases 0–5.9)
 
-- Opens `25565/tcp` + `19132/udp` in the on-box iptables (Oracle images end their ruleset with REJECT-all) and persists the rules
+- Opens `25565/tcp` + `19132/udp` in the on-box iptables and persists the rules
 - Installs fail2ban with an sshd jail
 - System packages incl. **OpenJDK 25** (Minecraft 26.x requires Java 25, not 21)
 - Creates a 4GB swapfile with `vm.swappiness=10` — OOM insurance, Oracle ships none
@@ -32,6 +32,9 @@ The script prints an operator checklist at the end. **One step cannot be scripte
 - Downloads the latest stable **Purpur** for the newest Minecraft version
 - Installs `start.sh` (Aikar's flags, **8GB heap** — leaving ~4GB for JVM off-heap + Geyser + OS), seeds a whitelisted-on `server.properties`
 - Installs and starts the `theglitch` systemd service (starts on boot, restarts on crash)
+- Installs all plugins: LuckPerms, EssentialsX, VaultUnlocked, Coins, MythicMobs, FancyNpcs, DeluxeMenus, TAB, PlaceholderAPI, VelKoth, GeyserMC, Floodgate, Multiverse-Core, Chunky, WorldGuard
+- Seeds plugin configs from repo (config-as-code)
+- GlitchStash is built from source: `sudo ./plugins/GlitchStash/build.sh`
 
 It's **idempotent** — the update loop for every future phase is:
 
@@ -56,26 +59,88 @@ Live server data (worlds, edited configs) is never overwritten; `start.sh` and t
 
 First join: open the console and run `whitelist add YourName`, then `op YourName`.
 
-## Repo layout
+## The extraction loop (fully working)
 
-```
-bootstrap.sh              one-shot / re-runnable box setup (Phases 0–4)
-setup-worlds.sh           Phase 4: creates the three zones, rules, protections
-console.sh                attach to the live server console
-scripts/mc-cmd.py         local RCON client — scripted console access
-server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM
-server/server.properties  first-boot baseline (seeded once)
-server/*.yml              performance tuning configs (synced every bootstrap)
-server/config/*.yml       Paper global + world-default tuning (synced)
-server/plugins/Geyser-Spigot/config.yml  Bedrock cross-play config (seeded once)
-systemd/theglitch.service service unit (auto-start, crash recovery, graceful stop)
-docs/ZONES.md             zone architecture blueprint (coordinates, rules)
-docs/PERFORMANCE.md       tuning rationale + baseline procedure
-ROADMAP.md                the full phased build plan
-```
+The core gameplay loop is extraction via VelKoth zones:
 
-### The three zones (Phase 4)
+1. Player enters an extraction zone in `glitch_red` (marked by particles/boss bar)
+2. Player holds the zone for 300 seconds (5 minutes)
+3. On completion:
+   - Inventory auto-saved to GlitchStash (accumulates across extractions)
+   - Player auto-teleported to hub via Multiverse-Core (`mv tp`)
+4. Player retrieves items in hub with `/stash`
+
+**Commands:**
+- `/koth start extraction_x1` — start an extraction event
+- `/stash` — open stash GUI, click items to retrieve
+- `/stashtp` — teleport to hub
+- `/koth list` — list all arenas and status
+
+**Important:** EssentialsX is INCOMPATIBLE with Minecraft 26.x / Java 25. Commands like `/spawn`, `/warp` do not work. Teleport uses Multiverse-Core instead.
+
+## Plugin stack
+
+| Plugin | Purpose | Config |
+|---|---|---|
+| Purpur | Server core (Paper fork) | `server/purpur.yml` |
+| LuckPerms | Permissions | `server/plugins/LuckPerms/config.yml` |
+| VaultUnlocked | Economy bridge | Auto-detects |
+| EssentialsX | **INCOMPATIBLE** with MC 26.x | N/A — not functional |
+| Eli's Coins | Glitch Shards currency | `server/plugins/Coins/config.yml` |
+| MythicMobs | Custom mobs + loot | `server/plugins/MythicMobs/` |
+| FancyNpcs | Packet-based NPCs | `server/plugins/FancyNpcs/` |
+| DeluxeMenus | GUI menus | `server/plugins/DeluxeMenus/gui_configs/` |
+| TAB | Scoreboard + tab list | `server/plugins/TAB/config.yml` |
+| PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
+| VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
+| **GlitchStash** | **Extraction vault** (custom) | `plugins/GlitchStash/` |
+| Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
+| GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
+| WorldGuard | Region protection | `server/plugins/WorldGuard/` |
+| Chunky | World pre-generation | `server/plugins/Chunky/` |
+
+## The three zones (Phase 4)
 
 `hub` (main world, safe) → `glitch_pve` (instanced dungeons, keep-inventory) →
 `glitch_red` (full-loot PvPvE extraction). Full blueprint with coordinates:
 [docs/ZONES.md](docs/ZONES.md).
+
+## Building GlitchStash (custom plugin)
+
+GlitchStash is built from source on the server:
+
+```bash
+cd ~/TheGlitch
+sudo ./plugins/GlitchStash/build.sh
+sudo systemctl restart theglitch
+```
+
+Requires: Maven (`sudo apt install maven`), Java 21+, VelKoth.jar (auto-downloaded).
+
+## Repo layout
+
+```
+bootstrap.sh              one-shot / re-runnable box setup (Phases 0–5.9)
+setup-worlds.sh           Phase 4: creates the three zones, rules, protections
+setup-luckperms.sh        Phase 5.1: LuckPerms groups, hierarchy
+setup-essentials.sh       Phase 5.2: spawn, warps, starter kit (INCOMPATIBLE)
+setup-tab.sh              Phase 5.7: TAB scoreboard
+setup-papi.sh             Phase 5.7: PlaceholderAPI expansions
+setup-mythicmobs.sh       Phase 5.3: MythicMobs reload
+setup-coins.sh            Phase 5.2: Glitch Shards economy
+setup-velkoth.sh          Phase 5.8: VelKoth extraction arenas
+setup-glitchstash.sh      Phase 5.9: GlitchStash extraction vault
+setup-deluxemenus.sh      Phase 5.5: GUI menus
+setup-fancynpcs.sh        Phase 5.5: NPC system
+setup-geyser.sh           Phase 3.1: Bedrock bridge
+setup-all-plugins.sh      Master runner: all setup scripts in order
+plugins/GlitchStash/      GlitchStash source (built via build.sh)
+console.sh                attach to the live server console
+scripts/mc-cmd.py         local RCON client
+server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM
+server/*.yml              performance tuning configs (synced every bootstrap)
+docs/ZONES.md             zone architecture blueprint
+docs/PERFORMANCE.md       tuning rationale + baseline
+ROADMAP.md                the full phased build plan
+HANDOFF.md                session handoff doc
+```
