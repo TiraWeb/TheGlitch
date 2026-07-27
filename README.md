@@ -35,6 +35,7 @@ The script prints an operator checklist at the end. **One step cannot be scripte
 - Installs all plugins: LuckPerms, EssentialsX, VaultUnlocked, Coins, MythicMobs, FancyNpcs, DeluxeMenus, TAB, PlaceholderAPI, VelKoth, GeyserMC, Floodgate, Multiverse-Core, Chunky, WorldGuard
 - Seeds plugin configs from repo (config-as-code)
 - GlitchStash is built from source: `sudo ./plugins/GlitchStash/build.sh`
+- GlitchClasses is built from source: `sudo ./plugins/GlitchClasses/build.sh`
 
 It's **idempotent** — the update loop for every future phase is:
 
@@ -78,6 +79,28 @@ The core gameplay loop is extraction via VelKoth zones:
 
 **Important:** EssentialsX is INCOMPATIBLE with Minecraft 26.x / Java 25. Commands like `/spawn`, `/warp` do not work. Teleport uses Multiverse-Core instead.
 
+## The class system (fully working)
+
+4 classes with unique abilities, 10 upgrade levels each:
+
+| Class | Role | Prime Ability | Tactical Ability |
+|---|---|---|---|
+| **Vanguard** | Tank | Shield Wall (barrier blocks) | Taunt (mobs target you) |
+| **Warden** | Support | Healing Pulse (AoE heal) | Revive Beacon (place beacon) |
+| **Specter** | Stealth | Cloak (invisibility) | Shadow Step (teleport forward) |
+| **Operator** | Tech | Turret Deploy (auto-targeting) | EMP Grenade (disable abilities) |
+
+**Commands:**
+- `/class` — open class selection GUI
+- `/class select <class>` — select a class directly
+- `/class info` — view your class and level
+- `/class kit` — re-receive ability items if missing
+
+**Ability items** (hotbar slots 0 and 1) are:
+- Auto-given on class select and when entering `glitch_pve` / `glitch_red`
+- Non-movable, non-droppable, non-duplicatable
+- Re-given on login if missing
+
 ## Plugin stack
 
 | Plugin | Purpose | Config |
@@ -94,6 +117,7 @@ The core gameplay loop is extraction via VelKoth zones:
 | PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
 | VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
 | **GlitchStash** | **Extraction vault** (custom) | `plugins/GlitchStash/` |
+| **GlitchClasses** | **Class system** (custom) | `plugins/GlitchClasses/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
 | GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
@@ -105,17 +129,18 @@ The core gameplay loop is extraction via VelKoth zones:
 `glitch_red` (full-loot PvPvE extraction). Full blueprint with coordinates:
 [docs/ZONES.md](docs/ZONES.md).
 
-## Building GlitchStash (custom plugin)
+## Building GlitchStash and GlitchClasses (custom plugins)
 
-GlitchStash is built from source on the server:
+Both are built from source on the server:
 
 ```bash
 cd ~/TheGlitch
 sudo ./plugins/GlitchStash/build.sh
+sudo ./plugins/GlitchClasses/build.sh
 sudo systemctl restart theglitch
 ```
 
-Requires: Maven (`sudo apt install maven`), Java 21+, VelKoth.jar (auto-downloaded).
+Requires: Maven (`sudo apt install maven`), Java 21+.
 
 ## Repo layout
 
@@ -135,6 +160,7 @@ setup-fancynpcs.sh        Phase 5.5: NPC system
 setup-geyser.sh           Phase 3.1: Bedrock bridge
 setup-all-plugins.sh      Master runner: all setup scripts in order
 plugins/GlitchStash/      GlitchStash source (built via build.sh)
+plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
 console.sh                attach to the live server console
 scripts/mc-cmd.py         local RCON client
 server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM

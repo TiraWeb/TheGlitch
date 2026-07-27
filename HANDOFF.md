@@ -1,7 +1,7 @@
 # The Glitch — Session Handoff
 
 Paste this whole file into a new chat (any model) to resume work with full
-context. It reflects state as of **2026-07-26**. The repo (`TiraWeb/TheGlitch`,
+context. It reflects state as of **2026-07-27**. The repo (`TiraWeb/TheGlitch`,
 branch `main`) is the single source of truth — this doc is a guide to it, not
 a replacement for reading `ROADMAP.md`, `docs/ZONES.md`, and
 `docs/PERFORMANCE.md`.
@@ -32,6 +32,7 @@ setup-mythicmobs.sh       Phase 5.3: reloads mob configs, verifies registration
 setup-coins.sh            Phase 5.2: reloads Glitch Shards economy, verifies Vault link
 setup-velkoth.sh         Phase 5.8: reloads extraction arenas, verifies VelKoth
 setup-glitchstash.sh     Phase 5.9: reloads extraction vault, verifies GlitchStash
+setup-glitchclasses.sh   Phase 5.6: verifies GlitchClasses class system
 setup-deluxemenus.sh      Phase 5.5: reloads GUI menus, sets permissions
 setup-fancynpcs.sh        Phase 5.5: reloads NPC system, sets permissions
 setup-geyser.sh           Phase 3.1: verifies Bedrock bridge (does NOT reload)
@@ -59,6 +60,9 @@ server/plugins/VelKoth/arenas.yml         generated in-game (NEVER overwrite)
 plugins/GlitchStash/                      source code (built via build.sh, deployed to live server)
 plugins/GlitchStash/src/main/resources/   config.yml + messages.yml (seeded to live server)
 plugins/GlitchStash/stashes/              per-player YAML stash files (auto-created at runtime)
+plugins/GlitchClasses/                    source code (built via build.sh, deployed to live server)
+plugins/GlitchClasses/src/main/resources/ config.yml + messages.yml (seeded to live server)
+plugins/GlitchClasses/players/            per-player YAML class files (auto-created at runtime)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
@@ -94,8 +98,11 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 5.4 (Dungeon/Party): custom plugin planned.** Development plan in
   Phase 5.9.
 - **Phase 5.5 (Hub NPCs): done.** FancyNpcs + DeluxeMenus installed.
-- **Phase 5.6 (Classes): needs premium plugin.** MMOCore+MMOItems or EcoSkills
-  not on Modrinth. Deferred.
+- **Phase 5.6 (Classes): done.** GlitchClasses plugin built from source — 4
+  classes (Vanguard, Warden, Specter, Operator) with prime/tactical abilities,
+  10 upgrade levels, class selection GUI, ability items (immovable, no-duplicate),
+  passive traits. Items auto-give on class select and when entering game worlds
+  (glitch_pve/glitch_red). YAML per-player storage, LuckPerms integration.
 - **Phase 5.7 (Scoreboard/HUD): done.** TAB + PlaceholderAPI installed.
 - **Phase 5.8 (Extraction): done.** VelKoth installed, extraction arenas
   in glitch_red (extraction_x1/x2/x3). Players hold zone for 300s to extract.
@@ -147,16 +154,21 @@ After reset:
 - TAB scoreboard renders all lines
 - VelKoth extraction zones active (hold zone → inventory saved → teleport to hub)
 
-## Where we left off — extraction loop complete, physical builds deferred
+## Where we left off — extraction loop + class system complete, physical builds deferred
 
 All server mechanics are fully scripted and survive a fresh instance reset.
 The extraction loop is fully functional: players extract via VelKoth zones,
 inventory auto-saves to GlitchStash, teleport to hub, retrieve with `/stash`.
 
+The class system is functional: GlitchClasses plugin built from source with
+4 classes, ability items, 10 upgrade levels. Ability items are immovable and
+non-duplicatable, auto-given on class select and when entering game worlds.
+
 Physical builds (Sakura Spawn hub, dungeon shells, Red Zone POIs) are deferred
 until the operator is ready to do in-game WorldEdit work.
 
-**Next when ready:** Physical builds or custom plugins (GlitchRaid, GlitchInsurance, etc.).
+**Next when ready:** Physical builds or custom plugins (TheGlitchDungeons,
+GlitchRaid, GlitchInsurance, etc.).
 
 ## Hard-won lessons (read before touching worlds/gamerules again)
 
@@ -223,11 +235,26 @@ until the operator is ready to do in-game WorldEdit work.
    instead of the intended target — which is exactly what happened and
    prompted the instance reset.
 
+10. **MC 26.x Paper API renamed many classes/methods:**
+    `PotionEffectType.DAMAGE_RESISTANCE` → `RESISTANCE`,
+    `PotionEffectType.SLOW` → `SLOWNESS`,
+    `Sound.SHOOT_ARROW` → `ENTITY_ARROW_SHOOT`,
+    `setCustomName(Component)` → `setCustomName(String)`,
+    `getCustomName()` returns `String` not `Component`,
+    `setTicksOnGround(int)` removed entirely.
+    All custom plugin code must use the new names or compilation fails.
+
+11. **Custom plugins built from source** live under `plugins/<Name>/` with a
+    `build.sh` script. Build: `sudo ./plugins/<Name>/build.sh`. Deploy copies
+    JAR to `/opt/theglitch/server/plugins/`. Restart server after deploy.
+    Both GlitchStash and GlitchClasses follow this pattern.
+
 ## Immediate next steps (pick up here)
 
 1. **Full instance reset** if needed: follow the "Full instance reset" section
    above. All mechanics are scripted — just `bootstrap.sh` → `setup-worlds.sh`
-   → `setup-luckperms.sh` → `plugins/GlitchStash/build.sh` → `setup-all-plugins.sh`.
+   → `setup-luckperms.sh` → `plugins/GlitchStash/build.sh` →
+   `plugins/GlitchClasses/build.sh` → `setup-all-plugins.sh`.
 2. **Physical builds** (when ready): paste Sakura Spawn in hub, build dungeon
    shells in glitch_pve, add Red Zone POIs. Requires in-game WorldEdit.
 3. **Custom plugins** (Phase 5.9): GlitchRaid + GlitchInsurance are next
@@ -236,10 +263,12 @@ until the operator is ready to do in-game WorldEdit work.
 4. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
    Geyser/Floodgate work correctly.
 5. **Extraction testing**: VelKoth arenas are in-game. Run:
-     /koth start extraction_x1
-     Walk into the zone and hold for 300s.
-     On win: inventory saved (accumulates), auto-teleported to hub, /stash to retrieve.
+      /koth start extraction_x1
+      Walk into the zone and hold for 300s.
+      On win: inventory saved (accumulates), auto-teleported to hub, /stash to retrieve.
    Build GlitchStash first: sudo ./plugins/GlitchStash/build.sh
+6. **Class testing**: Select a class with /class, verify abilities work in
+   game worlds. Ability items should appear in hotbar slots 0 and 1.
 
 ## Working agreements worth preserving
 
