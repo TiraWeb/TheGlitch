@@ -43,13 +43,26 @@ public final class AbilityItemManager {
     }
 
     /**
-     * Give a player their class ability items. Clears old ability items first.
+     * Ensure player has their class items. No-op if they already have them.
+     * Used for /class kit and world change.
      */
     public void giveClassItems(Player player, String className) {
         if (className.equals("none")) return;
+        if (hasClassItems(player)) return;
+        giveItemsNow(player, className);
+    }
 
-        // Remove old ability items from hotbar
+    /**
+     * Force-give class items, replacing any existing ones.
+     * Used when selecting a class.
+     */
+    public void forceGiveClassItems(Player player, String className) {
+        if (className.equals("none")) return;
         clearClassItems(player);
+        giveItemsNow(player, className);
+    }
+
+    private void giveItemsNow(Player player, String className) {
 
         ConfigurationSection abilities = plugin.getConfig().getConfigurationSection("abilities." + className);
         if (abilities == null) {
@@ -83,18 +96,28 @@ public final class AbilityItemManager {
     }
 
     /**
-     * Clear all ability items from a player's hotbar (slots 0 and 1).
+     * Clear all ability items from a player's inventory (all slots).
      */
     public void clearClassItems(Player player) {
-        ItemStack slot0 = player.getInventory().getItem(PRIME_SLOT);
-        ItemStack slot1 = player.getInventory().getItem(TACTICAL_SLOT);
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (item != null && isAbilityItem(item)) {
+                player.getInventory().setItem(i, null);
+            }
+        }
+    }
 
-        if (slot0 != null && slot0.hasItemMeta() && slot0.getItemMeta().getPersistentDataContainer().has(classItemKey, PersistentDataType.STRING)) {
-            player.getInventory().setItem(PRIME_SLOT, null);
+    /**
+     * Check if the player already has any ability items in their inventory.
+     */
+    public boolean hasClassItems(Player player) {
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (item != null && isAbilityItem(item)) {
+                return true;
+            }
         }
-        if (slot1 != null && slot1.hasItemMeta() && slot1.getItemMeta().getPersistentDataContainer().has(classItemKey, PersistentDataType.STRING)) {
-            player.getInventory().setItem(TACTICAL_SLOT, null);
-        }
+        return false;
     }
 
     /**

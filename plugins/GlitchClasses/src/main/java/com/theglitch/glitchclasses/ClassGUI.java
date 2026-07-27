@@ -463,8 +463,8 @@ public class ClassGUI implements Listener {
         // Apply health boost
         player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20 + (classManager.getClassData(player.getUniqueId()).level() * 2));
 
-        // Give ability items
-        abilityItemManager.giveClassItems(player, className);
+        // Give ability items (force — replaces any existing)
+        abilityItemManager.forceGiveClassItems(player, className);
 
         // Play select sound
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);

@@ -39,7 +39,7 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                     return true;
                 }
                 classManager.setClass(player.getUniqueId(), className);
-                plugin.getAbilityItemManager().giveClassItems(player, className);
+                plugin.getAbilityItemManager().forceGiveClassItems(player, className);
                 player.sendMessage(plugin.getComponent("class-selected", "<class>",
                         className.substring(0, 1).toUpperCase() + className.substring(1)));
                 player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
@@ -49,6 +49,10 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                 ClassData data = classManager.getClassData(player.getUniqueId());
                 if (data.className().equals("none")) {
                     player.sendMessage(Component.text("Select a class first!", NamedTextColor.RED));
+                    return true;
+                }
+                if (plugin.getAbilityItemManager().hasClassItems(player)) {
+                    player.sendMessage(Component.text("You already have your ability items.", NamedTextColor.YELLOW));
                     return true;
                 }
                 plugin.getAbilityItemManager().giveClassItems(player, data.className());
