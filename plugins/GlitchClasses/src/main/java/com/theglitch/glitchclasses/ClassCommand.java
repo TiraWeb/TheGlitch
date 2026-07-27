@@ -20,8 +20,17 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
         }
 
         if (args.length == 0) {
-            // /class — open GUI
-            new ClassGUI(plugin, classManager).openMainMenu(player);
+            // /class — open GUI (use registered listener instance from plugin)
+            org.bukkit.plugin.RegisteredListener[] listeners = org.bukkit.Bukkit.getPluginManager()
+                    .getRegisteredListeners(plugin.getName());
+            for (org.bukkit.plugin.RegisteredListener rl : listeners) {
+                if (rl.getListener() instanceof ClassGUI gui) {
+                    gui.openMainMenu(player);
+                    return true;
+                }
+            }
+            // Fallback — shouldn't happen
+            player.sendMessage(Component.text("Class GUI not available.", NamedTextColor.RED));
             return true;
         }
 
@@ -42,7 +51,8 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                 plugin.getAbilityItemManager().forceGiveClassItems(player, className);
                 player.sendMessage(plugin.getComponent("class-selected", "<class>",
                         className.substring(0, 1).toUpperCase() + className.substring(1)));
-                player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
+                ClassData newData = classManager.getClassData(player.getUniqueId());
+                player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20 + (newData.level() * 2));
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
             }
             case "kit" -> {

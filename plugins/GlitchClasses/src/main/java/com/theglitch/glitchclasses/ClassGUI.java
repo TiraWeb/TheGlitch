@@ -493,6 +493,23 @@ public class ClassGUI implements Listener {
     private void handleUpgrade(Player player, ClassData data) {
         int cost = classManager.getUpgradeCost(data.level());
 
+        // Check if player has enough shards via Vault economy
+        try {
+            var eco = org.bukkit.Bukkit.getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
+            if (eco != null) {
+                net.milkbowl.vault.economy.Economy economy = eco.getProvider();
+                if (!economy.has(player, cost)) {
+                    player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.",
+                            NamedTextColor.RED));
+                    return;
+                }
+                economy.withdrawPlayer(player, cost);
+            }
+        } catch (Exception e) {
+            // Vault not available — log warning but allow upgrade anyway
+            plugin.getLogger().warning("Vault economy not available for upgrade check: " + e.getMessage());
+        }
+
         // Add XP to trigger level up
         boolean leveledUp = classManager.addXp(player.getUniqueId(), cost);
 

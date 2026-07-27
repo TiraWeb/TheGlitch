@@ -30,8 +30,9 @@ public final class GlitchStash extends JavaPlugin {
 
         stashManager = new StashManager(this);
 
-        // Register event listener
+        // Register event listeners
         Bukkit.getPluginManager().registerEvents(new ExtractionListener(this, stashManager), this);
+        Bukkit.getPluginManager().registerEvents(new StashGUI(), this);
 
         // Register commands
         getCommand("stash").setExecutor(new StashCommand(this, stashManager));
@@ -65,7 +66,7 @@ public final class GlitchStash extends JavaPlugin {
     }
 
     public String getMessage(String key) {
-        String msg = messagesConfig.getString("messages." + key, key);
+        String msg = messagesConfig.getString(key, key);
         return msg;
     }
 

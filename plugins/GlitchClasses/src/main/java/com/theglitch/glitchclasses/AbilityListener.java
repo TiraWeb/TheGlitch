@@ -117,7 +117,7 @@ public class AbilityListener implements Listener {
 
         for (int x = -1; x <= 1; x++) {
             for (int y = 0; y <= 2; y++) {
-                Block block = playerLoc.clone().add(direction.multiply(2)).add(x, y, 0).getBlock();
+                Block block = playerLoc.clone().add(direction.clone().multiply(2)).add(x, y, 0).getBlock();
                 if (block.getType() == Material.AIR) {
                     block.setType(Material.BARRIER);
                     wallBlocks.add(block);
@@ -132,7 +132,7 @@ public class AbilityListener implements Listener {
         player.sendActionBar(Component.text("SHIELD WALL ACTIVE", NamedTextColor.RED));
 
         // Visual effects
-        player.getWorld().spawnParticle(Particle.CRIT, player.getLocation().add(direction.multiply(2)), 50, 1, 1, 1, 0.1);
+        player.getWorld().spawnParticle(Particle.CRIT, player.getLocation().add(direction.clone().multiply(2)), 50, 1, 1, 1, 0.1);
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_PLACE, 1.0f, 0.8f);
 
         // Remove wall after duration
@@ -254,7 +254,7 @@ public class AbilityListener implements Listener {
             if (beaconBlock.getType() == Material.BEACON) {
                 beaconBlock.setType(Material.AIR);
             }
-        }, 200); // 10 seconds
+        }, reviveTime);
     }
 
     // ==================== SPECTER ABILITIES ====================
@@ -305,8 +305,16 @@ public class AbilityListener implements Listener {
         Vector direction = eyeLoc.getDirection().multiply(range);
 
         // Find first solid block or max range
-        Block targetBlock = player.getWorld().rayTraceBlocks(eyeLoc, direction, range,
-                FluidCollisionMode.NEVER, true).getHitBlock();
+        Block targetBlock = null;
+        try {
+            var result = player.getWorld().rayTraceBlocks(eyeLoc, direction, range,
+                    FluidCollisionMode.NEVER, true);
+            if (result != null) {
+                targetBlock = result.getHitBlock();
+            }
+        } catch (Exception ignored) {
+            // Ray trace failed — use max range
+        }
 
         Location destination;
         if (targetBlock != null) {
@@ -366,8 +374,6 @@ public class AbilityListener implements Listener {
                 PersistentDataType.INTEGER,
                 damage);
 
-        turretBlocks.computeIfAbsent(player.getUniqueId(), k -> new ArrayList<>()).add(turretLoc.getBlock());
-
         player.sendMessage(plugin.getComponent("turret-placed"));
         player.sendActionBar(Component.text("TURRET DEPLOYED", NamedTextColor.AQUA));
         player.playSound(player.getLocation(), Sound.BLOCK_DISPENSER_DISPENSE, 1.0f, 1.0f);
@@ -416,7 +422,9 @@ public class AbilityListener implements Listener {
                 turret.getWorld().spawnParticle(Particle.CLOUD, turret.getLocation().add(0, 1, 0),
                         10, 0.3, 0.3, 0.3, 0.02);
             }
-            player.sendActionBar(Component.empty());
+            if (player.isOnline()) {
+                player.sendActionBar(Component.empty());
+            }
         }, duration);
     }
 

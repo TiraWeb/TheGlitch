@@ -3,7 +3,7 @@ version: '${project.version}'
 main: com.theglitch.glitchstash.GlitchStash
 api-version: '1.21'
 description: Extraction vault system for The Glitch
-depend:
+softdepend:
   - VelKoth
   - Essentials
 softdepend:

@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -111,8 +112,16 @@ public class StashGUI implements Listener {
                     clicked.getType().name().toLowerCase().replace("_", " "),
                     NamedTextColor.GREEN));
         } else {
-            // Some items didn't fit
-            int given = clicked.getAmount() - leftover.get(0).getAmount();
+            // Some items didn't fit — calculate how many were actually given
+            int given = clicked.getAmount();
+            if (!leftover.isEmpty()) {
+                // Sum up all leftover amounts
+                int leftoverAmount = 0;
+                for (ItemStack left : leftover.values()) {
+                    leftoverAmount += left.getAmount();
+                }
+                given = clicked.getAmount() - leftoverAmount;
+            }
             if (given > 0) {
                 event.getClickedInventory().setItem(slot,
                         given > 0 ? new ItemStack(clicked.getType(), given) : null);
@@ -126,26 +135,38 @@ public class StashGUI implements Listener {
     }
 
     @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (!openSessions.containsKey(player.getUniqueId())) return;
+        // Cancel all drag events in stash GUI to prevent bypass
+        event.setCancelled(true);
+    }
+
+    @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
         openSession session = openSessions.remove(player.getUniqueId());
         if (session == null) return;
 
-        // Check if any items remain in the GUI — save them back to stash
+        // Rebuild stash from remaining items in GUI
         List<ItemStack> remaining = new ArrayList<>();
         for (int i = 9; i < SIZE; i++) {
             ItemStack item = event.getInventory().getItem(i);
             if (item != null && item.getType() != Material.AIR) {
-                remaining.add(item);
+                remaining.add(item.clone());
             }
         }
 
-        // If all items were taken, clear the stash
         if (remaining.isEmpty()) {
+            // All items taken — clear stash
             GlitchStash.getInstance().getStashManager().clearStash(player.getUniqueId());
             player.sendMessage(GlitchStash.getInstance().getComponent("all-retrieved"));
+        } else {
+            // Partial retrieval — rebuild stash from remaining items and persist
+            ItemStack[] newContents = new ItemStack[remaining.size()];
+            remaining.toArray(newContents);
+            GlitchStash.getInstance().getStashManager().replaceStash(
+                    player.getUniqueId(), newContents);
         }
-        // Remaining items stay in the in-memory stash (but we don't re-persist them
-        // since the session tracks original items — next /stash will show original)
     }
 }
