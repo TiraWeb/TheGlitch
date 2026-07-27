@@ -1,0 +1,54 @@
+name: GlitchDungeons
+version: 1.0-SNAPSHOT
+main: com.theglitch.glitchdungeons.GlitchDungeons
+api-version: '1.21'
+description: The Glitch Dungeon System - Party, Wave Combat, Extraction
+author: TheGlitch
+
+softdepend:
+  - GlitchStash
+  - MythicMobs
+  - Coins
+  - LuckPerms
+  - WorldGuard
+
+commands:
+  party:
+    description: Party commands
+    usage: /party <invite|accept|kick|leave|list>
+    aliases: [p]
+  pchat:
+    description: Party chat
+    usage: /pchat <message>
+    aliases: [pc]
+  dungeon:
+    description: Dungeon commands
+    usage: /dungeon <join|queue|info|leave>
+    aliases: [d]
+  dungeonadmin:
+    description: Dungeon admin commands
+    usage: /dungeonadmin <reload|force-start|cancel|slots|reset-cooldowns>
+    permission: glitchdungeons.admin
+
+permissions:
+  glitchdungeons.party:
+    description: Use party commands
+    default: true
+  glitchdungeons.dungeon:
+    description: Use dungeon commands
+    default: true
+  glitchdungeons.dungeon.tier1:
+    description: Enter Tier 1 dungeons
+    default: true
+  glitchdungeons.dungeon.tier2:
+    description: Enter Tier 2 dungeons
+    default: op
+  glitchdungeons.dungeon.tier3:
+    description: Enter Tier 3 dungeons
+    default: op
+  glitchdungeons.dungeon.tier4:
+    description: Enter Tier 4 dungeons
+    default: op
+  glitchdungeons.admin:
+    description: Admin commands
+    default: op

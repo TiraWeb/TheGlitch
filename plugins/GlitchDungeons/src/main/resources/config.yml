@@ -1,0 +1,232 @@
+# GlitchDungeons Configuration
+
+# General settings
+prep-time: 30
+extraction-time: 30
+wave-delay: 10
+max-party-size: 4
+min-party-size: 1
+
+# Cooldown settings
+cooldown-per-dungeon: 600
+cooldown-per-player: true
+
+# Slot grid
+slots:
+  1: { x: -1024, z: -1024 }
+  2: { x: 0, z: -1024 }
+  3: { x: 1024, z: -1024 }
+  4: { x: -1024, z: 0 }
+  5: { x: -1024, z: 1024 }
+  6: { x: 0, z: 1024 }
+  7: { x: 1024, z: 1024 }
+  8: { x: 1024, z: 0 }
+
+# Staging area
+staging:
+  x: 0
+  y: 65
+  z: 0
+
+# Hub spawn (after completion)
+hub-spawn:
+  x: 0
+  y: 65
+  z: 0
+
+# Dungeon definitions
+dungeons:
+  1:
+    name: "Corrupted Ruins"
+    max-time: 600
+    waves:
+      1:
+        mobs:
+          - type: GlitchStalker
+            count: 5
+            radius: 16
+        delay: 5
+      2:
+        mobs:
+          - type: GlitchStalker
+            count: 8
+          - type: GlitchPhantom
+            count: 3
+        delay: 10
+      3:
+        mobs:
+          - type: GlitchBrute
+            count: 2
+          - type: GlitchStalker
+            count: 4
+        boss:
+          type: GlitchCore
+          count: 1
+        delay: 0
+    rewards:
+      base-shards: 50
+      per-wave-bonus: 10
+      tier-multiplier: 1.0
+      loot-chance: 0.3
+  2:
+    name: "Fractured Labs"
+    max-time: 900
+    waves:
+      1:
+        mobs:
+          - type: GlitchStalker
+            count: 8
+          - type: GlitchPhantom
+            count: 4
+        delay: 5
+      2:
+        mobs:
+          - type: GlitchBrute
+            count: 3
+          - type: GlitchPhantom
+            count: 6
+        delay: 10
+      3:
+        mobs:
+          - type: GlitchBrute
+            count: 4
+          - type: GlitchStalker
+            count: 6
+        delay: 10
+      4:
+        mobs:
+          - type: GlitchBrute
+            count: 3
+          - type: GlitchPhantom
+            count: 5
+        boss:
+          type: GlitchCore
+          count: 1
+        delay: 0
+    rewards:
+      base-shards: 100
+      per-wave-bonus: 15
+      tier-multiplier: 1.5
+      loot-chance: 0.5
+  3:
+    name: "Glitch Core"
+    max-time: 1200
+    waves:
+      1:
+        mobs:
+          - type: GlitchStalker
+            count: 10
+          - type: GlitchBrute
+            count: 2
+        delay: 5
+      2:
+        mobs:
+          - type: GlitchPhantom
+            count: 8
+          - type: GlitchBrute
+            count: 4
+        delay: 10
+      3:
+        mobs:
+          - type: GlitchBrute
+            count: 6
+          - type: GlitchStalker
+            count: 8
+        delay: 10
+      4:
+        mobs:
+          - type: GlitchPhantom
+            count: 10
+          - type: GlitchBrute
+            count: 5
+        delay: 10
+      5:
+        mobs:
+          - type: GlitchBrute
+            count: 4
+          - type: GlitchStalker
+            count: 6
+        boss:
+          type: GlitchCore
+          count: 2
+        delay: 0
+    rewards:
+      base-shards: 200
+      per-wave-bonus: 20
+      tier-multiplier: 2.5
+      loot-chance: 0.7
+  4:
+    name: "The Abyss"
+    max-time: 1200
+    waves:
+      1:
+        mobs:
+          - type: GlitchBrute
+            count: 6
+          - type: GlitchPhantom
+            count: 8
+          - type: GlitchStalker
+            count: 12
+        delay: 5
+      2:
+        mobs:
+          - type: GlitchBrute
+            count: 6
+          - type: GlitchPhantom
+            count: 10
+          - type: GlitchStalker
+            count: 15
+        delay: 10
+      3:
+        mobs:
+          - type: GlitchBrute
+            count: 8
+          - type: GlitchPhantom
+            count: 12
+          - type: GlitchStalker
+            count: 10
+        delay: 10
+      4:
+        mobs:
+          - type: GlitchBrute
+            count: 10
+          - type: GlitchPhantom
+            count: 15
+          - type: GlitchStalker
+            count: 12
+        delay: 10
+      5:
+        mobs:
+          - type: GlitchBrute
+            count: 8
+          - type: GlitchStalker
+            count: 10
+        boss:
+          type: GlitchCore
+          count: 3
+        delay: 0
+    rewards:
+      base-shards: 400
+      per-wave-bonus: 30
+      tier-multiplier: 4.0
+      loot-chance: 1.0
+
+# Messages
+messages:
+  party-invite: "&aParty invite sent to &e<player>&a!"
+  party-accepted: "&a<player> joined the party!"
+  party-kicked: "&c<player> was kicked from the party."
+  party-left: "&cYou left the party."
+  dungeon-joining: "&aJoining <dungeon> (Tier <tier>)..."
+  dungeon-prep: "&ePreparing... Get ready!"
+  dungeon-active: "&cDungeon started! Fight for your life!"
+  dungeon-wave: "&6Wave <current>/<total> incoming!"
+  dungeon-boss: "&4BOSS WAVE! <boss> has appeared!"
+  dungeon-extracting: "&aExtracting... Hold still for <time>s!"
+  dungeon-complete: "&aDungeon complete! Rewards sent to your stash."
+  dungeon-failed: "&cDungeon failed. You were teleported to hub."
+  dungeon-cooldown: "&cYou must wait <time> before entering this dungeon again."
+  dungeon-full: "&cAll dungeon slots are full. Try again later."
+  no-party: "&cYou must be in a party to enter a dungeon."
+  not-leader: "&cOnly the party leader can start a dungeon."
+  inventory-saved: "&aYour inventory has been saved to your stash."
