@@ -52,7 +52,10 @@ public final class AbilityItemManager {
         clearClassItems(player);
 
         ConfigurationSection abilities = plugin.getConfig().getConfigurationSection("abilities." + className);
-        if (abilities == null) return;
+        if (abilities == null) {
+            plugin.getLogger().warning("[AbilityItemManager] No abilities config for class: " + className);
+            return;
+        }
 
         NamedTextColor color = CLASS_COLORS.getOrDefault(className, NamedTextColor.WHITE);
 
@@ -61,6 +64,9 @@ public final class AbilityItemManager {
         if (prime != null) {
             ItemStack item = createAbilityItem(prime, "prime", className, color, true);
             player.getInventory().setItem(PRIME_SLOT, item);
+            plugin.getLogger().info("[AbilityItemManager] Gave prime item to " + player.getName() + " slot " + PRIME_SLOT + ": " + item.getType());
+        } else {
+            plugin.getLogger().warning("[AbilityItemManager] No prime ability config for: " + className);
         }
 
         // Give tactical ability
@@ -68,7 +74,12 @@ public final class AbilityItemManager {
         if (tactical != null) {
             ItemStack item = createAbilityItem(tactical, "tactical", className, color, false);
             player.getInventory().setItem(TACTICAL_SLOT, item);
+            plugin.getLogger().info("[AbilityItemManager] Gave tactical item to " + player.getName() + " slot " + TACTICAL_SLOT + ": " + item.getType());
+        } else {
+            plugin.getLogger().warning("[AbilityItemManager] No tactical ability config for: " + className);
         }
+
+        player.updateInventory();
     }
 
     /**
