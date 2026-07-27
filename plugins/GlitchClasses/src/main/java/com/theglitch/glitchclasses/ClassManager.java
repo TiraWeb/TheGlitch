@@ -39,11 +39,28 @@ public final class ClassManager {
     }
 
     /**
+     * Sanitize any in-memory data that might have bad class names.
+     */
+    public void sanitizeAll() {
+        for (Map.Entry<UUID, ClassData> entry : players.entrySet()) {
+            ClassData d = entry.getValue();
+            String clean = sanitizeClassName(d.className());
+            if (!clean.equals(d.className())) {
+                ClassData fixed = new ClassData(d.uuid(), clean, d.level(), d.xp());
+                entry.setValue(fixed);
+                saveToFile(d.uuid(), fixed);
+                plugin.getLogger().info("Sanitized class name for " + d.uuid() + ": '" + d.className() + "' -> '" + clean + "'");
+            }
+        }
+    }
+
+    /**
      * Set a player's class.
      */
     public void setClass(UUID uuid, String className) {
+        String sanitized = sanitizeClassName(className);
         ClassData data = getClassData(uuid);
-        ClassData updated = new ClassData(uuid, className.toLowerCase(), data.level(), data.xp());
+        ClassData updated = new ClassData(uuid, sanitized, data.level(), data.xp());
         players.put(uuid, updated);
         saveToFile(uuid, updated);
     }
@@ -158,7 +175,7 @@ public final class ClassManager {
                     UUID uuid = UUID.fromString(path.getFileName().toString().replace(".yml", ""));
                     YamlConfiguration yaml = YamlConfiguration.loadConfiguration(path.toFile());
 
-                    String className = yaml.getString("class", "none");
+                    String className = sanitizeClassName(yaml.getString("class", "none"));
                     int level = yaml.getInt("level", 0);
                     int xp = yaml.getInt("xp", 0);
 
@@ -191,5 +208,10 @@ public final class ClassManager {
 
     public void shutdown() {
         players.forEach(this::saveToFile);
+    }
+
+    private String sanitizeClassName(String className) {
+        if (className == null) return "none";
+        return className.toLowerCase().replaceAll("[^a-z]", "");
     }
 }

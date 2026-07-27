@@ -26,6 +26,7 @@ public final class GlitchClasses extends JavaPlugin {
         loadMessages();
 
         classManager = new ClassManager(this);
+        classManager.sanitizeAll();
         abilityItemManager = new AbilityItemManager(this);
 
         Bukkit.getPluginManager().registerEvents(new ClassGUI(this, classManager), this);
