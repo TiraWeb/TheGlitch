@@ -64,7 +64,7 @@ public class TimerTask {
             if (time <= 60) {
                 bossBar.setColor(BarColor.RED);
             } else if (time <= 180) {
-                bossBar.setColor(BarColor.ORANGE);
+                bossBar.setColor(BarColor.YELLOW);
             }
 
             // Low time warning

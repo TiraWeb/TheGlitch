@@ -145,11 +145,12 @@ public class WaveManager {
         // MythicMobs sets "MythicMob" metadata on spawned mobs
         boolean mmAvailable = Bukkit.getPluginManager().getPlugin("MythicMobs") != null;
         int checkRadius = 32;
-        for (LivingEntity entity : world.getNearbyEntities(
+        for (org.bukkit.entity.Entity entity : world.getNearbyEntities(
                 new Location(world, slot.getCenterX(), 64, slot.getCenterZ()),
                 checkRadius, 32, checkRadius)) {
+            if (!(entity instanceof org.bukkit.entity.LivingEntity living)) continue;
             if (entity instanceof Player) continue;
-            if (entity.isDead()) continue;
+            if (living.isDead()) continue;
             // If MythicMobs is available, check its metadata
             if (mmAvailable && entity.hasMetadata("MythicMob")) return false;
             // Fallback: if any non-player living entity exists in the area, wave isn't clear
