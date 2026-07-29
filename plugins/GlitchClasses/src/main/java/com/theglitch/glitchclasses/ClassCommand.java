@@ -20,17 +20,7 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
         }
 
         if (args.length == 0) {
-            // /class — open GUI (use registered listener instance from plugin)
-            org.bukkit.plugin.RegisteredListener[] listeners = org.bukkit.Bukkit.getPluginManager()
-                    .getRegisteredListeners(plugin);
-            for (org.bukkit.plugin.RegisteredListener rl : listeners) {
-                if (rl.getListener() instanceof ClassGUI gui) {
-                    gui.openMainMenu(player);
-                    return true;
-                }
-            }
-            // Fallback — shouldn't happen
-            player.sendMessage(Component.text("Class GUI not available.", NamedTextColor.RED));
+            plugin.getClassGUI().openMainMenu(player);
             return true;
         }
 

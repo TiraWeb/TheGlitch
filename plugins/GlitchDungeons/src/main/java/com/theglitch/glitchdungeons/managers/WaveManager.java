@@ -117,6 +117,7 @@ public class WaveManager {
         if (waveSection != null) {
             delay = waveSection.getInt("delay", delay);
         }
+        final int waveDelay = delay;
 
         // Check for mob completion periodically
         Bukkit.getScheduler().runTaskTimer(plugin, task -> {
@@ -126,12 +127,12 @@ public class WaveManager {
             }
             if (isWaveCleared(run)) {
                 task.cancel();
-                // Start next wave after delay
+                // Start next wave after waveDelay
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     if (run.getState() == DungeonRun.State.ACTIVE) {
                         startNextWave(run);
                     }
-                }, delay * 20L);
+                }, waveDelay * 20L);
             }
         }, 20L, 20L); // Check every second
     }
