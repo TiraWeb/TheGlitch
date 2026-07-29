@@ -8,11 +8,14 @@ almost nothing; only chunks near actual players are loaded. The *instancing*
 requirement is solved by coordinate offsetting **inside** the PvE world (dungeon
 slot grid, below) — no per-run world folders, ever.
 
-| World | Purpose | Terrain | Border | Key gamerules |
-|---|---|---|---|---|
-| `hub` | Hub City (safe) | Flat (main world) | 512 @ 0,0 | no mobs, no hunger*, frozen midnight, `keep_inventory on` |
-| `glitch_pve` | The Standard Glitch — instanced dungeons | Flat | 4096 @ 0,0 | **`keep_inventory ON`**, no natural mob spawns (MythicMobs only), frozen midnight |
-| `glitch_red` | The Deep Glitch / Red Zone — open PvPvE extraction | Normal, seed `20260719` | 2000 @ 0,0 | **`keep_inventory OFF`** (full loot), day/night cycle on, no phantoms |
+**All three worlds are custom imported maps** — not generated worlds. See
+"Custom Map Sources" below for download/origin details.
+
+| World | Purpose | Terrain | Source | Border | Key gamerules |
+|---|---|---|---|---|---|
+| `hub` | Hub City (safe) | Japanese city build | **TerraSpace** (Java world save) | 512 @ 0,0 | no mobs, no hunger*, frozen midnight, `keep_inventory on` |
+| `glitch_pve` | The Standard Glitch — instanced dungeons | Cave/underground map | **CaveFree** (imported via `mv import`) | 4096 @ 0,0 | **`keep_inventory ON`**, no natural mob spawns (MythicMobs only), frozen midnight |
+| `glitch_red` | The Deep Glitch / Red Zone — open PvPvE extraction | 2k x 2k custom terrain | **MMORPG_Odyssey** 2k map (imported via `mv import`) | 2000 @ 0,0 | **`keep_inventory OFF`** (full loot), day/night cycle on, no phantoms |
 
 \* hunger-off in the hub is a WorldGuard region flag, not a gamerule.
 
@@ -33,9 +36,27 @@ dimensions to tick.
 
 ---
 
+## Custom Map Sources
+
+All three worlds are pre-built custom maps, not vanilla generated terrain:
+
+| World | Source | Download | Import Method |
+|---|---|---|---|
+| `hub` | **TerraSpace** (Japanese cyberpunk city) | Java world save at `server/hub/` | Copied directly into server root before first start |
+| `glitch_red` | **MMORPG_Odyssey 2k map** | Free map (2,000 x 2,000 custom terrain) | `mv import glitch_red normal` — world folder at server root |
+| `glitch_pve` | **CaveFree** (cave/underground map) | Free map (underground caves & ruins) | `mv import glitch_pve normal` — world folder at server root |
+
+> **Import gotcha:** Paper 26.2 does NOT auto-detect custom dimensions in
+> `hub/dimensions/minecraft/` — custom world keys are rejected. Worlds MUST be
+> at **server root** (`/opt/theglitch/server/glitch_red/`) not as dimension
+> subfolders. Multiverse-Core handles root-level worlds correctly with
+> `/mv import <name> normal`. Always `rm -rf` both the root AND the
+> leftover dimension folder (`hub/dimensions/minecraft/glitch_red/`) before
+> re-importing to avoid "Refusing to overwrite existing migrated file" errors.
+
 ## Hub City (`hub`)
 
-- Flat world; the city gets built (or imported with WorldEdit) around spawn `0, -60, 0`.
+- **TerraSpace** Japanese cyberpunk city build (pre-built Java world save, pasted at spawn).
 - World border **512** centered on 0,0 — a city plaza, not a continent.
 - Time frozen at midnight (neon-city aesthetic), weather off, mobs off.
 - WorldGuard `__global__` lockdown (Phase 4.2): no PvP, no block changes, no
@@ -46,6 +67,11 @@ dimensions to tick.
   not in the deny-spawn list, so Phase 5 shops/class selectors are unaffected.
 
 ## The Standard Glitch (`glitch_pve`) — dungeon slot grid
+
+**CaveFree** cave/underground map. Dungeon shells are built inside the cave
+system at the slot grid coordinates below. Unlike a flat world, the terrain
+is not uniform — each slot location may need terrain clearing before a
+dungeon shell can be placed.
 
 Dungeon "instances" are **8 fixed slots** on a 1024-block grid, far enough
 apart that no slot can see another (view distance 7 = 112 blocks; slots are
@@ -101,8 +127,9 @@ not the console/RCON.
 
 ## The Red Zone (`glitch_red`)
 
-Natural terrain, fixed seed `20260719` (fixed = the box is rebuildable and POI
-coordinates stay valid), border **2000** centered 0,0.
+**MMORPG_Odyssey** 2k custom terrain map (not seed-generated). Border **2000**
+centered 0,0. The fixed seed `20260719` listed in earlier versions is no
+longer relevant — import the pre-built world save instead.
 
 **Entry ring — 6 rotating drop points** at radius 700 (60° apart):
 
@@ -133,8 +160,8 @@ make rotations trivially predictable):
 **The Core (0, 0)** — the center POI every extraction route has to gamble
 against. Mid POIs land in Phase 6 when loot tables exist.
 
-Y-coordinates everywhere in this world are "surface at that X/Z" — teleports
-use highest-block placement, never fixed Y (terrain is generated, not built).
+Y-coordinates in `glitch_red` are "surface at that X/Z" — the Odyssey map has
+varied terrain. Teleports use highest-block placement, never fixed Y.
 
 ---
 
@@ -155,7 +182,8 @@ Until the run-manager plugin exists, ops can move around with
 
 ## Per-world performance notes
 
-- Only `glitch_red` needs pre-generation (real terrain): radius 1050 covers
-  border + margin. Flat worlds generate ~free on demand.
+- **No pre-generation needed** — all three worlds are pre-built custom maps
+  with existing terrain. Chunky pre-gen was only relevant for the original
+  seed-generated `glitch_red` and is no longer needed.
 - Anti-xray is deliberately **off** everywhere: loot lives in chests/drops,
   not ores, so the CPU tax buys nothing. Revisit only if mining ever matters.

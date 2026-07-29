@@ -1,7 +1,7 @@
 # The Glitch — Session Handoff
 
 Paste this whole file into a new chat (any model) to resume work with full
-context. It reflects state as of **2026-07-27**. The repo (`TiraWeb/TheGlitch`,
+context. It reflects state as of **2026-07-29**. The repo (`TiraWeb/TheGlitch`,
 branch `main`) is the single source of truth — this doc is a guide to it, not
 a replacement for reading `ROADMAP.md`, `docs/ZONES.md`, and
 `docs/PERFORMANCE.md`.
@@ -10,8 +10,10 @@ a replacement for reading `ROADMAP.md`, `docs/ZONES.md`, and
 
 **The Glitch** — a non-Pay-to-Win, EULA-compliant rogue-lite **extraction
 hybrid** Minecraft server. Java + Bedrock cross-play. Three zones: `hub`
-(safe lobby), `glitch_pve` (instanced keep-inventory dungeons), `glitch_red`
-(open full-loot PvPvE extraction map).
+(safe lobby, **TerraSpace** Japanese cyberpunk build), `glitch_pve`
+(instanced keep-inventory dungeons, **CaveFree** cave map), `glitch_red`
+(open full-loot PvPvE extraction, **MMORPG_Odyssey** 2k custom terrain).
+**All three worlds are custom imported maps**, not vanilla generated terrain.
 
 **Hardware:** Oracle Cloud Always Free, Ampere A1, **2 OCPU / 12GB RAM**,
 Ubuntu 24.04 ARM64. **Stack:** Purpur on **Java 25** (Minecraft 26.x requires
@@ -37,6 +39,8 @@ setup-deluxemenus.sh      Phase 5.5: reloads GUI menus, sets permissions
 setup-fancynpcs.sh        Phase 5.5: reloads NPC system, sets permissions
 setup-geyser.sh           Phase 3.1: verifies Bedrock bridge (does NOT reload)
 setup-all-plugins.sh      Master runner: runs all setup scripts in order
+setup-imported-worlds.sh  Phase 4: import custom maps (glitch_red + glitch_pve) via Multiverse
+reapply-world-config.sh   Phase 4: re-apply gamerules/flags/borders after world import
 recover-worlds.sh         DESTRUCTIVE reset for glitch_pve/glitch_red (rarely needed)
 console.sh                attach to the live server console (self-elevates via sudo)
 scripts/mc-cmd.py         local RCON client (self-elevates via sudo)
@@ -82,12 +86,16 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 3.1: done** (Geyser/Floodgate installed, config correct for the
   *new* 2.9+ Geyser config format). **3.2 live Bedrock join-test: not done**
   — deliberately deferred, user's call.
-- **Phase 4 mechanics (4.1-4.4): done.** All three worlds created with
-  Multiverse, correct gamerules, WorldGuard flags, borders, Red Zone
-  pre-generated (17,689 chunks). All scripted — survives fresh instance reset.
+- **Phase 4 mechanics (4.1-4.4): done.** All three worlds are **custom
+  imported maps** (hub=TerraSpace, glitch_red=Odyssey 2k, glitch_pve=CaveFree),
+  not generated terrain. Correct gamerules, WorldGuard flags, borders applied
+  via script (`setup-imported-worlds.sh` + `reapply-world-config.sh`).
+  All scripted — survives fresh instance reset.
 - **Phase 4.5 (Hub City build): DEFERRED.** Requires in-game WorldEdit.
+  (TerraSpace is already pasted at spawn — minor edits may be needed.)
 - **Phase 4.6 (Dungeon shell build): DEFERRED.** Build scripts exist but
-  require in-game execution. See `docs/DUNGEON_SHELL.md`.
+  require in-game execution and may need Y-coordinate adjustments since
+  glitch_pve is a CaveFree cave map, not flat. See `docs/DUNGEON_SHELL.md`.
 - **Phase 4.7 (Red Zone POIs): DEFERRED.** Not started.
 - **Phase 5.1 (LuckPerms + VaultUnlocked): done.** `setup-luckperms.sh`
   creates group hierarchy. Run after first restart.
@@ -95,8 +103,9 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
   seeded. Echo Shard items, disabled in hub, drop-on-death in game worlds.
 - **Phase 5.3 (MythicMobs): done.** 4 mob definitions seeded (Stalker, Brute,
   Phantom, Core boss). Drop tables use COINS type.
-- **Phase 5.4 (Dungeon/Party): custom plugin planned.** Development plan in
-  Phase 5.9.
+- **Phase 5.4 (Dungeon/Party): DONE — GlitchDungeons built from source.**
+  21 Java files, party system, wave spawning, boss bar, extraction mechanic,
+  cooldowns, rewards. Requires testing on server.
 - **Phase 5.5 (Hub NPCs): done.** FancyNpcs + DeluxeMenus installed.
 - **Phase 5.6 (Classes): done.** GlitchClasses plugin built from source — 4
   classes (Vanguard, Warden, Specter, Operator) with prime/tactical abilities,
@@ -145,18 +154,25 @@ sudo ./setup-all-plugins.sh
 ```
 
 After reset:
-- Hub is a flat world at spawn (0, -60, 0) — re-paste Sakura Spawn with WorldEdit
-- glitch_pve is flat, empty — dungeon shells deferred
-- glitch_red is natural terrain, pre-generated — extraction arenas configured
+- Hub is the **TerraSpace** Japanese cyberpunk city (pre-built Java world save)
+- glitch_pve is the **CaveFree** cave map — dungeon shells deferred; build
+  scripts' Y=-60 assumptions may need adjustment for cave terrain
+- glitch_red is the **MMORPG_Odyssey** 2k custom map — extraction arenas configured
 - All plugins loaded, economy ready, mobs configured
 - GlitchStash built and deployed (extraction vault working)
+- GlitchClasses built and deployed (4 classes, ability items, 10 upgrade levels)
+- GlitchDungeons built and deployed (21 files, party system, wave spawning, boss bar, extraction, rewards)
 - PAPI expansions installed (LuckPerms + Vault placeholders work)
 - TAB scoreboard renders all lines
 - VelKoth extraction zones active (hold zone → inventory saved → teleport to hub)
 
-## Where we left off — extraction loop + class system complete, physical builds deferred
+## Where we left off — custom maps imported, extraction + class + dungeon systems done, physical builds deferred
 
 All server mechanics are fully scripted and survive a fresh instance reset.
+**All three worlds are custom imported maps** — hub=TerraSpace (Japanese
+cyberpunk city), glitch_red=Odyssey 2k custom terrain, glitch_pve=CaveFree
+cave map. Import gotcha documented in Hard-won lessons below.
+
 The extraction loop is fully functional: players extract via VelKoth zones,
 inventory auto-saves to GlitchStash, teleport to hub, retrieve with `/stash`.
 
@@ -164,13 +180,30 @@ The class system is functional: GlitchClasses plugin built from source with
 4 classes, ability items, 10 upgrade levels. Ability items are immovable and
 non-duplicatable, auto-given on class select and when entering game worlds.
 
-Physical builds (Sakura Spawn hub, dungeon shells, Red Zone POIs) are deferred
-until the operator is ready to do in-game WorldEdit work.
+The dungeon system is built: GlitchDungeons plugin (21 Java files) with party
+system, wave spawning, boss bar, extraction mechanic, cooldowns, and rewards.
+Needs server-side build and in-game testing.
 
-**Next when ready:** Physical builds or custom plugins (TheGlitchDungeons,
-GlitchRaid, GlitchInsurance, etc.).
+Physical builds (dungeon shells, Red Zone POIs) are deferred until the
+operator is ready to do in-game WorldEdit work. Note: build scripts for
+glitch_pve (staging, slot 1) assume flat Y=-60 terrain — the CaveFree map
+may require coordinate adjustments.
+
+**Next when ready:** In-game testing (extraction loop, class abilities, dungeon
+runs), then physical builds, then Phase 5.9 custom plugins (GlitchRaid,
+GlitchInsurance, etc.).
 
 ## Hard-won lessons (read before touching worlds/gamerules again)
+
+0. **Custom worlds must be at server root, NOT in dimension folders.**
+   Paper 26.2 does NOT auto-detect custom dimensions in
+   `hub/dimensions/minecraft/` — `/mv import` with a dimension key errors
+   "Invalid world name/key". Custom worlds (glitch_red, glitch_pve) MUST be
+   at `/opt/theglitch/server/glitch_red/` (root level), not inside
+   `hub/dimensions/minecraft/`. Multiverse-Core handles root-level worlds
+   correctly with `/mv import <name> normal`. Always `rm -rf` BOTH the root
+   folder AND the leftover dimension folder before re-importing, or you'll
+   get "Refusing to overwrite existing migrated file" errors.
 
 1. **Minecraft 26.x renamed every gamerule** from camelCase to `minecraft:`
    snake_case (snapshot 25w44a). `doMobSpawning`→`spawn_mobs`,
@@ -251,24 +284,32 @@ GlitchRaid, GlitchInsurance, etc.).
 
 ## Immediate next steps (pick up here)
 
-1. **Full instance reset** if needed: follow the "Full instance reset" section
-   above. All mechanics are scripted — just `bootstrap.sh` → `setup-worlds.sh`
-   → `setup-luckperms.sh` → `plugins/GlitchStash/build.sh` →
-   `plugins/GlitchClasses/build.sh` → `setup-all-plugins.sh`.
-2. **Physical builds** (when ready): paste Sakura Spawn in hub, build dungeon
-   shells in glitch_pve, add Red Zone POIs. Requires in-game WorldEdit.
-3. **Custom plugins** (Phase 5.9): GlitchRaid + GlitchInsurance are next
-   highest impact (raid timer + post-raid summary + item insurance).
-   GlitchHideout, GlitchEvents, GlitchLoot follow.
-4. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
-   Geyser/Floodgate work correctly.
-5. **Extraction testing**: VelKoth arenas are in-game. Run:
+1. **Build custom plugins on server** (always needed after git pull):
+   ```bash
+   sudo ./plugins/GlitchStash/build.sh
+   sudo ./plugins/GlitchClasses/build.sh
+   sudo ./plugins/GlitchDungeons/build.sh
+   sudo systemctl restart theglitch
+   ```
+2. **Full instance reset** if needed: follow the "Full instance reset" section
+    above. All mechanics are scripted — `bootstrap.sh` → `setup-worlds.sh`
+    → `setup-imported-worlds.sh` → `reapply-world-config.sh` →
+    `setup-luckperms.sh` → build custom plugins → `setup-all-plugins.sh`.
+3. **Physical builds** (when ready): build dungeon shells in glitch_pve,
+    add Red Zone POIs. Requires in-game WorldEdit. Note: build scripts for
+    glitch_pve assume flat Y=-60 terrain — CaveFree map may need adjustments.
+4. **Custom plugins** (Phase 5.9): GlitchRaid + GlitchInsurance are next
+    highest impact (raid timer + post-raid summary + item insurance).
+    GlitchHideout, GlitchEvents, GlitchLoot follow.
+5. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
+    Geyser/Floodgate work correctly.
+6. **Extraction testing**: VelKoth arenas are in-game. Run:
       /koth start extraction_x1
       Walk into the zone and hold for 300s.
       On win: inventory saved (accumulates), auto-teleported to hub, /stash to retrieve.
-   Build GlitchStash first: sudo ./plugins/GlitchStash/build.sh
-6. **Class testing**: Select a class with /class, verify abilities work in
-   game worlds. Ability items should appear in hotbar slots 0 and 1.
+    Build GlitchStash first: sudo ./plugins/GlitchStash/build.sh
+7. **Class testing**: Select a class with /class, verify abilities work in
+    game worlds. Ability items should appear in hotbar slots 0 and 1.
 
 ## Working agreements worth preserving
 

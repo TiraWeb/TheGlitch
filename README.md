@@ -125,9 +125,21 @@ The core gameplay loop is extraction via VelKoth zones:
 
 ## The three zones (Phase 4)
 
-`hub` (main world, safe) → `glitch_pve` (instanced dungeons, keep-inventory) →
-`glitch_red` (full-loot PvPvE extraction). Full blueprint with coordinates:
-[docs/ZONES.md](docs/ZONES.md).
+**All three worlds are custom imported maps** — not vanilla generated terrain:
+
+| World | Purpose | Source Map |
+|---|---|---|
+| `hub` | Safe lobby | **TerraSpace** (Japanese cyberpunk city, Java world save) |
+| `glitch_pve` | Instanced dungeons, keep-inventory | **CaveFree** (cave/underground map, imported via `mv import`) |
+| `glitch_red` | Full-loot PvPvE extraction | **MMORPG_Odyssey** 2k x 2k custom terrain (imported via `mv import`) |
+
+Full blueprint with coordinates: [docs/ZONES.md](docs/ZONES.md).
+
+> **Key import gotcha:** Paper 26.2 does NOT auto-detect custom dimensions in
+> `hub/dimensions/minecraft/`. Worlds must be at **server root** (not as
+> dimension subfolders). Multiverse-Core handles root-level worlds with
+> `/mv import <name> normal`. Always delete leftover dimension data before
+> re-importing.
 
 ## Building GlitchStash and GlitchClasses (custom plugins)
 
@@ -146,7 +158,9 @@ Requires: Maven (`sudo apt install maven`), Java 21+.
 
 ```
 bootstrap.sh              one-shot / re-runnable box setup (Phases 0–5.9)
-setup-worlds.sh           Phase 4: creates the three zones, rules, protections
+setup-worlds.sh           Phase 4: creates/imports the three zones, rules, protections
+setup-imported-worlds.sh  Phase 4: import custom maps (glitch_red + glitch_pve) via Multiverse
+reapply-world-config.sh   Phase 4: re-apply gamerules/flags/borders after world import
 setup-luckperms.sh        Phase 5.1: LuckPerms groups, hierarchy
 setup-essentials.sh       Phase 5.2: spawn, warps, starter kit (INCOMPATIBLE)
 setup-tab.sh              Phase 5.7: TAB scoreboard

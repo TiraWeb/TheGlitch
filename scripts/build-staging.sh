@@ -4,6 +4,10 @@
 # Run AFTER bootstrap.sh + server restart + setup-worlds.sh:
 #   sudo ./scripts/build-staging.sh
 #
+# NOTE: glitch_pve uses the CaveFree cave map, not a flat world. Y=-60
+# may be underground in the cave terrain. Check the actual ground level
+# at (0,0) before running — adjust YFLOOR constant below if needed.
+#
 # Builds a 40x40 platform at Y=-58 (2 above flat ground at Y=-60) with:
 #   - Deepslate tile floor
 #   - Glowstone border ring

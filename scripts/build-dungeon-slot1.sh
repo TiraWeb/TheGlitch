@@ -4,6 +4,10 @@
 # Run AFTER bootstrap.sh + server restart + setup-worlds.sh:
 #   sudo ./scripts/build-dungeon-slot1.sh
 #
+# NOTE: glitch_pve uses the CaveFree cave map, not a flat world. Y=-60
+# may be underground at Slot 1 (-1024, -1024). Teleport to the slot
+# location first to check actual ground level, then adjust YFLOOR below.
+#
 # Builds a 48x48 dungeon shell ("The Echoing Vault") with:
 #   - Deepslate tile floor + stone brick walls/ceiling
 #   - Main hall (south) + boss room (north) separated by archway

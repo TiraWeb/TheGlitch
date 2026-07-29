@@ -8,7 +8,7 @@ A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft ser
 
 Check items off as they're completed. Each numbered topic is sized to roughly one working session — except the Phase 4 building block, which is flagged as bigger.
 
-**Status as of 2026-07-27:** Phases 0–2 done. Phase 3.1 done (Bedrock test pending). Phase 4 mechanics done (4.5-4.7 physical builds deferred). Phase 5.1-5.3, 5.5, 5.6-5.9 done (plugins installed, GlitchStash + GlitchClasses built). Phase 5.4 designed (see Phase 5.9). Extraction loop fully working (VelKoth → GlitchStash → Multiverse teleport). Class system fully working (4 classes, ability items, 10 levels). EssentialsX INCOMPATIBLE with MC 26.x. Next: physical builds or custom plugins.
+**Status as of 2026-07-29:** Phases 0–2 done. Phase 3.1 done (Bedrock test pending). Phase 4 mechanics done — all 3 worlds are now **custom imported maps** (hub=TerraSpace, glitch_red=Odyssey 2k, glitch_pve=CaveFree), not generated worlds. Phase 5.1-5.3, 5.5, 5.6-5.9 done (plugins installed, GlitchStash + GlitchClasses + GlitchDungeons built). Phase 5.4 designed (see Phase 5.9). Extraction loop fully working (VelKoth → GlitchStash → Multiverse teleport). Class system fully working (4 classes, ability items, 10 levels). GlitchDungeons plugin built from source (21 files, party system, wave spawning, boss bar, rewards). EssentialsX INCOMPATIBLE with MC 26.x. Next: physical builds or in-game testing.
 
 ---
 
@@ -26,7 +26,7 @@ Check items off as they're completed. Each numbered topic is sized to roughly on
 ## Phase 2 — Performance tuning
 
 - [x] **2.1 Config pass** — `server.properties`, `bukkit.yml`, `spigot.yml`, `paper-global.yml`, `paper-world-defaults.yml`, `purpur.yml` tuned for 2-core ARM: view distance ~5, simulation distance ~3–4, entity ticking/activation ranges, pathfinding throttles, network compression threshold for mobile clients.
-- [x] **2.2 World pre-generation** — World borders per zone + full pre-gen with Chunky (mandatory on 2 cores; terrain gen mid-game would tank TPS). _Red Zone: 17,689 chunks pre-generated._
+- [x] **2.2 World pre-generation** — World borders per zone + full pre-gen with Chunky (mandatory on 2 cores; terrain gen mid-game would tank TPS). _Red Zone: 17,689 chunks pre-generated (on original seed-generated world; now replaced by Odyssey 2k map import — no pre-gen needed on imported maps)._
 - [x] **2.3 Monitoring baseline** — spark profiler installed, baseline TPS/MSPT recorded so every later phase can be measured against it. _Idle baseline: 20 TPS, 0.6ms median MSPT, ~1% CPU, 3.6GB heap — see docs/PERFORMANCE.md._
 
 ## Phase 3 — Bedrock cross-play
@@ -37,15 +37,17 @@ Check items off as they're completed. Each numbered topic is sized to roughly on
 ## Phase 4 — World architecture (the three zones)
 
 Everything below is *mechanics* — worlds, gamerules, protection flags, borders,
-pre-generation. All scriptable, all done and verified live. **The worlds are
-still empty shells** — physical construction is a separate, much larger body
-of work, split out into its own checklist further down so it isn't buried in
-a parenthetical.
+config. All scriptable, all done and verified live. **All three worlds are
+custom imported maps** — not vanilla generated terrain. Hub uses **TerraSpace**
+(Japanese cyberpunk city build), glitch_pve uses **CaveFree** (cave/underground
+map), glitch_red uses **MMORPG_Odyssey** 2k custom terrain. Physical
+construction inside these worlds is a separate body of work, split out into
+its own checklist below.
 
-- [x] **4.1 Zone layout blueprint** — Concrete coordinate offsets for Hub / Standard Glitch / Red Zone in one world (or minimal world set), world borders per zone, teleport routing between zones. _Three worlds created (hub/glitch_pve/glitch_red); see docs/ZONES.md._
+- [x] **4.1 Zone layout blueprint** — Concrete coordinate offsets, world borders per zone, teleport routing between zones. _Three custom imported worlds (hub=TerraSpace, glitch_red=Odyssey 2k, glitch_pve=CaveFree); see docs/ZONES.md._
 - [x] **4.2 Hub City — mechanics** — WorldGuard total lockdown (PvP/hunger/block-changes off, invincible on, explosion/mob-damage denied, hostile deny-spawn), `spawn_mobs false` / `keep_inventory true`, spawn set to 0,-60,0. _Verified live: worlds registered via `mv import`, correct MC 26.x gamerule names (see docs/ZONES.md)._
 - [x] **4.3 Standard Glitch (PvE) — mechanics** — World registered, `keep_inventory true`, natural spawns off (MythicMobs-only design), 8-slot dungeon instancing blueprint. _Verified live._
-- [x] **4.4 The Red Zone (PvPvE) — mechanics** — World registered, full-loot PvP flags, 6 entry coordinates + 3 extraction sites documented, terrain pre-generated (17,689 chunks, seed `20260719`). _Verified live._
+- [x] **4.4 The Red Zone (PvPvE) — mechanics** — World registered, full-loot PvP flags, 6 entry coordinates + 3 extraction sites documented. World uses **MMORPG_Odyssey 2k** custom imported map (not seed-generated terrain). _Verified live._
 
 ### Physical world building — DEFERRED
 
