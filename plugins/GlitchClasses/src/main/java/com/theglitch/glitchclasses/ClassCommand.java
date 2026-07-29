@@ -22,7 +22,7 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
         if (args.length == 0) {
             // /class — open GUI (use registered listener instance from plugin)
             org.bukkit.plugin.RegisteredListener[] listeners = org.bukkit.Bukkit.getPluginManager()
-                    .getRegisteredListeners(plugin.getName());
+                    .getRegisteredListeners(plugin);
             for (org.bukkit.plugin.RegisteredListener rl : listeners) {
                 if (rl.getListener() instanceof ClassGUI gui) {
                     gui.openMainMenu(player);

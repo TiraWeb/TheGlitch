@@ -25,7 +25,16 @@ command -v java >/dev/null 2>&1 || die "Java not found."
 
 log "Building GlitchClasses..."
 
-# Build
+# Copy VaultUnlocked jar for compilation
+mkdir -p "${PLUGIN_DIR}/lib"
+VAULT_JAR=$(ls "${LIVE_PLUGIN_DIR}/VaultUnlocked.jar" 2>/dev/null || ls "${SERVER_DIR}/plugins/VaultUnlocked.jar" 2>/dev/null || true)
+if [[ -z "${VAULT_JAR}" ]]; then
+    warn "VaultUnlocked.jar not found. Place it in ${PLUGIN_DIR}/lib/"
+else
+    cp "${VAULT_JAR}" "${PLUGIN_DIR}/lib/VaultUnlocked.jar"
+    log "VaultUnlocked JAR copied for compilation."
+fi
+
 cd "${PLUGIN_DIR}"
 log "Running Maven build..."
 if ! mvn clean package -DskipTests 2>&1; then
