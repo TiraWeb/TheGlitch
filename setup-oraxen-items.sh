@@ -67,9 +67,11 @@ ls -la "${ORAXEN_DIR}/items/" | tail -n +2
 ls -la "${ORAXEN_DIR}/pack/textures/" | tail -n +2
 
 # --- 6. reload ---------------------------------------------------------------
-log "Reloading Oraxen (this regenerates the resource pack)"
+# Note: /oraxen reload requires a type arg ("all" reloads items + recipes and
+# regenerates/upload the pack).
+log "Reloading Oraxen (reload all — regenerates the resource pack)"
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
-mc "oraxen reload" || warn "reload command failed — try: sudo ./console.sh then 'oraxen reload'"
+mc "oraxen reload all" || warn "reload command failed — try: sudo ./console.sh then 'oraxen reload all'"
 
 cat <<'EOF'
 
