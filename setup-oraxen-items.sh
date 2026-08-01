@@ -59,6 +59,11 @@ log "Syncing textures to pack/textures (where Oraxen builds the pack from)"
 mkdir -p "${ORAXEN_DIR}/pack/textures"
 install -o minecraft -g minecraft -m 644 "${TEX_SRC}"/*.png "${ORAXEN_DIR}/pack/textures/"
 
+log "Syncing clean lang overrides (removes broken ESC-menu glyphs)"
+LANG_SRC="${REPO_DIR}/server/plugins/Oraxen/pack/lang"
+mkdir -p "${ORAXEN_DIR}/pack/lang"
+install -o minecraft -g minecraft -m 644 "${LANG_SRC}"/*.json "${ORAXEN_DIR}/pack/lang/"
+
 # --- 5. verify what's on disk -------------------------------------------------
 ITEM_COUNT=$(find "${ORAXEN_DIR}/items" -name '*.yml' | wc -l)
 TEX_COUNT=$(find "${ORAXEN_DIR}/pack/textures" -name '*.png' | wc -l)
