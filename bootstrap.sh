@@ -398,10 +398,11 @@ get_prop() {
   grep "^${key_re}=" "${PROPS}" 2>/dev/null | head -1 | cut -d= -f2- || true
 }
 
-# Performance (Phase 2): view 7 / sim 4 — chunks render far, but entities
-# only tick within 4 chunks. Compression 256 balances CPU vs mobile bandwidth.
-set_prop view-distance 7
-set_prop simulation-distance 4
+# Performance (Phase 2): view 24 / sim 8 — raised for single-player (was 7/4
+# for the original 10-20 player target). Sim distance 8 still bounds entity
+# ticking. Compression 256 balances CPU vs mobile bandwidth.
+set_prop view-distance 24
+set_prop simulation-distance 8
 set_prop network-compression-threshold 256
 set_prop sync-chunk-writes false
 # Pairs with purpur.yml idle-timeout: AFK players are marked idle after
