@@ -1,0 +1,12 @@
+primordial_relic:
+  displayname: <gold>Primordial Relic</gold>
+  material: GOLD_NUGGET
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - primordial_relic
+  lore:
+    - '<gold>A relic from before the Glitch.</gold>'
+    - '<gray>Required for Primordial recipes.</gray>'
+    - '<dark_gray>Drops from bosses (rare).</dark_gray>'

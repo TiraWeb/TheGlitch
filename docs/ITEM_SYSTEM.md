@@ -209,8 +209,8 @@ forbids redistribution).
 
 Rough order:
 
-1. Item base plugin + resource pack (visuals for rifts, materials, named keys).
-2. Material + key items (real items with textures + shard values).
+1. **Item base plugin + resource pack** — ✅ Oraxen built from source + deployed (setup-oraxen.sh)
+2. **Material + key items** — ✅ 5 materials + 3 keys as Oraxen configs (server/plugins/Oraxen/), deploy via setup-oraxen-items.sh
 3. Rarity tiers + stat-roll engine (identify outcome).
 4. Rift drop (mob loot tables emit rifts) + Identifier NPC flow.
 5. Resonance tags (MythicMobs metadata) + gear rolls.

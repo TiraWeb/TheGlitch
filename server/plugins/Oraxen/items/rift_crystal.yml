@@ -1,0 +1,12 @@
+rift_crystal:
+  displayname: <light_purple>Rift Crystal</light_purple>
+  material: AMETHYST_SHARD
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - rift_crystal
+  lore:
+    - '<light_purple>A fragment of the Rift itself.</light_purple>'
+    - '<gray>Fuel for revealing Unstable Rifts.</gray>'
+    - '<dark_gray>Drops from mid-tier mobs and caches.</dark_gray>'

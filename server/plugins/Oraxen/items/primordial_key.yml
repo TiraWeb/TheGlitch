@@ -1,0 +1,12 @@
+primordial_key:
+  displayname: <gold>Primordial Key</gold>
+  material: TRIPWIRE_HOOK
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - primordial_key
+  lore:
+    - '<gold>Unlocks Rift Vaults — the rarest loot.</gold>'
+    - '<gray>Crafted from Void Essence and Primordial Relics.</gray>'
+    - '<dark_gray>Consumed on use.</dark_gray>'
