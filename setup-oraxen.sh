@@ -71,6 +71,25 @@ else
   git -C "${BUILD_DIR}" reset --hard "${ORAXEN_TAG}"
 fi
 
+# --- patch: drop Iris compatibility -----------------------------------------
+# Iris is a compileOnly dependency pinned to a JitPack commit that no longer
+# resolves (JitCI-built, artifact never published to jitpack.io). We don't run
+# Iris (it's a world-gen plugin), so strip its compatibility so the build works:
+#   1. remove "iris" from the plugins bundle in the version catalog
+#   2. delete the two Iris source files
+#   3. unregister IrisCompatibility in CompatibilitiesManager
+log "Patching out the Iris compatibility (broken JitPack pin; we don't run Iris)"
+cd "${BUILD_DIR}"
+sed -i '/^    "iris",/d' gradle/oraxenLibs.versions.toml
+sed -i '/^iris = { module = "com.github.VolmitSoftware:Iris"/d' gradle/oraxenLibs.versions.toml
+rm -f src/main/java/io/th0rgal/oraxen/compatibilities/provided/iris/IrisCompatibility.java
+rm -f src/main/java/io/th0rgal/oraxen/compatibilities/provided/iris/OraxenDataProvider.java
+sed -i '/import io.th0rgal.oraxen.compatibilities.provided.iris.IrisCompatibility;/d' \
+  src/main/java/io/th0rgal/oraxen/compatibilities/CompatibilitiesManager.java
+sed -i '/addCompatibility("Iris", IrisCompatibility.class, true);/d' \
+  src/main/java/io/th0rgal/oraxen/compatibilities/CompatibilitiesManager.java
+grep -rn "IrisCompatibility" src/ || log "Verified: no remaining Iris references in src"
+
 # --- build ------------------------------------------------------------------
 log "Building Oraxen (this downloads Paper dev bundles + Gradle — slow on 2 cores)"
 cd "${BUILD_DIR}"
