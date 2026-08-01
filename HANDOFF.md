@@ -1,7 +1,7 @@
 # The Glitch — Session Handoff
 
 Paste this whole file into a new chat (any model) to resume work with full
-context. It reflects state as of **2026-07-29**. The repo (`TiraWeb/TheGlitch`,
+context. It reflects state as of **2026-08-01**. The repo (`TiraWeb/TheGlitch`,
 branch `main`) is the single source of truth — this doc is a guide to it, not
 a replacement for reading `ROADMAP.md`, `docs/ZONES.md`, and
 `docs/PERFORMANCE.md`.
@@ -39,6 +39,8 @@ setup-deluxemenus.sh      Phase 5.5: reloads GUI menus, sets permissions
 setup-fancynpcs.sh        Phase 5.5: reloads NPC system, sets permissions
 setup-geyser.sh           Phase 3.1: verifies Bedrock bridge (does NOT reload)
 setup-all-plugins.sh      Master runner: runs all setup scripts in order
+setup-oraxen.sh           Phase 5.10: builds Oraxen from source (clone v1.218.0, Iris patch, Gradle, deploy)
+setup-oraxen-items.sh     Phase 5.10: cleans default items, deploys items/textures/lang, reloads Oraxen
 setup-imported-worlds.sh  Phase 4: import custom maps (glitch_red + glitch_pve) via Multiverse
 reapply-world-config.sh   Phase 4: re-apply gamerules/flags/borders after world import
 recover-worlds.sh         DESTRUCTIVE reset for glitch_pve/glitch_red (rarely needed)
@@ -61,6 +63,8 @@ server/plugins/DeluxeMenus/gui_configs/   seeded once (class selector, shard sho
 server/plugins/VelKoth/config.yml         seeded once (extraction settings)
 server/plugins/VelKoth/messages.yml       seeded once (extraction-themed messages)
 server/plugins/VelKoth/arenas.yml         generated in-game (NEVER overwrite)
+server/plugins/Oraxen/items/*.yml         seeded once (5 materials + 3 keys, Oraxen configs)
+server/plugins/Oraxen/pack/               seeded once (textures/*.png + lang/en_us.json ESC fix)
 plugins/GlitchStash/                      source code (built via build.sh, deployed to live server)
 plugins/GlitchStash/src/main/resources/   config.yml + messages.yml (seeded to live server)
 plugins/GlitchStash/stashes/              per-player YAML stash files (auto-created at runtime)
@@ -70,6 +74,8 @@ plugins/GlitchClasses/players/            per-player YAML class files (auto-crea
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
+docs/ITEM_SYSTEM.md       Arcane Ruins item system (rarities, Resonance, rifts, §10 order)
+docs/GAME_DESIGN.md       core gameplay numbers (mobs, loot, economy, extraction, anti-grief)
 ROADMAP.md                THE phased checklist — check here first for status
 HANDOFF.md                this file
 ```
@@ -121,6 +127,15 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
   auto-teleports to hub via Multiverse-Core, player retrieves items with /stash.
   YAML-based per-player storage. EssentialsX is INCOMPATIBLE with MC 26.x —
   teleport uses `mv tp` instead.
+- **Phase 5.10 (Arcane Ruins item system): started.** Oraxen built from source
+  (both Nexo and the prebuilt Oraxen jar are paid; GitHub source has a
+  personal-use license — jar never committed). setup-oraxen.sh builds v1.218.0
+  with an Iris JitPack dep patch; setup-oraxen-items.sh deploys 5 materials + 3
+  keys with programmatic textures + ESC-menu lang override, verified in-game
+  ("No broken models or textures", pack hash 2dc3133f...). Design doc:
+  docs/ITEM_SYSTEM.md. Next: steps 3–9 (rarity tiers + stat-roll engine, rifts +
+  Identifier NPC, Resonance tags, Residual Glitch, world population, crafting,
+  rename pass).
 - **Phases 6-8:** not started.
 
 ## Full instance reset (nuke and recreate)
@@ -151,6 +166,10 @@ sudo ./plugins/GlitchStash/build.sh
 
 # Configure all plugins (TAB, PAPI, MythicMobs, VelKoth, GlitchStash, etc.)
 sudo ./setup-all-plugins.sh
+
+# Build Oraxen from source + deploy Arcane Ruins items (needs git, JDK 21+25)
+sudo ./setup-oraxen.sh
+sudo ./setup-oraxen-items.sh
 ```
 
 After reset:
@@ -162,11 +181,12 @@ After reset:
 - GlitchStash built and deployed (extraction vault working)
 - GlitchClasses built and deployed (4 classes, ability items, 10 upgrade levels)
 - GlitchDungeons built and deployed (21 files, party system, wave spawning, boss bar, extraction, rewards)
+- Oraxen built from source and Arcane Ruins items deployed (5 materials + 3 keys, textures, ESC lang)
 - PAPI expansions installed (LuckPerms + Vault placeholders work)
 - TAB scoreboard renders all lines
 - VelKoth extraction zones active (hold zone → inventory saved → teleport to hub)
 
-## Where we left off — custom maps imported, extraction + class + dungeon systems done, physical builds deferred
+## Where we left off — item system started (Oraxen from source), extraction + class + dungeon systems done, physical builds deferred
 
 All server mechanics are fully scripted and survive a fresh instance reset.
 **All three worlds are custom imported maps** — hub=TerraSpace (Japanese
@@ -184,12 +204,22 @@ The dungeon system is built: GlitchDungeons plugin (21 Java files) with party
 system, wave spawning, boss bar, extraction mechanic, cooldowns, and rewards.
 Needs server-side build and in-game testing.
 
+The **Arcane Ruins item system (Phase 5.10)** is underway: Oraxen built from
+source (paid-jar alternatives rejected — non-P2W stance also means no paid
+plugins; setup-oraxen.sh patches a broken Iris JitPack dep). 8 base items (5
+materials + 3 keys) deployed with generated 16×16 textures, ESC menu fixed via
+lang override, verified in-game. Remaining per docs/ITEM_SYSTEM.md §10:
+rarity tiers + stat-roll engine, Unstable Rifts + Identifier NPC, Resonance
+tags, Residual Glitch greed system, world population, crafting, rename pass.
+
 Physical builds (dungeon shells, Red Zone POIs) are deferred until the
 operator is ready to do in-game WorldEdit work. Note: build scripts for
 glitch_pve (staging, slot 1) assume flat Y=-60 terrain — the CaveFree map
 may require coordinate adjustments.
 
-**Next when ready:** In-game testing (extraction loop, class abilities, dungeon
+**Next when ready:** item system steps 3–9 (GlitchItems stat-roll plugin,
+rifts + Identifier NPC, Resonance, Residual Glitch, population, crafting,
+rename pass), then in-game testing (extraction loop, class abilities, dungeon
 runs), then physical builds, then Phase 5.9 custom plugins (GlitchRaid,
 GlitchInsurance, etc.).
 
@@ -282,33 +312,57 @@ GlitchInsurance, etc.).
     JAR to `/opt/theglitch/server/plugins/`. Restart server after deploy.
     Both GlitchStash and GlitchClasses follow this pattern.
 
+12. **Oraxen: the prebuilt jar is paid and the source license forbids
+    redistribution — never commit the built jar, build on the box.** Both
+    Nexo (~$22) and the Oraxen jar (~$20) are premium; Oraxen's GitHub source
+    (tag `v1.218.0`) has a personal-use license, so `setup-oraxen.sh` clones +
+    builds it (JDK 21 + 25 toolchains; Gradle 9.x self-downloads). The Iris
+    JitPack dependency is broken (JitCI-built, 404 on jitpack.io) and must be
+    patched out after checkout (see setup-oraxen.sh). Oraxen specifics: item
+    textures must live in `plugins/Oraxen/pack/textures/` (NOT `textures/`),
+    reload is `/oraxen reload all` (bare `oraxen reload` → "Wrong usage"),
+    default example items/recipes must be deleted or they warn at boot, glyph
+    warnings in logs are harmless placeholders, and the ESC-menu text is
+    overridden via `pack/lang/en_us.json` (avoid the `shift:` glyph tag or the
+    button text overflows).
+
 ## Immediate next steps (pick up here)
 
-1. **Build custom plugins on server** (always needed after git pull):
+1. **Deploy/update the item system** (always needed after git pull):
+   ```bash
+   sudo ./setup-oraxen.sh        # only needed if Oraxen.jar missing or source changed (~5 min build)
+   sudo ./setup-oraxen-items.sh  # deploy item configs + textures + lang, reload
+   ```
+2. **Build custom plugins on server** (always needed after git pull):
    ```bash
    sudo ./plugins/GlitchStash/build.sh
    sudo ./plugins/GlitchClasses/build.sh
    sudo ./plugins/GlitchDungeons/build.sh
    sudo systemctl restart theglitch
    ```
-2. **Full instance reset** if needed: follow the "Full instance reset" section
+3. **Full instance reset** if needed: follow the "Full instance reset" section
     above. All mechanics are scripted — `bootstrap.sh` → `setup-worlds.sh`
     → `setup-imported-worlds.sh` → `reapply-world-config.sh` →
-    `setup-luckperms.sh` → build custom plugins → `setup-all-plugins.sh`.
-3. **Physical builds** (when ready): build dungeon shells in glitch_pve,
+    `setup-luckperms.sh` → build custom plugins → `setup-all-plugins.sh` →
+    `setup-oraxen.sh` → `setup-oraxen-items.sh`.
+4. **Item system** (Phase 5.10, docs/ITEM_SYSTEM.md §10): rarity tiers +
+    stat-roll engine (GlitchItems plugin), Unstable Rifts + Identifier NPC,
+    Resonance tags on mobs, Residual Glitch, world population, crafting,
+    rename pass.
+5. **Physical builds** (when ready): build dungeon shells in glitch_pve,
     add Red Zone POIs. Requires in-game WorldEdit. Note: build scripts for
     glitch_pve assume flat Y=-60 terrain — CaveFree map may need adjustments.
-4. **Custom plugins** (Phase 5.9): GlitchRaid + GlitchInsurance are next
+6. **Custom plugins** (Phase 5.9): GlitchRaid + GlitchInsurance are next
     highest impact (raid timer + post-raid summary + item insurance).
     GlitchHideout, GlitchEvents, GlitchLoot follow.
-5. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
+7. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
     Geyser/Floodgate work correctly.
-6. **Extraction testing**: VelKoth arenas are in-game. Run:
+8. **Extraction testing**: VelKoth arenas are in-game. Run:
       /koth start extraction_x1
       Walk into the zone and hold for 300s.
       On win: inventory saved (accumulates), auto-teleported to hub, /stash to retrieve.
     Build GlitchStash first: sudo ./plugins/GlitchStash/build.sh
-7. **Class testing**: Select a class with /class, verify abilities work in
+9. **Class testing**: Select a class with /class, verify abilities work in
     game worlds. Ability items should appear in hotbar slots 0 and 1.
 
 ## Working agreements worth preserving
@@ -323,3 +377,8 @@ GlitchInsurance, etc.).
   storage path) were both caught exactly this way.
 - Prefer downloading/importing existing free builds over hand-building from
   scratch for world content (established preference for Phase 4.5-4.7).
+- **No paid plugins, ever** (non-P2W stance extends to tooling): Nexo and the
+  Oraxen jar were rejected — everything premium is either replaced by
+  build-from-source code (GlitchStash/Classes/Dungeons, Oraxen) or a free
+  alternative. Keep the license note: Oraxen source is personal-use only, so
+  the built jar stays on the box, never in this repo.

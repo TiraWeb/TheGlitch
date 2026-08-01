@@ -36,6 +36,7 @@ The script prints an operator checklist at the end. **One step cannot be scripte
 - Seeds plugin configs from repo (config-as-code)
 - GlitchStash is built from source: `sudo ./plugins/GlitchStash/build.sh`
 - GlitchClasses is built from source: `sudo ./plugins/GlitchClasses/build.sh`
+- **Oraxen (item plugin) is deliberately NOT in bootstrap.sh** — built separately via `setup-oraxen.sh` (see below), so a bootstrap failure can't silently skip custom items.
 
 It's **idempotent** — the update loop for every future phase is:
 
@@ -101,6 +102,18 @@ The core gameplay loop is extraction via VelKoth zones:
 - Non-movable, non-droppable, non-duplicatable
 - Re-given on login if missing
 
+## The item system (Phase 5.10, in progress)
+
+Arcane Ruins aesthetic (corrupted magical anomaly — no techy/circuit items, no
+shooting). Design doc: [docs/ITEM_SYSTEM.md](docs/ITEM_SYSTEM.md). The core loop
+is "Unstable Rifts": mobs drop unrevealed rifts, you extract, and a hub
+Identifier NPC reveals the item with random stat rolls. Power comes from
+rarity tiers (Fragmented → Primordial) + stat rolls + the **Resonance system**
+(5 arcane frequencies, weapon +25% damage vs matching mobs), not item levels.
+
+**Base items deployed** (5 materials + 3 keys): Rune Fragment, Aether Shard,
+Rift Crystal, Void Essence, Primordial Relic; Fractured/Sealed/Primordial Key.
+
 ## Plugin stack
 
 | Plugin | Purpose | Config |
@@ -116,6 +129,7 @@ The core gameplay loop is extraction via VelKoth zones:
 | TAB | Scoreboard + tab list | `server/plugins/TAB/config.yml` |
 | PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
 | VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
+| Oraxen | Custom items (Arcane Ruins item system) | `server/plugins/Oraxen/` |
 | **GlitchStash** | **Extraction vault** (custom) | `plugins/GlitchStash/` |
 | **GlitchClasses** | **Class system** (custom) | `plugins/GlitchClasses/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
@@ -154,6 +168,19 @@ sudo systemctl restart theglitch
 
 Requires: Maven (`sudo apt install maven`), Java 21+.
 
+## Building Oraxen (custom items)
+
+The prebuilt Oraxen jar is paid (~$20) and the source license forbids
+redistribution, so **the jar is never committed** — build it on the box:
+
+```bash
+cd ~/TheGlitch
+sudo ./setup-oraxen.sh        # clone v1.218.0, patch Iris JitPack dep, Gradle build (~5 min), deploy
+sudo ./setup-oraxen-items.sh  # deploy item configs + textures + lang, reload
+```
+
+Requires: git, JDK 21 + JDK 25 toolchains (Gradle downloads itself).
+
 ## Repo layout
 
 ```
@@ -173,14 +200,18 @@ setup-deluxemenus.sh      Phase 5.5: GUI menus
 setup-fancynpcs.sh        Phase 5.5: NPC system
 setup-geyser.sh           Phase 3.1: Bedrock bridge
 setup-all-plugins.sh      Master runner: all setup scripts in order
+setup-oraxen.sh           Phase 5.10: build Oraxen from source (paid jars avoided)
+setup-oraxen-items.sh     Phase 5.10: deploy items/textures/lang to Oraxen, reload
 plugins/GlitchStash/      GlitchStash source (built via build.sh)
 plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
+server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
 console.sh                attach to the live server console
 scripts/mc-cmd.py         local RCON client
 server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM
 server/*.yml              performance tuning configs (synced every bootstrap)
 docs/ZONES.md             zone architecture blueprint
 docs/PERFORMANCE.md       tuning rationale + baseline
+docs/ITEM_SYSTEM.md       Arcane Ruins item system design (rarities, resonance, rifts)
 ROADMAP.md                the full phased build plan
 HANDOFF.md                session handoff doc
 ```
