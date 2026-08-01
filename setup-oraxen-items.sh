@@ -16,7 +16,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="/opt/theglitch/server"
 ORAXEN_DIR="${SERVER_DIR}/plugins/Oraxen"
 ITEMS_SRC="${REPO_DIR}/server/plugins/Oraxen/items"
-TEX_SRC="${REPO_DIR}/server/plugins/Oraxen/textures"
+TEX_SRC="${REPO_DIR}/server/plugins/Oraxen/pack/textures"
 
 log()  { echo -e "\033[1;32m[oraxen-items]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[oraxen-items]\033[0m $*"; }
@@ -44,9 +44,9 @@ log "Syncing item configs from repo"
 mkdir -p "${ORAXEN_DIR}/items"
 install -o minecraft -g minecraft -m 644 "${ITEMS_SRC}"/*.yml "${ORAXEN_DIR}/items/"
 
-log "Syncing textures from repo"
-mkdir -p "${ORAXEN_DIR}/textures"
-install -o minecraft -g minecraft -m 644 "${TEX_SRC}"/*.png "${ORAXEN_DIR}/textures/"
+log "Syncing textures from repo (pack/textures is where Oraxen builds the pack from)"
+mkdir -p "${ORAXEN_DIR}/pack/textures"
+install -o minecraft -g minecraft -m 644 "${TEX_SRC}"/*.png "${ORAXEN_DIR}/pack/textures/"
 
 # --- 4. reload ---------------------------------------------------------------
 log "Reloading Oraxen (this regenerates the resource pack)"
