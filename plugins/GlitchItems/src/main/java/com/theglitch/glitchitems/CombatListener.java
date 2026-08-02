@@ -108,9 +108,12 @@ public final class CombatListener implements Listener {
 
     private boolean resonanceMatches(LivingEntity entity, Resonance resonance) {
         if (resonance == null) return false;
-        String tag = "res:" + resonance.name();
+        String lower = resonance.name().toLowerCase();
+        String tagColon = "res:" + lower;
+        String tagUnderscore = "res_" + lower;
         for (String t : entity.getScoreboardTags()) {
-            if (t.equalsIgnoreCase(tag)) {
+            String tl = t.toLowerCase();
+            if (tl.equals(tagColon) || tl.equals(tagUnderscore)) {
                 return true;
             }
         }

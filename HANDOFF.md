@@ -371,8 +371,10 @@ GlitchInsurance, etc.).
    ```
 3. **Test the item system** (GlitchItems): `/glitchitems give rare blade` (admin),
    `/oraxen give unstable_rift_rare` then `/identify` (fee via Vault/Coins),
-   tag a mob `res:Veil` (MythicMobs `Options.ScoreboardTags: [res:Veil]`) and
-   check Resonance damage vs a matching gear item.
+   tag a mob `res_veil` (vanilla `/tag @e[limit=1] add res_veil` or MythicMobs
+   `Options.ScoreboardTags: [res_veil]`) and check Resonance damage vs a
+   matching gear item. Note: world difficulty may be peaceful — run
+   `/difficulty normal` first or /summon fails for hostiles.
 4. **Full instance reset** if needed: follow the "Full instance reset" section
     above. All mechanics are scripted — `bootstrap.sh` → `setup-worlds.sh`
     → `setup-imported-worlds.sh` → `reapply-world-config.sh` →

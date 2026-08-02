@@ -87,9 +87,9 @@ public final class GlitchItemsCommand implements CommandExecutor {
     }
 
     private boolean glitch(CommandSender sender, String[] args) {
-        if (args.length < 4) {
+        if (args.length < 3) {
             sender.sendMessage(MiniMessage.miniMessage().deserialize(
-                    "<gray>Usage: /glitchitems glitch <player> <set|add|clear> <stacks></gray>"));
+                    "<gray>Usage: /glitchitems glitch <player> <set <n>|add <n>|clear></gray>"));
             return true;
         }
         Player target = Bukkit.getPlayer(args[1]);
@@ -97,25 +97,33 @@ public final class GlitchItemsCommand implements CommandExecutor {
             sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>Player not found.</red>"));
             return true;
         }
-        int value;
-        try {
-            value = Integer.parseInt(args[3]);
-        } catch (NumberFormatException e) {
-            sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>Stacks must be a number.</red>"));
-            return true;
-        }
         switch (args[2].toLowerCase()) {
             case "set":
-                glitchManager.setStacks(target, Math.max(0, Math.min(value, maxStacks())));
+            case "add": {
+                if (args.length < 4) {
+                    sender.sendMessage(MiniMessage.miniMessage().deserialize(
+                            "<gray>Usage: /glitchitems glitch <player> " + args[2] + " <stacks></gray>"));
+                    return true;
+                }
+                int value;
+                try {
+                    value = Integer.parseInt(args[3]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>Stacks must be a number.</red>"));
+                    return true;
+                }
+                int stacks = args[2].equalsIgnoreCase("set")
+                        ? value
+                        : glitchManager.getStacks(target) + value;
+                glitchManager.setStacks(target, Math.max(0, Math.min(stacks, maxStacks())));
                 break;
-            case "add":
-                glitchManager.setStacks(target, Math.max(0, Math.min(glitchManager.getStacks(target) + value, maxStacks())));
-                break;
+            }
             case "clear":
                 glitchManager.clear(target);
                 break;
             default:
-                sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>Use set, add or clear.</red>"));
+                sender.sendMessage(MiniMessage.miniMessage().deserialize(
+                        "<red>Use set <n>, add <n> or clear.</red>"));
                 return true;
         }
         sender.sendMessage(MiniMessage.miniMessage().deserialize(

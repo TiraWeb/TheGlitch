@@ -122,8 +122,9 @@ gain special attributes (lifesteal, fire aspect...) from Rare up, armor keeps
 exactly one attribute. Gear comes from Unstable Rifts (`/identify`, shard fee),
 admin `/glitchitems give`, and later Workbench crafting + merchants. Resonance
 combat math (weapon +25% dmg vs matching mobs, armor reduction) and the
-Residual Glitch timer are implemented — mobs need a `res:<Name>` scoreboard
-tag (MythicMobs `Options.ScoreboardTags`) for Resonance to apply.
+Residual Glitch timer are implemented — mobs need a `res_<name>` scoreboard
+tag (e.g. `res_veil`, MythicMobs `Options.ScoreboardTags: [res_veil]`; the
+colon form `res:veil` is also accepted) for Resonance to apply.
 
 **Risk (designed):** glitch_red is full-loot, but on death you keep your **leggings and
 boots** only; glitch_pve stays keep-inventory as the training floor. Standard extract is

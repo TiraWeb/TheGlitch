@@ -30,19 +30,21 @@ public final class ResidualGlitchManager {
             long last = getLast(player);
             if (last == 0L) {
                 setLast(player, now);
+                sendActionBar(player, getStacks(player));
                 continue;
             }
             int due = (int) ((now - last) / (intervalMinutes() * 60_000L));
-            if (due <= 0) continue;
-            int oldStacks = getStacks(player);
-            int stacks = Math.min(oldStacks + due, maxStacks());
-            setStacks(player, stacks);
-            setLast(player, now);
-            sendActionBar(player, stacks);
-            if (oldStacks < eliteHuntStacks() && stacks >= eliteHuntStacks()) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(
-                        "<dark_red>You have " + stacks + " stacks of Residual Glitch — something elite is hunting you.</dark_red>"));
+            if (due > 0) {
+                int oldStacks = getStacks(player);
+                int stacks = Math.min(oldStacks + due, maxStacks());
+                setStacks(player, stacks);
+                setLast(player, now);
+                if (oldStacks < eliteHuntStacks() && stacks >= eliteHuntStacks()) {
+                    player.sendMessage(MiniMessage.miniMessage().deserialize(
+                            "<dark_red>You have " + stacks + " stacks of Residual Glitch — something elite is hunting you.</dark_red>"));
+                }
             }
+            sendActionBar(player, getStacks(player));
         }
     }
 
