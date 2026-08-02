@@ -1,0 +1,25 @@
+name: GlitchItems
+version: '${project.version}'
+main: com.theglitch.glitchitems.GlitchItems
+api-version: '1.21'
+description: Item system for The Glitch — gear rolls, rifts, Resonance, Residual Glitch
+softdepend:
+  - VaultUnlocked
+
+commands:
+  identify:
+    description: Identify an Unstable Rift into gear
+    usage: /identify [force]
+    permission: glitchitems.use
+  glitchitems:
+    description: Admin commands for GlitchItems
+    usage: /glitchitems <give|glitch|reload>
+    permission: glitchitems.admin
+
+permissions:
+  glitchitems.use:
+    description: Access item commands
+    default: true
+  glitchitems.admin:
+    description: Admin item commands
+    default: op

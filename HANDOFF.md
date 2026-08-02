@@ -71,6 +71,7 @@ plugins/GlitchStash/stashes/              per-player YAML stash files (auto-crea
 plugins/GlitchClasses/                    source code (built via build.sh, deployed to live server)
 plugins/GlitchClasses/src/main/resources/ config.yml + messages.yml (seeded to live server)
 plugins/GlitchClasses/players/            per-player YAML class files (auto-created at runtime)
+plugins/GlitchItems/                      source code (built via build.sh — gear rolls, /identify, Resonance, Residual Glitch)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
@@ -365,31 +366,36 @@ GlitchInsurance, etc.).
    sudo ./plugins/GlitchStash/build.sh
    sudo ./plugins/GlitchClasses/build.sh
    sudo ./plugins/GlitchDungeons/build.sh
+   sudo ./plugins/GlitchItems/build.sh
    sudo systemctl restart theglitch
    ```
-3. **Full instance reset** if needed: follow the "Full instance reset" section
+3. **Test the item system** (GlitchItems): `/glitchitems give rare blade` (admin),
+   `/oraxen give unstable_rift_rare` then `/identify` (fee via Vault/Coins),
+   tag a mob `res:Veil` (MythicMobs `Options.ScoreboardTags: [res:Veil]`) and
+   check Resonance damage vs a matching gear item.
+4. **Full instance reset** if needed: follow the "Full instance reset" section
     above. All mechanics are scripted — `bootstrap.sh` → `setup-worlds.sh`
     → `setup-imported-worlds.sh` → `reapply-world-config.sh` →
     `setup-luckperms.sh` → build custom plugins → `setup-all-plugins.sh` →
     `setup-oraxen.sh` → `setup-oraxen-items.sh`.
-4. **Item system** (Phase 5.10, docs/ITEM_SYSTEM.md §10): rarity tiers +
+5. **Item system** (Phase 5.10, docs/ITEM_SYSTEM.md §10): rarity tiers +
     stat-roll engine (GlitchItems plugin), Unstable Rifts + Identifier NPC,
     Resonance tags on mobs, Residual Glitch, world population, crafting,
     rename pass.
-5. **Physical builds** (when ready): build dungeon shells in glitch_pve,
+6. **Physical builds** (when ready): build dungeon shells in glitch_pve,
     add Red Zone POIs. Requires in-game WorldEdit. Note: build scripts for
     glitch_pve assume flat Y=-60 terrain — CaveFree map may need adjustments.
-6. **Custom plugins** (Phase 5.9): GlitchRaid + GlitchInsurance are next
+7. **Custom plugins** (Phase 5.9): GlitchRaid + GlitchInsurance are next
     highest impact (raid timer + post-raid summary + item insurance).
     GlitchHideout, GlitchEvents, GlitchLoot follow.
-7. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
+8. **Bedrock join test** (Phase 3.2): connect from a Bedrock client and verify
     Geyser/Floodgate work correctly.
-8. **Extraction testing**: VelKoth arenas are in-game. Run:
+9. **Extraction testing**: VelKoth arenas are in-game. Run:
       /koth start extraction_x1
       Walk into the zone and hold for 300s.
       On win: inventory saved (accumulates), auto-teleported to hub, /stash to retrieve.
     Build GlitchStash first: sudo ./plugins/GlitchStash/build.sh
-9. **Class testing**: Select a class with /class, verify abilities work in
+10. **Class testing**: Select a class with /class, verify abilities work in
     game worlds. Ability items should appear in hotbar slots 0 and 1.
 
 ## Working agreements worth preserving

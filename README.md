@@ -116,11 +116,14 @@ every one ends with a `Sell price: N Shards` lore line. Hub merchant NPCs (Phase
 GlitchShops) buy all custom items for Glitch Shards and sell stock at higher buy prices
 (shown only in the merchant GUI).
 
-**Gear line (designed, not yet built):** 3 weapon archetypes (Blade, Greatblade, Arcane
-Staff) + 4 armor pieces; base stats scale by rarity, weapons gain special attributes
-(lifesteal, fire aspect...) from Resonant up, armor keeps exactly one attribute. Gear
-comes from rifts, Workbench crafting, merchants (small roll variance + 0.01% super-rare
-max-roll variant), and elites/bosses.
+**Gear line (v1 built — GlitchItems plugin):** 3 weapon archetypes (Blade,
+Greatblade, Arcane Staff) + 4 armor pieces; base stats scale by rarity, weapons
+gain special attributes (lifesteal, fire aspect...) from Rare up, armor keeps
+exactly one attribute. Gear comes from Unstable Rifts (`/identify`, shard fee),
+admin `/glitchitems give`, and later Workbench crafting + merchants. Resonance
+combat math (weapon +25% dmg vs matching mobs, armor reduction) and the
+Residual Glitch timer are implemented — mobs need a `res:<Name>` scoreboard
+tag (MythicMobs `Options.ScoreboardTags`) for Resonance to apply.
 
 **Risk (designed):** glitch_red is full-loot, but on death you keep your **leggings and
 boots** only; glitch_pve stays keep-inventory as the training floor. Standard extract is
@@ -144,6 +147,7 @@ boots** only; glitch_pve stays keep-inventory as the training floor. Standard ex
 | Oraxen | Custom items (18 Arcane Ruins items) | `server/plugins/Oraxen/` |
 | **GlitchStash** | **Extraction vault** (custom) | `plugins/GlitchStash/` |
 | **GlitchClasses** | **Class system** (custom) | `plugins/GlitchClasses/` |
+| **GlitchItems** | **Item system** (custom: gear rolls, /identify, Resonance, Residual Glitch) | `plugins/GlitchItems/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
 | GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
@@ -169,12 +173,13 @@ Full blueprint with coordinates: [docs/ZONES.md](docs/ZONES.md).
 
 ## Building GlitchStash and GlitchClasses (custom plugins)
 
-Both are built from source on the server:
+Built from source on the server:
 
 ```bash
 cd ~/TheGlitch
 sudo ./plugins/GlitchStash/build.sh
 sudo ./plugins/GlitchClasses/build.sh
+sudo ./plugins/GlitchItems/build.sh
 sudo systemctl restart theglitch
 ```
 
@@ -216,6 +221,7 @@ setup-oraxen.sh           Phase 5.10: build Oraxen from source (paid jars avoide
 setup-oraxen-items.sh     Phase 5.10: deploy items/textures/lang to Oraxen, reload
 plugins/GlitchStash/      GlitchStash source (built via build.sh)
 plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
+plugins/GlitchItems/      GlitchItems source (built via build.sh)
 server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
 console.sh                attach to the live server console
 scripts/mc-cmd.py         local RCON client
