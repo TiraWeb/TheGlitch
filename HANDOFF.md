@@ -63,7 +63,7 @@ server/plugins/DeluxeMenus/gui_configs/   seeded once (class selector, shard sho
 server/plugins/VelKoth/config.yml         seeded once (extraction settings)
 server/plugins/VelKoth/messages.yml       seeded once (extraction-themed messages)
 server/plugins/VelKoth/arenas.yml         generated in-game (NEVER overwrite)
-server/plugins/Oraxen/items/*.yml         seeded once (5 materials + 3 keys, Oraxen configs)
+server/plugins/Oraxen/items/*.yml         seeded once (18 items: 5 materials, 4 keys, 5 rifts, 4 alchemy)
 server/plugins/Oraxen/pack/               seeded once (textures/*.png + lang/en_us.json ESC fix)
 plugins/GlitchStash/                      source code (built via build.sh, deployed to live server)
 plugins/GlitchStash/src/main/resources/   config.yml + messages.yml (seeded to live server)
@@ -74,7 +74,8 @@ plugins/GlitchClasses/players/            per-player YAML class files (auto-crea
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
-docs/ITEM_SYSTEM.md       Arcane Ruins item system (rarities, Resonance, rifts, §10 order)
+docs/ITEM_SYSTEM.md       Arcane Ruins item system (rarities, Resonance, rifts, §10 order, §11 prices)
+docs/GLITCH_SHOPS_DESIGN.md  merchant NPC plugin design (Phase 5.12)
 docs/GAME_DESIGN.md       core gameplay numbers (mobs, loot, economy, extraction, anti-grief)
 ROADMAP.md                THE phased checklist — check here first for status
 HANDOFF.md                this file
@@ -130,12 +131,37 @@ operator (not the assistant) has SSH/sudo on the box. Loop is always:
 - **Phase 5.10 (Arcane Ruins item system): started.** Oraxen built from source
   (both Nexo and the prebuilt Oraxen jar are paid; GitHub source has a
   personal-use license — jar never committed). setup-oraxen.sh builds v1.218.0
-  with an Iris JitPack dep patch; setup-oraxen-items.sh deploys 5 materials + 3
-  keys with programmatic textures + ESC-menu lang override, verified in-game
-  ("No broken models or textures", pack hash 2dc3133f...). Design doc:
-  docs/ITEM_SYSTEM.md. Next: steps 3–9 (rarity tiers + stat-roll engine, rifts +
+  with an Iris JitPack dep patch; setup-oraxen-items.sh deploys **18 custom
+  items** (5 materials, 4 keys, 5 Unstable Rifts, 4 alchemy) with programmatic
+  textures + ESC-menu lang override, verified in-game. Every item ends with a
+  `Sell price: N Shards` lore line (docs/ITEM_SYSTEM.md §11). Design doc:
+  docs/ITEM_SYSTEM.md. **Phase 5.12 (merchant NPCs) planned:** GlitchShops
+  plugin design in docs/GLITCH_SHOPS_DESIGN.md — merchants buy any custom item
+  at sell price, sell stock at buy price (buy shown only in GUI).
+- **Design decisions locked (2026-08-02)** (see ITEM_SYSTEM §2/§6/§11/§12,
+  GAME_DESIGN §2/§7/§11, ROADMAP 5.10.3/5.11.5/5.12.4/5.13):
+  - **Simplicity pass:** rarities are now **Common/Uncommon/Rare/Epic/Legendary**
+    (was Fragmented/Primordial jargon); keys = Cache Key/Vault Key/Rift Key;
+    containers = Debris Pile/Loot Cache/Vault/Rift Vault; relic = Legendary
+    Relic. Oraxen item ids renamed accordingly (unstable_rift_common,
+    cache_key, ...) — re-deploy with setup-oraxen-items.sh.
+  - **Residual Glitch retuned:** +1 stack per **5 min** (max 8), loot luck
+    +5%/stack, payout ×(1+0.10×stacks) — glitch_red is a big map, the game is
+    *searching* it, not camping for staying bonuses.
+  - Gear line: 3 weapon archetypes (Blade/Greatblade/Arcane Staff) + 4 armor
+    pieces; weapons gain attributes from Rare up; armor = base stats by
+    rarity + exactly 1 attribute.
+  - **Death rule (glitch_red): player keeps leggings + boots only** — rest
+    drops (Phase 5.13, small plugin). glitch_pve stays keep-inventory.
+  - Standard extract = **30s** (VelKoth must change from 300s test value);
+    Fast 15s (Fast Extract Key), Silent 10s (Rift Key).
+  - Vendor gear: fixed base + small roll variance; 0.01% super-rare max-roll
+    variant per weapon in stock.
+  - Mob zone distribution: glitch_red = T1 everywhere, T2 mid, T3 at POIs,
+    T4 server events; glitch_pve = tier-scaled waves.
+  Next: item system steps 3–10 (stat-roll engine + gear line, rifts +
   Identifier NPC, Resonance tags, Residual Glitch, world population, crafting,
-  rename pass).
+  rename pass, death rules).
 - **Phases 6-8:** not started.
 
 ## Full instance reset (nuke and recreate)
@@ -181,7 +207,7 @@ After reset:
 - GlitchStash built and deployed (extraction vault working)
 - GlitchClasses built and deployed (4 classes, ability items, 10 upgrade levels)
 - GlitchDungeons built and deployed (21 files, party system, wave spawning, boss bar, extraction, rewards)
-- Oraxen built from source and Arcane Ruins items deployed (5 materials + 3 keys, textures, ESC lang)
+- Oraxen built from source and Arcane Ruins items deployed (18 items: materials, keys, rifts, alchemy; textures, ESC lang)
 - PAPI expansions installed (LuckPerms + Vault placeholders work)
 - TAB scoreboard renders all lines
 - VelKoth extraction zones active (hold zone → inventory saved → teleport to hub)
@@ -206,11 +232,12 @@ Needs server-side build and in-game testing.
 
 The **Arcane Ruins item system (Phase 5.10)** is underway: Oraxen built from
 source (paid-jar alternatives rejected — non-P2W stance also means no paid
-plugins; setup-oraxen.sh patches a broken Iris JitPack dep). 8 base items (5
-materials + 3 keys) deployed with generated 16×16 textures, ESC menu fixed via
-lang override, verified in-game. Remaining per docs/ITEM_SYSTEM.md §10:
-rarity tiers + stat-roll engine, Unstable Rifts + Identifier NPC, Resonance
-tags, Residual Glitch greed system, world population, crafting, rename pass.
+plugins; setup-oraxen.sh patches a broken Iris JitPack dep). 18 items (5
+materials, 4 keys, 5 rifts, 4 alchemy) deployed with generated 16×16 textures,
+ESC menu fixed via lang override, verified in-game. Remaining per
+docs/ITEM_SYSTEM.md §10: stat-roll engine + gear line (archetypes/attributes),
+Unstable Rifts + Identifier NPC, Resonance tags, Residual Glitch greed system,
+world population, crafting, rename pass, death rules (5.13).
 
 Physical builds (dungeon shells, Red Zone POIs) are deferred until the
 operator is ready to do in-game WorldEdit work. Note: build scripts for

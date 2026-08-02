@@ -1,0 +1,13 @@
+unstable_rift_legendary:
+  displayname: <gold>Unstable Rift (Legendary)</gold>
+  material: AMETHYST_SHARD
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - unstable_rift_legendary
+  lore:
+    - '<gold>An unstable piece of the Glitch.</gold>'
+    - '<gray>Carry it out and identify it at the hub.</gray>'
+    - '<dark_gray>Identify fee: 800 Shards</dark_gray>'
+    - '<gray>Sell price: <aqua>500 Shards</aqua></gray>'

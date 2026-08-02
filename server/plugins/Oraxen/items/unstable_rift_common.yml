@@ -1,0 +1,13 @@
+unstable_rift_common:
+  displayname: <white>Unstable Rift (Common)</white>
+  material: AMETHYST_SHARD
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - unstable_rift_common
+  lore:
+    - '<gray>An unstable piece of the Glitch.</gray>'
+    - '<gray>Carry it out and identify it at the hub.</gray>'
+    - '<dark_gray>Identify fee: 5 Shards</dark_gray>'
+    - '<gray>Sell price: <aqua>3 Shards</aqua></gray>'

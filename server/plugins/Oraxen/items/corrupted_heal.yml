@@ -1,0 +1,12 @@
+corrupted_heal:
+  displayname: <dark_purple>Corrupted Heal</dark_purple>
+  material: HONEY_BOTTLE
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - corrupted_heal
+  lore:
+    - '<dark_purple>Restores full HP + Regeneration III for 10s.</dark_purple>'
+    - '<gray>Rare boss-cache consumable.</gray>'
+    - '<gray>Sell price: <aqua>150 Shards</aqua></gray>'

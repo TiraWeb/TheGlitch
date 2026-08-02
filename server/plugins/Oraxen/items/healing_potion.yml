@@ -1,0 +1,12 @@
+healing_potion:
+  displayname: <green>Healing Potion</green>
+  material: HONEY_BOTTLE
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - healing_potion
+  lore:
+    - '<green>Regeneration II for 5s.</green>'
+    - '<gray>Crafted from Rune Fragments and Rift Crystals.</gray>'
+    - '<gray>Sell price: <aqua>12 Shards</aqua></gray>'

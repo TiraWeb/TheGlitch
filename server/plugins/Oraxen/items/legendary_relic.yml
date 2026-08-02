@@ -1,12 +1,13 @@
-primordial_relic:
-  displayname: <gold>Primordial Relic</gold>
+legendary_relic:
+  displayname: <gold>Legendary Relic</gold>
   material: GOLD_NUGGET
   Pack:
     generate_model: true
     parent_model: "item/generated"
     textures:
-      - primordial_relic
+      - legendary_relic
   lore:
     - '<gold>A relic from before the Glitch.</gold>'
-    - '<gray>Required for Primordial recipes.</gray>'
+    - '<gray>Required for Legendary recipes.</gray>'
     - '<dark_gray>Drops from bosses (rare).</dark_gray>'
+    - '<gray>Sell price: <aqua>800 Shards</aqua></gray>'

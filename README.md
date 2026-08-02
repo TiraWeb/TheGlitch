@@ -104,15 +104,27 @@ The core gameplay loop is extraction via VelKoth zones:
 
 ## The item system (Phase 5.10, in progress)
 
-Arcane Ruins aesthetic (corrupted magical anomaly — no techy/circuit items, no
-shooting). Design doc: [docs/ITEM_SYSTEM.md](docs/ITEM_SYSTEM.md). The core loop
-is "Unstable Rifts": mobs drop unrevealed rifts, you extract, and a hub
-Identifier NPC reveals the item with random stat rolls. Power comes from
-rarity tiers (Fragmented → Primordial) + stat rolls + the **Resonance system**
-(5 arcane frequencies, weapon +25% damage vs matching mobs), not item levels.
+Arcane Ruins aesthetic (corrupted magical anomaly — no guns, no techy/circuit items).
+Design doc: [docs/ITEM_SYSTEM.md](docs/ITEM_SYSTEM.md). The core loop is "Unstable
+Rifts": mobs drop unrevealed rifts, you extract, and a hub Identifier NPC reveals the
+item with random stat rolls. Power comes from rarity tiers (Common → Legendary) +
+stat rolls + the **Resonance system** (5 arcane frequencies, weapon +25% damage vs
+matching mobs), not item levels.
 
-**Base items deployed** (5 materials + 3 keys): Rune Fragment, Aether Shard,
-Rift Crystal, Void Essence, Primordial Relic; Fractured/Sealed/Primordial Key.
+**18 custom items deployed:** 5 materials, 4 keys, 5 Unstable Rifts, 4 alchemy items —
+every one ends with a `Sell price: N Shards` lore line. Hub merchant NPCs (Phase 5.12,
+GlitchShops) buy all custom items for Glitch Shards and sell stock at higher buy prices
+(shown only in the merchant GUI).
+
+**Gear line (designed, not yet built):** 3 weapon archetypes (Blade, Greatblade, Arcane
+Staff) + 4 armor pieces; base stats scale by rarity, weapons gain special attributes
+(lifesteal, fire aspect...) from Resonant up, armor keeps exactly one attribute. Gear
+comes from rifts, Workbench crafting, merchants (small roll variance + 0.01% super-rare
+max-roll variant), and elites/bosses.
+
+**Risk (designed):** glitch_red is full-loot, but on death you keep your **leggings and
+boots** only; glitch_pve stays keep-inventory as the training floor. Standard extract is
+30s (Fast = 15s with a key, Silent = 10s with the rare Rift Key).
 
 ## Plugin stack
 
@@ -129,7 +141,7 @@ Rift Crystal, Void Essence, Primordial Relic; Fractured/Sealed/Primordial Key.
 | TAB | Scoreboard + tab list | `server/plugins/TAB/config.yml` |
 | PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
 | VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
-| Oraxen | Custom items (Arcane Ruins item system) | `server/plugins/Oraxen/` |
+| Oraxen | Custom items (18 Arcane Ruins items) | `server/plugins/Oraxen/` |
 | **GlitchStash** | **Extraction vault** (custom) | `plugins/GlitchStash/` |
 | **GlitchClasses** | **Class system** (custom) | `plugins/GlitchClasses/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
@@ -211,7 +223,9 @@ server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM
 server/*.yml              performance tuning configs (synced every bootstrap)
 docs/ZONES.md             zone architecture blueprint
 docs/PERFORMANCE.md       tuning rationale + baseline
-docs/ITEM_SYSTEM.md       Arcane Ruins item system design (rarities, resonance, rifts)
+docs/ITEM_SYSTEM.md       Arcane Ruins item system design (rarities, resonance, rifts, prices §11)
+docs/GLITCH_SHOPS_DESIGN.md  merchant NPC plugin design (Phase 5.12)
+docs/GAME_DESIGN.md       core gameplay numbers (mobs, loot, economy, extraction, anti-grief)
 ROADMAP.md                the full phased build plan
 HANDOFF.md                session handoff doc
 ```

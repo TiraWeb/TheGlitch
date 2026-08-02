@@ -1,12 +1,13 @@
-sealed_key:
-  displayname: <blue>Sealed Key</blue>
+vault_key:
+  displayname: <blue>Vault Key</blue>
   material: TRIPWIRE_HOOK
   Pack:
     generate_model: true
     parent_model: "item/generated"
     textures:
-      - sealed_key
+      - vault_key
   lore:
-    - '<blue>Unlocks Sealed Reliquaries in hard zones.</blue>'
+    - '<blue>Unlocks Vaults in hard zones.</blue>'
     - '<gray>Crafted from Rift Crystals and Void Essence.</gray>'
     - '<dark_gray>Consumed on use.</dark_gray>'
+    - '<gray>Sell price: <aqua>60 Shards</aqua></gray>'

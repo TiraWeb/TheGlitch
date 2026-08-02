@@ -1,0 +1,12 @@
+cache_key:
+  displayname: <gray>Cache Key</gray>
+  material: TRIPWIRE_HOOK
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - cache_key
+  lore:
+    - '<gray>Unlocks Loot Caches in mid zones.</gray>'
+    - '<dark_gray>Consumed on use.</dark_gray>'
+    - '<gray>Sell price: <aqua>15 Shards</aqua></gray>'

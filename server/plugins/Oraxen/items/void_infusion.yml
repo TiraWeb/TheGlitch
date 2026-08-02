@@ -1,0 +1,12 @@
+void_infusion:
+  displayname: <light_purple>Void Infusion</light_purple>
+  material: GLASS_BOTTLE
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - void_infusion
+  lore:
+    - '<light_purple>Boosts a Resonance on an Epic item.</light_purple>'
+    - '<gray>Crafted from Void Essence and Legendary Relics.</gray>'
+    - '<gray>Sell price: <aqua>600 Shards</aqua></gray>'

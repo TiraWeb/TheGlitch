@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 #
-# The Glitch — deploy Oraxen items (Arcane Ruins materials + keys).
+# The Glitch — deploy Oraxen items (Arcane Ruins materials, keys, rifts, potions).
 #
 # Syncs repo configs/textures into the live Oraxen folder, removes the default
 # example items + recipes (crystalmush, ruby gear, fire_hammer, bedrock_pickaxe,
 # obsidian_sword, ...), disables default config regeneration, then reloads.
+#
+# Every item ends with a "Sell price: N Shards" lore line (docs/ITEM_SYSTEM.md
+# §11) so the hub merchants (Phase 5.12, GlitchShops) can buy them back.
 #
 # Usage:  sudo ./setup-oraxen-items.sh
 #
@@ -81,10 +84,15 @@ mc "oraxen reload all" || warn "reload command failed — try: sudo ./console.sh
 cat <<'EOF'
 
 ============================================================
-  Oraxen items deployed.
-  Items: rune_fragment, aether_shard, rift_crystal,
-         void_essence, primordial_relic,
-         fractured_key, sealed_key, primordial_key
+  Oraxen items deployed (18 custom items).
+  Materials: rune_fragment, aether_shard, rift_crystal,
+             void_essence, legendary_relic
+  Keys:      cache_key, vault_key, rift_key,
+             fast_extract_key
+  Rifts:     unstable_rift_common, _uncommon, _rare,
+             _epic, _legendary
+  Alchemy:   healing_potion, corrupted_heal,
+             rift_reveal_pack, void_infusion
 ============================================================
 
   If you still see "invalid texture-path" warnings after
@@ -93,7 +101,7 @@ cat <<'EOF'
 
   Verify in-game:
     /oraxen give rune_fragment
-    /oraxen give rift_crystal
-    /oraxen give primordial_key
+    /oraxen give unstable_rift_rare
+    /oraxen give rift_key
 ============================================================
 EOF

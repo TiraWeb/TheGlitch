@@ -1,0 +1,12 @@
+fast_extract_key:
+  displayname: <aqua>Fast Extract Key</aqua>
+  material: TRIPWIRE_HOOK
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - fast_extract_key
+  lore:
+    - '<aqua>Unlocks Fast Extract sites (15s channel).</aqua>'
+    - '<gray>Consumed on use.</gray>'
+    - '<gray>Sell price: <aqua>40 Shards</aqua></gray>'
