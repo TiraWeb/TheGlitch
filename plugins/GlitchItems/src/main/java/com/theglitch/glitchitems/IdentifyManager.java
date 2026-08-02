@@ -3,6 +3,7 @@ package com.theglitch.glitchitems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -51,9 +52,12 @@ public final class IdentifyManager {
         }
 
         if (item.getItemMeta().hasCustomName()) {
-            String name = item.getItemMeta().getCustomName();
-            if (name != null && name.contains("Unstable Rift")) {
-                return name;
+            Component nameComponent = item.getItemMeta().customName();
+            if (nameComponent != null) {
+                String name = PlainTextComponentSerializer.plainText().serialize(nameComponent);
+                if (name.contains("Unstable Rift")) {
+                    return name;
+                }
             }
         }
         return null;
