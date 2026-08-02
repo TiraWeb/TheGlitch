@@ -44,6 +44,10 @@ It's **idempotent** — the update loop for every future phase is:
 git pull && sudo ./bootstrap.sh
 ```
 
+**If a script says "command not found" after a pull** (new script committed
+without the exec bit): `sudo bash scripts/fix-script-modes.sh` — or just run
+it as `sudo bash <script>.sh` (bash doesn't need the exec bit).
+
 Live server data (worlds, edited configs) is never overwritten; `start.sh` and the systemd unit are treated as code and always synced from the repo.
 
 ## Day-to-day operations

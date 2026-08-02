@@ -310,7 +310,12 @@ GlitchInsurance, etc.).
 7. Executable bits matter for `git pull` on the box: a script committed
    `100644` fails as "command not found" and its later `chmod +x` blocks the
    next pull. `core.fileMode false` is set on the box now to stop mode diffs
-   from blocking pulls at all — but keep committing scripts as `755`.
+   from blocking pulls at all — but because of that, git never fixes modes on
+   pull either. **Permanent fix:** run `sudo bash scripts/fix-script-modes.sh`
+   whenever any script says "command not found" (chmods every repo .sh).
+   Alternatively run any script as `sudo bash <script>.sh` — bash doesn't
+   need the exec bit. All repo .sh files are committed as 755; mark new
+   scripts with `git update-index --chmod=+x` before committing.
 
 8. RCON commands run with no player context — anything needing "current
    position" or a player-tied selection (`//paste`, `//copy`, `//pos1`/
