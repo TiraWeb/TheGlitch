@@ -7,6 +7,7 @@ import net.milkbowl.vault.economy.Economy;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -37,11 +38,21 @@ public final class IdentifyManager {
 
     public String oraxenId(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
-        String id = item.getItemMeta().getPersistentDataContainer().get(ORAXEN_ID_KEY, PersistentDataType.STRING);
+        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+
+        String id = pdc.get(ORAXEN_ID_KEY, PersistentDataType.STRING);
         if (id != null && !id.isEmpty()) return id;
-        if (item.getType().name().contains("AMETHYST") && item.getItemMeta().hasDisplayName()) {
-            String name = item.getItemMeta().displayName().toString();
-            if (name.contains("Unstable Rift")) {
+
+        for (NamespacedKey key : pdc.getKeys()) {
+            String value = pdc.get(key, PersistentDataType.STRING);
+            if (value != null && value.startsWith("unstable_rift_")) {
+                return value;
+            }
+        }
+
+        if (item.getItemMeta().hasCustomName()) {
+            String name = item.getItemMeta().getCustomName();
+            if (name != null && name.contains("Unstable Rift")) {
                 return name;
             }
         }
@@ -49,12 +60,15 @@ public final class IdentifyManager {
     }
 
     private Rarity matchRarityName(String text) {
+        String lower = text.toLowerCase();
+        Rarity best = null;
         for (Rarity rarity : Rarity.values()) {
-            if (text.toLowerCase().contains(rarity.getId())) {
-                return rarity;
+            if (lower.contains(rarity.getId())
+                    && (best == null || rarity.getId().length() > best.getId().length())) {
+                best = rarity;
             }
         }
-        return null;
+        return best;
     }
 
     public boolean identify(Player player, boolean force) {
