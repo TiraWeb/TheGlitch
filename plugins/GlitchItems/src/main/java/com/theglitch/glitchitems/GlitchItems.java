@@ -73,6 +73,20 @@ public final class GlitchItems extends JavaPlugin {
     }
 
     public Economy getEconomy() {
+        if (economy != null) {
+            return economy;
+        }
+        if (getServer().getPluginManager().getPlugin("VaultUnlocked") == null) {
+            return null;
+        }
+        RegisteredServiceProvider<Economy> provider =
+                getServer().getServicesManager().getRegistration(Economy.class);
+        if (provider != null) {
+            economy = provider.getProvider();
+            if (economy != null) {
+                getLogger().info("Economy provider found: " + economy.getName());
+            }
+        }
         return economy;
     }
 }
