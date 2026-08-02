@@ -172,11 +172,11 @@ public final class GearManager {
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
         if (rolls.speed > 0) {
-            meta.addAttributeModifier(Attribute.GENERIC_MOVEMENT_SPEED,
+            meta.addAttributeModifier(Attribute.MOVEMENT_SPEED,
                     new AttributeModifier(uniqueKey("speed"), 0.1 * rolls.speed / 100.0, AttributeModifier.Operation.ADD_NUMBER));
         }
         if (rolls.maxhp > 0) {
-            meta.addAttributeModifier(Attribute.GENERIC_MAX_HEALTH,
+            meta.addAttributeModifier(Attribute.MAX_HEALTH,
                     new AttributeModifier(uniqueKey("maxhp"), rolls.maxhp, AttributeModifier.Operation.ADD_NUMBER));
         }
 

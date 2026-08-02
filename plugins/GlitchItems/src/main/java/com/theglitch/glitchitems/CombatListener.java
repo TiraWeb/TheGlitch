@@ -54,10 +54,10 @@ public final class CombatListener implements Listener {
         Map<String, Integer> attributes = gearManager.parseAttributes(rolls.attributes);
         Integer lifesteal = attributes.get("lifesteal");
         if (lifesteal != null && lifesteal > 0) {
+            double maxHp = attacker.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) == null
+                    ? 20.0 : attacker.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
             double healed = out * lifesteal / 100.0;
-            attacker.setHealth(Math.min(attacker.getHealth() + healed, attacker.getAttribute(
-                    org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH) == null
-                    ? 20.0 : attacker.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue()));
+            attacker.setHealth(Math.min(attacker.getHealth() + healed, maxHp));
         }
         Integer fire = attributes.get("fire-aspect");
         if (fire != null && fire > 0) {
