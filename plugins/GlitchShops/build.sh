@@ -5,7 +5,9 @@
 #   sudo ./plugins/GlitchShops/build.sh
 #
 # Requires: Maven (mvn), Java 21+, and these jars in the live plugins dir:
-#   VaultUnlocked.jar, Oraxen.jar, FancyNpcs.jar
+#   VaultUnlocked.jar, Oraxen.jar, FancyNpcs.jar, GlitchItems.jar
+# IMPORTANT: build GlitchItems FIRST (sudo ./plugins/GlitchItems/build.sh)
+# so the GlitchItems.jar copied here contains the latest API (e.g. generateGodroll).
 # Output:   plugins/GlitchShops/target/GlitchShops-1.0.0.jar
 
 set -euo pipefail
