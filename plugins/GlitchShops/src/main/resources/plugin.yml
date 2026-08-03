@@ -1,0 +1,23 @@
+name: GlitchShops
+version: '${project.version}'
+main: com.theglitch.glitchshops.GlitchShops
+api-version: '1.21'
+description: Merchant NPCs for The Glitch — buy/sell custom items for Glitch Shards
+softdepend:
+  - Oraxen
+  - GlitchItems
+  - FancyNpcs
+
+commands:
+  shop:
+    description: Open the Grand Bazaar
+    usage: /shop [open <tab>|reload|restock]
+    permission: glitchshops.use
+
+permissions:
+  glitchshops.use:
+    description: Access the bazaar
+    default: true
+  glitchshops.admin:
+    description: Admin shop commands
+    default: op

@@ -72,6 +72,7 @@ plugins/GlitchClasses/                    source code (built via build.sh, deplo
 plugins/GlitchClasses/src/main/resources/ config.yml + messages.yml (seeded to live server)
 plugins/GlitchClasses/players/            per-player YAML class files (auto-created at runtime)
 plugins/GlitchItems/                      source code (built via build.sh — gear rolls, /identify, Resonance, Residual Glitch)
+plugins/GlitchShops/                      source code (built via build.sh — Grand Bazaar, buy/sell, gear vendor)
 docs/ZONES.md             zone blueprint: coordinates, world storage gotchas, rules
 docs/PERFORMANCE.md       tuning rationale + the recorded idle baseline
 docs/DUNGEON_SHELL.md     dungeon shell blueprint (deferred — requires in-game build)
@@ -372,6 +373,7 @@ GlitchInsurance, etc.).
    sudo ./plugins/GlitchClasses/build.sh
    sudo ./plugins/GlitchDungeons/build.sh
    sudo ./plugins/GlitchItems/build.sh
+   sudo ./plugins/GlitchShops/build.sh
    sudo systemctl restart theglitch
    ```
 3. **Test the item system** (GlitchItems): `/glitchitems give rare blade` (admin),

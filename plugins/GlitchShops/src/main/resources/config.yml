@@ -1,0 +1,39 @@
+# GlitchShops — The Glitch merchant economy
+# Design: docs/GLITCH_SHOPS_DESIGN.md, prices: docs/ITEM_SYSTEM.md §11
+
+# FancyNpcs display names that open the bazaar on right-click
+bazaar-npc-names:
+  - "Grand Bazaar"
+
+# Tab opened by default (materials, keys, alchemy, rifts, gear)
+default-tab: materials
+
+# Gear vendor (rotating stock)
+gear:
+  restock-minutes: 10
+  # Chance per stock slot (per restock) to roll a Legendary max-roll item
+  super-rare-chance: 0.0001
+  # Buy price = rarity sell value x this
+  buy-multiplier: 1.75
+  # Rarity weights for normal stock rolls (higher = more common)
+  rarity-weights:
+    common: 5
+    uncommon: 10
+    rare: 12
+    epic: 6
+    legendary: 1
+  # Which slots the vendor shows (weapons first, then armor)
+  weapon-slots: [blade, greatblade, arcane_staff]
+  armor-slots: [helmet, chestplate, leggings, boots]
+  max-slots: 5
+
+# Click behavior: buy/sell 1 per click, whole stack on shift
+buy-stack-size: 64
+
+messages:
+  not-enough-shards: "<red>Not enough Shards — you need {price}.</red>"
+  sold: "<green>Sold {amount}x {item} for {price} Shards.</green>"
+  bought: "<green>Bought {amount}x {item} for {price} Shards.</green>"
+  no-value: "<red>This item has no value here.</red>"
+  full-inventory: "<yellow>Inventory full — the item dropped at your feet.</yellow>"
+  denied: "<red>That item can't be traded.</red>"

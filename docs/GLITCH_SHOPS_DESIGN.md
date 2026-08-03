@@ -9,13 +9,19 @@ Maven, Paper API, no premium dependencies. Currency via Vault/Coins (Glitch Shar
 
 ## Overview
 
-- NPCs: **FancyNpcs** (already installed) — right-click an NPC opens this plugin's GUI.
-- Every merchant opens the same GUI: a **Sell** tab (your inventory, click to sell at config
-  price) and a **Buy** tab (this NPC's stock at buy prices).
-- Any custom item can be sold to **any** merchant — one shared price table, nothing is
-  unsellable clutter.
-- Gear vendors (armour/weapons with fixed vendor rolls) are a later expansion — v1 ships the
-  sell floor + custom-item stock only.
+- NPCs: **FancyNpcs** (already installed) — right-click the **Grand Bazaar** NPC
+  (config `bazaar-npc-names`) opens the shop GUI. `/shop` works without an NPC.
+- One 54-slot GUI: **BUY / SELL toggle** + **5 category tabs** (Materials, Keys,
+  Alchemy, Rifts, Gear). Bottom rows show the player's inventory.
+- **Sell:** any custom item to any merchant at config sell price (Oraxen items by
+  id, GlitchItems gear by its `gear` PDC → rarity sell value). Left-click = 1,
+  shift-click = whole stack.
+- **Buy:** static supply stock (per §11 prices, buy price shown only in the GUI)
+  + a rotating **gear vendor**: 3 weapon + 2 armor slots, fresh rolls each
+  restock (10 min default), 0.01% per slot chance of a Legendary max-roll
+  **SUPER RARE** item.
+- Ability items (`class_ability` PDC) can never be sold. Class selection/shard
+  shop stay on DeluxeMenus as-is.
 
 ## Commands
 

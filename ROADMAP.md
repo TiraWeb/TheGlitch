@@ -140,9 +140,9 @@ Sell price < buy price; sell price on item lore, buy price only in the merchant
 GUI. Currency: Glitch Shards (Coins/Vault)._
 
 - [ ] **5.12.1 Sellable roster + prices** — _Item configs done: all 18 custom items carry a `Sell price: N Shards` lore line per the §11 table. Plugin pending._
-- [ ] **5.12.2 GlitchShops plugin** — buy/sell GUI (Sell tab = inventory, Buy tab = stock), prices from config only, Vault/Coins deposit+withdraw, Oraxen item-id resolution.
-- [ ] **5.12.3 Hub merchant NPCs** — FancyNpcs × 4 (Materials, Keys, Alchemy, Rifts), right-click opens the shop; every merchant buys any custom item.
-- [ ] **5.12.4 Gear vendors** — Armourer/Weaponsmith NPCs: fixed base price + small random variance on rolls each restock; every weapon has a 0.01% super-rare max-roll variant in stock (ITEM_SYSTEM §11).
+- [ ] **5.12.2 GlitchShops plugin** — buy/sell GUI (Sell tab = inventory, Buy tab = stock), prices from config only, Vault/Coins deposit+withdraw, Oraxen item-id resolution. _V1 BUILT (plugins/GlitchShops): 54-slot bazaar GUI, BUY/SELL toggle + 5 category tabs, gear vendor with 10-min restock + 0.01% super-rare godroll, lazy Vault economy. Needs server build (`sudo ./plugins/GlitchShops/build.sh`) + test._
+- [ ] **5.12.3 Hub merchant NPCs** — FancyNpcs × 1 "Grand Bazaar" (config `bazaar-npc-names`), right-click opens the shop; any vendor buys any custom item. _Plugin side done (NpcListener); NPC placed in-game by operator._
+- [ ] **5.12.4 Gear vendors** — Armourer/Weaponsmith NPCs: fixed base price + small random variance on rolls each restock; every weapon has a 0.01% super-rare max-roll variant in stock (ITEM_SYSTEM §11). _V1 built: gear tab in bazaar (3 weapon + 2 armor slots, restock every 10 min, super-rare roll)._
 - [ ] **5.12.5 Economy sanity pass** — verify prices against GAME_DESIGN §8 income targets once loot tables (5.11.3) + rifts (5.10.4) land.
 
 ## Phase 5.13 — Death Rules (risk tuning)

@@ -153,6 +153,7 @@ boots** only; glitch_pve stays keep-inventory as the training floor. Standard ex
 | **GlitchStash** | **Extraction vault** (custom) | `plugins/GlitchStash/` |
 | **GlitchClasses** | **Class system** (custom) | `plugins/GlitchClasses/` |
 | **GlitchItems** | **Item system** (custom: gear rolls, /identify, Resonance, Residual Glitch) | `plugins/GlitchItems/` |
+| **GlitchShops** | **Grand Bazaar** (custom: buy/sell merchants, gear vendor) | `plugins/GlitchShops/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
 | GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
@@ -185,6 +186,7 @@ cd ~/TheGlitch
 sudo ./plugins/GlitchStash/build.sh
 sudo ./plugins/GlitchClasses/build.sh
 sudo ./plugins/GlitchItems/build.sh
+sudo ./plugins/GlitchShops/build.sh
 sudo systemctl restart theglitch
 ```
 
@@ -227,6 +229,7 @@ setup-oraxen-items.sh     Phase 5.10: deploy items/textures/lang to Oraxen, relo
 plugins/GlitchStash/      GlitchStash source (built via build.sh)
 plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
 plugins/GlitchItems/      GlitchItems source (built via build.sh)
+plugins/GlitchShops/      GlitchShops source (built via build.sh)
 server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
 console.sh                attach to the live server console
 scripts/mc-cmd.py         local RCON client

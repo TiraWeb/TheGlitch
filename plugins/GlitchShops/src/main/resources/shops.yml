@@ -1,0 +1,40 @@
+# GlitchShops — shop stock and prices
+# buy = price shown in the GUI only; sell = price paid to players (on item lore)
+# Items without an entry cannot be sold.
+# Design: docs/ITEM_SYSTEM.md §11
+
+shops:
+  materials:
+    title: "Materials"
+    tab-icon: "rune_fragment"
+    stock:
+      rune_fragment: { buy: 5, sell: 2 }
+      aether_shard: { buy: 20, sell: 10 }
+      rift_crystal: { buy: 40, sell: 20 }
+      void_essence: { buy: 200, sell: 100 }
+      legendary_relic: { buy: 1500, sell: 800 }
+  keys:
+    title: "Keys"
+    tab-icon: "vault_key"
+    stock:
+      cache_key: { buy: 30, sell: 15 }
+      vault_key: { buy: 120, sell: 60 }
+      rift_key: { buy: 800, sell: 400 }
+      fast_extract_key: { buy: 75, sell: 40 }
+  alchemy:
+    title: "Alchemy"
+    tab-icon: "healing_potion"
+    stock:
+      healing_potion: { buy: 20, sell: 12 }
+      corrupted_heal: { buy: 250, sell: 150 }
+      rift_reveal_pack: { buy: 150, sell: 75 }
+      void_infusion: { buy: 1000, sell: 600 }
+  rifts:
+    title: "Rifts"
+    tab-icon: "unstable_rift_rare"
+    stock:
+      unstable_rift_common: { buy: 10, sell: 3 }
+      unstable_rift_uncommon: { buy: 40, sell: 12 }
+      unstable_rift_rare: { buy: 150, sell: 45 }
+      unstable_rift_epic: { buy: 500, sell: 150 }
+      unstable_rift_legendary: { buy: 1500, sell: 500 }

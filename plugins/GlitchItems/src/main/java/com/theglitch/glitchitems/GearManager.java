@@ -67,6 +67,34 @@ public final class GearManager {
         return generateGear(type, rarity, null);
     }
 
+    public ItemStack generateGodroll(GearType type) {
+        Rarity rarity = Rarity.LEGENDARY;
+        GearRolls rolls = new GearRolls();
+        rolls.rarity = rarity;
+        rolls.type = type;
+        rolls.resonance = Resonance.values()[ThreadLocalRandom.current().nextInt(Resonance.values().length)];
+        rolls.boost = resonanceBoost(rarity);
+
+        rolls.starsPrimary = statRange(rarity, "stars")[1];
+        rolls.starsSpeed = statRange(rarity, "stars")[1];
+        rolls.starsHp = statRange(rarity, "stars")[1];
+
+        if (type.isWeapon()) {
+            rolls.damage = statRange(rarity, "damage")[1];
+            int lifesteal = plugin.getConfig().getInt("attributes.weapon.lifesteal.legendary", 8);
+            int fire = plugin.getConfig().getInt("attributes.weapon.fire-aspect.legendary", 2);
+            rolls.attributes = "lifesteal:" + lifesteal + ";fire-aspect:" + fire;
+        } else {
+            rolls.armor = statRange(rarity, "armor")[1];
+            int reduction = plugin.getConfig().getInt("attributes.armor.damage-reduction.legendary", 12);
+            rolls.attributes = "damage-reduction:" + reduction;
+        }
+        rolls.speed = statRange(rarity, "speed")[1];
+        rolls.maxhp = statRange(rarity, "maxhp")[1];
+
+        return buildItem(rolls);
+    }
+
     public ItemStack generateGear(GearType type, Rarity rarity, Resonance forcedResonance) {
         ThreadLocalRandom rand = ThreadLocalRandom.current();
 
