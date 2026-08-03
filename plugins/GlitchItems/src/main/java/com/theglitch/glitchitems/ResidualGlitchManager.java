@@ -77,7 +77,7 @@ public final class ResidualGlitchManager {
         bar.progress((float) Math.min(1.0, (double) stacks / maxStacks()));
         bar.color(stacks >= eliteHuntStacks() ? BossBar.Color.PURPLE : BossBar.Color.RED);
 
-        if (plugin.getConfig().getBoolean("residual-glitch.show-xp-bar", true)) {
+        if (plugin.getConfig().getBoolean("residual-glitch.show-xp-bar", false)) {
             player.setLevel(stacks);
             player.setExp((float) stacks / maxStacks());
         }

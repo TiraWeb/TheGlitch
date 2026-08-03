@@ -129,10 +129,10 @@ combat math (weapon +25% dmg vs matching mobs, armor reduction) and the
 Residual Glitch timer are implemented — mobs need a `res_<name>` scoreboard
 tag (e.g. `res_veil`, MythicMobs `Options.ScoreboardTags: [res_veil]`; the
 colon form `res:veil` is also accepted) for Resonance to apply. Stack HUD:
-boss bar (top of screen, turns purple when elites hunt you) + vanilla XP bar
-mirror, plus `%glitchitems_stacks%` / `%glitchitems_payout%` /
-`%glitchitems_payout_multiplier%` / `%glitchitems_dmg_taken%` PlaceholderAPI
-placeholders for the TAB scoreboard.
+boss bar (top of screen, turns purple when elites hunt you; optional vanilla
+XP bar mirror, off by default), plus `%glitchitems_stacks%` /
+`%glitchitems_payout%` / `%glitchitems_payout_multiplier%` /
+`%glitchitems_dmg_taken%` PlaceholderAPI placeholders for the TAB scoreboard.
 
 **Risk (designed):** glitch_red is full-loot, but on death you keep your **leggings and
 boots** only; glitch_pve stays keep-inventory as the training floor. Standard extract is

@@ -82,5 +82,6 @@ residual-glitch:
   payout-per-stack: 0.10
   # Boss bar HUD (top of screen, MiniMessage format) — {stacks}/{max}/{dmg}/{payout} placeholders
   bossbar-title: "<red>Residual Glitch: <white>{stacks}/{max}</white> <dark_gray>(<gray>+{dmg}% dmg taken, +{payout}% payout</gray>)</dark_gray>"
-  # Mirror stacks onto the vanilla XP bar (level = stacks, fill = 8/8)
-  show-xp-bar: true
+  # Mirror stacks onto the vanilla XP bar (level = stacks, fill = 8/8).
+  # Off by default — the boss bar is the HUD; the XP bar is free for other uses.
+  show-xp-bar: false
