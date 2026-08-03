@@ -1,9 +1,9 @@
 package com.theglitch.glitchitems;
 
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
-import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -58,22 +58,24 @@ public final class ResidualGlitchManager {
 
     private void show(Player player) {
         int stacks = getStacks(player);
-        BossBar bar = bars.get(player.getUniqueId());
-        if (bar == null) {
-            bar = Bukkit.createBossBar("", BossBar.Color.RED, BossBar.Style.SOLID);
-            bar.addPlayer(player);
-            bars.put(player.getUniqueId(), bar);
-        }
-        String title = plugin.getConfig().getString("residual-glitch.bossbar-title",
-                "§cResidual Glitch: §f{stacks}/{max} §8(§7+{dmg}% dmg taken, +{payout}% payout§8)");
-        bar.setTitle(title
+        String template = plugin.getConfig().getString("residual-glitch.bossbar-title",
+                "<red>Residual Glitch: <white>{stacks}/{max}</white> <dark_gray>(<gray>+{dmg}% dmg taken, +{payout}% payout</gray>)</dark_gray>");
+        String text = template
                 .replace("{stacks}", String.valueOf(stacks))
                 .replace("{max}", String.valueOf(maxStacks()))
                 .replace("{dmg}", String.valueOf(stacks * damageTakenPerStack()))
-                .replace("{payout}", String.valueOf((int) (stacks * payoutPerStack() * 100))));
-        bar.setProgress(Math.min(1.0, (double) stacks / maxStacks()));
-        bar.setColor(stacks >= eliteHuntStacks() ? BossBar.Color.PURPLE : BossBar.Color.RED);
-        bar.setVisible(true);
+                .replace("{payout}", String.valueOf((int) (stacks * payoutPerStack() * 100)));
+        Component title = MiniMessage.miniMessage().deserialize(text);
+
+        BossBar bar = bars.get(player.getUniqueId());
+        if (bar == null) {
+            bar = BossBar.bossBar(title, 0.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+            player.showBossBar(bar);
+            bars.put(player.getUniqueId(), bar);
+        }
+        bar.name(title);
+        bar.progress((float) Math.min(1.0, (double) stacks / maxStacks()));
+        bar.color(stacks >= eliteHuntStacks() ? BossBar.Color.PURPLE : BossBar.Color.RED);
 
         if (plugin.getConfig().getBoolean("residual-glitch.show-xp-bar", true)) {
             player.setLevel(stacks);
@@ -84,7 +86,7 @@ public final class ResidualGlitchManager {
     private void hide(Player player) {
         BossBar bar = bars.remove(player.getUniqueId());
         if (bar != null) {
-            bar.removeAll();
+            player.hideBossBar(bar);
         }
         if (player.getLevel() != 0 || player.getExp() > 0.0f) {
             player.setLevel(0);
@@ -127,8 +129,11 @@ public final class ResidualGlitchManager {
     }
 
     public void shutdown() {
-        for (BossBar bar : bars.values()) {
-            bar.removeAll();
+        for (Map.Entry<UUID, BossBar> entry : bars.entrySet()) {
+            org.bukkit.entity.Player player = plugin.getServer().getPlayer(entry.getKey());
+            if (player != null) {
+                player.hideBossBar(entry.getValue());
+            }
         }
         bars.clear();
     }

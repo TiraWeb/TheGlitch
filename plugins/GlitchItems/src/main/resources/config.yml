@@ -80,7 +80,7 @@ residual-glitch:
   loot-luck-per-stack: 5
   elite-hunt-stacks: 5
   payout-per-stack: 0.10
-  # Boss bar HUD (top of screen) — {stacks}/{max}/{dmg}/{payout} placeholders
-  bossbar-title: "§cResidual Glitch: §f{stacks}/{max} §8(§7+{dmg}% dmg taken, +{payout}% payout§8)"
+  # Boss bar HUD (top of screen, MiniMessage format) — {stacks}/{max}/{dmg}/{payout} placeholders
+  bossbar-title: "<red>Residual Glitch: <white>{stacks}/{max}</white> <dark_gray>(<gray>+{dmg}% dmg taken, +{payout}% payout</gray>)</dark_gray>"
   # Mirror stacks onto the vanilla XP bar (level = stacks, fill = 8/8)
   show-xp-bar: true
