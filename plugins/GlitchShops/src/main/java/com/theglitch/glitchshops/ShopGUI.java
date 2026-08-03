@@ -120,11 +120,9 @@ public final class ShopGUI implements Listener {
                 slot++;
             }
             if (slot == 18) {
-                inv.setItem(22, MiniMessageItem.builder(Material.BARRIER,
+                inv.setItem(22, guiIcon("gui_close", Material.BARRIER,
                         "<red>Out of stock</red>",
-                        "<gray>The vendor will restock soon.</gray>")
-                        .tag(ACTION_KEY, "none")
-                        .build());
+                        "<gray>The vendor will restock soon.</gray>"));
             }
             return;
         }
@@ -437,13 +435,6 @@ public final class ShopGUI implements Listener {
         player.playSound(player.getLocation(),
                 success ? Sound.ENTITY_EXPERIENCE_ORB_PICKUP : Sound.ENTITY_VILLAGER_NO,
                 1.0f, success ? 1.4f : 1.0f);
-    }
-
-    @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
-        if (switchingGui.remove(player.getUniqueId())) return;
-        sessions.remove(player.getUniqueId());
     }
 
     @EventHandler
