@@ -18,9 +18,9 @@ public final class GlitchItems extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
 
-        economy = setupEconomy();
+        economy = getEconomy();
         if (economy == null) {
-            getLogger().warning("Vault economy not found — identify fees disabled until an economy plugin is present.");
+            getLogger().warning("No Vault economy provider registered — identify fees disabled until an economy plugin is present.");
         }
 
         gearManager = new GearManager(this);
@@ -40,15 +40,6 @@ public final class GlitchItems extends JavaPlugin {
     public void onDisable() {
         instance = null;
         getLogger().info("GlitchItems disabled.");
-    }
-
-    private Economy setupEconomy() {
-        if (getServer().getPluginManager().getPlugin("VaultUnlocked") == null) {
-            return null;
-        }
-        RegisteredServiceProvider<Economy> provider =
-                getServer().getServicesManager().getRegistration(Economy.class);
-        return provider == null ? null : provider.getProvider();
     }
 
     public void reloadPlugin() {
@@ -75,9 +66,6 @@ public final class GlitchItems extends JavaPlugin {
     public Economy getEconomy() {
         if (economy != null) {
             return economy;
-        }
-        if (getServer().getPluginManager().getPlugin("VaultUnlocked") == null) {
-            return null;
         }
         RegisteredServiceProvider<Economy> provider =
                 getServer().getServicesManager().getRegistration(Economy.class);
