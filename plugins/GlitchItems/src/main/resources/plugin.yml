@@ -5,6 +5,7 @@ api-version: '1.21'
 description: Item system for The Glitch — gear rolls, rifts, Resonance, Residual Glitch
 softdepend:
   - VaultUnlocked
+  - PlaceholderAPI
 
 commands:
   identify:

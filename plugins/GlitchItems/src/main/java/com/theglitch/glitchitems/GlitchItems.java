@@ -30,6 +30,11 @@ public final class GlitchItems extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CombatListener(this, gearManager, glitchManager), this);
         glitchManager.start();
 
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new GlitchExpansion(this).register();
+            getLogger().info("PlaceholderAPI expansion registered (%glitchitems_*%).");
+        }
+
         getCommand("identify").setExecutor(new IdentifyCommand(identifyManager));
         getCommand("glitchitems").setExecutor(new GlitchItemsCommand(this, gearManager, glitchManager));
 
@@ -38,6 +43,9 @@ public final class GlitchItems extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (glitchManager != null) {
+            glitchManager.shutdown();
+        }
         instance = null;
         getLogger().info("GlitchItems disabled.");
     }

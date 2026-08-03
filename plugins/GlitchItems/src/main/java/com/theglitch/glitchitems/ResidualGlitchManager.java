@@ -1,17 +1,23 @@
 package com.theglitch.glitchitems;
 
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public final class ResidualGlitchManager {
 
     private final GlitchItems plugin;
     private final NamespacedKey stacksKey;
     private final NamespacedKey lastKey;
+    private final Map<UUID, BossBar> bars = new HashMap<>();
 
     public ResidualGlitchManager(GlitchItems plugin) {
         this.plugin = plugin;
@@ -25,26 +31,64 @@ public final class ResidualGlitchManager {
 
     private void tick() {
         for (Player player : plugin.getServer().getOnlinePlayers()) {
-            if (!isEnabledWorld(player.getWorld().getName())) continue;
+            if (!isEnabledWorld(player.getWorld().getName())) {
+                hide(player);
+                continue;
+            }
             long now = System.currentTimeMillis();
             long last = getLast(player);
             if (last == 0L) {
                 setLast(player, now);
-                sendActionBar(player, getStacks(player));
-                continue;
-            }
-            int due = (int) ((now - last) / (intervalMinutes() * 60_000L));
-            if (due > 0) {
-                int oldStacks = getStacks(player);
-                int stacks = Math.min(oldStacks + due, maxStacks());
-                setStacks(player, stacks);
-                setLast(player, now);
-                if (oldStacks < eliteHuntStacks() && stacks >= eliteHuntStacks()) {
-                    player.sendMessage(MiniMessage.miniMessage().deserialize(
-                            "<dark_red>You have " + stacks + " stacks of Residual Glitch — something elite is hunting you.</dark_red>"));
+            } else {
+                int due = (int) ((now - last) / (intervalMinutes() * 60_000L));
+                if (due > 0) {
+                    int oldStacks = getStacks(player);
+                    int stacks = Math.min(oldStacks + due, maxStacks());
+                    setStacks(player, stacks);
+                    setLast(player, now);
+                    if (oldStacks < eliteHuntStacks() && stacks >= eliteHuntStacks()) {
+                        player.sendMessage(MiniMessage.miniMessage().deserialize(
+                                "<dark_red>You have " + stacks + " stacks of Residual Glitch — something elite is hunting you.</dark_red>"));
+                    }
                 }
             }
-            sendActionBar(player, getStacks(player));
+            show(player);
+        }
+    }
+
+    private void show(Player player) {
+        int stacks = getStacks(player);
+        BossBar bar = bars.get(player.getUniqueId());
+        if (bar == null) {
+            bar = Bukkit.createBossBar("", BossBar.Color.RED, BossBar.Style.SOLID);
+            bar.addPlayer(player);
+            bars.put(player.getUniqueId(), bar);
+        }
+        String title = plugin.getConfig().getString("residual-glitch.bossbar-title",
+                "§cResidual Glitch: §f{stacks}/{max} §8(§7+{dmg}% dmg taken, +{payout}% payout§8)");
+        bar.setTitle(title
+                .replace("{stacks}", String.valueOf(stacks))
+                .replace("{max}", String.valueOf(maxStacks()))
+                .replace("{dmg}", String.valueOf(stacks * damageTakenPerStack()))
+                .replace("{payout}", String.valueOf((int) (stacks * payoutPerStack() * 100))));
+        bar.setProgress(Math.min(1.0, (double) stacks / maxStacks()));
+        bar.setColor(stacks >= eliteHuntStacks() ? BossBar.Color.PURPLE : BossBar.Color.RED);
+        bar.setVisible(true);
+
+        if (plugin.getConfig().getBoolean("residual-glitch.show-xp-bar", true)) {
+            player.setLevel(stacks);
+            player.setExp((float) stacks / maxStacks());
+        }
+    }
+
+    private void hide(Player player) {
+        BossBar bar = bars.remove(player.getUniqueId());
+        if (bar != null) {
+            bar.removeAll();
+        }
+        if (player.getLevel() != 0 || player.getExp() > 0.0f) {
+            player.setLevel(0);
+            player.setExp(0.0f);
         }
     }
 
@@ -67,6 +111,7 @@ public final class ResidualGlitchManager {
     public void clear(Player player) {
         setStacks(player, 0);
         setLast(player, 0L);
+        hide(player);
     }
 
     public double getPayoutMultiplier(Player player) {
@@ -81,15 +126,11 @@ public final class ResidualGlitchManager {
         return getStacks(player) * lootLuckPerStack();
     }
 
-    private void sendActionBar(Player player, int stacks) {
-        String template = plugin.getConfig().getString("residual-glitch.actionbar",
-                "<dark_red>Residual Glitch: <red>{stacks}/{max}</red>");
-        String message = template
-                .replace("{stacks}", String.valueOf(stacks))
-                .replace("{max}", String.valueOf(maxStacks()))
-                .replace("{dmg}", String.valueOf(stacks * damageTakenPerStack()))
-                .replace("{payout}", String.valueOf((int) (stacks * payoutPerStack() * 100)));
-        player.sendActionBar(MiniMessage.miniMessage().deserialize(message));
+    public void shutdown() {
+        for (BossBar bar : bars.values()) {
+            bar.removeAll();
+        }
+        bars.clear();
     }
 
     private boolean isEnabledWorld(String world) {
