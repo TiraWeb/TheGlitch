@@ -3,6 +3,7 @@ package com.theglitch.glitchstash;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
@@ -100,6 +101,23 @@ public final class StashManager {
         StashData data = new StashData(uuid, playerName, mergedContents, mergedArmor, mergedOffhand, System.currentTimeMillis());
         stashes.put(uuid, data);
         saveToFile(uuid, data);
+
+        // Warn when the stash exceeds the 45-slot GUI display — items stay saved
+        // (tail is preserved on close) but won't all be visible until retrieved.
+        int itemCount = 0;
+        for (ItemStack item : mergedContents) {
+            if (item != null) itemCount++;
+        }
+        for (ItemStack item : mergedArmor) {
+            if (item != null) itemCount++;
+        }
+        if (mergedOffhand != null && mergedOffhand.getType() != Material.AIR) itemCount++;
+        if (itemCount > 45) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                player.sendMessage(plugin.getComponent("stash-full"));
+            }
+        }
     }
 
     /**
@@ -123,19 +141,14 @@ public final class StashManager {
 
     /**
      * Replace a player's stash contents (used after partial GUI retrieval).
-     * Preserves armor and offhand from the original stash.
+     * The GUI flattens contents + armor + offhand into one grid, so the
+     * replacement stores the flat list as contents and clears armor/offhand
+     * (otherwise already-retrieved armor pieces would duplicate).
      */
     public void replaceStash(UUID uuid, ItemStack[] newContents) {
         StashData existing = stashes.get(uuid);
-        if (existing == null) {
-            // No existing stash — save as new
-            StashData data = new StashData(uuid, "Unknown", newContents, new ItemStack[4], null, System.currentTimeMillis());
-            stashes.put(uuid, data);
-            saveToFile(uuid, data);
-            return;
-        }
-        // Keep existing armor and offhand, replace contents
-        StashData data = new StashData(uuid, existing.playerName(), newContents, existing.armor(), existing.offhand(), System.currentTimeMillis());
+        String playerName = existing == null ? "Unknown" : existing.playerName();
+        StashData data = new StashData(uuid, playerName, newContents, new ItemStack[4], null, System.currentTimeMillis());
         stashes.put(uuid, data);
         saveToFile(uuid, data);
     }

@@ -28,10 +28,14 @@ public class StashGUI implements Listener {
     private static final int SIZE = ROWS * 9;
     private static final Map<UUID, openSession> openSessions = new HashMap<>();
 
-    private record openSession(UUID playerUuid, List<ItemStack> stashItems) {}
+    private record openSession(UUID playerUuid, List<ItemStack> allItems, int displayedCount) {}
 
     /**
      * Open the stash GUI for a player.
+     * Border = top row only; items fill slots 9-53 (45 slots, covers a full
+     * extraction: 36 inventory + 4 armor + 1 offhand = 41 items).
+     * Items beyond the display (rare merge overflow) are preserved on close,
+     * never silently deleted.
      */
     public static void open(Player player, StashManager stashManager, GlitchStash plugin) {
         UUID uuid = player.getUniqueId();
@@ -55,7 +59,7 @@ public class StashGUI implements Listener {
         }
         if (data.offhand() != null) stashItems.add(data.offhand().clone());
 
-        // Add decorative border (top row = stained glass pane)
+        // Decorative border (top row only)
         ItemStack border = new ItemStack(Material.PURPLE_STAINED_GLASS_PANE);
         ItemMeta borderMeta = border.getItemMeta();
         borderMeta.customName(Component.empty());
@@ -64,19 +68,18 @@ public class StashGUI implements Listener {
             inv.setItem(i, border);
         }
 
-        // Fill items starting at slot 10 (row 2, col 2)
-        int slot = 10;
+        // Fill items starting at slot 9 (row 2, full width)
+        int slot = 9;
+        int displayed = 0;
         for (ItemStack item : stashItems) {
-            if (slot >= SIZE) break;
-            // Skip last slot of each row (right border)
-            if ((slot + 1) % 9 == 0) slot++;
             if (slot >= SIZE) break;
             inv.setItem(slot, item);
             slot++;
+            displayed++;
         }
 
         // Register session
-        openSessions.put(uuid, new openSession(uuid, stashItems));
+        openSessions.put(uuid, new openSession(uuid, stashItems, displayed));
 
         player.openInventory(inv);
         player.sendMessage(plugin.getComponent("stash-opened"));
@@ -123,8 +126,9 @@ public class StashGUI implements Listener {
                 given = clicked.getAmount() - leftoverAmount;
             }
             if (given > 0) {
-                event.getClickedInventory().setItem(slot,
-                        given > 0 ? new ItemStack(clicked.getType(), given) : null);
+                ItemStack partial = clicked.clone();
+                partial.setAmount(given);
+                event.getClickedInventory().setItem(slot, partial);
                 player.sendMessage(Component.text("Inventory full! Only took " + given + " items.",
                         NamedTextColor.RED));
             } else {
@@ -155,6 +159,13 @@ public class StashGUI implements Listener {
             if (item != null && item.getType() != Material.AIR) {
                 remaining.add(item.clone());
             }
+        }
+
+        // Items beyond the displayed count were never shown in the GUI, so they
+        // could not have been taken — preserve them instead of silently deleting.
+        if (session.displayedCount() < session.allItems().size()) {
+            remaining.addAll(
+                    session.allItems().subList(session.displayedCount(), session.allItems().size()));
         }
 
         if (remaining.isEmpty()) {
