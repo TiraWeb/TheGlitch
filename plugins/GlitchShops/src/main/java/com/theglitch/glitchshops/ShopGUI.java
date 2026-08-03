@@ -1,6 +1,7 @@
 package com.theglitch.glitchshops;
 
 import io.th0rgal.oraxen.api.OraxenItems;
+import io.th0rgal.oraxen.items.ItemBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -23,9 +24,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class ShopGUI implements Listener {
@@ -39,6 +42,7 @@ public final class ShopGUI implements Listener {
     private static final NamespacedKey GEAR_SLOT_KEY = new NamespacedKey("glitchshops", "gearslot");
 
     private static final Map<UUID, Session> sessions = new HashMap<>();
+    private static final Set<UUID> switchingGui = new HashSet<>();
 
     private record Session(String category, boolean sellMode) {
     }
@@ -87,7 +91,9 @@ public final class ShopGUI implements Listener {
         }
 
         sessions.put(player.getUniqueId(), new Session(category, sellMode));
+        switchingGui.add(player.getUniqueId());
         player.openInventory(inv);
+        switchingGui.remove(player.getUniqueId());
     }
 
     private void fillStock(Inventory inv, Player player, String category) {
@@ -347,8 +353,19 @@ public final class ShopGUI implements Listener {
             ShopManager.GearStockEntry entry = shopManager.getGearStock().get(gearSlot);
             bought = entry == null ? null : entry.item().clone();
         } else {
-            bought = OraxenItems.getItemById(itemId).build().clone();
-            bought.setAmount(amount);
+            try {
+                ItemBuilder builder = OraxenItems.getItemById(itemId);
+                if (builder == null) {
+                    economy.depositPlayer(player, total);
+                    return;
+                }
+                bought = builder.build().clone();
+                bought.setAmount(amount);
+            } catch (Exception e) {
+                economy.depositPlayer(player, total);
+                plugin.getLogger().warning("Failed to build Oraxen item " + itemId + ": " + e.getMessage());
+                return;
+            }
         }
         if (bought == null) {
             economy.depositPlayer(player, total);
@@ -406,9 +423,9 @@ public final class ShopGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        if (event.getPlayer() instanceof Player player) {
-            sessions.remove(player.getUniqueId());
-        }
+        if (!(event.getPlayer() instanceof Player player)) return;
+        if (switchingGui.remove(player.getUniqueId())) return;
+        sessions.remove(player.getUniqueId());
     }
 
     private static final class MiniMessageItem {

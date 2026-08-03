@@ -112,6 +112,10 @@ public final class ShopManager {
 
     private GearStockEntry rollGearEntry(String typeId, boolean weapon, double superRareChance,
                                          double buyMultiplier, ThreadLocalRandom rand) {
+        com.theglitch.glitchitems.GearManager manager = gearManager();
+        if (manager == null) {
+            return new GearStockEntry(null, 0, false);
+        }
         com.theglitch.glitchitems.GearType type = com.theglitch.glitchitems.GearType.fromId(typeId);
         if (type == null) {
             return new GearStockEntry(null, 0, false);
@@ -119,12 +123,12 @@ public final class ShopManager {
         boolean superRare = rand.nextDouble() < superRareChance;
         ItemStack item;
         if (superRare) {
-            item = gearManager().generateGodroll(type);
+            item = manager.generateGodroll(type);
         } else {
             com.theglitch.glitchitems.Rarity rarity = weightedRarity(rand);
-            item = gearManager().generateGear(type, rarity);
+            item = manager.generateGear(type, rarity);
         }
-        int sellValue = gearManager().sellValue(gearRarity(item));
+        int sellValue = manager.sellValue(gearRarity(item));
         int price = (int) Math.round(sellValue * buyMultiplier);
         return new GearStockEntry(item, price, superRare);
     }
