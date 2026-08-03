@@ -1,0 +1,8 @@
+gui_tab_rifts:
+  displayname: <aqua>Rifts</aqua>
+  material: AMETHYST_SHARD
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - gui_tab_rifts

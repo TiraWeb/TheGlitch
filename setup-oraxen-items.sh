@@ -93,6 +93,9 @@ cat <<'EOF'
              _epic, _legendary
   Alchemy:   healing_potion, corrupted_heal,
              rift_reveal_pack, void_infusion
+  GUI:       gui_buy, gui_sell, gui_close, gui_coin,
+             gui_tab_materials, gui_tab_keys, gui_tab_alchemy,
+             gui_tab_rifts, gui_tab_gear
 ============================================================
 
   If you still see "invalid texture-path" warnings after

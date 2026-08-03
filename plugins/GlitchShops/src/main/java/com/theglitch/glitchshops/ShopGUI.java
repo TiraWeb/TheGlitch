@@ -25,7 +25,6 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,11 +67,14 @@ public final class ShopGUI implements Listener {
 
         fillBorder(inv);
 
-        inv.setItem(0, logo());
-        inv.setItem(1, balanceItem(player));
-        inv.setItem(3, tabButton("tab_buy", "BUY", Material.EMERALD, !sellMode));
-        inv.setItem(4, tabButton("tab_sell", "SELL", Material.GOLD_INGOT, sellMode));
-        inv.setItem(7, closeButton());
+        inv.setItem(0, balanceItem(player));
+        inv.setItem(3, tabButton("tab_buy", "gui_buy", Material.EMERALD, "BUY",
+                "<green><bold>BUY</bold></green>",
+                "<gray>Left-click = 1 · Shift-click = stack.</gray>", !sellMode));
+        inv.setItem(4, tabButton("tab_sell", "gui_sell", Material.GOLD_INGOT, "SELL",
+                "<gold><bold>SELL</bold></gold>",
+                "<gray>Click items in your inventory below.</gray>", sellMode));
+        inv.setItem(8, closeButton());
 
         for (int i = 0; i < TAB_ORDER.size(); i++) {
             String tab = TAB_ORDER.get(i);
@@ -80,12 +82,10 @@ public final class ShopGUI implements Listener {
         }
 
         if (sellMode) {
-            inv.setItem(22, MiniMessageItem.builder(Material.GOLD_BLOCK,
+            inv.setItem(22, guiIcon("gui_coin", Material.GOLD_BLOCK,
                     "<gold><bold>SELLING</bold></gold>",
                     "<gray>Click items in your inventory below.</gray>",
-                    "<yellow>Left-click = 1 · Shift-click = stack</yellow>")
-                    .tag(ACTION_KEY, "none")
-                    .build());
+                    "<yellow>Left-click = 1 · Shift-click = stack</yellow>"));
         } else {
             fillStock(inv, player, category);
         }
@@ -149,89 +149,107 @@ public final class ShopGUI implements Listener {
         }
     }
 
-    private ItemStack logo() {
-        return MiniMessageItem.builder(Material.NETHER_STAR,
-                "<dark_purple><bold>GRAND BAZAAR</bold></dark_purple>",
-                "<gray>Trade custom items for Shards.</gray>")
-                .tag(ACTION_KEY, "none")
-                .build();
+    private ItemStack guiIcon(String oraxenId, Material fallback, String name, String... lore) {
+        ItemStack item;
+        try {
+            ItemBuilder builder = OraxenItems.getItemById(oraxenId);
+            item = builder == null ? new ItemStack(fallback) : builder.build();
+        } catch (Exception e) {
+            item = new ItemStack(fallback);
+        }
+        ItemMeta meta = item.getItemMeta();
+        if (name != null && !name.equals(" ")) {
+            meta.customName(MiniMessage.miniMessage().deserialize(name));
+        }
+        if (lore != null && lore.length > 0 && !lore[0].equals(" ")) {
+            List<Component> lines = new java.util.ArrayList<>();
+            for (String line : lore) {
+                if (line != null && !line.equals(" ")) {
+                    lines.add(MiniMessage.miniMessage().deserialize(line));
+                }
+            }
+            meta.lore(lines);
+        }
+        item.setItemMeta(meta);
+        return item;
     }
 
     private ItemStack balanceItem(Player player) {
         Economy economy = plugin.getEconomy();
         int balance = economy == null ? 0 : (int) economy.getBalance(player);
-        return MiniMessageItem.builder(Material.ECHO_SHARD,
+        return guiIcon("gui_coin", Material.ECHO_SHARD,
                 "<aqua><bold>" + balance + " Shards</bold></aqua>",
-                "<gray>Your current balance.</gray>")
-                .tag(ACTION_KEY, "none")
-                .build();
+                "<gray>Your current balance.</gray>");
     }
 
-    private ItemStack tabButton(String action, String label, Material material, boolean active) {
-        MiniMessageItem.Builder builder = MiniMessageItem.builder(material,
-                (active ? "<green><bold>" : "<gray>") + label + (active ? "</bold>" : ""),
-                "<gray>Click to " + (action.equals("buy") ? "buy" : "sell") + " items.</gray>")
-                .tag(ACTION_KEY, action);
-        if (active) {
-            builder.glow();
-        }
-        return builder.build();
+    private ItemStack tabButton(String action, String iconId, Material fallback,
+                                String label, String activeName, String lore, boolean active) {
+        ItemStack item = guiIcon(iconId, fallback,
+                active ? activeName : "<gray>" + label + "</gray>", lore);
+        item.editMeta(ItemMeta.class, m -> {
+            m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, action);
+            if (active) {
+                m.addEnchant(Enchantment.UNBREAKING, 1, true);
+                m.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
+        });
+        return item;
     }
 
     private ItemStack categoryTab(String category, boolean active) {
+        String iconId = "gui_tab_" + category;
         String label;
-        Material material;
+        Material fallback;
         switch (category) {
             case "materials":
                 label = "Materials";
-                material = Material.REDSTONE;
+                fallback = Material.REDSTONE;
                 break;
             case "keys":
                 label = "Keys";
-                material = Material.TRIPWIRE_HOOK;
+                fallback = Material.TRIPWIRE_HOOK;
                 break;
             case "alchemy":
                 label = "Alchemy";
-                material = Material.HONEY_BOTTLE;
+                fallback = Material.HONEY_BOTTLE;
                 break;
             case "rifts":
                 label = "Rifts";
-                material = Material.AMETHYST_SHARD;
+                fallback = Material.AMETHYST_SHARD;
                 break;
             default:
                 label = "Gear";
-                material = Material.DIAMOND_SWORD;
+                fallback = Material.DIAMOND_SWORD;
                 break;
         }
-        MiniMessageItem.Builder builder = MiniMessageItem.builder(material,
-                (active ? "<dark_purple><bold>" : "<gray>") + label + (active ? "</bold>" : ""),
-                "<gray>Browse " + label.toLowerCase() + ".</gray>")
-                .tag(ACTION_KEY, "tab")
-                .tag(CATEGORY_KEY, category);
-        if (active) {
-            builder.glow();
-        }
-        return builder.build();
+        String name = (active ? "<dark_purple><bold>" : "<gray>") + label + (active ? "</bold>" : "");
+        ItemStack item = guiIcon(iconId, fallback, name, "<gray>Browse " + label.toLowerCase() + ".</gray>");
+        item.editMeta(ItemMeta.class, m -> {
+            m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "tab");
+            m.getPersistentDataContainer().set(CATEGORY_KEY, PersistentDataType.STRING, category);
+            if (active) {
+                m.addEnchant(Enchantment.UNBREAKING, 1, true);
+                m.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
+        });
+        return item;
     }
 
     private ItemStack closeButton() {
-        return MiniMessageItem.builder(Material.BARRIER,
+        ItemStack item = guiIcon("gui_close", Material.BARRIER,
                 "<red><bold>CLOSE</bold></red>",
-                "<gray>Close the bazaar.</gray>")
-                .tag(ACTION_KEY, "close")
-                .build();
+                "<gray>Close the bazaar.</gray>");
+        item.editMeta(ItemMeta.class, m ->
+                m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "close"));
+        return item;
     }
 
     private void fillBorder(Inventory inv) {
-        ItemStack border = MiniMessageItem.builder(Material.BLACK_STAINED_GLASS_PANE,
-                " ", " ").tag(ACTION_KEY, "none").build();
+        ItemStack border = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         for (int i = 0; i < SIZE; i++) {
             if (i < 18 || i >= 27) {
                 inv.setItem(i, border);
             }
-        }
-        for (int i : new int[]{2, 5, 6, 8}) {
-            inv.setItem(i, border);
         }
     }
 
@@ -386,7 +404,7 @@ public final class ShopGUI implements Listener {
 
     private void refreshBalance(Player player) {
         Inventory top = player.getOpenInventory().getTopInventory();
-        top.setItem(1, balanceItem(player));
+        top.setItem(0, balanceItem(player));
     }
 
     private int buyStackSize() {
@@ -428,56 +446,10 @@ public final class ShopGUI implements Listener {
         sessions.remove(player.getUniqueId());
     }
 
-    private static final class MiniMessageItem {
-        private MiniMessageItem() {
-        }
-
-        static Builder builder(Material material, String name, String... lore) {
-            return new Builder(material, name, lore);
-        }
-
-        private static final class Builder {
-            private final ItemStack item;
-            private final ItemMeta meta;
-            private final Map<NamespacedKey, String> tags = new LinkedHashMap<>();
-            private boolean glow;
-
-            Builder(Material material, String name, String... lore) {
-                item = new ItemStack(material);
-                meta = item.getItemMeta();
-                if (name != null && !name.equals(" ")) {
-                    meta.customName(MiniMessage.miniMessage().deserialize(name));
-                }
-                if (lore != null && lore.length > 0 && !lore[0].equals(" ")) {
-                    List<Component> lines = new java.util.ArrayList<>();
-                    for (String line : lore) {
-                        lines.add(MiniMessage.miniMessage().deserialize(line));
-                    }
-                    meta.lore(lines);
-                }
-            }
-
-            Builder tag(NamespacedKey key, String value) {
-                tags.put(key, value);
-                return this;
-            }
-
-            Builder glow() {
-                this.glow = true;
-                return this;
-            }
-
-            ItemStack build() {
-                for (Map.Entry<NamespacedKey, String> entry : tags.entrySet()) {
-                    meta.getPersistentDataContainer().set(entry.getKey(), PersistentDataType.STRING, entry.getValue());
-                }
-                if (glow) {
-                    meta.addEnchant(Enchantment.UNBREAKING, 1, true);
-                    meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-                }
-                item.setItemMeta(meta);
-                return item;
-            }
-        }
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (!(event.getPlayer() instanceof Player player)) return;
+        if (switchingGui.remove(player.getUniqueId())) return;
+        sessions.remove(player.getUniqueId());
     }
 }

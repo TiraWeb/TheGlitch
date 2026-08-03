@@ -1,0 +1,8 @@
+gui_tab_alchemy:
+  displayname: <green>Alchemy</green>
+  material: HONEY_BOTTLE
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - gui_tab_alchemy
