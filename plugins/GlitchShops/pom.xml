@@ -39,6 +39,13 @@
             <systemPath>${project.basedir}/lib/VaultUnlocked.jar</systemPath>
         </dependency>
         <dependency>
+            <groupId>com.theglitch</groupId>
+            <artifactId>GlitchItems</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/GlitchItems.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>io.th0rgal.oraxen</groupId>
             <artifactId>Oraxen</artifactId>
             <version>1.218.0</version>

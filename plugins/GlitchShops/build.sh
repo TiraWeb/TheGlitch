@@ -27,7 +27,7 @@ command -v java >/dev/null 2>&1 || die "Java not found."
 log "Building GlitchShops..."
 
 mkdir -p "${PLUGIN_DIR}/lib"
-for jar in VaultUnlocked Oraxen FancyNpcs; do
+for jar in VaultUnlocked Oraxen FancyNpcs GlitchItems; do
     SRC=$(ls "${LIVE_PLUGIN_DIR}/${jar}.jar" 2>/dev/null || ls "${SERVER_DIR}/plugins/${jar}.jar" 2>/dev/null || true)
     if [[ -z "${SRC}" ]]; then
         die "${jar}.jar not found in live plugins — needed for compilation."

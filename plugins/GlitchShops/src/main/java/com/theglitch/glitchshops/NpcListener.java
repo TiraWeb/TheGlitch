@@ -16,7 +16,6 @@ public final class NpcListener implements Listener {
 
     @EventHandler
     public void onNpcInteract(NpcInteractEvent event) {
-        if (!event.isRightClick()) return;
         String npcName = event.getNpc().getData().getName();
         if (plugin.getConfig().getStringList("bazaar-npc-names").contains(npcName)) {
             shopGUI.open(event.getPlayer(), plugin.getConfig().getString("default-tab", "materials"));
