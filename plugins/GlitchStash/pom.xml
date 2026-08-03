@@ -41,6 +41,27 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/VelKoth.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>net.milkbowl.vault</groupId>
+            <artifactId>VaultAPI</artifactId>
+            <version>1.7</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/VaultUnlocked.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.theglitch</groupId>
+            <artifactId>GlitchItems</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/GlitchItems.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.theglitch</groupId>
+            <artifactId>GlitchShops</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/GlitchShops.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>

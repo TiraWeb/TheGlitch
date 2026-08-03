@@ -1,6 +1,7 @@
 # GlitchStash Messages — The Glitch (MiniMessage format)
 
 extracted: "<green>Extraction complete! Your gear has been stored safely."
+glitch-payout: "<dark_red>Residual Glitch payout: <gold>+<amount> Shards</gold> <gray>(x<multiplier>)</gray>"
 stash-saved: "<gray>Your inventory has been saved to your stash."
 stash-opened: "<gold>Stash opened</gold> <dark_gray>|</dark_gray> <gray>Click items to retrieve"
 stash-full: "<red>Your stash is full! Retrieve items before extracting again."

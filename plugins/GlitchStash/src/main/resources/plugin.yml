@@ -6,8 +6,8 @@ description: Extraction vault system for The Glitch
 softdepend:
   - VelKoth
   - Essentials
-softdepend:
-  - LuckPerms
+  - GlitchItems
+  - GlitchShops
 
 commands:
   stash:

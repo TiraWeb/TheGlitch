@@ -57,6 +57,18 @@ fi
 # Verify the JAR exists
 [[ -f "${PLUGIN_DIR}/lib/VelKoth.jar" ]] || die "VelKoth.jar not found in ${PLUGIN_DIR}/lib/"
 
+# Copy VaultUnlocked, GlitchItems and GlitchShops jars for compilation
+# (payout integration — build GlitchItems and GlitchShops FIRST so these jars are fresh)
+LIVE_PLUGIN_DIR="/opt/theglitch/server/plugins"
+for jar in VaultUnlocked GlitchItems GlitchShops; do
+    SRC=$(ls "${LIVE_PLUGIN_DIR}/${jar}.jar" 2>/dev/null || ls "${SERVER_DIR}/plugins/${jar}.jar" 2>/dev/null || true)
+    if [[ -z "${SRC}" ]]; then
+        die "${jar}.jar not found in live plugins — build GlitchItems/GlitchShops first."
+    fi
+    cp "${SRC}" "${PLUGIN_DIR}/lib/${jar}.jar"
+    log "${jar}.jar copied for compilation."
+done
+
 # Build
 cd "${PLUGIN_DIR}"
 log "Running Maven build..."

@@ -11,10 +11,10 @@ database:
   pool-size: 5
 
 capture-defaults:
-  capture-time: 300
+  capture-time: 30
   grace-period: 5
   capture-mode: CAPTURE
-  max-score: 300
+  max-score: 30
   contest-enabled: true
 
 display:

@@ -9,6 +9,10 @@ extra-slots: 9
 # Stash expiry in hours (0 = never expires)
 stash-expiry-hours: 0
 
+# Residual Glitch payout: on extraction, pay bonus shards =
+# sell value of saved loot x (payout multiplier - 1) from GlitchItems stacks.
+payout-enabled: true
+
 # Display settings
 display-name: "<dark_purple><bold>YOUR STASH</bold></dark_purple>"
 lore:
@@ -18,6 +22,7 @@ lore:
 # Messages (MiniMessage format)
 messages:
   extracted: "<green>Extraction complete! Your gear has been stored safely."
+  glitch-payout: "<dark_red>Residual Glitch payout: <gold>+<amount> Shards</gold> <gray>(x<multiplier>)</gray>"
   stash-saved: "<gray>Your inventory has been saved to your stash."
   stash-opened: "<gold>Stash opened</gold> <dark_gray>|</dark_gray> <gray>Click items to retrieve"
   stash-full: "<red>Your stash is full! Retrieve items before extracting again."
