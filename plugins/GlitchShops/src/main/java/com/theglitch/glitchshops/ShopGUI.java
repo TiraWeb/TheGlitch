@@ -105,8 +105,9 @@ public final class ShopGUI implements Listener {
                 lore.add(MiniMessage.miniMessage().deserialize("<aqua>Buy: " + entry.price() + " Shards</aqua>"));
                 meta.lore(lore);
                 display.setItemMeta(meta);
+                int gearIndex = i;
                 display.editMeta(ItemMeta.class, m -> {
-                    m.getPersistentDataContainer().set(GEAR_SLOT_KEY, PersistentDataType.INTEGER, i);
+                    m.getPersistentDataContainer().set(GEAR_SLOT_KEY, PersistentDataType.INTEGER, gearIndex);
                     m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "buygear");
                 });
                 inv.setItem(slot, display);
