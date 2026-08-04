@@ -2,7 +2,7 @@
 
 A non-Pay-to-Win, EULA-compliant **rogue-lite extraction hybrid** Minecraft server with Java + Bedrock cross-play, built for Oracle Cloud Always Free (Ampere A1, ARM64, 2 OCPU / 12GB).
 
-This repo is the single source of truth for the server: every script and config lives here, so the whole box can be rebuilt from scratch at any time. The build plan lives in [ROADMAP.md](ROADMAP.md).
+This repo is the source for the server scripts, configuration, and custom plugin code. It does not contain external world saves, generated live files such as VelKoth `arenas.yml`, or deployed third-party jars. See [docs/STATUS.md](docs/STATUS.md) for the distinction between repository work and live-server verification.
 
 ## Quick start (fresh Ubuntu 24.04 ARM instance)
 
@@ -22,7 +22,7 @@ The script prints an operator checklist at the end. **One step cannot be scripte
 | `0.0.0.0/0` | TCP | `25565` | Java edition |
 | `0.0.0.0/0` | UDP | `19132` | Bedrock (Geyser, Phase 3) |
 
-## What `bootstrap.sh` does (Roadmap Phases 0–5.9)
+## What `bootstrap.sh` does (Roadmap Phases 0–5.9 foundation)
 
 - Opens `25565/tcp` + `19132/udp` in the on-box iptables and persists the rules
 - Installs fail2ban with an sshd jail
@@ -34,11 +34,10 @@ The script prints an operator checklist at the end. **One step cannot be scripte
 - Installs and starts the `theglitch` systemd service (starts on boot, restarts on crash)
 - Installs all plugins: LuckPerms, EssentialsX, VaultUnlocked, Coins, MythicMobs, FancyNpcs, DeluxeMenus, TAB, PlaceholderAPI, VelKoth, GeyserMC, Floodgate, Multiverse-Core, Chunky, WorldGuard
 - Seeds plugin configs from repo (config-as-code)
-- GlitchStash is built from source: `sudo ./plugins/GlitchStash/build.sh`
-- GlitchClasses is built from source: `sudo ./plugins/GlitchClasses/build.sh`
+- Custom plugins are **not** built by bootstrap. Build them separately with the commands below.
 - **Oraxen (item plugin) is deliberately NOT in bootstrap.sh** — built separately via `setup-oraxen.sh` (see below), so a bootstrap failure can't silently skip custom items.
 
-It's **idempotent** — the update loop for every future phase is:
+It is designed to be repeatable for the scripted foundation. It does not provision external world saves or replace generated live data. The update loop for scripted changes is:
 
 ```bash
 git pull && sudo ./bootstrap.sh
@@ -65,12 +64,12 @@ Live server data (worlds, edited configs) is never overwritten; `start.sh` and t
 
 First join: open the console and run `whitelist add YourName`, then `op YourName`.
 
-## The extraction loop (fully working)
+## The extraction loop (core implemented, live verification pending)
 
 The core gameplay loop is extraction via VelKoth zones:
 
 1. Player enters an extraction zone in `glitch_red` (marked by particles/boss bar)
-2. Player holds the zone for 300 seconds (5 minutes)
+2. Player holds the Standard zone for 30 seconds
 3. On completion:
    - Inventory auto-saved to GlitchStash (accumulates across extractions)
    - Player auto-teleported to hub via Multiverse-Core (`mv tp`)
@@ -84,7 +83,7 @@ The core gameplay loop is extraction via VelKoth zones:
 
 **Important:** EssentialsX is INCOMPATIBLE with Minecraft 26.x / Java 25. Commands like `/spawn`, `/warp` do not work. Teleport uses Multiverse-Core instead.
 
-## The class system (fully working)
+## The class system (core implemented, incomplete features remain)
 
 4 classes with unique abilities, 10 upgrade levels each:
 
@@ -115,16 +114,16 @@ item with random stat rolls. Power comes from rarity tiers (Common → Legendary
 stat rolls + the **Resonance system** (5 arcane frequencies, weapon +25% damage vs
 matching mobs), not item levels.
 
-**18 custom items deployed:** 5 materials, 4 keys, 5 Unstable Rifts, 4 alchemy items —
-every one ends with a `Sell price: N Shards` lore line. Hub merchant NPCs (Phase 5.12,
-GlitchShops) buy all custom items for Glitch Shards and sell stock at higher buy prices
-(shown only in the merchant GUI).
+**18 custom item definitions/assets exist:** 5 materials, 4 keys, 5 Unstable Rifts,
+and 4 alchemy items — every one ends with a `Sell price: N Shards` lore line.
+GlitchShops (`/shop`) buy/sell is deployed and live-tested (2026-08-03); prices
+come from the shop config, and buy prices appear only in the merchant GUI.
 
-**Gear line (v1 built — GlitchItems plugin):** 3 weapon archetypes (Blade,
+**Gear line (deployed + tested):** 3 weapon archetypes (Blade,
 Greatblade, Arcane Staff) + 4 armor pieces; base stats scale by rarity, weapons
 gain special attributes (lifesteal, fire aspect...) from Rare up, armor keeps
-exactly one attribute. Gear comes from Unstable Rifts (`/identify`, shard fee),
-admin `/glitchitems give`, and later Workbench crafting + merchants. Resonance
+exactly one attribute. Gear comes from Unstable Rifts (`/identify`, shard fee —
+live-tested), admin `/glitchitems give`, and later Workbench crafting + merchants. Resonance
 combat math (weapon +25% dmg vs matching mobs, armor reduction) and the
 Residual Glitch timer are implemented — mobs need a `res_<name>` scoreboard
 tag (e.g. `res_veil`, MythicMobs `Options.ScoreboardTags: [res_veil]`; the
@@ -134,9 +133,10 @@ XP bar mirror, off by default), plus `%glitchitems_stacks%` /
 `%glitchitems_payout%` / `%glitchitems_payout_multiplier%` /
 `%glitchitems_dmg_taken%` PlaceholderAPI placeholders for the TAB scoreboard.
 
-**Risk (designed):** glitch_red is full-loot, but on death you keep your **leggings and
-boots** only; glitch_pve stays keep-inventory as the training floor. Standard extract is
-30s (Fast = 15s with a key, Silent = 10s with the rare Rift Key).
+**Risk (designed, not fully implemented):** glitch_red is intended to be full-loot with
+leggings and boots retained; the death protection plugin is still pending. glitch_pve
+stays keep-inventory as the training floor. Standard extract is configured for 30s;
+Fast and Silent extraction are not implemented.
 
 ## Plugin stack
 
@@ -165,23 +165,25 @@ boots** only; glitch_pve stays keep-inventory as the training floor. Standard ex
 
 ## The three zones (Phase 4)
 
-**All three worlds are custom imported maps** — not vanilla generated terrain:
+The repository supports two world provisioning paths. `setup-worlds.sh` creates generated
+worlds for a fresh server. `scripts/setup-imported-worlds.sh` imports externally uploaded
+map saves. The imported saves are not stored in this repository, so the live terrain
+source must be verified on the server:
 
 | World | Purpose | Source Map |
 |---|---|---|
-| `hub` | Safe lobby | **TerraSpace** (Japanese cyberpunk city, Java world save) |
-| `glitch_pve` | Instanced dungeons, keep-inventory | **CaveFree** (cave/underground map, imported via `mv import`) |
-| `glitch_red` | Full-loot PvPvE extraction | **MMORPG_Odyssey** 2k x 2k custom terrain (imported via `mv import`) |
+| `hub` | Safe lobby | Generated by default; an external TerraSpace save may be provisioned separately |
+| `glitch_pve` | Instanced dungeons, keep-inventory | Generated by default; an external CaveFree save may be provisioned separately |
+| `glitch_red` | Full-loot PvPvE extraction | Generated by default; an external MMORPG_Odyssey save may be provisioned separately |
 
 Full blueprint with coordinates: [docs/ZONES.md](docs/ZONES.md).
 
-> **Key import gotcha:** Paper 26.2 does NOT auto-detect custom dimensions in
-> `hub/dimensions/minecraft/`. Worlds must be at **server root** (not as
-> dimension subfolders). Multiverse-Core handles root-level worlds with
-> `/mv import <name> normal`. Always delete leftover dimension data before
-> re-importing.
+> **Import note:** The current `setup-worlds.sh` path expects Paper 26.x dimension
+> storage under `hub/dimensions/minecraft/`. The separate imported-map script expects
+> uploaded world folders and must be validated against the live server before use.
+> Do not delete world data without a backup.
 
-## Building GlitchStash and GlitchClasses (custom plugins)
+## Building Custom Plugins
 
 Built from source on the server:
 
@@ -189,12 +191,15 @@ Built from source on the server:
 cd ~/TheGlitch
 sudo ./plugins/GlitchStash/build.sh
 sudo ./plugins/GlitchClasses/build.sh
+sudo ./plugins/GlitchDungeons/build.sh
 sudo ./plugins/GlitchItems/build.sh
 sudo ./plugins/GlitchShops/build.sh
 sudo systemctl restart theglitch
 ```
 
-Requires: Maven (`sudo apt install maven`), Java 21+.
+Requires: Maven (`sudo apt install maven`) and a Java toolchain compatible with the
+plugin build files. The custom projects currently declare Paper API 1.21.4; verify
+compatibility with the live Minecraft/Paper target before deployment.
 
 ## Building Oraxen (custom items)
 
@@ -244,6 +249,7 @@ docs/PERFORMANCE.md       tuning rationale + baseline
 docs/ITEM_SYSTEM.md       Arcane Ruins item system design (rarities, resonance, rifts, prices §11)
 docs/GLITCH_SHOPS_DESIGN.md  merchant NPC plugin design (Phase 5.12)
 docs/GAME_DESIGN.md       core gameplay numbers (mobs, loot, economy, extraction, anti-grief)
+docs/STATUS.md             authoritative implementation and verification status
 ROADMAP.md                the full phased build plan
 HANDOFF.md                session handoff doc
 ```

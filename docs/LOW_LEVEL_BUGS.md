@@ -1,73 +1,102 @@
-# Low-Level Bug Tracker — Custom Plugins
+# Low-Level Bug Tracker - Custom Plugins
 
-Tracking WARNING and MINOR bugs across GlitchStash, GlitchClasses, and GlitchDungeons.
-These are not exploitable crashes but should be cleaned up for quality.
+Updated: 2026-08-03
 
-Last updated: 2026-07-27
-
----
+This tracker lists known implementation issues. It is not a substitute for
+runtime testing. Source-only plugins must be built and tested on the target
+server before an issue can be marked resolved.
 
 ## GlitchStash
 
-| # | Severity | File:Line | Description |
-|---|----------|-----------|-------------|
-| S6 | WARNING | `config.yml:6-7` | `max-items`, `extra-slots`, `glitchstash.vip` defined but never enforced — players can store unlimited items |
-| S7 | WARNING | `config.yml:10` | `stash-expiry-hours` never enforced — stale stashes accumulate forever |
-| S8 | WARNING | `plugin.yml:8` | Essentials hard `depend` breaks MC 26.x loading — should be `softdepend` |
-| S9 | WARNING | `StashGUI.java` | No `InventoryDragEvent` handler — drag bypasses click protection, causes same duplication as #2 |
-| S10 | WARNING | `ExtractionListener.java:21` | `KothWinEvent.getWinner()` no null check — NPE if winner disconnected |
-| S11 | WARNING | `config.yml:20-29` | Dead `messages:` block in config.yml — never read (plugin uses messages.yml) |
-| S12 | WARNING | `StashGUI.java:28` | Plain `HashMap` instead of `ConcurrentHashMap` for `openSessions` |
-| S13 | WARNING | `StashManager.java:61` | Contents array inflates 41→54 on merge (harmless but wastes memory) |
-| S14 | MINOR | `ExtractionListener.java:86-88` | Hardcoded English message bypasses i18n |
-| S15 | MINOR | `StashCommand.java:26` | `/stashtp` dispatches `spawn` command — assumes Essentials spawn exists |
-| S16 | MINOR | `StashAdminCommand.java:42` | Deprecated `getOfflinePlayer(String)` — creates fake entries |
-| S17 | MINOR | `StashCommand.java:14,19` | Two unrelated commands (`/stash` + `/stashtp`) in one class |
+| ID | Severity | Location | Status / Description |
+|---|---|---|---|
+| S6 | Warning | `config.yml` | `max-items`, `extra-slots`, and VIP limits are configured but not enforced. |
+| S7 | Warning | `config.yml` | `stash-expiry-hours` is configured but not enforced. |
+| S10 | Warning | `ExtractionListener.java` | Winner disconnect/null handling needs verification. |
+| S11 | Warning | `config.yml` | Dead duplicate `messages:` configuration block remains. |
+| S12 | Warning | `StashGUI.java` | `openSessions` uses a normal map; review lifecycle/concurrency behavior. |
+| S14 | Minor | `ExtractionListener.java` | One extraction message bypasses the message bundle. |
+| S15 | Warning | `StashCommand.java` | `/stashtp` still dispatches the `spawn` command and may fail without a compatible plugin. |
+| S16 | Minor | `StashAdminCommand.java` | Offline-player lookup should avoid creating fake entries. |
+| S17 | Minor | `StashCommand.java` | `/stash` and `/stashtp` are unrelated responsibilities in one command class. |
 
----
+Resolved in recent source:
+
+- Essentials is no longer a hard dependency.
+- GUI drag protection exists.
+- Partial retrieval preserves item metadata.
+- GUI overflow items are preserved instead of discarded.
+- Partial replacement no longer duplicates old armor/offhand items.
 
 ## GlitchClasses
 
-| # | Severity | File:Line | Description |
-|---|----------|-----------|-------------|
-| C9 | WARNING | `ClassGUI.java:38` | `openClassSessions` never cleaned on player disconnect — memory leak |
-| C10 | WARNING | `AbilityListener.java:38-48` | Cooldown maps (`cooldowns`, `shieldWallActive`, `cloakActive`, `tauntActive`, `turretBlocks`, `lastStandCooldown`, `mendCooldown`) never cleaned on disconnect |
-| C11 | WARNING | `AbilityItemListener.java:33-43` | Ability items can be deposited into external inventories (chests, ender chest, villagers) — lost forever |
-| C12 | WARNING | `AbilityItemManager.java:139-178` | Items not set as `Unbreakable` — breakable in survival mode |
-| C13 | WARNING | `ClassCommand.java:45` | `/class select` resets MAX_HEALTH to flat 20, ignoring level (GUI correctly uses `20 + level*2`) |
-| C14 | WARNING | `config.yml:11` + `AbilityListener.java:596` | `cooldown-reduction-per-level` described as percentage but used as flat seconds |
-| C15 | WARNING | `AbilityListener.java:524-536` | Specter speed effect flickers on/off every 20 ticks — duration too short |
-| C16 | WARNING | `AbilityItemListener.java:33-43` | Non-ability items can be placed INTO ability item slots, destroying the ability item |
-| C17 | WARNING | `AbilityListener.java:245-246` | Revive beacon overwrites whatever block player stands on — destroys spawners, etc. |
-| C18 | WARNING | `AbilityListener.java:118-126` | Shield wall places barriers without WorldGuard/region protection check — griefing possible |
-| C19 | WARNING | `ClassManager.java:158-159` | `getClassNames()` NPE if config `classes` section missing |
-| C20 | MINOR | `ClassGUI.java:477-481` | `handleClassReset` has TODO shard cost check — reset is always free |
-| C21 | MINOR | `ClassGUI.java:49`, `ClassCommand.java:93`, `AbilityItemManager.java:26` | `CLASS_COLORS` map duplicated in 3 places — should be shared constant |
-| C22 | MINOR | `AbilityListener.java:454-465` | `onVanguardKnockback` reduces ALL damage by 50%, not just knockback |
-| C23 | MINOR | `ClassGUI.java:473,510` | Scheduled tasks don't check `player.isOnline()` before sending messages |
-| C24 | MINOR | `AbilityListener.java:348` | Turret spawns at player location if looking straight up (zero vector) |
-| C25 | MINOR | `plugin.yml:4` | `api-version: '1.21'` — should target MC 26.x version |
-
----
+| ID | Severity | Location | Status / Description |
+|---|---|---|---|
+| C9 | Warning | `ClassGUI.java` | Open class sessions need cleanup on disconnect. |
+| C10 | Warning | `AbilityListener.java` | Per-player cooldown/effect maps need cleanup on disconnect. |
+| C11 | Warning | `AbilityItemListener.java` | Ability items can be moved into external inventories and lost. |
+| C12 | Warning | `AbilityItemManager.java` | Ability items are not unbreakable. |
+| C14 | Warning | `config.yml`, `AbilityListener.java` | Cooldown-reduction naming and units do not agree. |
+| C15 | Warning | `AbilityListener.java` | Specter speed effect refresh may flicker. |
+| C16 | Warning | `AbilityItemListener.java` | Non-ability items can interfere with protected ability slots. |
+| C17 | Warning | `AbilityListener.java` | Revive beacon placement can overwrite an existing block. |
+| C18 | Warning | `AbilityListener.java` | Shield-wall placement needs a WorldGuard/build check. |
+| C19 | Warning | `ClassManager.java` | Missing class configuration can cause a null access. |
+| C20 | Minor | `ClassGUI.java` | Class reset shard-cost check is still TODO/free. |
+| C22 | Minor | `AbilityListener.java` | Vanguard mitigation appears broader than knockback damage. |
+| C23 | Minor | `ClassGUI.java` | Scheduled messages should check online state. |
+| C24 | Minor | `AbilityListener.java` | Turret placement needs a zero-direction guard. |
+| C25 | Warning | `plugin.yml` | API version/build target must be reconciled with the live Minecraft target. |
+| C26 | Warning | Multiple files | Runtime ability names still differ from the Arcane Ruins design names. |
+| C27 | Warning | `AbilityListener.java` | Vigilance, Scavenge, Engineer, and some designed traits are incomplete or stubbed. |
 
 ## GlitchDungeons
 
-| # | Severity | File:Line | Description |
-|---|----------|-----------|-------------|
-| D1 | WARNING | `DungeonCommand.java:140-155` | `handleQueue` doesn't check party member permissions — pulls members without tier access |
-| D2 | WARNING | `DungeonCommand.java:60-76` | Solo party created before tier validation — `/dungeon join 99` creates unwanted party |
-| D3 | WARNING | `ExtractionListener.java:113-118` | Single player extraction completes for entire party — others get rewards without extracting |
-| D4 | WARNING | `DungeonManager.java:172-179` | `cleanupRun` doesn't cancel active tasks — wave-check timers fire after cleanup |
-| D5 | WARNING | `WaveManager.java:102-103` | `mobType` from config used in console command without sanitization (fixed: now sanitized) |
-| D6 | WARNING | `DungeonConfig.java:60` | `getStagingWorld()` hardcoded to `glitch_pve` — not configurable |
-| D7 | WARNING | `CooldownManager.java:71` | `saveCooldowns()` called synchronously on every cooldown set — disk I/O on main thread |
-| D8 | WARNING | `DungeonConfig.java:70-74` | Config reload creates new slot objects — active runs reference stale slots |
-| D9 | WARNING | `DungeonRun.java:40` | `alivePlayers` populated at construction, never updated on party member kick |
-| D10 | WARNING | `PartyManager.java:62` | `acceptInvite` iterates all parties O(n) — should use direct lookup |
-| D11 | MINOR | `RewardManager.java:23` | Integer truncation — should use `Math.round()` |
-| D12 | MINOR | `DungeonSelectGUI.java:79` | Uses `getRawSlot()` instead of `getSlot()` |
-| D13 | MINOR | `PartyCommand.java:175-177` | Party chat sends to sender too (normal but inconsistent with join/leave) |
-| D14 | MINOR | `DungeonCommand.java:134-137` | `/dungeon queue` silently creates party without notification |
-| D15 | MINOR | `config.yml:214-231` | Message templates defined but never used — all messages hardcoded |
-| D16 | MINOR | `plugin.yml:34-36` | `glitchdungeons.party` permission defined but never checked |
-| D17 | MINOR | `DungeonRun.java:86-88` | `isAllWavesComplete()` method exists but is never called |
+| ID | Severity | Location | Status / Description |
+|---|---|---|---|
+| D1 | Warning | `DungeonCommand.java` | Queue flow does not fully validate party-member tier permissions. |
+| D2 | Warning | `DungeonCommand.java` | Invalid tier input can create an unwanted solo party before validation. |
+| D3 | Warning | `ExtractionListener.java` | One player completing extraction may complete it for the party. |
+| D4 | Critical | `DungeonManager.java` | Cleanup does not cancel all active scheduled tasks. |
+| D6 | Warning | `DungeonConfig.java` | Staging world is hardcoded instead of fully configurable. |
+| D7 | Warning | `CooldownManager.java` | Cooldown persistence performs synchronous disk I/O. |
+| D8 | Warning | `DungeonConfig.java` | Reload can replace slot objects referenced by active runs. |
+| D9 | Warning | `DungeonRun.java` | Alive-player state can become stale after party changes. |
+| D10 | Minor | `PartyManager.java` | Invite acceptance performs an O(n) party scan. |
+| D11 | Minor | `RewardManager.java` | Reward calculation truncates instead of rounding. |
+| D12 | Minor | `DungeonSelectGUI.java` | Raw slot API usage should be reviewed. |
+| D15 | Minor | `config.yml` | Many configured message templates are not used by hardcoded messages. |
+| D16 | Minor | `plugin.yml` | Party permission is declared but not consistently checked. |
+| D17 | Minor | `DungeonRun.java` | `isAllWavesComplete()` is unused. |
+| D18 | Critical | `WaveManager.java`, `config.yml` | Config defines `mobs` as a list while code reads a configuration section; regular mob waves will not parse correctly. |
+| D19 | Critical | `ExtractionTask.java` | Extraction task exists but is not reliably instantiated by the run lifecycle. |
+| D20 | Critical | `DungeonManager.java` | Completion gives rewards but does not call GlitchStash to save inventory. |
+| D21 | Warning | `DungeonManager.java` | Dungeon source is not runtime-verified and must not be described as complete. |
+
+Resolved:
+
+- Mob type command input is sanitized before dispatch.
+
+## GlitchItems
+
+| ID | Severity | Location | Status / Description |
+|---|---|---|---|
+| I1 | Warning | Loot integration | Drop tables now emit Unstable Rifts + materials in repo (2026-08-03); live drop verification pending. |
+| I2 | Warning | Mob integration | All 10 mobs now carry Resonance tags in repo (2026-08-03); live Resonance damage test pending. |
+| I3 | Warning | Residual Glitch | Loot-luck and elite-hunt methods have no world-population consumer. |
+
+Resolved:
+
+- Deployment and runtime verification of `/identify` and gear rolls completed (2026-08-03).
+
+## GlitchShops
+
+| ID | Severity | Location | Status / Description |
+|---|---|---|---|
+| H2 | Warning | NPC setup | Grand Bazaar NPC placement and name binding are live-only and unverified. |
+| H3 | Warning | Economy | Prices need a balance pass against actual loot and income after integration. |
+| H4 | Minor | GUI | Session maps and GUI transitions need disconnect/close lifecycle testing. |
+
+Resolved:
+
+- Buy/sell transactions (`/shop`) deployed and live-tested (2026-08-03).

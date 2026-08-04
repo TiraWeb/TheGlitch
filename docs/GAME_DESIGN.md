@@ -5,6 +5,13 @@
 > Arcane Ruins aesthetic: corrupted magical anomaly — no guns, no techy/circuit items.
 > Item names/rarities per docs/ITEM_SYSTEM.md; merchant economy per ITEM_SYSTEM.md §11.
 
+> **Implementation status:** This is a design specification, not an as-built
+> feature list. The tables below describe intended gameplay. Four initial mobs,
+> the core class plugin, GlitchStash, and parts of the item/merchant plugins
+> exist in source/configuration; most world content, loot integration, dungeon
+> content, death rules, and anti-grief rules remain incomplete. See
+> [`docs/STATUS.md`](STATUS.md).
+
 ---
 
 ## 1. Classes
@@ -285,7 +292,7 @@ Five dungeon tiers, each harder than the last. Tier 1 is for beginners, Tier 5 i
 ### Dungeon Modifiers (Rotating Weekly)
 
 | Modifier | Effect |
-|---|---|
+|---|---|---|
 | **Glass Cannon** | All damage dealt +50%, all HP -25% |
 | **Horde Mode** | 2x spawn rate, -25% mob HP |
 | **Boss Rush** | Only elites and bosses spawn |
@@ -356,7 +363,9 @@ Five dungeon tiers, each harder than the last. Tier 1 is for beginners, Tier 5 i
 | **Silent Extract** | 10s | Silent | Rift Key (rare drop) | 1 per map (hidden) |
 
 **Key design:** Standard is free but loud — attracts mobs and players. Fast is quicker but costs a key. Silent is the best but the key is extremely rare.
-**Confirmed:** VelKoth hold time is set to **30 seconds** for the Standard extract (was 300s in testing config — change on deploy, ROADMAP 5.11.5).
+**Repository configuration:** VelKoth is set to **30 seconds** for the Standard
+extract. The live arena timer is stored in generated `arenas.yml` and must be
+verified on the server. Fast and Silent extraction are still design-only.
 
 ### Death Rules
 
@@ -366,8 +375,10 @@ Five dungeon tiers, each harder than the last. Tier 1 is for beginners, Tier 5 i
 | **glitch_pve** | Keep-inventory: run is lost, your items are kept. Training floor. |
 | **glitch_red** | Full loot — **with one mercy rule: you keep your leggings and boots**. Helmet, chestplate, weapons, inventory, and shards all drop. The point is danger: a corpse can always be re-geared from the legs up. |
 
-Shards drop on death in both game worlds (Coins config). Merchant sell prices are the safety
-net: anything you extract can be cashed out at the hub.
+The current Coins configuration drops currency as items in game worlds. The
+design decision that shards are account-bound is unresolved and must be aligned
+with the death/economy implementation before launch. Merchant sell prices are
+intended as the safety net for extracted loot.
 
 ---
 
@@ -413,14 +424,14 @@ Full merchant price table (sell < buy): docs/ITEM_SYSTEM.md §11.
 
 ## 9. Anti-Grief / Fair Play
 
-| Rule | Implementation |
-|---|---|
-| No spawn camping | 30-second invulnerability on entry points |
-| No team killing | Friendly fire disabled in all zones |
-| No item duplication | Per-player stash, items tracked by UUID |
-| No AFK farming | Dungeons kick after 2 minutes of inactivity |
-| No RMT | Shards are bound to account, not tradeable between players (check: Coins currently drops on death as items — verify against this on deploy, ROADMAP 5.11.6) |
-| No exploit abuse | Weekly audit logs, automatic detection |
+| Rule | Intended implementation | Current status |
+|---|---|---|
+| No spawn camping | 30-second invulnerability on entry points | Planned |
+| No team killing | Friendly fire disabled in all zones | Partially configured; live verification pending |
+| No item duplication | Per-player stash, item-safe GUI handling | Core stash fixes implemented; testing pending |
+| No AFK farming | Dungeons kick after 2 minutes of inactivity | Not implemented |
+| No RMT | Shards are bound to account, not tradeable between players | Conflicts with current item-drop currency configuration |
+| No exploit abuse | Weekly audit logs, automatic detection | Planned |
 
 ---
 

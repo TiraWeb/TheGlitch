@@ -1,5 +1,10 @@
 # The Glitch — Performance Tuning & Baseline (Phase 2)
 
+> **Status:** The idle baseline is recorded. A live-play Red Zone baseline,
+> dungeon-wave profile, Bedrock profile, and multi-player load test are still
+> pending. Values in this document must match the current repository config,
+> not an older tuning session.
+
 ## The budget
 
 At 20 TPS the server has **50ms per tick**. Everything in Phase 2 exists to
@@ -51,7 +56,7 @@ problem *that day*, not at launch.
 
 | Lever | File | Effect |
 |---|---|---|
-| view 7 / sim 4 | server.properties | chunks render far; entities only tick within 64 blocks |
+| view 24 / sim 8 | server.properties | current configured distances; re-test before launch because the original baseline used different values |
 | monster spawn attempts every 10 ticks, caps ~20 | bukkit.yml | the spawn loop is a top-5 tick cost at defaults |
 | entity-activation-range | spigot.yml | distant entities tick at reduced rates |
 | no pathfinding on block update | paper-world-defaults.yml | mobs re-path on schedule, not on every block change — biggest single lever for wave dungeons |
@@ -62,7 +67,7 @@ problem *that day*, not at launch.
 | tps-catchup off | purpur.yml | lag spikes end instead of smearing |
 | AFK players stop ticking entities | purpur.yml + player-idle-timeout | idle players cost ~nothing after 10 min |
 | no nether, no end | multiple | fewer dimensions to tick |
-| full Red Zone pre-generation | Chunky | terrain gen never competes with gameplay |
+| Red Zone pre-generation when using generated terrain | Chunky | terrain generation should not compete with gameplay; imported maps may have different requirements |
 
 ## Reading trouble later
 

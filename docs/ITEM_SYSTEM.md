@@ -8,6 +8,11 @@
 > damage, profession crafting) and **Hypixel Ravengard** (Dark-and-Darker clone; shrinking death
 > wall, 3-man parties, weapons with only 2 stats — top complaint: *no loot depth*).
 
+> **Implementation status:** This document is the intended Arcane Ruins design.
+> Oraxen item definitions/assets, GlitchItems V1 source, and parts of GlitchShops
+> exist. Rift drops, Identifier NPC behavior, mob tags, world population,
+> crafting, and death handling are not complete. See [`docs/STATUS.md`](STATUS.md).
+
 ---
 
 ## 1. Design Pillars
@@ -253,14 +258,14 @@ Rough order:
 
 1. **Item base plugin + resource pack** — ✅ Oraxen built from source + deployed (setup-oraxen.sh)
 2. **Material + key + consumable items** — ✅ 18 items as Oraxen configs (server/plugins/Oraxen/): 5 materials, 4 keys, 5 Unstable Rifts, 4 alchemy — deploy via setup-oraxen-items.sh
-3. Rarity tiers + stat-roll engine (identify outcome) — includes the 3 weapon archetypes + 4 armor pieces with attributes (§2).
-4. Rift drop (mob loot tables emit rifts) + Identifier NPC flow.
-5. Resonance tags (MythicMobs metadata) + gear rolls.
-6. Residual Glitch timer (5 min/stack) + effects + extraction multiplier.
-7. World population (spawners, chests, regen) — emits rifts from §4.
-8. Crafting recipes via Workbench.
-9. Rename pass across GlitchClasses configs + MythicMobs drop tables + DeluxeMenus shop.
-10. Death rules (§12: keep leggings+boots in glitch_red — small custom plugin, ROADMAP 5.13).
+3. **Source V1:** rarity tiers + stat-roll engine, 3 weapon archetypes, 4 armor pieces, attributes, `/identify`, Resonance math, and Residual Glitch source exist. Build and runtime testing are pending.
+4. Rift drops (mob loot tables emit rifts) + Identifier NPC flow — not complete.
+5. Resonance tags (MythicMobs metadata) + complete gear integration — not complete.
+6. Residual Glitch timer/effects + extraction multiplier — source and payout hook exist; loot-luck and elite-hunt consumers are missing.
+7. World population (spawners, chests, regen) — not complete.
+8. Crafting recipes via Workbench — not complete.
+9. Rename pass across runtime configs and menus — not complete.
+10. Death rules (§12: keep leggings+boots in glitch_red) — design only; plugin not implemented.
 
 ---
 
@@ -350,6 +355,7 @@ the legs up" — players keep a defensive floor (2 armor slots + the pieces that
 simplest stats) while still feeling the sting of losing their chestpiece, helmet, and
 weapon. Keep-inventory PvE stays as the new-player training floor.
 
-**Extraction timing (confirmed):** Standard extract = **30s** (VelKoth hold changed from
-the 300s test value), Fast = 15s with Fast Extract Key, Silent = 10s with Rift Key
-(rare). See GAME_DESIGN §7.
+**Extraction timing:** Repository VelKoth configuration sets Standard extract to
+**30s**. The live timer is stored in generated `arenas.yml` and must be verified.
+Fast = 15s and Silent = 10s remain design-only until separate arenas and key
+consumption are implemented. See GAME_DESIGN §7.

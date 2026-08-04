@@ -1,5 +1,9 @@
 # The Glitch — Dungeon Shell Blueprint (Phase 4.6)
 
+> **Status:** Deferred physical-build blueprint. The slot grid and scripts are
+> documentation/provisioning aids; the shell, regions, spawners, and objectives
+> are not verified as a complete live dungeon.
+
 Dungeon "instances" in `glitch_pve` are **8 fixed slots** on a 1024-block grid.
 Each slot gets a dungeon shell built once; the run manager (Phase 6) assigns
 parties to free slots, resets objectives, and teleports them in.
@@ -89,7 +93,9 @@ Slot 6 (-1024,  1024)   Slot 7 (0,  1024)   Slot 8 (1024,  1024)
 | `scripts/build-dungeon-slot1.sh` | Dungeon shell at Slot 1 | RCON (sudo) |
 | `scripts/setup-dungeon-regions.sh` | Regions + spawners + extraction | RCON (sudo) |
 
-All scripts are safe to re-run (idempotent fills).
+The scripts are intended to be repeatable, but run them only after confirming
+the live world terrain and taking a backup. The CaveFree/imported-map path may
+not match the flat-world Y assumptions in the scripts.
 
 ## In-Game Setup (Required After Build)
 
@@ -122,7 +128,7 @@ To build additional slots, copy the Slot 1 template and adjust coordinates:
 
 ## Future Enhancements
 
-- **Phase 5.4:** Custom dungeon plugin for party system + run manager
+- **Phase 5.4:** Custom dungeon plugin source prototype; repair and runtime verification remain
 - **Phase 6.1:** Wave-based mob spawning with increasing difficulty
 - **Phase 6.2:** Timed extraction with server-wide broadcasts
 - **Phase 6.3:** Gear-score gating for slot assignment

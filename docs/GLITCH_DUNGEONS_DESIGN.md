@@ -1,5 +1,11 @@
 # GlitchDungeons Plugin Architecture
 
+> **Status:** Design/specification plus a source prototype. Party, slot, wave,
+> timer, reward, GUI, and extraction classes exist, but this plugin is not
+> complete or runtime-verified. Current blockers include list-form mob config
+> parsing, extraction task startup, missing GlitchStash integration, and task
+> cleanup. See [`docs/STATUS.md`](STATUS.md).
+
 ## Overview
 GlitchDungeons is the dungeon system for "The Glitch" server. Players form parties, select a dungeon from the hub GUI, get assigned to a pre-built dungeon shell in `glitch_pve`, fight waves of MythicMobs, and extract for loot.
 
@@ -229,11 +235,11 @@ ExtractionListener:
   - When complete → DungeonCompleteEvent
 ```
 
-### 6. Completion
+### 6. Completion (intended behavior)
 ```
 DungeonManager:
   - RunState = COMPLETED
-  - Save inventory via GlitchStash API
+   - Save inventory via GlitchStash API (not currently wired in source)
   - Give shard rewards via Coins
   - Teleport party to hub
   - Set cooldowns
@@ -378,10 +384,10 @@ int totalShards = (int)((baseShards + waveBonus) * multiplier * partySizeBonus);
 
 ## Integration Points
 
-### GlitchStash (Required)
-- `GlitchStashAPI.saveInventory(Player)` — saves inventory to stash
-- `GlitchStashAPI.getStash(Player)` — retrieve stash
-- Plugin soft-depends on GlitchStash; if missing, players keep inventory
+### GlitchStash (Required, not currently wired)
+- Intended `GlitchStashAPI.saveInventory(Player)` integration — not present in the current source
+- Intended stash retrieval integration — not present in the current source
+- Until wired and tested, dungeon completion must not be described as saving loot to GlitchStash
 
 ### MythicMobs (Required)
 - `MythicMobs.inst().getMobManager().spawnMob(type, location)` — spawn mobs
@@ -401,7 +407,7 @@ int totalShards = (int)((baseShards + waveBonus) * multiplier * partySizeBonus);
 - Permission: `glitchdungeons.admin`
 
 ### VelKoth (Not used)
-- GlitchDungeons does NOT use VelKoth. Extraction is handled internally with a simpler hold-to-extract mechanic.
+- GlitchDungeons does NOT use VelKoth. Extraction is intended to be handled internally with a simpler hold-to-extract mechanic, but the current source does not reliably start the extraction task.
 
 ## Configuration File
 

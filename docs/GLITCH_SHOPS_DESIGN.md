@@ -1,5 +1,11 @@
 # GlitchShops Plugin Architecture (Phase 5.12)
 
+> **Status:** Source V1 exists under `plugins/GlitchShops/`, including the
+> buy/sell GUI, five categories, gear stock, economy hook, and NPC listener.
+> The plugin still requires a server build, deployment, NPC placement, and
+> transaction testing. This document describes intended behavior, not a
+> verified live feature.
+
 Hub merchant NPCs for the item economy. Players **sell** any custom item for Glitch Shards,
 and **buy** shop stock (materials, keys, rifts, potions). Prices follow docs/ITEM_SYSTEM.md §11
 (sell < buy; only sell price is visible on items; buy price shown only in the shop GUI).
@@ -45,7 +51,7 @@ shops:
       aether_shard:   { slot: 1, buy: 20, sell: 10 }
       rift_crystal:   { slot: 2, buy: 40, sell: 20 }
       void_essence:   { slot: 3, buy: 200, sell: 100 }
-      primordial_relic: { slot: 4, buy: 1500, sell: 800 }
+       legendary_relic: { slot: 4, buy: 1500, sell: 800 }
   keys:        # stock: the 3 keys + Fast Extract Key
   alchemy:     # stock: Healing Potion, Corrupted Heal, Rift Reveal Pack, Void Infusion
   rifts:       # stock: the 5 Unstable Rift variants
@@ -98,9 +104,8 @@ shops:
 
 ## Future expansions
 
-- **Gear vendors:** buy-only stock of vanilla-base gear with fixed vendor rolls (rolls from
-  ITEM_SYSTEM §2 ranges), priced by rarity shard value (sell to NPC also allowed at a
-  reduced vendor-roll price, keeping sell < buy).
+- **Gear vendors:** source V1 provides rotating buy-only stock with generated rolls.
+  Live deployment and balance testing remain pending.
 - **Buyback?** no — sold items are gone (sink).
 - **Residual Glitch cross-feature:** merchant prices could scale with the glitch timer
   (later; not v1).

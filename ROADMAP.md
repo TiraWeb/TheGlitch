@@ -8,7 +8,7 @@ A non-Pay-to-Win (EULA-compliant) rogue-lite **extraction hybrid** Minecraft ser
 
 Check items off as they're completed. Each numbered topic is sized to roughly one working session — except the Phase 4 building block, which is flagged as bigger.
 
-**Status as of 2026-08-01:** Phases 0–2 done. Phase 3.1 done (Bedrock test pending). Phase 4 mechanics done — all 3 worlds are now **custom imported maps** (hub=TerraSpace, glitch_red=Odyssey 2k, glitch_pve=CaveFree), not generated worlds. Phase 5.1-5.3, 5.5, 5.6-5.9 done (plugins installed, GlitchStash + GlitchClasses + GlitchDungeons built). Phase 5.4 designed (see Phase 5.9). Extraction loop fully working (VelKoth → GlitchStash → Multiverse teleport). Class system fully working (4 classes, ability items, 10 levels). GlitchDungeons plugin built from source (21 files, party system, wave spawning, boss bar, rewards). **Phase 5.10 (Arcane Ruins item system) started:** Oraxen built from source (paid jars avoided — see setup-oraxen.sh), 18 custom items (5 materials, 4 keys, 5 Unstable Rifts, 4 alchemy) with sell-price lore + textures deployed and verified in-game; design doc in docs/ITEM_SYSTEM.md. **Phase 5.11 (core gameplay content) now tracked** — design numbers in docs/GAME_DESIGN.md. **Phase 5.12 (merchant NPCs / GlitchShops) planned** — prices in ITEM_SYSTEM §11, plugin design in docs/GLITCH_SHOPS_DESIGN.md. **Design decisions locked (2026-08-02):** gear = 3 weapon archetypes + 4 armor pieces with attributes; death in glitch_red keeps only leggings+boots (Phase 5.13); Standard extract = 30s; merchant stock has small variance + 0.01% super-rare weapon variant; mob zone distribution fixed; **simplicity pass — rarities are now Common/Uncommon/Rare/Epic/Legendary and keys are Cache/Vault/Rift (no Fragmented/Primordial jargon); Residual Glitch = +1 stack per 5 min with small staying bonus (search-first, no camping rewards)**. EssentialsX INCOMPATIBLE with MC 26.x. Next: item-system steps 3–10 (stat-roll engine + gear line, rifts, Resonance, Residual Glitch, world population, crafting, rename pass, death rules), then physical builds or in-game testing.
+**Status as of 2026-08-03:** Phases 0-2 are implemented. Phase 3.1 is configured, but the live Bedrock join test is pending. Phase 4 mechanics are scripted; the default setup creates generated worlds, while imported map saves are external/live-only. Phase 5 has several installed or source-level foundations, but GlitchDungeons, GlitchItems, and GlitchShops are not runtime-verified. GlitchStash extraction/storage is implemented, with the repository Standard timer set to 30 seconds; generated live arena values still require verification. GlitchClasses has a working core but incomplete abilities and progression. Oraxen has 18 item definitions and assets. See [docs/STATUS.md](docs/STATUS.md) for the authoritative status. EssentialsX is incompatible with the current Minecraft target. The immediate priorities are dungeon repair, item/loot integration, death and extraction rules, physical world content, and end-to-end testing.
 
 ---
 
@@ -37,17 +37,16 @@ Check items off as they're completed. Each numbered topic is sized to roughly on
 ## Phase 4 — World architecture (the three zones)
 
 Everything below is *mechanics* — worlds, gamerules, protection flags, borders,
-config. All scriptable, all done and verified live. **All three worlds are
-custom imported maps** — not vanilla generated terrain. Hub uses **TerraSpace**
-(Japanese cyberpunk city build), glitch_pve uses **CaveFree** (cave/underground
-map), glitch_red uses **MMORPG_Odyssey** 2k custom terrain. Physical
-construction inside these worlds is a separate body of work, split out into
-its own checklist below.
+and config. The scripts are present, but live verification and terrain source
+depend on the provisioning path. `setup-worlds.sh` creates generated worlds;
+`scripts/setup-imported-worlds.sh` expects external uploaded saves. Physical
+construction inside these worlds is a separate body of work, split out into its
+own checklist below.
 
-- [x] **4.1 Zone layout blueprint** — Concrete coordinate offsets, world borders per zone, teleport routing between zones. _Three custom imported worlds (hub=TerraSpace, glitch_red=Odyssey 2k, glitch_pve=CaveFree); see docs/ZONES.md._
-- [x] **4.2 Hub City — mechanics** — WorldGuard total lockdown (PvP/hunger/block-changes off, invincible on, explosion/mob-damage denied, hostile deny-spawn), `spawn_mobs false` / `keep_inventory true`, spawn set to 0,-60,0. _Verified live: worlds registered via `mv import`, correct MC 26.x gamerule names (see docs/ZONES.md)._
-- [x] **4.3 Standard Glitch (PvE) — mechanics** — World registered, `keep_inventory true`, natural spawns off (MythicMobs-only design), 8-slot dungeon instancing blueprint. _Verified live._
-- [x] **4.4 The Red Zone (PvPvE) — mechanics** — World registered, full-loot PvP flags, 6 entry coordinates + 3 extraction sites documented. World uses **MMORPG_Odyssey 2k** custom imported map (not seed-generated terrain). _Verified live._
+- [x] **4.1 Zone layout blueprint** — Concrete coordinate offsets, world borders per zone, teleport routing between zones. _Scripts and coordinates exist; terrain source is provisioning-dependent. See docs/ZONES.md._
+- [x] **4.2 Hub City — mechanics** — WorldGuard lockdown, safe-zone flags, borders, gamerules, and spawn configuration are scripted. _Live verification depends on the chosen world provisioning path._
+- [x] **4.3 Standard Glitch (PvE) — mechanics** — Keep-inventory, natural-spawn, border, and 8-slot instancing configuration are scripted. _Dungeon shells and runtime dungeon verification remain pending._
+- [x] **4.4 The Red Zone (PvPvE) — mechanics** — Full-loot flags, borders, entry coordinates, and extraction coordinates are documented/scripted. _Terrain source and live configuration remain to be verified._
 
 ### Physical world building — DEFERRED
 
@@ -67,14 +66,20 @@ documented in `docs/DUNGEON_SHELL.md` for when the operator is ready.
 - [x] **5.3 MythicMobs** — Custom mobs with Glitch Shards loot. _Done: plugin added to bootstrap.sh, 4 mob definitions (Glitch Stalker, Brute, Phantom, Core boss) with drop tables using COINS type. Configs seeded once._
 - [ ] **5.4 Dungeon/Party management** — _Deferred to custom plugin. Development plan documented in Phase 5.9._
 - [x] **5.5 Hub NPCs** — FancyNpcs (packet-based, 0 TPS impact) + DeluxeMenus for GUIs. _Done: plugins added to bootstrap.sh, class selector + shard shop GUIs seeded._
-- [x] **5.6 Classes** — Vanguard (tank), Warden (support), Specter (stealth), Operator (tech). _Done: GlitchClasses plugin built from source (replaces premium plugin). 4 classes with prime/tactical abilities, 10 upgrade levels, passive traits, class selection GUI. Ability items (immovable, no-duplicate) auto-given on class select and when entering game worlds. YAML per-player storage, LuckPerms integration._
+- [x] **5.6 Classes** — Vanguard (tank), Warden (support), Specter (stealth), Operator (tech). _Core GlitchClasses source exists with class selection, persistence, ability items, and several abilities. Designed traits, reset costs, upgrade behavior, and live testing remain incomplete._
 - [x] **5.7 Scoreboard/HUD** — TAB (sidebar scoreboard: shards/zone/class, tab list header/footer) + PlaceholderAPI. _Done: plugins added to bootstrap.sh, TAB config seeded with Glitch-themed sidebar._
-- [x] **5.8 Extraction mechanic** — VelKoth (KOTH plugin in CAPTURE mode for extraction zones). _Done: plugin added to bootstrap.sh, extraction arenas (X1/X2/X3) in glitch_red with 300s hold-to-extract. Wand fix: click block at your feet, not ground below._
-- [x] **5.9 Extraction vault** — GlitchStash plugin (custom, built from source). _Done: auto-saves inventory on extraction (accumulates across multiple extractions), auto-teleports to hub via Multiverse-Core mv tp, /stash retrieves items. YAML per-player storage. EssentialsX INCOMPATIBLE with MC 26.x — teleport uses mv tp instead._
+- [ ] **5.8 Extraction mechanic** — VelKoth (KOTH plugin in CAPTURE mode for extraction zones). _Repository config uses a 30s Standard timer. Generated `arenas.yml`, live arena values, and a full extraction test still need verification. Fast/Silent variants are not implemented. Wand fix: click the block at your feet, not the ground below._
+- [x] **5.9 Extraction vault** — GlitchStash plugin (custom, built from source). _Core inventory save, YAML persistence, retrieval GUI, overflow preservation, and Multiverse teleport exist. Live extraction testing and remaining low-level cleanup are pending. EssentialsX is incompatible with MC 26.x; teleport uses Multiverse._
 
 ## Phase 5.4 — Custom Dungeon Plugin (TheGlitchDungeons)
 
 _Authoritative development plan. See Phase 5.9 for extraction plugins._
+
+_Current reality: source exists, but this phase is not complete. The current
+configuration uses list-form mob entries while the wave code expects a
+configuration section; dungeon extraction is not fully started or integrated
+with GlitchStash. **Deferred by operator decision (2026-08-03)** — the dungeon
+PvE world is not the current focus._
 
 - [ ] **5.4.1** Project setup — Maven/Gradle, Paper API + MythicMobs API dependencies
 - [ ] **5.4.2** Party system — create/invite/accept/leave/disband, max 4 players
@@ -92,7 +97,7 @@ _Authoritative development plan. See Phase 5.9 for extraction plugins._
 _Seven custom plugins designed for Arc Raiders/Marathon-style extraction gameplay. All Java/Paper API, no premium dependencies._
 
 - [x] **5.9.1 GlitchStash** — Grid-based stash inventory UI. Persistent server-side storage, risk/reward visualization, item provenance tracking. _Done: built from source, YAML storage, /stash GUI, auto-save on extraction (accumulates), teleport via mv tp (EssentialsX broken on MC 26.x)._
-- [x] **5.9.2 GlitchClasses** — Class selection + abilities system. _Done: built from source, 4 classes (Vanguard/Warden/Specter/Operator), class selection GUI, prime + tactical ability items (immovable, no-duplicate), 10 upgrade levels, passive traits via event listeners. Items auto-given on class select, on join, and on entering game worlds. /class kit to re-receive. YAML per-player storage, LuckPerms meta integration._
+- [x] **5.9.2 GlitchClasses** — Class selection + abilities system. _Source core exists with four classes, selection GUI, ability items, persistence, and event listeners. Some traits/abilities, reset costs, and live verification remain pending._
 - [ ] **5.9.3 GlitchRaid** — Raid lifecycle manager. Timers, party assignment, post-raid summary screen, death recap, loot accounting.
 - [ ] **5.9.4 GlitchInsurance** — Shard-backed item insurance. Pay premium to protect gear on death, cooldowns, claim window.
 - [ ] **5.9.5 GlitchHideout** — Between-raid progression. Physical hideout in hub, upgradeable crafting stations, skill trees, stash expansion.
@@ -108,11 +113,11 @@ are paid (~$20–22), but Oraxen's GitHub source carries a personal-use license
 the jar. No item levels: power comes from rarity tiers + random stat rolls +
 Resonance matching, not number inflation._
 
-- [x] **5.10.1 Item base + resource pack** — Oraxen v1.218.0 built from source. _Done: setup-oraxen.sh (clone, patch Iris JitPack dep, Gradle build with JDK 21+25 toolchains), deployed to server/plugins/Oraxen.jar, resource pack auto-hosts via atlas.oraxen.com._
-- [x] **5.10.2 Material + key items** — 5 materials (Rune Fragment, Aether Shard, Rift Crystal, Void Essence, Legendary Relic) + 4 keys (Cache/Vault/Rift/Fast Extract). _Done: Oraxen configs in server/plugins/Oraxen/items/, programmatic 16×16 textures, ESC-menu language override (pack name "The Glitch"), deployed via setup-oraxen-items.sh, verified in-game. Extended: 10 more items (5 Unstable Rifts, Fast Extract Key, Healing Potion, Corrupted Heal, Rift Reveal Pack, Void Infusion) with sell-price lore — 18 custom items total._
-- [ ] **5.10.3 Rarity tiers + stat-roll engine** — Common/Uncommon/Rare/Epic/Legendary; identify-outcome stat rolls (GlitchItems custom plugin). _V1 BUILT (plugins/GlitchItems): gear generation (3 archetypes + 4 armor pieces, stat ranges + stars + attributes from config), Resonance combat math, /identify, Residual Glitch — needs server build (`sudo ./plugins/GlitchItems/build.sh`) + in-game test. Design locked: attributes from Rare up; armor = base stats by rarity + 1 attribute (ITEM_SYSTEM §2). Simple-name pass done: rarities + keys renamed to plain words (no Fragmented/Primordial etc.)._
-- [ ] **5.10.4 Unstable Rifts + Identifier NPC** — mob loot tables emit rifts; hub NPC stabilizes for a shard fee.
-- [ ] **5.10.5 Resonance tags + gear rolls** — 5 frequencies (Aegis/Veil/Bloom/Ward/Hollow) on mobs + gear; weapons +25% damage vs matching mobs, armor +defense.
+- [x] **5.10.1 Item base + resource pack** — Oraxen v1.218.0 build/deploy path and resource-pack assets exist. _The jar is built on the server; deployment and live verification are not represented by this repository._
+- [x] **5.10.2 Material + key items** — 5 materials (Rune Fragment, Aether Shard, Rift Crystal, Void Essence, Legendary Relic) + 4 keys (Cache/Vault/Rift/Fast Extract). _Oraxen configs, generated 16×16 textures, ESC-menu language override, and deployment script exist. Extended: 10 more item definitions (5 Unstable Rifts, Fast Extract Key, Healing Potion, Corrupted Heal, Rift Reveal Pack, Void Infusion) with sell-price lore — 18 custom items total. Live deployment must be verified on the server._
+- [x] **5.10.3 Rarity tiers + stat-roll engine** — Common/Uncommon/Rare/Epic/Legendary; identify-outcome stat rolls (GlitchItems custom plugin). _Source V1 exists: gear generation, 3 archetypes, 4 armor pieces, stat ranges, stars, attributes, `/identify`, Resonance math, and Residual Glitch. Deployed and live-tested (2026-08-03): `/identify` works. Loot and mob integrations are still incomplete._
+- [ ] **5.10.4 Unstable Rifts + Identifier NPC** — mob loot tables emit rifts; hub NPC stabilizes for a shard fee. _Mob drops wired (2026-08-03): all 4 drop tables now emit Unstable Rifts + materials via the Oraxen `oraxen` drop type (GlitchStalker/Phantom/Brute: common/uncommon ~8%, GlitchCore: rare guaranteed + epic 50% + legendary 15%). Needs live test. Identifier NPC still pending._
+- [ ] **5.10.5 Resonance tags + gear rolls** — 5 frequencies (Aegis/Veil/Bloom/Ward/Hollow) on mobs + gear; weapons +25% damage vs matching mobs, armor +defense. _Mob side done in repo (2026-08-03): all 10 mobs carry ScoreboardTags (res_aegis/res_veil/res_bloom/res_ward/res_hollow). Gear side exists in GlitchItems (CombatListener reads res_* tags). Needs live damage test._
 - [ ] **5.10.6 Residual Glitch** — greed stacks (max 8, +1 every **5 min** — big map, searching is the game, not camping), small loot luck +5%/stack, aggro/risk scaling, extraction payout ×(1+0.10×stacks), elite hunts at 5+ stacks. _V1 built in GlitchItems (timer, boss bar HUD, damage multiplier, payout API) + payout hooked into extraction (GlitchStash pays sell-value × (multiplier−1) on win, stacks clear). Remaining: loot-luck/elite-hunt integration with world population._
 - [ ] **5.10.7 World population** — spawners, chests, regen emitting rifts from 5.10.4.
 - [ ] **5.10.8 Resonance crafting** — recipes via Workbench (no RNG professions).
@@ -125,9 +130,9 @@ docs/GAME_DESIGN.md (mobs §2, loot §3, hideout §4, dungeon tiers §5, extract
 §7, economy §8, anti-grief §9) — renames per docs/ITEM_SYSTEM.md §9. GAME_DESIGN
 still carries old techy names until 5.10.9._
 
-- [ ] **5.11.1 Mob roster (10/10)** — GAME_DESIGN §2: 4 seeded (Stalker, Brute, Phantom, Core boss — 5.3). _Add:_ Glitch Wisp (Vex), Corrupted Crawler (Silverfish), Glitch Sentinel (Wither Skeleton), Glitch Sniper (enchanted Skeleton), Glitch Warden (Iron Golem), The Glitch King (Ender Dragon, 3-phase). Each gets a `Resonance:` tag per ITEM_SYSTEM §5 mob table. **Zone distribution locked:** glitch_red = T1 fodder everywhere, T2 mid zones, T3 elites guard POIs (Core 0,0, reliquaries, extract sites), T4 bosses = server events; glitch_pve = tier-scaled dungeon waves.
+- [ ] **5.11.1 Mob roster (10/10)** — GAME_DESIGN §2: 4 seeded (Stalker, Brute, Phantom, Core boss — 5.3). _Add:_ Glitch Wisp (Vex), Corrupted Crawler (Silverfish), Glitch Sentinel (Wither Skeleton), Glitch Sniper (enchanted Skeleton), Glitch Warden (Iron Golem), The Glitch King (Ender Dragon, 3-phase). Each gets a `Resonance:` tag per ITEM_SYSTEM §5 mob table. **Zone distribution locked:** glitch_red = T1 fodder everywhere, T2 mid zones, T3 elites guard POIs (Core 0,0, reliquaries, extract sites), T4 bosses = server events; glitch_pve = tier-scaled dungeon waves. _DONE in repo (2026-08-03): all 6 missing mobs added with per-tier drop tables + resonance ScoreboardTags (res_veil/res_hollow/res_ward/res_aegis/res_bloom); the 4 existing mobs also got their tags. Needs live test (`mm reload` + spawn checks). Spawners/zone placement still deferred with world population (5.10.7)._
 - [ ] **5.11.2 Loot containers** — GAME_DESIGN §3 + ITEM_SYSTEM §9: Debris Pile (everywhere, free), Loot Cache (mid-tier, Cache Key), Vault (hard areas, Vault Key), Rift Vault (boss areas, Rift Key). Contents per rarity table; placed in-world by 5.10.7.
-- [ ] **5.11.3 Material + shard drop tables** — replace COINS-only placeholders with GAME_DESIGN §3 per-mob-tier rates (renamed materials, e.g. Rune Fragment 100% 1-2 on Tier 1, Void Essence 5% on Tier 3, Legendary Relic 10% on bosses).
+- [ ] **5.11.3 Material + shard drop tables** — replace COINS-only placeholders with GAME_DESIGN §3 per-mob-tier rates (renamed materials, e.g. Rune Fragment 100% 1-2 on Tier 1, Void Essence 5% on Tier 3, Legendary Relic 10% on bosses). _Done in repo (2026-08-03) for the 4 existing mobs: T2 tables (rune 100% 2-4, aether 10%, crystal 5%) + T4 boss table (rune/aether/crystal/void 100%, relic 10%). Vanilla placeholder drops (diamond/netherite/pearl/star) removed. Needs live test._
 - [ ] **5.11.4 Starter kit** — GAME_DESIGN §6: leather armor, wooden sword, 3 bread, 5 Rune Fragments. _EssentialsX kits unusable on MC 26.x — mechanism TBD (small custom plugin or DeluxeMenus button)._
 - [ ] **5.11.5 Extraction variants** — GAME_DESIGN §7: Standard (30s, free) / Fast (15s, Fast Extract Key) / Silent (10s, Rift Key). _DECIDED: Standard = 30s. _Repo VelKoth config set to 30s; payout hookup done (GlitchStash pays sell-value × (multiplier−1) on extract). Remaining: change the live per-arena capture time on the box (arenas.yml, generated in-game) + Fast/Silent arenas with key consumption (separate task)._
 - [ ] **5.11.6 Anti-grief / fair play** — GAME_DESIGN §9: 30s invulnerability on Red Zone entry points, friendly fire off everywhere, 2-min AFK kick in dungeons, shards account-bound (Coins currently drop on death as items — verify against "not tradeable").
@@ -139,9 +144,9 @@ _Plan: docs/GLITCH_SHOPS_DESIGN.md; price table in docs/ITEM_SYSTEM.md §11.
 Sell price < buy price; sell price on item lore, buy price only in the merchant
 GUI. Currency: Glitch Shards (Coins/Vault)._
 
-- [ ] **5.12.1 Sellable roster + prices** — _Item configs done: all 18 custom items carry a `Sell price: N Shards` lore line per the §11 table. Plugin pending._
-- [ ] **5.12.2 GlitchShops plugin** — buy/sell GUI (Sell tab = inventory, Buy tab = stock), prices from config only, Vault/Coins deposit+withdraw, Oraxen item-id resolution. _V1 BUILT (plugins/GlitchShops): 54-slot bazaar GUI, BUY/SELL toggle + 5 category tabs, gear vendor with 10-min restock + 0.01% super-rare godroll, lazy Vault economy. Needs server build (`sudo ./plugins/GlitchShops/build.sh`) + test._
-- [ ] **5.12.3 Hub merchant NPCs** — FancyNpcs × 1 "Grand Bazaar" (config `bazaar-npc-names`), right-click opens the shop; any vendor buys any custom item. _Plugin side done (NpcListener); NPC placed in-game by operator._
+- [x] **5.12.1 Sellable roster + prices** — _The 18 item configs carry sell-price lore and the shop reads them from config._
+- [x] **5.12.2 GlitchShops plugin** — _Deployed and live-tested (2026-08-03): `/shop` buy/sell verified. 54-slot bazaar GUI, buy/sell toggle, five categories, gear restock, super-rare roll, and Vault economy hook._
+- [ ] **5.12.3 Hub merchant NPCs** — _NPC listener exists, but the Grand Bazaar NPC must be placed and tested in-game._
 - [ ] **5.12.4 Gear vendors** — Armourer/Weaponsmith NPCs: fixed base price + small random variance on rolls each restock; every weapon has a 0.01% super-rare max-roll variant in stock (ITEM_SYSTEM §11). _V1 built: gear tab in bazaar (3 weapon + 2 armor slots, restock every 10 min, super-rare roll)._
 - [ ] **5.12.5 Economy sanity pass** — verify prices against GAME_DESIGN §8 income targets once loot tables (5.11.3) + rifts (5.10.4) land.
 
