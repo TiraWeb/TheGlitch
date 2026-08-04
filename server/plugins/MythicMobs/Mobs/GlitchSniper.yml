@@ -1,0 +1,29 @@
+# The Glitch — MythicMobs: Glitch Sniper (Tier 3 elite)
+# Enchanted-skeleton ranged elite. Fires heavy 18-dmg shots with a particle
+# telegraph. Resonates Ward.
+# Design: GAME_DESIGN §2 (T3), Resonance: ITEM_SYSTEM §5.
+
+GlitchSniper:
+  Type: SKELETON
+  Display: '<dark_red>Glitch Sniper'
+  Health: 80
+  Damage: 8
+  Options:
+    MovementSpeed: 0.3
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 40
+    KnockbackResistance: 0.2
+    ScoreboardTags: [res_ward]
+  Equipment:
+    - BOW HAND
+  Skills:
+    - effect:sound{s=entity.skeleton.ambient;v=0.5;p=1.2} @self ~onSpawn 1
+    - effect:sound{s=entity.skeleton.hurt;v=0.7;p=1.0} @self ~onDamaged 0.4
+    - effect:sound{s=entity.skeleton.death;v=1;p=0.8} @self ~onDeath 1
+    - effect:particles{p=REDSTONE;d=1;r=1} @target ~onTimer:60 0.6
+    - damage{amount=18} @Target ~onTimer:120 0.5
+    - effect:sound{s=entity.shulker.shoot;v=0.8;p=1.2} @self ~onTimer:120 0.5
+  Drops:
+    - GlitchSniperLoot

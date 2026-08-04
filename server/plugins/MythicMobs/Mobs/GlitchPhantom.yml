@@ -13,6 +13,7 @@ GlitchPhantom:
     Despawn: false
     FollowRange: 30
     KnockbackResistance: 0
+    ScoreboardTags: [res_veil]
   AIGoalSelectors:
     - clear
     - fly

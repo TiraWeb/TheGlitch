@@ -1,0 +1,13 @@
+# The Glitch — MythicMobs DropTable: Glitch Warden loot
+# Tier 3 elite — shards + elite materials (GAME_DESIGN §3), good rift chance
+
+GlitchWardenLoot:
+  TotalItems: 7
+  Drops:
+    - COINS 15-25 1
+    - oraxen rune_fragment 3-6 1
+    - oraxen aether_shard 1 0.3
+    - oraxen rift_crystal 1 0.15
+    - oraxen void_essence 1 0.05
+    - oraxen unstable_rift_uncommon 1 0.3
+    - oraxen unstable_rift_rare 1 0.15

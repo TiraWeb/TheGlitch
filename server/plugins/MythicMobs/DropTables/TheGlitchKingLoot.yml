@@ -1,0 +1,17 @@
+# The Glitch — MythicMobs DropTable: The Glitch King loot
+# Tier 4 boss — boss materials (GAME_DESIGN §3), guaranteed high-rarity rifts
+# Drops: rune 100% (10-20), aether 100% (3-5), crystal 100% (1-3), void 100% (1), relic 10%
+#        rare rift 80%, epic rift 60%, legendary rift 20%
+
+TheGlitchKingLoot:
+  TotalItems: 9
+  Drops:
+    - COINS 50-100 1
+    - oraxen rune_fragment 10-20 1
+    - oraxen aether_shard 3-5 1
+    - oraxen rift_crystal 1-3 1
+    - oraxen void_essence 1 1
+    - oraxen legendary_relic 1 0.1
+    - oraxen unstable_rift_rare 1 0.8
+    - oraxen unstable_rift_epic 1 0.6
+    - oraxen unstable_rift_legendary 1 0.2

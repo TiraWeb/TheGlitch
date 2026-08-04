@@ -1,0 +1,43 @@
+# The Glitch — MythicMobs: The Glitch King (Tier 4 boss, server event)
+# Ender Dragon. 3-phase fight:
+#   Phase 1 (100-75%): summons Glitch Stalkers, ground-slam AoE
+#   Phase 2 (75-25%):  heavy laser strikes + corruption-zone damage
+#   Phase 3 (<25%):    enrage (1.5x damage) + faster, bigger spawns
+# PreventsOtherDrops stops the vanilla dragon egg. Resonates Hollow.
+# Design: GAME_DESIGN §2 (T4), Resonance: ITEM_SYSTEM §5.
+
+TheGlitchKing:
+  Type: ENDER_DRAGON
+  Display: '<bold><dark_red>The Glitch King'
+  Health: 2000
+  Damage: 20
+  Options:
+    MovementSpeed: 0.5
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 60
+    KnockbackResistance: 1
+    PreventSunburn: true
+    PreventsOtherDrops: true
+    PreventRandomEquipment: true
+    PreventInfection: true
+    ScoreboardTags: [res_hollow]
+  Skills:
+    - effect:sound{s=entity.ender_dragon.growl;v=1;p=0.6} @self ~onSpawn 1
+    - effect:sound{s=entity.ender_dragon.hurt;v=1;p=0.7} @self ~onDamaged 0.3
+    - effect:sound{s=entity.ender_dragon.death;v=1;p=0.5} @self ~onDeath 1
+    # Phase 1 — summons + ground slam
+    - summon{m=GlitchStalker;a=3;r=8} @self ~onTimer:400 0.5
+    - damage{amount=12} @PlayersInRadius{r=6} ~onTimer:300 0.5
+    - effect:sound{s=entity.generic.explode;v=0.6;p=0.4} @self ~onTimer:300 0.5
+    # Phase 2 (75-25%) — laser strikes + corruption zone
+    - damage{amount=16} @NearestPlayer{r=40} ~onTimer:200 0.5
+    - damage{amount=4} @PlayersInRadius{r=10} ~onTimer:100 0.3
+    - effect:sound{s=entity.enderman.scream;v=0.8;p=0.8} @self ~onHealth:75 1
+    # Phase 3 (<25%) — enrage
+    - modifier{d=1.5;type=MULTIPLY;duration=999999} @self ~onHealth:25 1
+    - summon{m=GlitchStalker;a=4;r=8} @self ~onTimer:200 0.6
+    - effect:sound{s=entity.warden.roar;v=1;p=0.6} @self ~onHealth:25 1
+  Drops:
+    - TheGlitchKingLoot

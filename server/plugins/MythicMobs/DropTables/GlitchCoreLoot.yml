@@ -1,12 +1,17 @@
 # The Glitch — MythicMobs DropTable: Glitch Core (boss) loot
-# Boss mob — large shard drops, rare high-tier loot
+# Tier 4 boss — big shard payout + boss materials (GAME_DESIGN §3), guaranteed high-rarity rift
+# Drops: rune 100% (10-20), aether 100% (3-5), crystal 100% (1-3), void 100% (1), relic 10%
+#        rare rift 100%, epic rift 50%, legendary rift 15%
 
 GlitchCoreLoot:
-  TotalItems: 5
+  TotalItems: 10
   Drops:
     - COINS 50-100 1
-    - COINS 25-50 0.5
-    - diamond 2-4 0.4
-    - netherite_scrap 1-2 0.2
-    - nether_star 1 0.05
-    - experience_bottle 10-20 1
+    - oraxen rune_fragment 10-20 1
+    - oraxen aether_shard 3-5 1
+    - oraxen rift_crystal 1-3 1
+    - oraxen void_essence 1 1
+    - oraxen legendary_relic 1 0.1
+    - oraxen unstable_rift_rare 1 1
+    - oraxen unstable_rift_epic 1 0.5
+    - oraxen unstable_rift_legendary 1 0.15

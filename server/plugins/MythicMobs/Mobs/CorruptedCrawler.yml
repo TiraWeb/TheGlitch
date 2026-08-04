@@ -1,0 +1,24 @@
+# The Glitch — MythicMobs: Corrupted Crawler (Tier 1 fodder)
+# Silverfish that bursts out of walls. Poisons on hit (2s). Resonates Hollow.
+# Design: GAME_DESIGN §2 (T1), Resonance: ITEM_SYSTEM §5.
+
+CorruptedCrawler:
+  Type: SILVERFISH
+  Display: '<green>Corrupted Crawler'
+  Health: 30
+  Damage: 4
+  Options:
+    MovementSpeed: 0.35
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 20
+    KnockbackResistance: 0
+    ScoreboardTags: [res_hollow]
+  Skills:
+    - effect:sound{s=entity.silverfish.ambient;v=0.6;p=1.2} @self ~onSpawn 1
+    - effect:sound{s=entity.silverfish.hurt;v=0.7;p=1.0} @self ~onDamaged 0.4
+    - effect:sound{s=entity.silverfish.death;v=1;p=0.8} @self ~onDeath 1
+    - potion{type=POISON;duration=40;level=0} @Trigger ~onAttack 0.5
+  Drops:
+    - CorruptedCrawlerLoot

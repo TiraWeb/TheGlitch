@@ -1,0 +1,30 @@
+# The Glitch — MythicMobs: Glitch Sentinel (Tier 3 elite)
+# Wither skeleton elite. AoE slam (5-block radius, 15 dmg, heavy slow), summons
+# 2 Glitch Wisps every 30s, immune to knockback. Resonates Ward.
+# Design: GAME_DESIGN §2 (T3), Resonance: ITEM_SYSTEM §5.
+
+GlitchSentinel:
+  Type: WITHER_SKELETON
+  Display: '<red>Glitch Sentinel'
+  Health: 200
+  Damage: 14
+  Options:
+    MovementSpeed: 0.28
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 24
+    KnockbackResistance: 1
+    ScoreboardTags: [res_ward]
+  Equipment:
+    - IRON_SWORD HAND
+  Skills:
+    - effect:sound{s=entity.wither_skeleton.ambient;v=0.5;p=0.9} @self ~onSpawn 1
+    - effect:sound{s=entity.wither_skeleton.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
+    - effect:sound{s=entity.wither_skeleton.death;v=1;p=0.7} @self ~onDeath 1
+    - summon{m=GlitchWisp;a=2;r=6} @self ~onTimer:600 1
+    - damage{amount=15} @PlayersInRadius{r=5} ~onTimer:300 0.6
+    - potion{type=SLOWNESS;duration=60;level=5} @PlayersInRadius{r=5} ~onTimer:300 0.6
+    - effect:sound{s=entity.generic.explode;v=0.6;p=0.4} @self ~onTimer:300 0.6
+  Drops:
+    - GlitchSentinelLoot

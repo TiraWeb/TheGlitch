@@ -1,9 +1,12 @@
 # The Glitch — MythicMobs DropTable: Glitch Phantom loot
-# Ranged mob — good shard drops, rare ender pearls
+# Tier 2 ranged — shards + Tier 2 materials (GAME_DESIGN §3), small rift chance (ITEM_SYSTEM §4)
 
 GlitchPhantomLoot:
-  TotalItems: 2
+  TotalItems: 6
   Drops:
     - COINS 5-12 1
-    - ender_pearl 1-2 0.3
-    - experience_bottle 1-3 0.5
+    - oraxen rune_fragment 2-4 1
+    - oraxen aether_shard 1 0.1
+    - oraxen rift_crystal 1 0.05
+    - oraxen unstable_rift_common 1 0.05
+    - oraxen unstable_rift_uncommon 1 0.03

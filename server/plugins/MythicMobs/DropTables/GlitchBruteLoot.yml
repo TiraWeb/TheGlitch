@@ -1,10 +1,12 @@
 # The Glitch — MythicMobs DropTable: Glitch Brute loot
-# Tank mob — medium shard drops, chance at gear
+# Tier 2 tank — shards + Tier 2 materials (GAME_DESIGN §3), slightly better than Stalker
 
 GlitchBruteLoot:
-  TotalItems: 3
+  TotalItems: 6
   Drops:
     - COINS 8-15 1
-    - diamond 1 0.15
-    - netherite_scrap 1 0.05
-    - experience_bottle 2-4 0.6
+    - oraxen rune_fragment 3-6 1
+    - oraxen aether_shard 1 0.12
+    - oraxen rift_crystal 1 0.06
+    - oraxen unstable_rift_common 1 0.06
+    - oraxen unstable_rift_uncommon 1 0.04

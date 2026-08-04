@@ -56,11 +56,11 @@ cat <<'EOF'
   Phase 5.3 — MythicMobs reloaded & verified.
 ============================================================
 
-  Mobs defined:
-    GlitchStalker  — fast melee, drops 1-3 shards
-    GlitchBrute    — slow tank, drops 3-5 shards
-    GlitchPhantom  — ranged flier, drops 2-4 shards
-    GlitchCore     — dungeon boss, drops 10-15 shards
+  Mobs defined (10/10 roster, GAME_DESIGN §2):
+    T1: GlitchWisp (Vex, res_veil) / CorruptedCrawler (Silverfish, res_hollow) — rune fragments + small shards
+    T2: GlitchStalker (res_bloom) / GlitchBrute (res_aegis) / GlitchPhantom (res_veil) — T2 materials + ~8% rifts
+    T3: GlitchSentinel (res_ward) / GlitchSniper (res_ward) / GlitchWarden (res_aegis) — elite materials, good rift chance
+    T4: GlitchCore (res_hollow) / TheGlitchKing (Ender Dragon, res_hollow) — boss tables, guaranteed high-rarity rifts
 
   Spawners: configured in setup-dungeon-regions.sh (deferred)
   Spawn areas: configured in setup-dungeon-regions.sh (deferred)

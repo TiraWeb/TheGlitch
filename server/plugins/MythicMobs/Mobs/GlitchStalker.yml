@@ -13,6 +13,7 @@ GlitchStalker:
     Despawn: false
     FollowRange: 24
     KnockbackResistance: 0.1
+    ScoreboardTags: [res_bloom]
   Equipment:
     - IRON_SWORD HAND
     - CHAINMAIL_CHESTPLATE CHEST

@@ -1,8 +1,13 @@
 # The Glitch — MythicMobs DropTable: Glitch Stalker loot
-# Basic mob — small shard drops, common gear
+# Tier 2 infantry — shards + Tier 2 materials (GAME_DESIGN §3), small rift chance (ITEM_SYSTEM §4)
+# Drops: rune_fragment 100% (2-4), aether_shard 10%, rift_crystal 5%, rifts ~8%
 
 GlitchStalkerLoot:
-  TotalItems: 2
+  TotalItems: 6
   Drops:
     - COINS 3-8 1
-    - experience_bottle 1-2 0.4
+    - oraxen rune_fragment 2-4 1
+    - oraxen aether_shard 1 0.1
+    - oraxen rift_crystal 1 0.05
+    - oraxen unstable_rift_common 1 0.05
+    - oraxen unstable_rift_uncommon 1 0.03

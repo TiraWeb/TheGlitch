@@ -13,6 +13,7 @@ GlitchBrute:
     Despawn: false
     FollowRange: 20
     KnockbackResistance: 0.6
+    ScoreboardTags: [res_aegis]
   Equipment:
     - NETHERITE_SWORD HAND
     - NETHERITE_CHESTPLATE CHEST

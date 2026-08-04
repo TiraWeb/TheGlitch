@@ -1,0 +1,23 @@
+# The Glitch — MythicMobs: Glitch Wisp (Tier 1 fodder)
+# Fast, low-HP Vex that swarms in groups of 3-5. Resonates Veil.
+# Design: GAME_DESIGN §2 (T1), Resonance: ITEM_SYSTEM §5.
+
+GlitchWisp:
+  Type: VEX
+  Display: '<aqua>Glitch Wisp'
+  Health: 20
+  Damage: 3
+  Options:
+    MovementSpeed: 0.4
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 24
+    KnockbackResistance: 0
+    ScoreboardTags: [res_veil]
+  Skills:
+    - effect:sound{s=entity.vex.ambient;v=0.5;p=1.3} @self ~onSpawn 1
+    - effect:sound{s=entity.vex.hurt;v=0.7;p=1.1} @self ~onDamaged 0.4
+    - effect:sound{s=entity.vex.death;v=0.9;p=0.9} @self ~onDeath 1
+  Drops:
+    - GlitchWispLoot

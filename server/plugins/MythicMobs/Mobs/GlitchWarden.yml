@@ -1,0 +1,32 @@
+# The Glitch — MythicMobs: Glitch Warden (Tier 3 elite)
+# Iron Golem area guard. Vortex-pulls players every 20s and radiates a small
+# damage field. Target selectors force it to aggro players (golems are neutral
+# by default). Resonates Aegis.
+# Design: GAME_DESIGN §2 (T3), Resonance: ITEM_SYSTEM §5.
+
+GlitchWarden:
+  Type: IRON_GOLEM
+  Display: '<dark_aqua>Glitch Warden'
+  Health: 300
+  Damage: 8
+  Options:
+    MovementSpeed: 0.22
+    AlwaysShowName: true
+    Persistent: true
+    Despawn: false
+    FollowRange: 24
+    KnockbackResistance: 1
+    ScoreboardTags: [res_aegis]
+  AITargetSelectors:
+    - clear
+    - players
+    - attacker
+  Skills:
+    - effect:sound{s=entity.iron_golem.ambient;v=0.5;p=0.9} @self ~onSpawn 1
+    - effect:sound{s=entity.iron_golem.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
+    - effect:sound{s=entity.iron_golem.death;v=1;p=0.7} @self ~onDeath 1
+    - throw{velocity=1.5;velocityY=1.2} @PlayersInRadius{r=6} ~onTimer:400 0.6
+    - damage{amount=6} @PlayersInRadius{r=3} ~onTimer:100 0.7
+    - effect:sound{s=entity.shulker.bullet.hit;v=0.8;p=0.6} @self ~onTimer:400 0.6
+  Drops:
+    - GlitchWardenLoot
