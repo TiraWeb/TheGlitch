@@ -30,7 +30,7 @@ public final class HealthBarManager {
 
         TextDisplay display = mob.getWorld().spawn(barLocation(mob), TextDisplay.class, d -> {
             d.setBillboard(Display.Billboard.CENTER);
-            d.setSeeThroughBlocks(true);
+            d.setSeeThrough(true);
             d.setShadowed(true);
             d.setPersistent(false);
         });
@@ -59,7 +59,9 @@ public final class HealthBarManager {
             BarEntry entry = it.next().getValue();
             LivingEntity target = entry.target();
             if (!target.isValid() || target.isDead()
-                    || !target.getWorld().isChunkLoaded(target.getLocation())) {
+                    || !target.getWorld().isChunkLoaded(
+                            target.getLocation().getBlockX() >> 4,
+                            target.getLocation().getBlockZ() >> 4)) {
                 entry.display().remove();
                 it.remove();
                 continue;

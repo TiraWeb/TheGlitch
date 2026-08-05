@@ -7,7 +7,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityRemoveFromWorldEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 
 public final class HealthBarListener implements Listener {
@@ -47,12 +46,5 @@ public final class HealthBarListener implements Listener {
     @EventHandler
     public void onDeath(EntityDeathEvent event) {
         manager.remove(event.getEntity());
-    }
-
-    @EventHandler
-    public void onRemove(EntityRemoveFromWorldEvent event) {
-        if (event.getEntity() instanceof LivingEntity entity) {
-            manager.remove(entity);
-        }
     }
 }
