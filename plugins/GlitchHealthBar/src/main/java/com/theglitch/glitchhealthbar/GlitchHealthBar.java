@@ -44,7 +44,7 @@ public final class GlitchHealthBar extends JavaPlugin {
     private void loadSettings() {
         reloadConfig();
         enabledWorlds = getConfig().getStringList("enabled-worlds");
-        mobsMode = getConfig().getString("mobs", "MYTHICMOBS").toUpperCase();
+        mobsMode = getConfig().getString("mobs", "MONSTERS").toUpperCase();
         barLength = Math.max(1, getConfig().getInt("bar-length", 10));
         showNumbers = getConfig().getBoolean("show-numbers", true);
         offsetFraction = Math.max(0, getConfig().getDouble("offset-fraction", 0.6));
@@ -68,7 +68,11 @@ public final class GlitchHealthBar extends JavaPlugin {
     public boolean shouldTrack(Mob mob) {
         if (mob instanceof Player) return false;
         if (!isEnabledWorld(mob.getWorld().getName())) return false;
-        return mobsMode.equals("ALL") || mob.hasMetadata("MythicMob");
+        return switch (mobsMode) {
+            case "ALL" -> true;
+            case "MONSTERS" -> mob instanceof org.bukkit.entity.Monster;
+            default -> mob.hasMetadata("MythicMob"); // MYTHICMOBS
+        };
     }
 
     public boolean isEnabledWorld(String world) {

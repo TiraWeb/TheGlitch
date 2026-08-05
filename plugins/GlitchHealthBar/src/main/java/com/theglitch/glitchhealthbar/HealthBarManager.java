@@ -32,6 +32,7 @@ public final class HealthBarManager {
             d.setBillboard(Display.Billboard.CENTER);
             d.setSeeThrough(true);
             d.setShadowed(true);
+            d.setViewRange(2);
             d.setPersistent(false);
         });
 

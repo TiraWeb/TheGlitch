@@ -7,9 +7,11 @@ enabled-worlds:
   - glitch_red
   - glitch_pve
 
-# MYTHICMOBS = only MythicMobs-spawned mobs (all custom mobs + summons)
-# ALL = every living hostile mob in the enabled worlds
-mobs: MYTHICMOBS
+# MONSTERS = every hostile mob in the enabled worlds (default — robust, covers
+#            MythicMobs mobs AND vanilla hostiles; no plugin internals needed)
+# MYTHICMOBS = only mobs tagged with MythicMobs metadata
+# ALL = every mob (including passive animals)
+mobs: MONSTERS
 
 # Bar appearance
 bar-length: 10
