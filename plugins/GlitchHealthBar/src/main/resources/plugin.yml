@@ -3,3 +3,14 @@ version: '${project.version}'
 main: com.theglitch.glitchhealthbar.GlitchHealthBar
 api-version: '1.21'
 description: Floating health bars above mobs for The Glitch
+
+commands:
+  ghb:
+    description: GlitchHealthBar debug tools
+    usage: /ghb <test|count|reload>
+    permission: glitchhealthbar.admin
+
+permissions:
+  glitchhealthbar.admin:
+    description: GlitchHealthBar admin commands
+    default: op

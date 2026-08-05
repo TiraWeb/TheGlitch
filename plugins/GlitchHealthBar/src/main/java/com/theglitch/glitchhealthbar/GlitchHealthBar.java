@@ -30,6 +30,11 @@ public final class GlitchHealthBar extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new HealthBarListener(this, manager), this);
         Bukkit.getScheduler().runTaskTimer(this, manager::tick, 20L, 20L);
 
+        GhBarCommand command = new GhBarCommand(this);
+        if (getCommand("ghb") != null) {
+            getCommand("ghb").setExecutor(command);
+        }
+
         getLogger().info("GlitchHealthBar enabled (mobs=" + mobsMode + ", worlds=" + enabledWorlds + ").");
     }
 
@@ -39,6 +44,12 @@ public final class GlitchHealthBar extends JavaPlugin {
             manager.clearAll();
         }
         getLogger().info("GlitchHealthBar disabled.");
+    }
+
+    public void reloadPlugin() {
+        loadSettings();
+        manager.rescan();
+        getLogger().info("GlitchHealthBar reloaded (mobs=" + mobsMode + ", worlds=" + enabledWorlds + ").");
     }
 
     private void loadSettings() {
@@ -81,6 +92,10 @@ public final class GlitchHealthBar extends JavaPlugin {
 
     public String mobsMode() {
         return mobsMode;
+    }
+
+    public HealthBarManager getManager() {
+        return manager;
     }
 
     public int barLength() {
