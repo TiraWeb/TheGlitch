@@ -158,6 +158,7 @@ Fast and Silent extraction are not implemented.
 | **GlitchClasses** | **Class system** (custom) | `plugins/GlitchClasses/` |
 | **GlitchItems** | **Item system** (custom: gear rolls, /identify, Resonance, Residual Glitch) | `plugins/GlitchItems/` |
 | **GlitchShops** | **Grand Bazaar** (custom: buy/sell merchants, gear vendor) | `plugins/GlitchShops/` |
+| **GlitchHealthBar** | **Mob health bars** (custom: floating HP bar above mobs) | `plugins/GlitchHealthBar/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
 | GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
@@ -194,6 +195,7 @@ sudo ./plugins/GlitchClasses/build.sh
 sudo ./plugins/GlitchDungeons/build.sh
 sudo ./plugins/GlitchItems/build.sh
 sudo ./plugins/GlitchShops/build.sh
+sudo ./plugins/GlitchHealthBar/build.sh
 sudo systemctl restart theglitch
 ```
 
@@ -239,6 +241,7 @@ plugins/GlitchStash/      GlitchStash source (built via build.sh)
 plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
 plugins/GlitchItems/      GlitchItems source (built via build.sh)
 plugins/GlitchShops/      GlitchShops source (built via build.sh)
+plugins/GlitchHealthBar/  GlitchHealthBar source (built via build.sh)
 server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
 console.sh                attach to the live server console
 scripts/mc-cmd.py         local RCON client

@@ -137,6 +137,7 @@ still carries old techy names until 5.10.9._
 - [ ] **5.11.5 Extraction variants** — GAME_DESIGN §7: Standard (30s, free) / Fast (15s, Fast Extract Key) / Silent (10s, Rift Key). _DECIDED: Standard = 30s. _Repo VelKoth config set to 30s; payout hookup done (GlitchStash pays sell-value × (multiplier−1) on extract). Remaining: change the live per-arena capture time on the box (arenas.yml, generated in-game) + Fast/Silent arenas with key consumption (separate task)._
 - [ ] **5.11.6 Anti-grief / fair play** — GAME_DESIGN §9: 30s invulnerability on Red Zone entry points, friendly fire off everywhere, 2-min AFK kick in dungeons, shards account-bound (Coins currently drop on death as items — verify against "not tradeable").
 - [ ] **5.11.7 Economy balance pass** — GAME_DESIGN §8 income/expense targets (new ~50 shards/h, mid ~150, endgame ~400; ~15k shard hideout, ~5k class) — tune after 5.10.x + 5.11.x land.
+- [ ] **5.11.8 Mob health bars (GlitchHealthBar)** — floating color-coded HP bar (██████░░░░ 32/80) above every mob's head. _V1 BUILT (plugins/GlitchHealthBar): TextDisplay above each MythicMob (metadata-tagged, incl. summons), updates on hit + 1s tick, scales with mob height (boss-safe), config for worlds/bar-length/colors/mode. Needs server build (`sudo ./plugins/GlitchHealthBar/build.sh`) + in-game test._
 
 ## Phase 5.12 — Merchant NPCs & item economy (GlitchShops)
 

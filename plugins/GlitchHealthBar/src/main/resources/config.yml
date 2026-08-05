@@ -1,0 +1,27 @@
+# GlitchHealthBar — floating health bars above mobs
+# Shows a color-coded HP bar over each tracked mob's head, e.g.  ██████░░░░ 32/80
+# Works with MythicMobs mobs (they carry the "MythicMob" metadata) or all hostiles.
+
+# Worlds where bars are shown
+enabled-worlds:
+  - glitch_red
+  - glitch_pve
+
+# MYTHICMOBS = only MythicMobs-spawned mobs (all custom mobs + summons)
+# ALL = every living hostile mob in the enabled worlds
+mobs: MYTHICMOBS
+
+# Bar appearance
+bar-length: 10
+show-numbers: true
+
+# Extra offset above the mob's head, as a fraction of the mob's height
+# (bosses like the Glitch King are much taller — the bar scales with them)
+offset-fraction: 0.6
+
+# Colors by HP fraction
+colors:
+  high: "#55FF55"   # > 50% HP
+  mid: "#FFFF55"    # 25-50% HP
+  low: "#FF5555"    # < 25% HP
+  empty: "#4A4A4A"  # empty bar cells

@@ -39,6 +39,7 @@ rules, and end-to-end testing still need work.
 | Oraxen items | Configured | 18 item definitions, textures, and lore are present; Oraxen must be built/deployed on the server. |
 | GlitchItems | Implemented | Deployed and live-tested (gear rolls, `/identify`). Loot and mob integrations (rift drops, Resonance tags) are still incomplete. |
 | GlitchShops | Implemented | Deployed and live-tested (`/shop` buy/sell). Grand Bazaar NPC placement and balance tuning remain. |
+| GlitchHealthBar | Source-only | New plugin: floating HP bars above mobs (TextDisplay, MythicMobs-tagged). Needs server build + in-game test. |
 | GlitchDungeons | Deferred (operator decision, 2026-08-03) | Party, slots, waves, timers, rewards, and GUI source exist, but configuration parsing, extraction startup, stash integration, and cleanup still need fixes. Working on the dungeon PvE world is deferred for now. |
 | Physical world content | Deferred | Hub facilities, dungeon shells, containers, Red Zone POIs, and extraction structures are not reproducibly stored in Git. |
 | Death rules | Planned | The leggings-and-boots mercy rule is documented but not implemented. |

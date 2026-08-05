@@ -25,6 +25,7 @@ player data, or deployed third-party jars.
 - Oraxen has 18 configured Arcane Ruins items and resource-pack assets. The jar is built on the server and is not committed.
 - GlitchItems is deployed and live-tested: `/identify` and gear rolls work. Rift drops from mobs, Resonance tags, and loot-luck/elite-hunt consumers are still missing.
 - GlitchShops is deployed and live-tested: `/shop` buy/sell works. Grand Bazaar NPC placement and balance tuning remain.
+- GlitchHealthBar is built (source): floating HP bars above mobs via TextDisplay. Needs server build + in-game test.
 - GlitchDungeons has a source prototype for parties, slots, waves, timers, rewards, and extraction. It is **deferred by operator decision**; configuration parsing, extraction startup, stash integration, and cleanup still require work.
 - Physical hub facilities, dungeon shells, containers, and Red Zone POIs are not stored or completed in the repository.
 - Death mercy rules, Fast/Silent extraction, full loot population, crafting, hideout progression, and launch operations remain unfinished.
@@ -44,6 +45,7 @@ sudo ./plugins/GlitchClasses/build.sh
 sudo ./plugins/GlitchDungeons/build.sh
 sudo ./plugins/GlitchItems/build.sh
 sudo ./plugins/GlitchShops/build.sh
+sudo ./plugins/GlitchHealthBar/build.sh
 sudo systemctl restart theglitch
 ```
 

@@ -1,0 +1,5 @@
+name: GlitchHealthBar
+version: '${project.version}'
+main: com.theglitch.glitchhealthbar.GlitchHealthBar
+api-version: '1.21'
+description: Floating health bars above mobs for The Glitch
