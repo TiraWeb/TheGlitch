@@ -1,17 +1,11 @@
 # GlitchHealthBar — floating health bars above mobs
-# Shows a color-coded HP bar over each tracked mob's head, e.g.  ██████░░░░ 32/80
-# Works with MythicMobs mobs (they carry the "MythicMob" metadata) or all hostiles.
+# Shows a color-coded HP bar over each hostile mob's head, e.g.  ██████░░░░ 32/80
+# Every hostile mob (MythicMobs + vanilla) in the enabled worlds gets a bar.
 
 # Worlds where bars are shown
 enabled-worlds:
   - glitch_red
   - glitch_pve
-
-# MONSTERS = every hostile mob in the enabled worlds (default — robust, covers
-#            MythicMobs mobs AND vanilla hostiles; no plugin internals needed)
-# MYTHICMOBS = only mobs tagged with MythicMobs metadata
-# ALL = every mob (including passive animals)
-mobs: MONSTERS
 
 # Bar appearance
 bar-length: 10

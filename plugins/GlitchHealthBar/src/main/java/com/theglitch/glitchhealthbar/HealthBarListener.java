@@ -24,16 +24,6 @@ public final class HealthBarListener implements Listener {
         if (!(event.getEntity() instanceof Mob mob)) return;
         if (plugin.shouldTrack(mob)) {
             manager.attach(mob);
-            return;
-        }
-        // MythicMobs sets its "MythicMob" metadata during creation, which can
-        // land after this event — re-check briefly after spawn.
-        if (plugin.mobsMode().equals("MYTHICMOBS") && plugin.isEnabledWorld(mob.getWorld().getName())) {
-            org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                if (mob.isValid() && !mob.isDead() && plugin.shouldTrack(mob)) {
-                    manager.attach(mob);
-                }
-            }, 5L);
         }
     }
 

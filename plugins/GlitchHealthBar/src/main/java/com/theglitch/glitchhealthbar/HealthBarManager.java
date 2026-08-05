@@ -115,7 +115,18 @@ public final class HealthBarManager {
             display.setViewRange(2);
             display.setPersistent(false);
             display.text(Component.text("██████████ 100/100", TextColor.color(0x55FF55)));
-            plugin.getServer().getScheduler().runTaskLater(plugin, display::remove, 200L);
+
+            // Follows the player for 10 seconds — verifies the follow mechanic
+            // that the real mob bars use.
+            int taskId = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+                if (player.isOnline() && display.isValid()) {
+                    display.teleport(player.getLocation().add(0, 2.5, 0));
+                }
+            }, 4L, 4L).getTaskId();
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                plugin.getServer().getScheduler().cancelTask(taskId);
+                display.remove();
+            }, 200L);
         } catch (Exception e) {
             plugin.getLogger().warning("Test bar failed: " + e.getMessage());
         }

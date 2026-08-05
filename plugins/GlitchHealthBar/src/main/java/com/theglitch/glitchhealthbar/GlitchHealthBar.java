@@ -12,7 +12,6 @@ public final class GlitchHealthBar extends JavaPlugin {
 
     private HealthBarManager manager;
     private List<String> enabledWorlds;
-    private String mobsMode;
     private int barLength;
     private boolean showNumbers;
     private double offsetFraction;
@@ -35,7 +34,7 @@ public final class GlitchHealthBar extends JavaPlugin {
             getCommand("ghb").setExecutor(command);
         }
 
-        getLogger().info("GlitchHealthBar enabled (mobs=" + mobsMode + ", worlds=" + enabledWorlds + ").");
+        getLogger().info("GlitchHealthBar enabled (worlds=" + enabledWorlds + ").");
     }
 
     @Override
@@ -49,13 +48,12 @@ public final class GlitchHealthBar extends JavaPlugin {
     public void reloadPlugin() {
         loadSettings();
         manager.rescan();
-        getLogger().info("GlitchHealthBar reloaded (mobs=" + mobsMode + ", worlds=" + enabledWorlds + ").");
+        getLogger().info("GlitchHealthBar reloaded (worlds=" + enabledWorlds + ").");
     }
 
     private void loadSettings() {
         reloadConfig();
         enabledWorlds = getConfig().getStringList("enabled-worlds");
-        mobsMode = getConfig().getString("mobs", "MONSTERS").toUpperCase();
         barLength = Math.max(1, getConfig().getInt("bar-length", 10));
         showNumbers = getConfig().getBoolean("show-numbers", true);
         offsetFraction = Math.max(0, getConfig().getDouble("offset-fraction", 0.6));
@@ -79,19 +77,11 @@ public final class GlitchHealthBar extends JavaPlugin {
     public boolean shouldTrack(Mob mob) {
         if (mob instanceof Player) return false;
         if (!isEnabledWorld(mob.getWorld().getName())) return false;
-        return switch (mobsMode) {
-            case "ALL" -> true;
-            case "MONSTERS" -> mob instanceof org.bukkit.entity.Monster;
-            default -> mob.hasMetadata("MythicMob"); // MYTHICMOBS
-        };
+        return mob instanceof org.bukkit.entity.Monster;
     }
 
     public boolean isEnabledWorld(String world) {
         return enabledWorlds.contains(world);
-    }
-
-    public String mobsMode() {
-        return mobsMode;
     }
 
     public HealthBarManager getManager() {
