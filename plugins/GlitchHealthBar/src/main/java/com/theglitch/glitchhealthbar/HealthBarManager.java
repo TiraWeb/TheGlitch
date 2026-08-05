@@ -3,8 +3,10 @@ package com.theglitch.glitchhealthbar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.TextDisplay;
 
 import java.util.HashMap;
@@ -69,6 +71,20 @@ public final class HealthBarManager {
             }
             entry.display().teleport(barLocation(target));
             entry.display().text(barText(target));
+        }
+        scanUntracked();
+    }
+
+    private void scanUntracked() {
+        for (World world : plugin.getServer().getWorlds()) {
+            if (!plugin.isEnabledWorld(world.getName())) continue;
+            for (org.bukkit.entity.Entity entity : world.getEntities()) {
+                if (!(entity instanceof Mob mob)) continue;
+                if (bars.containsKey(mob.getUniqueId())) continue;
+                if (plugin.shouldTrack(mob)) {
+                    attach(mob);
+                }
+            }
         }
     }
 
