@@ -16,6 +16,7 @@ GlitchCore:
     KnockbackResistance: 0.8
     CombatReady: true
     ScoreboardTags: [res_hollow]
+    ShowHealth: true
   AIGoalSelectors:
     - clear
     - meleeattack

@@ -14,6 +14,7 @@ GlitchPhantom:
     FollowRange: 30
     KnockbackResistance: 0
     ScoreboardTags: [res_veil]
+    ShowHealth: true
   AIGoalSelectors:
     - clear
     - fly

@@ -16,6 +16,7 @@ GlitchSentinel:
     FollowRange: 24
     KnockbackResistance: 1
     ScoreboardTags: [res_ward]
+    ShowHealth: true
   Equipment:
     - IRON_SWORD HAND
   Skills:

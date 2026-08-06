@@ -41,6 +41,11 @@ public final class HealthBarManager {
             display.text(barText(mob));
 
             bars.put(mob.getUniqueId(), new BarEntry(mob, display));
+            plugin.getLogger().info("Bar attached to " + mob.getType()
+                    + " in " + mob.getWorld().getName()
+                    + " (" + (int) mob.getLocation().getX() + ","
+                    + (int) mob.getLocation().getY() + ","
+                    + (int) mob.getLocation().getZ() + ")");
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to attach bar to " + mob.getType() + ": " + e.getMessage());
         }

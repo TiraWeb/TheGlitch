@@ -15,6 +15,7 @@ CorruptedCrawler:
     FollowRange: 20
     KnockbackResistance: 0
     ScoreboardTags: [res_hollow]
+    ShowHealth: true
   Skills:
     - effect:sound{s=entity.silverfish.ambient;v=0.6;p=1.2} @self ~onSpawn 1
     - effect:sound{s=entity.silverfish.hurt;v=0.7;p=1.0} @self ~onDamaged 0.4

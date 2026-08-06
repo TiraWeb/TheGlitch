@@ -23,6 +23,7 @@ TheGlitchKing:
     PreventRandomEquipment: true
     PreventInfection: true
     ScoreboardTags: [res_hollow]
+    ShowHealth: true
   Skills:
     - effect:sound{s=entity.ender_dragon.growl;v=1;p=0.6} @self ~onSpawn 1
     - effect:sound{s=entity.ender_dragon.hurt;v=1;p=0.7} @self ~onDamaged 0.3

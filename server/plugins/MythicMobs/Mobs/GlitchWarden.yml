@@ -17,6 +17,7 @@ GlitchWarden:
     FollowRange: 24
     KnockbackResistance: 1
     ScoreboardTags: [res_aegis]
+    ShowHealth: true
   AITargetSelectors:
     - clear
     - players

@@ -16,6 +16,7 @@ GlitchSniper:
     FollowRange: 40
     KnockbackResistance: 0.2
     ScoreboardTags: [res_ward]
+    ShowHealth: true
   Equipment:
     - BOW HAND
   Skills:
