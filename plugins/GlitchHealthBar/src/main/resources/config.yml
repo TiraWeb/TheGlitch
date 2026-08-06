@@ -11,9 +11,9 @@ enabled-worlds:
 bar-length: 10
 show-numbers: true
 
-# Extra offset above the mob's head, as a fraction of the mob's height
-# (bosses like the Glitch King are much taller — the bar scales with them)
-offset-fraction: 0.6
+# Extra blocks above the mob's top where the bar floats (nametag level).
+# Scales with mob height automatically — bosses get bars above their bodies.
+offset-extra: 0.6
 
 # Colors by HP fraction
 colors:

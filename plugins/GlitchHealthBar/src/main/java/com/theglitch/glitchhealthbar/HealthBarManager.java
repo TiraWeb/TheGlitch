@@ -162,7 +162,10 @@ public final class HealthBarManager {
     }
 
     private Location barLocation(LivingEntity mob) {
-        return mob.getLocation().add(0, mob.getHeight() * plugin.offsetFraction() + 0.4, 0);
+        // Just above the mob's top (nametag level): mob height + fixed extra.
+        // Scales with size automatically — small mobs get low bars, the
+        // Glitch King's bar clears its body.
+        return mob.getLocation().add(0, mob.getHeight() + plugin.offsetExtra(), 0);
     }
 
     private Component barText(LivingEntity mob) {

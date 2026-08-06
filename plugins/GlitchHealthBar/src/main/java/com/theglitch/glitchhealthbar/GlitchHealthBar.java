@@ -14,7 +14,7 @@ public final class GlitchHealthBar extends JavaPlugin {
     private List<String> enabledWorlds;
     private int barLength;
     private boolean showNumbers;
-    private double offsetFraction;
+    private double offsetExtra;
     private TextColor colorHigh;
     private TextColor colorMid;
     private TextColor colorLow;
@@ -60,7 +60,7 @@ public final class GlitchHealthBar extends JavaPlugin {
         enabledWorlds = getConfig().getStringList("enabled-worlds");
         barLength = Math.max(1, getConfig().getInt("bar-length", 10));
         showNumbers = getConfig().getBoolean("show-numbers", true);
-        offsetFraction = Math.max(0, getConfig().getDouble("offset-fraction", 0.6));
+        offsetExtra = Math.max(0, getConfig().getDouble("offset-extra", 0.6));
         colorHigh = parseColor("colors.high", 0x55FF55);
         colorMid = parseColor("colors.mid", 0xFFFF55);
         colorLow = parseColor("colors.low", 0xFF5555);
@@ -100,8 +100,8 @@ public final class GlitchHealthBar extends JavaPlugin {
         return showNumbers;
     }
 
-    public double offsetFraction() {
-        return offsetFraction;
+    public double offsetExtra() {
+        return offsetExtra;
     }
 
     public TextColor colorHigh() {
