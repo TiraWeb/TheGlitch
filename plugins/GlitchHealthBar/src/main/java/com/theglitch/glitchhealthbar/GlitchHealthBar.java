@@ -28,6 +28,9 @@ public final class GlitchHealthBar extends JavaPlugin {
         manager = new HealthBarManager(this);
         Bukkit.getPluginManager().registerEvents(new HealthBarListener(this, manager), this);
         Bukkit.getScheduler().runTaskTimer(this, manager::tick, 20L, 20L);
+        // Safety net: scan for untracked hostiles every 2s. Events are a
+        // fast-path; this is the mechanism that cannot miss a spawn.
+        Bukkit.getScheduler().runTaskTimer(this, manager::rescan, 40L, 40L);
 
         GhBarCommand command = new GhBarCommand(this);
         if (getCommand("ghb") != null) {

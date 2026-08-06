@@ -1,6 +1,5 @@
 package com.theglitch.glitchhealthbar;
 
-import io.papermc.paper.event.entity.EntityAddToWorldEvent;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.event.EventHandler;
@@ -22,16 +21,6 @@ public final class HealthBarListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onSpawn(EntitySpawnEvent event) {
-        if (!(event.getEntity() instanceof Mob mob)) return;
-        if (plugin.shouldTrack(mob)) {
-            manager.attach(mob);
-        }
-    }
-
-    // Paper-level event — fires for EVERY entity added to a world, including
-    // plugin spawn paths that skip EntitySpawnEvent (e.g. MythicMobs 5.x).
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onEntityAdd(EntityAddToWorldEvent event) {
         if (!(event.getEntity() instanceof Mob mob)) return;
         if (plugin.shouldTrack(mob)) {
             manager.attach(mob);
