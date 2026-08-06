@@ -37,8 +37,12 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                     player.sendMessage(plugin.getComponent("class-not-found", "<class>", args[1]));
                     return true;
                 }
+                boolean firstSelect = !classManager.hasClass(player.getUniqueId());
                 classManager.setClass(player.getUniqueId(), className);
                 plugin.getAbilityItemManager().forceGiveClassItems(player, className);
+                if (firstSelect) {
+                    plugin.getStarterKit().giveIfFirstSelect(player);
+                }
                 player.sendMessage(plugin.getComponent("class-selected", "<class>",
                         className.substring(0, 1).toUpperCase() + className.substring(1)));
                 ClassData newData = classManager.getClassData(player.getUniqueId());

@@ -1,6 +1,6 @@
 # The Glitch - Current Status
 
-> Authoritative implementation status. Updated 2026-08-03.
+> Authoritative implementation status. Updated 2026-08-06.
 >
 > This file distinguishes repository evidence from live-server verification.
 > A source implementation or configuration is not considered launch-ready until
@@ -31,19 +31,19 @@ rules, and end-to-end testing still need work.
 | Reproducible deployment | Partial | Custom plugins are not built by `bootstrap.sh`; external world saves, generated arenas, and some plugin jars remain live-only. |
 | Java/Bedrock platform | Configured | Geyser/Floodgate configuration exists; a real Bedrock join test is pending. |
 | World mechanics | Configured | World rules, borders, and protection scripts exist. The actual imported maps are external/live-only; the default setup can create generated worlds. |
-| GlitchStash | Implemented | Extraction inventory storage, YAML persistence, retrieval GUI, overflow preservation, and recent duplication fixes exist. Live extraction testing remains. |
+| GlitchStash | Implemented | Extraction inventory storage, YAML persistence, retrieval GUI, overflow preservation, and recent duplication fixes exist. Fast/Silent extraction variants (key consumption, zone arming, payout bonus, `/extractadmin`) added in source 2026-08-06. Live extraction testing remains. |
 | Standard extraction | Partial | Repository VelKoth config is 30 seconds. Generated `arenas.yml` and live arena values require verification. |
-| Fast/Silent extraction | Planned | Key consumption and separate extraction variants are not implemented. |
-| GlitchClasses | Partial | Four classes, persistence, GUI, ability items, and several abilities exist. Some traits/abilities, reset costs, and progression behavior are incomplete. |
-| MythicMobs | Partial | Four mob definitions and basic drops exist. The planned ten-mob roster, Resonance tags, and complete material/rift drops do not. |
+| Fast/Silent extraction | Source-only | GlitchStash variant zones + key consumption implemented in source; VelKoth arenas with 15s/10s capture timers must be created live and bounds mirrored into `extraction-variants.zones`. |
+| GlitchClasses | Partial | Four classes, persistence, GUI, ability items, and several abilities exist. Starter kit on first class select added in source 2026-08-06. Some traits/abilities, reset costs, and progression behavior are incomplete. |
+| MythicMobs | Partial | Ten mob definitions (2026-08-03) and per-tier drop tables exist in repo. Live test pending; spawners/zone placement deferred with world population. |
 | Oraxen items | Configured | 18 item definitions, textures, and lore are present; Oraxen must be built/deployed on the server. |
-| GlitchItems | Implemented | Deployed and live-tested (gear rolls, `/identify`). Loot and mob integrations (rift drops, Resonance tags) are still incomplete. |
+| GlitchItems | Implemented | Deployed and live-tested (gear rolls, `/identify`). Residual Glitch consumers added in source 2026-08-06: loot luck applies at identify (star-luck + rarity surge), elite hunt spawns MythicMobs elites at 5+ stacks. Container loot-luck consumer still missing (world population). |
 | GlitchShops | Implemented | Deployed and live-tested (`/shop` buy/sell). Grand Bazaar NPC placement and balance tuning remain. |
-| GlitchHealthBar | Implemented | Deployed and live-tested: floating HP bars above all hostiles (0.25s follow, hit updates), `/ghb` debug tools, ShowHealth name baseline on all mobs. |
+| GlitchHealthBar | Implemented | Deployed and live-tested: floating HP bars above all hostiles (smooth follow, hit updates), `/ghb` debug tools, ShowHealth name baseline on all mobs. |
 | GlitchDungeons | Deferred (operator decision, 2026-08-03) | Party, slots, waves, timers, rewards, and GUI source exist, but configuration parsing, extraction startup, stash integration, and cleanup still need fixes. Working on the dungeon PvE world is deferred for now. |
 | Physical world content | Deferred | Hub facilities, dungeon shells, containers, Red Zone POIs, and extraction structures are not reproducibly stored in Git. |
-| Death rules | Planned | The leggings-and-boots mercy rule is documented but not implemented. |
-| Game loops | Planned | Gear gating, hideout progression, dynamic events, insurance, and smart loot are not implemented. |
+| Death rules | Source-only | GlitchDeathRules (2026-08-06): leggings+boots mercy keep on death in glitch_red + Red Zone entry invulnerability (30s, entry-point zones, cancel-on-action, glow). Shards-on-death verification (5.13.2) and tuning pass (5.13.3) remain. |
+| Game loops | Planned | Gear gating, hideout progression, dynamic events, insurance, and smart loot are not implemented. Residual Glitch loop is now fully wired (timer → damage/luck/payout/elite hunt). |
 | Operations and launch | Planned | Backups, moderation/rollback, load testing, soft launch, and launch checklist remain. |
 
 ## Completed Foundation
@@ -59,8 +59,8 @@ rules, and end-to-end testing still need work.
 
 ## Highest-Priority Remaining Work
 
-1. Finish the item loop: rift drops from mobs, Resonance tags on mobs, Identifier NPC, loot containers/world population, crafting.
-2. Implement Red Zone death protection, extraction variants, starter kit, and anti-grief rules.
+1. Build/deploy/test the Track 1 plugins on the box: GlitchDeathRules, starter kit, Residual consumers, extraction variants.
+2. Finish the item loop: rift drops from mobs, Identifier NPC, loot containers/world population, crafting.
 3. Repair GlitchDungeons (deferred by operator; planned after the item loop).
 4. Build or provision the physical maps and dungeon/POI content.
 5. Run Bedrock, extraction, class, economy, and performance tests.

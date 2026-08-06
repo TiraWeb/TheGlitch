@@ -80,8 +80,20 @@ residual-glitch:
   loot-luck-per-stack: 5
   elite-hunt-stacks: 5
   payout-per-stack: 0.10
+  # Identify consumer: % chance per stack that a revealed rift surges one rarity tier
+  rarity-upgrade-percent-per-stack: 2
   # Boss bar HUD (top of screen, MiniMessage format) — {stacks}/{max}/{dmg}/{payout} placeholders
   bossbar-title: "<red>Residual Glitch: <white>{stacks}/{max}</white> <dark_gray>(<gray>+{dmg}% dmg taken, +{payout}% payout</gray>)</dark_gray>"
   # Mirror stacks onto the vanilla XP bar (level = stacks, fill = 8/8).
   # Off by default — the boss bar is the HUD; the XP bar is free for other uses.
   show-xp-bar: false
+
+# Elite hunt consumer: once a player reaches elite-hunt-stacks, this mob spawns
+# near them immediately, then again every spawn-interval-minutes while they
+# stay at that stack level. Spawned via console "mm spawn" (MythicMobs).
+elite-hunt:
+  mob: "GlitchSentinel"
+  spawn-interval-minutes: 10
+  spawn-radius: 12
+  announce: true
+  message: "<dark_red><bold>An elite hunts you.</bold></dark_red> <gray>Something powerful is closing in.</gray>"

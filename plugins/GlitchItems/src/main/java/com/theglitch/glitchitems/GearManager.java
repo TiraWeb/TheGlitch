@@ -64,7 +64,11 @@ public final class GearManager {
     }
 
     public ItemStack generateGear(GearType type, Rarity rarity) {
-        return generateGear(type, rarity, null);
+        return generateGear(type, rarity, null, 0);
+    }
+
+    public ItemStack generateGear(GearType type, Rarity rarity, Resonance forcedResonance) {
+        return generateGear(type, rarity, forcedResonance, 0);
     }
 
     public ItemStack generateGodroll(GearType type) {
@@ -95,7 +99,7 @@ public final class GearManager {
         return buildItem(rolls);
     }
 
-    public ItemStack generateGear(GearType type, Rarity rarity, Resonance forcedResonance) {
+    public ItemStack generateGear(GearType type, Rarity rarity, Resonance forcedResonance, int luck) {
         ThreadLocalRandom rand = ThreadLocalRandom.current();
 
         GearRolls rolls = new GearRolls();
@@ -107,9 +111,9 @@ public final class GearManager {
         rolls.boost = resonanceBoost(rarity);
 
         int[] starRange = statRange(rarity, "stars");
-        rolls.starsPrimary = rand.nextInt(starRange[0], starRange[1] + 1);
-        rolls.starsSpeed = rand.nextInt(starRange[0], starRange[1] + 1);
-        rolls.starsHp = rand.nextInt(starRange[0], starRange[1] + 1);
+        rolls.starsPrimary = rollStars(starRange, luck, rand);
+        rolls.starsSpeed = rollStars(starRange, luck, rand);
+        rolls.starsHp = rollStars(starRange, luck, rand);
 
         if (type.isWeapon()) {
             int[] dmgRange = statRange(rarity, "damage");
@@ -128,6 +132,14 @@ public final class GearManager {
                 : rollArmorAttribute(rarity, rand);
 
         return buildItem(rolls);
+    }
+
+    private int rollStars(int[] range, int luck, ThreadLocalRandom rand) {
+        int stars = rand.nextInt(range[0], range[1] + 1);
+        if (luck > 0 && rand.nextInt(100) < luck) {
+            stars++;
+        }
+        return Math.min(stars, 5);
     }
 
     private String rollWeaponAttribute(Rarity rarity, ThreadLocalRandom rand) {

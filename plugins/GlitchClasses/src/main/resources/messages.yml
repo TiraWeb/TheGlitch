@@ -7,6 +7,7 @@ class-none: "<gray>You have not chosen a class yet. Use <gold>/class</gold> to c
 class-reset: "<gold>Class reset! Choose a new class with /class</gold>"
 class-reset-cost: "<red>Class reset costs <gold><cost> shards</gold>. You have <gold><shards></gold>.</red>"
 class-not-found: "<red>Unknown class: <gold><class></gold></red>"
+starter-kit-given: "<gold>Starter kit granted!</gold> <gray>Gear up — find the extraction point and survive.</gray>"
 
 # Upgrades
 level-up: "<green><bold>LEVEL UP!</bold></green> <gold>You are now level <level> <class></gold>!"

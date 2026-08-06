@@ -66,6 +66,16 @@ cat <<'EOF'
     /koth stop extraction_x1       — stop the event
     /koth list                     — list all arenas
 
+  Extraction variants (Fast/Silent, GlitchStash):
+    Create arenas with shorter capture times, then mirror the zone bounds
+    in plugins/GlitchStash/config.yml (extraction-variants.zones):
+      /koth create extract_fast    — Fast Extract (15s): needs Fast Extract Key
+      /koth set time extract_fast 15
+      /koth create extract_silent  — Silent Extract (10s): needs Rift Key
+      /koth set time extract_silent 10
+    Zone bounds in GlitchStash config = the arena's selection rectangle.
+    Verify with: /extractadmin zones
+
   Config files (seeded from repo):
     plugins/VelKoth/config.yml
     plugins/VelKoth/messages.yml

@@ -1,0 +1,26 @@
+# GlitchDeathRules — The Glitch Red Zone death & entry rules
+# Design: docs/ITEM_SYSTEM.md §12, docs/GAME_DESIGN.md §7
+
+# Worlds where the mercy rule applies:
+# on death the player keeps leggings + boots; everything else drops.
+mercy-worlds:
+  - glitch_red
+
+# Entry invulnerability after entering the Red Zone (or spawning inside it).
+entry-invulnerability:
+  enabled: true
+  duration-seconds: 30
+  # Apply when the player joins or respawns already inside a mercy world
+  apply-on-join-respawn: true
+  # Optional entry point zones (world + rectangle). Empty = any entry into the world.
+  # The player's location at the moment of world change is checked against these.
+  entry-points:
+    # - world: glitch_red
+    #   x1: 0
+    #   z1: 0
+    #   x2: 20
+    #   z2: 20
+  # Attacking or right-clicking ends the protection early
+  cancel-on-action: true
+  # Show a glowing outline while protected
+  glow: true

@@ -7,6 +7,20 @@ max-level: 10
 # Cost in shards to reset class (0 = free)
 reset-cost: 500
 
+# Starter kit — granted on the player's very first class selection (once ever).
+# Entries: vanilla "material" or Oraxen "oraxen" id + amount.
+starter-kit:
+  enabled: true
+  once-per-player: true
+  items:
+    helmet: { material: LEATHER_HELMET, amount: 1 }
+    chestplate: { material: LEATHER_CHESTPLATE, amount: 1 }
+    leggings: { material: LEATHER_LEGGINGS, amount: 1 }
+    boots: { material: LEATHER_BOOTS, amount: 1 }
+    blade: { material: WOODEN_SWORD, amount: 1 }
+    bread: { material: BREAD, amount: 3 }
+    rune-fragments: { oraxen: rune_fragment, amount: 5 }
+
 # Cooldown reduction per level (percentage)
 cooldown-reduction-per-level: 3
 

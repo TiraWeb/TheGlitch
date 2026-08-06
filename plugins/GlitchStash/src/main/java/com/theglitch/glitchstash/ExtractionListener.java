@@ -40,7 +40,27 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
         player.getInventory().setItemInOffHand(null);
 
         // 3. Residual Glitch payout: bonus shards = sell value x (multiplier - 1)
-        payGlitchBonus(player, contents, armor, offhand);
+        //    Plus extraction variant bonus (Fast/Silent) when armed with the key.
+        ExtractionVariantManager.Variant variant = variantAt(player.getLocation());
+        int variantBonusPct = 0;
+        if (variant != null) {
+            if (!variant.requiresKey() || plugin.getExtractionVariantManager().isArmed(player, variant)) {
+                variantBonusPct = variant.payoutBonus();
+                if (variantBonusPct > 0) {
+                    player.sendMessage(plugin.getComponent("variant-bonus",
+                            "<variant>", variant.name(),
+                            "<pct>", String.valueOf(variantBonusPct)));
+                }
+            } else if (plugin.getConfig().getBoolean("extraction-variants.enforce-key", true)) {
+                // VelKoth still counts the win — we cannot cancel it — but a keyless
+                // win in a key zone earns no variant bonus and is logged.
+                player.sendMessage(plugin.getComponent("variant-no-key", "<variant>", variant.name()));
+                plugin.getLogger().warning(player.getName() + " extracted in key zone '"
+                        + variant.name() + "' without consuming the required key.");
+            }
+            plugin.getExtractionVariantManager().clearArmed(player);
+        }
+        payGlitchBonus(player, contents, armor, offhand, variantBonusPct);
 
         // 4. Clear glitch stacks (design: clears on extraction or death)
         clearGlitchStacks(player);
@@ -55,12 +75,12 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
         }, 5L);
     }
 
-    private void payGlitchBonus(Player player, ItemStack[] contents, ItemStack[] armor, ItemStack offhand) {
+    private void payGlitchBonus(Player player, ItemStack[] contents, ItemStack[] armor,
+                                ItemStack offhand, int variantBonusPct) {
         if (!plugin.getConfig().getBoolean("payout-enabled", true)) return;
         GlitchItems glitchItems = GlitchItems.getInstance();
         if (glitchItems == null) return;
         double multiplier = glitchItems.getGlitchManager().getPayoutMultiplier(player);
-        if (multiplier <= 1.0) return;
         GlitchShops shops = GlitchShops.getInstance();
         if (shops == null) return;
         ShopManager shopManager = shops.getShopManager();
@@ -73,6 +93,9 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
             }
         }
         int bonus = (int) Math.round(value * (multiplier - 1.0));
+        if (variantBonusPct > 0) {
+            bonus += (int) Math.round(value * variantBonusPct / 100.0);
+        }
         if (bonus <= 0) return;
 
         RegisteredServiceProvider<Economy> provider =
@@ -106,6 +129,10 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
         if (glitchItems != null) {
             glitchItems.getGlitchManager().clear(player);
         }
+    }
+
+    private ExtractionVariantManager.Variant variantAt(Location location) {
+        return plugin.getExtractionVariantManager().variantAt(location);
     }
 
     /**

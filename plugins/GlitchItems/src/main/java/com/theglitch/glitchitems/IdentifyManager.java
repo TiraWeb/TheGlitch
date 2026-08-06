@@ -116,7 +116,22 @@ public final class IdentifyManager {
         boolean weapon = ThreadLocalRandom.current().nextDouble()
                 < plugin.getConfig().getDouble("reveal-weapon-chance", 0.6);
         GearType type = weapon ? GearType.randomWeapon() : GearType.randomArmor();
-        ItemStack gear = gearManager.generateGear(type, rarity);
+
+        // Residual Glitch loot luck (design ITEM_SYSTEM.md §6):
+        // - chance the revealed rarity surges one tier
+        // - chance of +1 star on each stat roll
+        int stacks = plugin.getGlitchManager().getStacks(player);
+        Rarity revealed = rarity;
+        int upgradePercent = stacks * plugin.getConfig().getInt(
+                "residual-glitch.rarity-upgrade-percent-per-stack", 2);
+        if (upgradePercent > 0 && revealed != Rarity.LEGENDARY
+                && ThreadLocalRandom.current().nextInt(100) < upgradePercent) {
+            revealed = Rarity.values()[revealed.getTier() + 1];
+            player.sendMessage(MiniMessage.miniMessage().deserialize(
+                    "<gold>The rift surges — a higher rarity shines through!</gold>"));
+        }
+        int luck = plugin.getGlitchManager().lootLuckBonus(player);
+        ItemStack gear = gearManager.generateGear(type, revealed, null, luck);
 
         if (player.getInventory().firstEmpty() == -1) {
             player.getWorld().dropItem(player.getLocation(), gear);

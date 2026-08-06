@@ -365,7 +365,10 @@ Five dungeon tiers, each harder than the last. Tier 1 is for beginners, Tier 5 i
 **Key design:** Standard is free but loud — attracts mobs and players. Fast is quicker but costs a key. Silent is the best but the key is extremely rare.
 **Repository configuration:** VelKoth is set to **30 seconds** for the Standard
 extract. The live arena timer is stored in generated `arenas.yml` and must be
-verified on the server. Fast and Silent extraction are still design-only.
+verified on the server. Fast/Silent extraction is **implemented in source
+(2026-08-06)** in GlitchStash (key-requiring zones, arming, payout bonus) —
+VelKoth arenas with 15s/10s capture times must still be created live and
+mirrored into the GlitchStash config.
 
 ### Death Rules
 

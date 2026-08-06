@@ -455,9 +455,13 @@ public class ClassGUI implements Listener {
     }
 
     private void handleClassSelect(Player player, String className) {
+        boolean firstSelect = !classManager.hasClass(player.getUniqueId());
         classManager.setClass(player.getUniqueId(), className);
         switchingGui.add(player.getUniqueId());
         player.closeInventory();
+        if (firstSelect) {
+            plugin.getStarterKit().giveIfFirstSelect(player);
+        }
         player.sendMessage(plugin.getComponent("class-selected", "<class>", className.substring(0, 1).toUpperCase() + className.substring(1)));
 
         // Apply health boost

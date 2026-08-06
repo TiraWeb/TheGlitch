@@ -1,0 +1,16 @@
+name: GlitchDeathRules
+version: '${project.version}'
+main: com.theglitch.glitchdeathrules.GlitchDeathRules
+api-version: '1.21'
+description: Red Zone death rules for The Glitch — mercy keep (leggings + boots) and entry invulnerability
+
+commands:
+  deathrules:
+    description: Reload GlitchDeathRules configuration
+    usage: /deathrules reload
+    permission: glitchdeathrules.admin
+
+permissions:
+  glitchdeathrules.admin:
+    description: Admin commands for GlitchDeathRules
+    default: op

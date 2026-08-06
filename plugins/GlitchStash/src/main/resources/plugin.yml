@@ -22,6 +22,10 @@ commands:
     description: Admin commands for GlitchStash
     usage: /stashadmin <reload|clear <player>|list>
     permission: glitchstash.admin
+  extractadmin:
+    description: Admin commands for extraction variants
+    usage: /extractadmin <reload|zones|armed>
+    permission: glitchstash.admin
 
 permissions:
   glitchstash.use:

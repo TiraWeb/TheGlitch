@@ -13,6 +13,40 @@ stash-expiry-hours: 0
 # sell value of saved loot x (payout multiplier - 1) from GlitchItems stacks.
 payout-enabled: true
 
+# Fast/Silent extraction variants (design ROADMAP 5.11.5).
+# VelKoth arenas provide the shorter capture timers (e.g. /koth set time fast 15);
+# this plugin enforces the key: right-click the key inside the zone to consume it
+# and arm the variant, then win the zone to get the payout bonus.
+# Zones are rectangles (x/z bounds, y ignored). Empty key-id = no key required.
+extraction-variants:
+  enabled: true
+  # When true, winning a key zone without consuming the key gives no variant
+  # bonus and logs a warning (the VelKoth win itself cannot be cancelled).
+  enforce-key: true
+  # How long a consumed key stays armed (seconds) — covers the capture duration
+  arm-duration-seconds: 180
+  zones:
+    fast:
+      world: glitch_red
+      x1: 0.0
+      z1: 0.0
+      x2: 50.0
+      z2: 50.0
+      key-id: "fast_extract_key"
+      key-material: "TRIPWIRE_HOOK"
+      key-name: "Fast Extract Key"
+      payout-bonus: 5
+    silent:
+      world: glitch_red
+      x1: 100.0
+      z1: 100.0
+      x2: 150.0
+      z2: 150.0
+      key-id: "rift_key"
+      key-material: "TRIPWIRE_HOOK"
+      key-name: "Rift Key"
+      payout-bonus: 10
+
 # Display settings
 display-name: "<dark_purple><bold>YOUR STASH</bold></dark_purple>"
 lore:

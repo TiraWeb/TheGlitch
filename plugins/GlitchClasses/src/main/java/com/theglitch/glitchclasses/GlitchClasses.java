@@ -17,6 +17,7 @@ public final class GlitchClasses extends JavaPlugin {
     private ClassManager classManager;
     private ClassGUI classGUI;
     private AbilityItemManager abilityItemManager;
+    private StarterKit starterKit;
     private FileConfiguration messagesConfig;
     private File messagesFile;
 
@@ -29,6 +30,7 @@ public final class GlitchClasses extends JavaPlugin {
         classManager = new ClassManager(this);
         classManager.sanitizeAll();
         abilityItemManager = new AbilityItemManager(this);
+        starterKit = new StarterKit(this);
 
         classGUI = new ClassGUI(this, classManager);
         Bukkit.getPluginManager().registerEvents(classGUI, this);
@@ -102,5 +104,9 @@ public final class GlitchClasses extends JavaPlugin {
 
     public AbilityItemManager getAbilityItemManager() {
         return abilityItemManager;
+    }
+
+    public StarterKit getStarterKit() {
+        return starterKit;
     }
 }

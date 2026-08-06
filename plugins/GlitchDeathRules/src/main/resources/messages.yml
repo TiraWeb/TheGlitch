@@ -1,0 +1,7 @@
+# GlitchDeathRules Messages — The Glitch (MiniMessage format)
+
+mercy-kept: "<dark_green>Mercy of the Glitch: your <gold>leggings</gold> and <gold>boots</gold> survive.</dark_green>"
+invuln-start: "<dark_green>Red Zone entry protection: <green><seconds>s</green> of invulnerability.</dark_green>"
+invuln-expired: "<dark_green>Entry protection expired — stay sharp.</dark_green>"
+invuln-cancelled: "<dark_green>Entry protection ended.</dark_green>"
+reloaded: "<green>GlitchDeathRules configuration reloaded."

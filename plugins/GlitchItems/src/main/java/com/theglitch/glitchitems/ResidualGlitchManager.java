@@ -3,6 +3,7 @@ package com.theglitch.glitchitems;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
@@ -11,18 +12,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class ResidualGlitchManager {
 
     private final GlitchItems plugin;
     private final NamespacedKey stacksKey;
     private final NamespacedKey lastKey;
+    private final NamespacedKey eliteKey;
     private final Map<UUID, BossBar> bars = new HashMap<>();
 
     public ResidualGlitchManager(GlitchItems plugin) {
         this.plugin = plugin;
         this.stacksKey = new NamespacedKey(plugin, "glitch_stacks");
         this.lastKey = new NamespacedKey(plugin, "glitch_last");
+        this.eliteKey = new NamespacedKey(plugin, "glitch_elite_last");
     }
 
     public void start() {
@@ -52,6 +56,7 @@ public final class ResidualGlitchManager {
                     }
                 }
             }
+            maybeSpawnElite(player);
             show(player);
         }
     }
@@ -113,6 +118,7 @@ public final class ResidualGlitchManager {
     public void clear(Player player) {
         setStacks(player, 0);
         setLast(player, 0L);
+        player.getPersistentDataContainer().remove(eliteKey);
         hide(player);
     }
 
@@ -126,6 +132,47 @@ public final class ResidualGlitchManager {
 
     public int lootLuckBonus(Player player) {
         return getStacks(player) * lootLuckPerStack();
+    }
+
+    /**
+     * Elite hunt consumer (design ITEM_SYSTEM.md §6): once a player holds
+     * elite-hunt stacks or more, an elite mob spawns near them immediately,
+     * then again every spawn-interval-minutes while they stay at that level.
+     */
+    private void maybeSpawnElite(Player player) {
+        if (getStacks(player) < eliteHuntStacks()) return;
+
+        long last = player.getPersistentDataContainer()
+                .getOrDefault(eliteKey, PersistentDataType.LONG, 0L);
+        long now = System.currentTimeMillis();
+        long interval = eliteSpawnIntervalMinutes() * 60_000L;
+        if (last != 0L && now - last < interval) return;
+
+        player.getPersistentDataContainer().set(eliteKey, PersistentDataType.LONG, now);
+        spawnElite(player);
+    }
+
+    private void spawnElite(Player player) {
+        String mob = plugin.getConfig().getString("elite-hunt.mob", "GlitchSentinel");
+        int radius = plugin.getConfig().getInt("elite-hunt.spawn-radius", 12);
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        Location base = player.getLocation();
+        int x = base.getBlockX() + rand.nextInt(-radius, radius + 1);
+        int z = base.getBlockZ() + rand.nextInt(-radius, radius + 1);
+
+        String cmd = "mm spawn " + mob + " " + base.getWorld().getName()
+                + " " + x + " " + base.getBlockY() + " " + z;
+        boolean dispatched = plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), cmd);
+        if (!dispatched) {
+            plugin.getLogger().warning("Elite hunt: could not dispatch '" + cmd + "' — MythicMobs loaded?");
+            return;
+        }
+        if (plugin.getConfig().getBoolean("elite-hunt.announce", true)) {
+            String msg = plugin.getConfig().getString(
+                    "elite-hunt.message",
+                    "<dark_red><bold>An elite hunts you.</bold></dark_red> <gray>Something powerful is closing in.</gray>");
+            player.sendMessage(MiniMessage.miniMessage().deserialize(msg));
+        }
     }
 
     public void shutdown() {
@@ -164,6 +211,10 @@ public final class ResidualGlitchManager {
 
     private int eliteHuntStacks() {
         return plugin.getConfig().getInt("residual-glitch.elite-hunt-stacks", 5);
+    }
+
+    private int eliteSpawnIntervalMinutes() {
+        return plugin.getConfig().getInt("elite-hunt.spawn-interval-minutes", 10);
     }
 
     private double payoutPerStack() {

@@ -260,12 +260,12 @@ Rough order:
 2. **Material + key + consumable items** — ✅ 18 items as Oraxen configs (server/plugins/Oraxen/): 5 materials, 4 keys, 5 Unstable Rifts, 4 alchemy — deploy via setup-oraxen-items.sh
 3. **Source V1:** rarity tiers + stat-roll engine, 3 weapon archetypes, 4 armor pieces, attributes, `/identify`, Resonance math, and Residual Glitch source exist. Build and runtime testing are pending.
 4. Rift drops (mob loot tables emit rifts) + Identifier NPC flow — not complete.
-5. Resonance tags (MythicMobs metadata) + complete gear integration — not complete.
-6. Residual Glitch timer/effects + extraction multiplier — source and payout hook exist; loot-luck and elite-hunt consumers are missing.
+5. Resonance tags (MythicMobs metadata) + complete gear integration — DONE in repo (2026-08-03, ten mobs); live test pending.
+6. Residual Glitch timer/effects + extraction multiplier — source and payout hook exist; consumers DONE (2026-08-06): identify loot luck (star-luck per roll, rarity surge per stack), elite hunt at 5+ stacks (console `mm spawn`, configurable). Container loot-luck consumer still missing (world population).
 7. World population (spawners, chests, regen) — not complete.
 8. Crafting recipes via Workbench — not complete.
 9. Rename pass across runtime configs and menus — not complete.
-10. Death rules (§12: keep leggings+boots in glitch_red) — design only; plugin not implemented.
+10. Death rules (§12: keep leggings+boots in glitch_red) — DONE in repo (2026-08-06): GlitchDeathRules plugin (mercy keep + entry invulnerability). Live build/test pending.
 
 ---
 
