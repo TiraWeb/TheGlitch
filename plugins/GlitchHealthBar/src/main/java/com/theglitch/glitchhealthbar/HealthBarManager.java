@@ -20,7 +20,15 @@ public final class HealthBarManager {
     private final GlitchHealthBar plugin;
     private final Map<UUID, BarEntry> bars = new HashMap<>();
 
-    private record BarEntry(LivingEntity target, TextDisplay display) {
+    private static final class BarEntry {
+        final LivingEntity target;
+        final TextDisplay display;
+        double lastHp = -1;
+
+        BarEntry(LivingEntity target, TextDisplay display) {
+            this.target = target;
+            this.display = display;
+        }
     }
 
     public HealthBarManager(GlitchHealthBar plugin) {
@@ -32,20 +40,18 @@ public final class HealthBarManager {
             if (!mob.isValid() || mob.isDead()) return;
             if (bars.containsKey(mob.getUniqueId())) return;
 
-            TextDisplay display = mob.getWorld().spawn(barLocation(mob), TextDisplay.class);
-            display.setBillboard(Display.Billboard.CENTER);
-            display.setSeeThrough(true);
-            display.setShadowed(true);
-            display.setViewRange(2);
-            display.setPersistent(false);
+            TextDisplay display = mob.getWorld().spawn(barLocation(mob), TextDisplay.class, d -> {
+                d.setBillboard(Display.Billboard.CENTER);
+                d.setSeeThrough(true);
+                d.setShadowed(true);
+                d.setViewRange(2);
+                d.setPersistent(false);
+            });
             display.text(barText(mob));
 
             bars.put(mob.getUniqueId(), new BarEntry(mob, display));
             plugin.getLogger().info("Bar attached to " + mob.getType()
-                    + " in " + mob.getWorld().getName()
-                    + " (" + (int) mob.getLocation().getX() + ","
-                    + (int) mob.getLocation().getY() + ","
-                    + (int) mob.getLocation().getZ() + ")");
+                    + " in " + mob.getWorld().getName());
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to attach bar to " + mob.getType() + ": " + e.getMessage());
         }
@@ -57,6 +63,7 @@ public final class HealthBarManager {
             if (entry == null || !mob.isValid() || mob.isDead()) return;
             entry.display().teleport(barLocation(mob));
             entry.display().text(barText(mob));
+            entry.lastHp = Math.max(0, mob.getHealth());
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to refresh bar for " + mob.getType() + ": " + e.getMessage());
         }
@@ -69,6 +76,10 @@ public final class HealthBarManager {
         }
     }
 
+    /**
+     * Follow + refresh pass. Runs every 5 ticks so bars track moving mobs
+     * smoothly; text is only re-sent when the mob's health actually changed.
+     */
     public void tick() {
         Iterator<Map.Entry<UUID, BarEntry>> it = bars.entrySet().iterator();
         while (it.hasNext()) {
@@ -84,7 +95,11 @@ public final class HealthBarManager {
                     continue;
                 }
                 entry.display().teleport(barLocation(target));
-                entry.display().text(barText(target));
+                double hp = Math.max(0, target.getHealth());
+                if (hp != entry.lastHp) {
+                    entry.display().text(barText(target));
+                    entry.lastHp = hp;
+                }
             } catch (Exception e) {
                 plugin.getLogger().warning("Bar tick error for " + target.getType() + ": " + e.getMessage());
                 entry.display().remove();
@@ -93,6 +108,7 @@ public final class HealthBarManager {
         }
     }
 
+    /** Attach bars to any untracked hostile in enabled worlds (safety net). */
     public void rescan() {
         for (World world : plugin.getServer().getWorlds()) {
             if (!plugin.isEnabledWorld(world.getName())) continue;
@@ -113,12 +129,13 @@ public final class HealthBarManager {
     public void attachTestBar(Player player) {
         try {
             Location loc = player.getLocation().add(0, 2.5, 0);
-            TextDisplay display = player.getWorld().spawn(loc, TextDisplay.class);
-            display.setBillboard(Display.Billboard.CENTER);
-            display.setSeeThrough(true);
-            display.setShadowed(true);
-            display.setViewRange(2);
-            display.setPersistent(false);
+            TextDisplay display = player.getWorld().spawn(loc, TextDisplay.class, d -> {
+                d.setBillboard(Display.Billboard.CENTER);
+                d.setSeeThrough(true);
+                d.setShadowed(true);
+                d.setViewRange(2);
+                d.setPersistent(false);
+            });
             display.text(Component.text("██████████ 100/100", TextColor.color(0x55FF55)));
 
             // Follows the player for 10 seconds — verifies the follow mechanic
@@ -127,7 +144,7 @@ public final class HealthBarManager {
                 if (player.isOnline() && display.isValid()) {
                     display.teleport(player.getLocation().add(0, 2.5, 0));
                 }
-            }, 4L, 4L).getTaskId();
+            }, 2L, 2L).getTaskId();
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 plugin.getServer().getScheduler().cancelTask(taskId);
                 display.remove();
