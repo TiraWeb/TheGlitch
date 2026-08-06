@@ -61,8 +61,8 @@ public final class HealthBarManager {
         try {
             BarEntry entry = bars.get(mob.getUniqueId());
             if (entry == null || !mob.isValid() || mob.isDead()) return;
-            entry.display().teleport(barLocation(mob));
-            entry.display().text(barText(mob));
+            entry.display.teleport(barLocation(mob));
+            entry.display.text(barText(mob));
             entry.lastHp = Math.max(0, mob.getHealth());
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to refresh bar for " + mob.getType() + ": " + e.getMessage());
@@ -72,7 +72,7 @@ public final class HealthBarManager {
     public void remove(LivingEntity mob) {
         BarEntry entry = bars.remove(mob.getUniqueId());
         if (entry != null) {
-            entry.display().remove();
+            entry.display.remove();
         }
     }
 
@@ -84,25 +84,25 @@ public final class HealthBarManager {
         Iterator<Map.Entry<UUID, BarEntry>> it = bars.entrySet().iterator();
         while (it.hasNext()) {
             BarEntry entry = it.next().getValue();
-            LivingEntity target = entry.target();
+            LivingEntity target = entry.target;
             try {
                 if (!target.isValid() || target.isDead()
                         || !target.getWorld().isChunkLoaded(
                                 target.getLocation().getBlockX() >> 4,
                                 target.getLocation().getBlockZ() >> 4)) {
-                    entry.display().remove();
+                    entry.display.remove();
                     it.remove();
                     continue;
                 }
-                entry.display().teleport(barLocation(target));
+                entry.display.teleport(barLocation(target));
                 double hp = Math.max(0, target.getHealth());
                 if (hp != entry.lastHp) {
-                    entry.display().text(barText(target));
+                    entry.display.text(barText(target));
                     entry.lastHp = hp;
                 }
             } catch (Exception e) {
                 plugin.getLogger().warning("Bar tick error for " + target.getType() + ": " + e.getMessage());
-                entry.display().remove();
+                entry.display.remove();
                 it.remove();
             }
         }
@@ -156,7 +156,7 @@ public final class HealthBarManager {
 
     public void clearAll() {
         for (BarEntry entry : bars.values()) {
-            entry.display().remove();
+            entry.display.remove();
         }
         bars.clear();
     }
