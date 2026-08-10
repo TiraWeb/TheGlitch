@@ -71,6 +71,7 @@ rules, and end-to-end testing still need work.
 ## Documentation Rules
 
 - `ROADMAP.md` is the progress checklist.
+- `docs/TESTING.md` is the live-server test checklist (run items after each deploy).
 - `README.md` is the operator quickstart.
 - `HANDOFF.md` is a temporary session handoff and must not contradict this file.
 - Design documents describe intended behavior and must label features that are not implemented.
