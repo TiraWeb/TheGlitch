@@ -46,13 +46,13 @@ Resolved in recent source:
 | C17 | Warning | `AbilityListener.java` | Revive beacon placement can overwrite an existing block. |
 | C18 | Warning | `AbilityListener.java` | Shield-wall placement needs a WorldGuard/build check. |
 | C19 | Warning | `ClassManager.java` | Missing class configuration can cause a null access. |
-| C20 | Minor | `ClassGUI.java` | Class reset shard-cost check is still TODO/free. |
-| C22 | Minor | `AbilityListener.java` | Vanguard mitigation appears broader than knockback damage. |
+| C20 | Minor | `ClassGUI.java` | Class reset shard-cost check is still TODO/free. — **resolved 2026-08-10** (see below). |
+| C22 | Minor | `AbilityListener.java` | Vanguard mitigation appears broader than knockback damage. — **resolved 2026-08-10** (see below). |
 | C23 | Minor | `ClassGUI.java` | Scheduled messages should check online state. |
 | C24 | Minor | `AbilityListener.java` | Turret placement needs a zero-direction guard. |
 | C25 | Warning | `plugin.yml` | API version/build target must be reconciled with the live Minecraft target. |
 | C26 | Warning | Multiple files | Runtime ability names still differ from the Arcane Ruins design names. |
-| C27 | Warning | `AbilityListener.java` | Vigilance, Scavenge, Engineer, and some designed traits are incomplete or stubbed. |
+| C27 | Warning | `AbilityListener.java` | Vigilance, Scavenge, Engineer, and some designed traits are incomplete or stubbed. — **resolved 2026-08-10** (see below). |
 
 Resolved (2026-08-10):
 

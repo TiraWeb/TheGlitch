@@ -9,9 +9,12 @@
 > wall, 3-man parties, weapons with only 2 stats — top complaint: *no loot depth*).
 
 > **Implementation status:** This document is the intended Arcane Ruins design.
-> Oraxen item definitions/assets, GlitchItems V1 source, and parts of GlitchShops
-> exist. Rift drops, Identifier NPC behavior, mob tags, world population,
-> crafting, and death handling are not complete. See [`docs/STATUS.md`](STATUS.md).
+> Oraxen item definitions/assets, GlitchItems V1 source, containers, and parts
+> of GlitchShops exist. Rift drops are wired (T2-T4 tables), Residual Glitch
+> consumers (identify/containers/elite hunt) are in source, and death rules
+> are implemented (GlitchDeathRules). Identifier NPC behavior and crafting
+> (GlitchHideout workbench covers §7 recipes) still need live verification.
+> See [`docs/STATUS.md`](STATUS.md).
 
 ---
 
@@ -259,11 +262,11 @@ Rough order:
 1. **Item base plugin + resource pack** — ✅ Oraxen built from source + deployed (setup-oraxen.sh)
 2. **Material + key + consumable items** — ✅ 18 items as Oraxen configs (server/plugins/Oraxen/): 5 materials, 4 keys, 5 Unstable Rifts, 4 alchemy — deploy via setup-oraxen-items.sh
 3. **Source V1:** rarity tiers + stat-roll engine, 3 weapon archetypes, 4 armor pieces, attributes, `/identify`, Resonance math, and Residual Glitch source exist. Build and runtime testing are pending.
-4. Rift drops (mob loot tables emit rifts) + Identifier NPC flow — not complete.
+4. Rift drops (mob loot tables emit rifts) — DONE in repo (2026-08-03, all T2-T4 tables); Identifier NPC flow — not complete.
 5. Resonance tags (MythicMobs metadata) + complete gear integration — DONE in repo (2026-08-03, ten mobs); live test pending.
 6. Residual Glitch timer/effects + extraction multiplier — source and payout hook exist; consumers DONE (2026-08-06 → 2026-08-10): identify loot luck (star-luck per roll, rarity surge per stack), elite hunt at 5+ stacks (console `mm spawn`, configurable), container loot luck (per-roll rarity surge + surge drop). Aggro-scaling consumer still open.
 7. World population (spawners, chests, regen) — DONE in repo (2026-08-10): glitch_red SpawnAreas seeded + GlitchItems container system (Debris/Cache/Vault/Rift Vault, key consumption, regen, loot luck). In-world marking/placement is operator work.
-8. Crafting recipes via Workbench — not complete.
+8. Crafting recipes via Workbench — DONE in source (2026-08-10): GlitchHideout workbench implements the §7 recipes (healing potion, base + 5 targeted-resonance blades, reveal pack, vault/rift keys, void infusion); live build/test pending.
 9. Rename pass across runtime configs and menus — not complete.
 10. Death rules (§12: keep leggings+boots in glitch_red) — DONE in repo (2026-08-06): GlitchDeathRules plugin (mercy keep + entry invulnerability). Live build/test pending.
 
@@ -357,5 +360,6 @@ weapon. Keep-inventory PvE stays as the new-player training floor.
 
 **Extraction timing:** Repository VelKoth configuration sets Standard extract to
 **30s**. The live timer is stored in generated `arenas.yml` and must be verified.
-Fast = 15s and Silent = 10s remain design-only until separate arenas and key
-consumption are implemented. See GAME_DESIGN §7.
+Fast = 15s and Silent = 10s are implemented in source (GlitchStash key-requiring
+zones, arming, payout bonus, 2026-08-06); the separate VelKoth arenas with key
+consumption must still be created live. See GAME_DESIGN §7.

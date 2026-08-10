@@ -6,10 +6,12 @@
 > Item names/rarities per docs/ITEM_SYSTEM.md; merchant economy per ITEM_SYSTEM.md §11.
 
 > **Implementation status:** This is a design specification, not an as-built
-> feature list. The tables below describe intended gameplay. Four initial mobs,
-> the core class plugin, GlitchStash, and parts of the item/merchant plugins
-> exist in source/configuration; most world content, loot integration, dungeon
-> content, death rules, and anti-grief rules remain incomplete. See
+> feature list. The tables below describe intended gameplay. As of 2026-08-10:
+> the full ten-mob roster, class plugin (abilities + ultimates + starter kit),
+> GlitchStash (incl. Fast/Silent variants), GlitchItems (identify, Residual
+> consumers, loot containers), GlitchShops, GlitchHealthBar, GlitchDeathRules,
+> and GlitchHideout exist in source; most world content, the Identifier NPC,
+> dungeon content, and anti-grief remainder are still incomplete. See
 > [`docs/STATUS.md`](STATUS.md).
 
 ---
@@ -248,6 +250,9 @@ by rarity + exactly one attribute** from Rare up.
 ## 4. Hideout Upgrades
 
 The hideout is a persistent progression system between raids. Located in the hub, accessible via `/hideout`.
+**Implementation (2026-08-10):** GlitchHideout plugin — all seven stations with
+costs and prerequisites, workbench crafting (ITEM_SYSTEM §7), extended stash
+and armory storage, med heal, intel glow. Live build/test pending.
 
 ### Station List
 
@@ -312,6 +317,7 @@ Five dungeon tiers, each harder than the last. Tier 1 is for beginners, Tier 5 i
    - Specter (stealth) — "Get in, get rich, get out. They never see you."
    - Operator (control) — "Control the fight before it starts."
 3. **Get starter kit** — basic leather armor, wooden Blade, 3 bread, 5 Rune Fragments.
+   *Implemented (GlitchClasses starter-kit, 2026-08-06): granted once per player on first class select; config-driven items.*
 4. **Explore hub** — class trainer (upgrade abilities), armory (store gear), merchant NPCs (buy potions/keys/materials, sell any custom item — ITEM_SYSTEM §11).
 5. **Learn the extraction loop** — `/tutorial` starts a 5-minute guided run in a safe zone.
 

@@ -2,9 +2,12 @@
 
 > **Status:** Design/specification plus a source prototype. Party, slot, wave,
 > timer, reward, GUI, and extraction classes exist, but this plugin is not
-> complete or runtime-verified. Current blockers include list-form mob config
+> complete or runtime-verified and is **deferred by operator decision
+> (2026-08-03)**. Current blockers include list-form mob config
 > parsing, extraction task startup, missing GlitchStash integration, and task
-> cleanup. See [`docs/STATUS.md`](STATUS.md).
+> cleanup. A defensive config-parse fix (non-numeric keys) was added
+> 2026-08-10; the plugin must not be described as deployable. See
+> [`docs/STATUS.md`](STATUS.md).
 
 ## Overview
 GlitchDungeons is the dungeon system for "The Glitch" server. Players form parties, select a dungeon from the hub GUI, get assigned to a pre-built dungeon shell in `glitch_pve`, fight waves of MythicMobs, and extract for loot.

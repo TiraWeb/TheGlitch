@@ -1,6 +1,6 @@
 # The Glitch - Current Status
 
-> Authoritative implementation status. Updated 2026-08-06.
+> Authoritative implementation status. Updated 2026-08-10.
 >
 > This file distinguishes repository evidence from live-server verification.
 > A source implementation or configuration is not considered launch-ready until
@@ -18,10 +18,12 @@
 
 ## Overall
 
-The server has a solid operational foundation and several working plugin cores, but
-it is not launch-ready. The extraction/stash foundation, basic classes, item V1,
-and merchant V1 exist. The dungeon loop, world content, loot population, death
-rules, and end-to-end testing still need work.
+The server has a solid operational foundation and most core loops exist in
+source: extraction + stash, classes with full abilities/ultimates, item V1
+with Residual Glitch consumers, merchants, containers, Red Zone population,
+death rules, and hideout progression. The main remaining gaps are live
+build/test verification of the recent source, the Identifier NPC flow,
+physical world content, GlitchDungeons (deferred), and launch operations.
 
 ## Area Status
 
@@ -53,21 +55,31 @@ rules, and end-to-end testing still need work.
 - Phases 0-2: server setup, security, performance configuration, and idle baseline.
 - Geyser/Floodgate configuration, pending live Bedrock verification.
 - Zone rules, borders, and WorldGuard configuration scripts.
-- Glitch Shards economy configuration and four initial MythicMobs.
-- GlitchStash extraction vault and GUI fixes in commit `6ef1425`.
-- GlitchClasses core plugin.
-- Oraxen item definitions and resource-pack assets.
-- GlitchItems and GlitchShops deployed and live-tested (2026-08-03): `/identify` and `/shop` buy/sell verified.
+- Glitch Shards economy configuration and the full ten-mob MythicMobs roster with per-tier loot tables.
+- GlitchStash extraction vault + GUI fixes (`6ef1425`) and merge overflow preservation (2026-08-10).
+- GlitchClasses core plugin with complete abilities, ultimates, starter kit, and real reset costs (source 2026-08-10).
+- GlitchDeathRules: mercy keep + Red Zone entry invulnerability (source 2026-08-06).
+- GlitchHideout: 7 stations, workbench crafting, extended stash, armory (source 2026-08-10).
+- Oraxen item definitions and resource-pack assets (18 items).
+- GlitchItems + GlitchShops deployed and live-tested (2026-08-03): `/identify` and `/shop` buy/sell verified.
+- GlitchHealthBar deployed and live-tested: floating HP bars above hostiles.
+- Red Zone spawn areas (T1/T2/T3 distribution) + container system in source (2026-08-10).
+- Cross-plugin bug audit (2026-08-10): compile-blocking Hideout type mismatch, stash merge data loss, shop sell-without-pay, hotbar overwrite, crash risks, upgrade-cost balance — all fixed in source.
 
 ## Highest-Priority Remaining Work
 
-1. Build/deploy/test Track 1 plugins on the box: GlitchDeathRules, starter kit, Residual consumers, extraction variants.
-2. Build/deploy/test the latest source on the box: GlitchClasses abilities/ultimates, GlitchHideout, container system, Red Zone spawn areas.
+1. Build + run the live test checklist on the box for all recent source
+   (docs/TESTING.md): Track 1 plugins, abilities/ultimates, GlitchHideout,
+   containers, Red Zone spawn areas.
+2. Create Fast/Silent VelKoth arenas live (15s/10s) and mirror bounds into
+   `extraction-variants.zones`; verify with `/extractadmin zones`.
 3. Finish the item loop: Identifier NPC flow.
-4. Repair GlitchDungeons (deferred by operator; planned after the item loop).
-5. Build or provision the physical maps and dungeon/POI content.
-6. Run Bedrock, extraction, class, economy, and performance tests.
-7. Complete backup, moderation, load-test, and launch work.
+4. Anti-grief remainder: friendly-fire off everywhere, 2-min AFK kick,
+   shards account-bound vs drop-on-death resolution.
+5. Repair GlitchDungeons (deferred by operator; planned after the item loop).
+6. Build or provision the physical maps and dungeon/POI content.
+7. Run Bedrock, extraction, class, economy, and performance tests.
+8. Complete backup, moderation, load-test, and launch work.
 
 ## Documentation Rules
 

@@ -72,38 +72,54 @@ The core gameplay loop is extraction via VelKoth zones:
 2. Player holds the Standard zone for 30 seconds
 3. On completion:
    - Inventory auto-saved to GlitchStash (accumulates across extractions)
+   - Residual Glitch payout bonus credited (sell value × stacks multiplier)
    - Player auto-teleported to hub via Multiverse-Core (`mv tp`)
 4. Player retrieves items in hub with `/stash`
+
+**Extraction variants (GlitchStash, source):** Fast (15s, consumes a Fast
+Extract Key) and Silent (10s, consumes a Rift Key) zones earn a payout bonus
+(+5% / +10%). Right-click the key inside the zone to consume and arm it.
 
 **Commands:**
 - `/koth start extraction_x1` — start an extraction event
 - `/stash` — open stash GUI, click items to retrieve
 - `/stashtp` — teleport to hub
+- `/extractadmin zones|reload|armed` — variant zone admin
 - `/koth list` — list all arenas and status
 
 **Important:** EssentialsX is INCOMPATIBLE with Minecraft 26.x / Java 25. Commands like `/spawn`, `/warp` do not work. Teleport uses Multiverse-Core instead.
 
-## The class system (core implemented, incomplete features remain)
+## The class system (implemented in source, live verification pending)
 
-4 classes with unique abilities, 10 upgrade levels each:
+4 classes with unique abilities, 10 upgrade levels each, and an ultimate at
+level 10:
 
-| Class | Role | Prime Ability | Tactical Ability |
-|---|---|---|---|
-| **Vanguard** | Tank | Shield Wall (barrier blocks) | Taunt (mobs target you) |
-| **Warden** | Support | Healing Pulse (AoE heal) | Revive Beacon (place beacon) |
-| **Specter** | Stealth | Cloak (invisibility) | Shadow Step (teleport forward) |
-| **Operator** | Tech | Turret Deploy (auto-targeting) | EMP Grenade (disable abilities) |
+| Class | Role | Prime Ability | Tactical Ability | Ultimate (level 10) |
+|---|---|---|---|---|
+| **Vanguard** | Tank | Shield Wall (barrier blocks) | Taunt (mobs target you) | Fortress (indestructible wall + ally resistance) |
+| **Warden** | Support | Healing Pulse (AoE heal) | Revive Beacon (surge-heals allies) | Guardian Angel (survive a fatal blow at 1 HP) |
+| **Specter** | Stealth | Cloak (invisibility, breaks on combat) | Shadow Step (teleport forward) | Ghost Protocol (10s undetectable, 2x speed) |
+| **Operator** | Tech | Turret Deploy (auto-targeting) | EMP Grenade (disrupts mobs) | Cataclysm (turret detonates, deploys new) |
+
+Traits are complete: Ironclad (knockback resist), Last Stand, Mend,
+Vigilance (ally HP in action bar), Lightweight, Scavenge (+container rolls via
+the `specter_scavenge` tag), Engineer (turret repair), Resonance Surge
+(faster turret / longer EMP).
 
 **Commands:**
 - `/class` — open class selection GUI
 - `/class select <class>` — select a class directly
 - `/class info` — view your class and level
 - `/class kit` — re-receive ability items if missing
+- `/class reset` — reset your class for shards (500)
+- `/classadmin set|reset|list|reload` — admin tools
 
-**Ability items** (hotbar slots 0 and 1) are:
+**Ability items** (hotbar slots 0–2: prime, tactical, ultimate) are:
 - Auto-given on class select and when entering `glitch_pve` / `glitch_red`
+  (re-given only when actually missing — hotbar loot is never overwritten)
 - Non-movable, non-droppable, non-duplicatable
 - Re-given on login if missing
+- The ultimate item is locked until level 10
 
 ## The item system (Phase 5.10, in progress)
 
@@ -123,9 +139,9 @@ come from the shop config, and buy prices appear only in the merchant GUI.
 Greatblade, Arcane Staff) + 4 armor pieces; base stats scale by rarity, weapons
 gain special attributes (lifesteal, fire aspect...) from Rare up, armor keeps
 exactly one attribute. Gear comes from Unstable Rifts (`/identify`, shard fee —
-live-tested), admin `/glitchitems give`, and later Workbench crafting + merchants. Resonance
+live-tested), admin `/glitchitems give`, and Workbench crafting (GlitchHideout). Resonance
 combat math (weapon +25% dmg vs matching mobs, armor reduction) and the
-Residual Glitch timer are implemented — mobs need a `res_<name>` scoreboard
+Residual Glitch loop are implemented — mobs need a `res_<name>` scoreboard
 tag (e.g. `res_veil`, MythicMobs `Options.ScoreboardTags: [res_veil]`; the
 colon form `res:veil` is also accepted) for Resonance to apply. Stack HUD:
 boss bar (top of screen, turns purple when elites hunt you; optional vanilla
@@ -133,10 +149,40 @@ XP bar mirror, off by default), plus `%glitchitems_stacks%` /
 `%glitchitems_payout%` / `%glitchitems_payout_multiplier%` /
 `%glitchitems_dmg_taken%` PlaceholderAPI placeholders for the TAB scoreboard.
 
-**Risk (designed, not fully implemented):** glitch_red is intended to be full-loot with
-leggings and boots retained; the death protection plugin is still pending. glitch_pve
-stays keep-inventory as the training floor. Standard extract is configured for 30s;
-Fast and Silent extraction are not implemented.
+**Residual Glitch consumers (source, 2026-08-06 → 08-10):** loot luck applies
+at `/identify` (star-luck per roll + rarity-surge chance) and at loot
+containers (per-roll rarity surge + surge drop); at 5+ stacks a MythicMobs
+elite hunts the player (repeat spawns every 10 min).
+
+**Loot containers (source, 2026-08-10):** Debris Pile (free) / Loot Cache
+(Cache Key) / Vault (Vault Key) / Rift Vault (Rift Key) — rarity-weighted
+rolls, per-block regen cooldown, loot-luck consumer. Mark blocks in-world
+with `/glitchcontainers set <type>`.
+
+**Risk (implemented in source, live verification pending):** glitch_red is
+full-loot with the mercy rule — on death you keep **leggings + boots**
+(GlitchDeathRules), plus 30s entry invulnerability at Red Zone entry points.
+glitch_pve stays keep-inventory as the training floor. Standard extract is
+configured for 30s; Fast (15s, Fast Extract Key) and Silent (10s, Rift Key)
+extraction variants are implemented in GlitchStash — VelKoth arenas must be
+created live and their bounds mirrored into `extraction-variants.zones`.
+
+## The hideout (implemented in source, live verification pending)
+
+Between-raid progression via `/hideout` (design: GAME_DESIGN §4). Seven
+stations upgrade with Glitch Shards and prerequisites:
+
+| Station | What it does |
+|---|---|
+| Arcane Core | Prerequisite chain for the Armory |
+| Workbench | Crafting (ITEM_SYSTEM §7 recipes: healing potions, base/targeted resonance blades, reveal packs, vault/rift keys, void infusion) |
+| Med Station | Free full heal between raids (30s cooldown) |
+| Stash | Extended storage: 27 / 45 / 54 slots by level |
+| Intel Center | Hostiles glow within 20 blocks while you are in the rift |
+| Skill Trainer | Opens the class menu (upgrades / reset) |
+| Armory | Gear storage (27 / 45 slots) with auto-sort |
+
+Admin: `/hideoutadmin set <player> <station> <level> | reset <player> | reload`
 
 ## Plugin stack
 
@@ -154,11 +200,13 @@ Fast and Silent extraction are not implemented.
 | PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
 | VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
 | Oraxen | Custom items (18 Arcane Ruins items) | `server/plugins/Oraxen/` |
-| **GlitchStash** | **Extraction vault** (custom) | `plugins/GlitchStash/` |
-| **GlitchClasses** | **Class system** (custom) | `plugins/GlitchClasses/` |
-| **GlitchItems** | **Item system** (custom: gear rolls, /identify, Resonance, Residual Glitch) | `plugins/GlitchItems/` |
+| **GlitchStash** | **Extraction vault + Fast/Silent variants** (custom) | `plugins/GlitchStash/` |
+| **GlitchClasses** | **Class system** (custom: abilities, ultimates, starter kit) | `plugins/GlitchClasses/` |
+| **GlitchItems** | **Item system** (custom: gear rolls, /identify, Resonance, Residual Glitch, loot containers) | `plugins/GlitchItems/` |
 | **GlitchShops** | **Grand Bazaar** (custom: buy/sell merchants, gear vendor) | `plugins/GlitchShops/` |
 | **GlitchHealthBar** | **Mob health bars** (custom: floating HP bar above mobs) | `plugins/GlitchHealthBar/` |
+| **GlitchDeathRules** | **Red Zone death rules** (custom: mercy keep, entry invulnerability) | `plugins/GlitchDeathRules/` |
+| **GlitchHideout** | **Hideout progression** (custom: stations, crafting, storage) | `plugins/GlitchHideout/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
 | GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
@@ -192,7 +240,9 @@ Built from source on the server:
 cd ~/TheGlitch
 sudo ./plugins/GlitchStash/build.sh
 sudo ./plugins/GlitchClasses/build.sh
-sudo ./plugins/GlitchDungeons/build.sh
+sudo ./plugins/GlitchDeathRules/build.sh
+sudo ./plugins/GlitchHideout/build.sh
+sudo ./plugins/GlitchDungeons/build.sh   # deferred — source only, not deployed
 sudo ./plugins/GlitchItems/build.sh
 sudo ./plugins/GlitchShops/build.sh
 sudo ./plugins/GlitchHealthBar/build.sh
@@ -242,6 +292,9 @@ plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
 plugins/GlitchItems/      GlitchItems source (built via build.sh)
 plugins/GlitchShops/      GlitchShops source (built via build.sh)
 plugins/GlitchHealthBar/  GlitchHealthBar source (built via build.sh)
+plugins/GlitchDeathRules/ GlitchDeathRules source (built via build.sh)
+plugins/GlitchHideout/    GlitchHideout source (built via build.sh)
+plugins/GlitchDungeons/   GlitchDungeons source (deferred — not deployed)
 server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
 console.sh                attach to the live server console
 scripts/mc-cmd.py         local RCON client
@@ -252,7 +305,8 @@ docs/PERFORMANCE.md       tuning rationale + baseline
 docs/ITEM_SYSTEM.md       Arcane Ruins item system design (rarities, resonance, rifts, prices §11)
 docs/GLITCH_SHOPS_DESIGN.md  merchant NPC plugin design (Phase 5.12)
 docs/GAME_DESIGN.md       core gameplay numbers (mobs, loot, economy, extraction, anti-grief)
-docs/STATUS.md             authoritative implementation and verification status
+docs/STATUS.md            authoritative implementation and verification status
+docs/TESTING.md           live-server test checklist (run after each deploy)
 ROADMAP.md                the full phased build plan
 HANDOFF.md                session handoff doc
 ```

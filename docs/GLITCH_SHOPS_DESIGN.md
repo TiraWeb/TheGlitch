@@ -1,10 +1,10 @@
 # GlitchShops Plugin Architecture (Phase 5.12)
 
-> **Status:** Source V1 exists under `plugins/GlitchShops/`, including the
-> buy/sell GUI, five categories, gear stock, economy hook, and NPC listener.
-> The plugin still requires a server build, deployment, NPC placement, and
-> transaction testing. This document describes intended behavior, not a
-> verified live feature.
+> **Status:** Implemented in source under `plugins/GlitchShops/`, deployed and
+> live-tested (`/shop` buy/sell, gear vendor restock). Grand Bazaar NPC
+> placement and name binding (`bazaar-npc-names`) remain live-only, and prices
+> need a balance pass once loot integration lands. This document describes
+> intended behavior; live verification details live in docs/STATUS.md.
 
 Hub merchant NPCs for the item economy. Players **sell** any custom item for Glitch Shards,
 and **buy** shop stock (materials, keys, rifts, potions). Prices follow docs/ITEM_SYSTEM.md §11
