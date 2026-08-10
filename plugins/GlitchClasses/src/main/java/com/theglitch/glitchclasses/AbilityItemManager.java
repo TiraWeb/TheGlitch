@@ -36,6 +36,7 @@ public final class AbilityItemManager {
     // Hotbar slots for ability items
     private static final int PRIME_SLOT = 0;
     private static final int TACTICAL_SLOT = 1;
+    private static final int ULTIMATE_SLOT = 2;
 
     public AbilityItemManager(GlitchClasses plugin) {
         this.plugin = plugin;
@@ -77,7 +78,6 @@ public final class AbilityItemManager {
         if (prime != null) {
             ItemStack item = createAbilityItem(prime, "prime", className, color, true);
             player.getInventory().setItem(PRIME_SLOT, item);
-            plugin.getLogger().info("[AbilityItemManager] Gave prime item to " + player.getName() + " slot " + PRIME_SLOT + ": " + item.getType());
         } else {
             plugin.getLogger().warning("[AbilityItemManager] No prime ability config for: " + className);
         }
@@ -87,9 +87,17 @@ public final class AbilityItemManager {
         if (tactical != null) {
             ItemStack item = createAbilityItem(tactical, "tactical", className, color, false);
             player.getInventory().setItem(TACTICAL_SLOT, item);
-            plugin.getLogger().info("[AbilityItemManager] Gave tactical item to " + player.getName() + " slot " + TACTICAL_SLOT + ": " + item.getType());
         } else {
             plugin.getLogger().warning("[AbilityItemManager] No tactical ability config for: " + className);
+        }
+
+        // Give ultimate ability (locked until level 10 — enforced on activation)
+        ConfigurationSection ultimate = abilities.getConfigurationSection("ultimate");
+        if (ultimate != null) {
+            ItemStack item = createAbilityItem(ultimate, "ultimate", className, color, false);
+            player.getInventory().setItem(ULTIMATE_SLOT, item);
+        } else {
+            plugin.getLogger().warning("[AbilityItemManager] No ultimate ability config for: " + className);
         }
 
         player.updateInventory();
@@ -152,14 +160,21 @@ public final class AbilityItemManager {
         int cooldown = ability.getInt("cooldown", 0);
         String description = ability.getString("description", "");
 
-        // Name: colored by class with "PRIME" or "TACTICAL" prefix
-        String label = isPrime ? "PRIME" : "TACTICAL";
-        meta.customName(Component.text(label + ": " + name.toUpperCase(), color, TextDecoration.BOLD));
+        boolean isUltimate = type.equals("ultimate");
+
+        // Name: colored by class with "PRIME" / "TACTICAL" / "ULTIMATE" prefix
+        String label = isUltimate ? "ULTIMATE" : (isPrime ? "PRIME" : "TACTICAL");
+        NamedTextColor nameColor = isUltimate ? NamedTextColor.GOLD : color;
+        meta.customName(Component.text(label + ": " + name.toUpperCase(), nameColor, TextDecoration.BOLD));
 
         // Lore
         List<Component> lore = new ArrayList<>();
         lore.add(Component.empty());
         lore.add(Component.text(description, NamedTextColor.GRAY));
+        if (isUltimate) {
+            lore.add(Component.empty());
+            lore.add(Component.text("Requires level 10", NamedTextColor.GOLD));
+        }
         if (cooldown > 0) {
             lore.add(Component.empty());
             lore.add(Component.text("Cooldown: " + cooldown + "s", NamedTextColor.YELLOW));

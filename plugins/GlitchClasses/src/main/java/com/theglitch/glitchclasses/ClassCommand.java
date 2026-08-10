@@ -82,10 +82,31 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                 player.sendMessage(Component.empty());
             }
             case "reset" -> {
+                ClassData data = classManager.getClassData(player.getUniqueId());
+                if (data.className().equals("none")) {
+                    player.sendMessage(plugin.getComponent("class-none"));
+                    return true;
+                }
                 int cost = classManager.getResetCost();
-                player.sendMessage(plugin.getComponent("class-reset-cost",
-                        "<cost>", String.valueOf(cost),
-                        "<shards>", "check TODO"));
+                var eco = org.bukkit.Bukkit.getServicesManager()
+                        .getRegistration(net.milkbowl.vault.economy.Economy.class);
+                if (eco == null) {
+                    player.sendMessage(Component.text("Economy unavailable.", NamedTextColor.RED));
+                    return true;
+                }
+                net.milkbowl.vault.economy.Economy economy = eco.getProvider();
+                if (!economy.has(player, cost)) {
+                    player.sendMessage(plugin.getComponent("class-reset-cost",
+                            "<cost>", String.valueOf(cost),
+                            "<shards>", String.valueOf((int) economy.getBalance(player))));
+                    return true;
+                }
+                economy.withdrawPlayer(player, cost);
+                classManager.resetClass(player.getUniqueId());
+                plugin.getAbilityItemManager().clearClassItems(player);
+                player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
+                player.sendMessage(plugin.getComponent("class-reset"));
+                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 0.8f);
             }
             default -> {
                 player.sendMessage(Component.text("Usage: /class [select <class>|info|reset|kit]", NamedTextColor.RED));

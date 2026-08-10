@@ -33,8 +33,10 @@ public final class GlitchClasses extends JavaPlugin {
         starterKit = new StarterKit(this);
 
         classGUI = new ClassGUI(this, classManager);
+        AbilityListener abilityListener = new AbilityListener(this, classManager);
+        abilityListener.startTickers();
         Bukkit.getPluginManager().registerEvents(classGUI, this);
-        Bukkit.getPluginManager().registerEvents(new AbilityListener(this, classManager), this);
+        Bukkit.getPluginManager().registerEvents(abilityListener, this);
         Bukkit.getPluginManager().registerEvents(new AbilityItemListener(this, classManager, abilityItemManager), this);
         Bukkit.getPluginManager().registerEvents(new JoinListener(this, classManager, abilityItemManager), this);
 

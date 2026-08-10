@@ -1,0 +1,107 @@
+# GlitchHideout — The Glitch hideout progression (design GAME_DESIGN.md §4)
+# Stations upgrade with Glitch Shards. Prerequisites are "station:level".
+
+med-cooldown-seconds: 30
+
+stations:
+  core:
+    display: "<light_purple>Arcane Core"
+    icon: BEACON
+    description: "Powers the anomaly stations. Prerequisite for the Armory."
+    costs: [300, 1000, 4000]
+    requires: { 1: "workbench:1", 2: "intel:1", 3: "intel:2" }
+  workbench:
+    display: "<gold>Workbench"
+    icon: CRAFTING_TABLE
+    description: "Craft weapons, keys and consumables from rift materials."
+    costs: [100, 500, 2000]
+    requires: { 1: "", 2: "med:1", 3: "intel:2" }
+  med:
+    display: "<green>Med Station"
+    icon: BREWING_STAND
+    description: "Free full heal between raids (30s cooldown)."
+    costs: [50, 300, 1000]
+    requires: { 1: "", 2: "workbench:1", 3: "workbench:2" }
+  stash:
+    display: "<dark_purple>Stash"
+    icon: CHEST
+    description: "Extended storage: 27 / 45 / 54 slots."
+    costs: [200, 800, 3000]
+    requires: { 1: "", 2: "workbench:1", 3: "med:2" }
+  intel:
+    display: "<aqua>Intel Center"
+    icon: SPYGLASS
+    description: "Hostiles within 20 blocks glow while you are in the rift."
+    costs: [150, 600, 2500]
+    requires: { 1: "", 2: "workbench:1", 3: "stash:2" }
+  trainer:
+    display: "<red>Skill Trainer"
+    icon: EXPERIENCE_BOTTLE
+    description: "Class management — open the class menu (upgrades / reset)."
+    costs: [100]
+    requires: { 1: "" }
+  armory:
+    display: "<blue>Armory"
+    icon: ITEM_FRAME
+    description: "Store and auto-sort your gear. 27 / 54 slots."
+    costs: [250, 750]
+    requires: { 1: "stash:2", 2: "core:1" }
+
+# Workbench recipes (ITEM_SYSTEM.md §7).
+# materials = Oraxen item ids + counts; output = console command (<player> placeholder).
+recipes:
+  healing_potion:
+    display: "<green>Healing Potion"
+    icon: POTION
+    output: "o give <player> healing_potion 3"
+    materials: { rune_fragment: 5, rift_crystal: 1 }
+  base_weapon:
+    display: "<green>Base Blade (Uncommon)"
+    icon: STONE_SWORD
+    output: "glitchitems give uncommon blade random <player>"
+    materials: { rune_fragment: 3, rift_crystal: 2 }
+  targeted_weapon_aegis:
+    display: "<gold>Aegis Blade (Uncommon)"
+    icon: GOLD_SWORD
+    output: "glitchitems give uncommon blade aegis <player>"
+    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+  targeted_weapon_veil:
+    display: "<aqua>Veil Blade (Uncommon)"
+    icon: GOLD_SWORD
+    output: "glitchitems give uncommon blade veil <player>"
+    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+  targeted_weapon_bloom:
+    display: "<green>Bloom Blade (Uncommon)"
+    icon: GOLD_SWORD
+    output: "glitchitems give uncommon blade bloom <player>"
+    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+  targeted_weapon_ward:
+    display: "<red>Ward Blade (Uncommon)"
+    icon: GOLD_SWORD
+    output: "glitchitems give uncommon blade ward <player>"
+    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+  targeted_weapon_hollow:
+    display: "<light_purple>Hollow Blade (Uncommon)"
+    icon: GOLD_SWORD
+    output: "glitchitems give uncommon blade hollow <player>"
+    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+  rift_reveal_pack:
+    display: "<blue>Rift Reveal Pack"
+    icon: BOOK
+    output: "o give <player> rift_reveal_pack 1"
+    materials: { rift_crystal: 5 }
+  vault_key:
+    display: "<dark_gray>Vault Key"
+    icon: TRIPWIRE_HOOK
+    output: "o give <player> vault_key 1"
+    materials: { rift_crystal: 3, void_essence: 1 }
+  rift_key:
+    display: "<gold>Rift Key"
+    icon: TRIPWIRE_HOOK
+    output: "o give <player> rift_key 1"
+    materials: { void_essence: 3, legendary_relic: 1 }
+  void_infusion:
+    display: "<light_purple>Void Infusion"
+    icon: BREWING_STAND
+    output: "o give <player> void_infusion 1"
+    materials: { void_essence: 2, legendary_relic: 1 }

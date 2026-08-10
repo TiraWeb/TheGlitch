@@ -11,15 +11,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -43,17 +45,45 @@ public class AbilityListener implements Listener {
     private final Map<UUID, Boolean> tauntActive = new HashMap<>();
     private final Map<UUID, List<Block>> turretBlocks = new HashMap<>();
 
+    // Turret lifecycle (owned armor stands) — used by Engineer repair + Cataclysm
+    private final Map<UUID, ArmorStand> turrets = new HashMap<>();
+    private final Map<UUID, BukkitTask> turretTasks = new HashMap<>();
+    private final Map<UUID, Long> turretExpiry = new HashMap<>();
+    private final Map<UUID, Integer> turretRepairs = new HashMap<>();
+    private final Map<UUID, Long> repairCooldown = new HashMap<>();
+
+    // Guardian Angel (Warden ultimate) — protected players and post-save invulnerability
+    private final Map<UUID, Long> guardianProtection = new HashMap<>();
+    private final Map<UUID, Long> deathInvuln = new HashMap<>();
+
+    // Ghost Protocol (Specter ultimate) — untargetable window
+    private final Map<UUID, Long> ghostUntil = new HashMap<>();
+
     // Passive cooldowns (for traits with internal cooldowns)
     private final Map<UUID, Long> lastStandCooldown = new HashMap<>();
     private final Map<UUID, Long> mendCooldown = new HashMap<>();
 
     // NamespacedKey for class item identification
     private final NamespacedKey classItemKey;
+    private final NamespacedKey turretOwnerKey;
+    private final NamespacedKey turretDamageKey;
+    private final NamespacedKey turretBaseExpiryKey;
+    private final NamespacedKey empGrenadeKey;
+    private final NamespacedKey empRangeKey;
+    private final NamespacedKey empDurationKey;
+
+    private static final Set<String> GAME_WORLDS = Set.of("glitch_pve", "glitch_red");
 
     public AbilityListener(GlitchClasses plugin, ClassManager classManager) {
         this.plugin = plugin;
         this.classManager = classManager;
         this.classItemKey = new NamespacedKey(plugin, "class_ability");
+        this.turretOwnerKey = new NamespacedKey(plugin, "turret_owner");
+        this.turretDamageKey = new NamespacedKey(plugin, "turret_damage");
+        this.turretBaseExpiryKey = new NamespacedKey(plugin, "turret_base_expiry");
+        this.empGrenadeKey = new NamespacedKey(plugin, "emp_grenade");
+        this.empRangeKey = new NamespacedKey(plugin, "emp_range");
+        this.empDurationKey = new NamespacedKey(plugin, "emp_duration");
     }
 
     @EventHandler
@@ -78,6 +108,13 @@ public class AbilityListener implements Listener {
 
         event.setCancelled(true);
 
+        // Ultimates require level 10
+        if (abilityType.equals("ultimate") && data.level() < getUltimateLevel()) {
+            player.sendMessage(plugin.getComponent("ultimate-locked",
+                    "<level>", String.valueOf(getUltimateLevel())));
+            return;
+        }
+
         // Check cooldown
         if (isOnCooldown(uuid, abilityType)) {
             long remaining = getCooldownRemaining(uuid, abilityType);
@@ -100,15 +137,20 @@ public class AbilityListener implements Listener {
         switch (type) {
             case "prime" -> activateShieldWall(player, data);
             case "tactical" -> activateTaunt(player, data);
+            case "ultimate" -> activateFortress(player, data);
         }
     }
 
     private void activateShieldWall(Player player, ClassData data) {
         int cooldown = getCooldown("vanguard", "prime", data.level());
         setCooldown(player.getUniqueId(), "prime", cooldown);
+        placeShieldWall(player, data);
+        player.sendMessage(plugin.getComponent("shield-wall-placed"));
+        player.sendActionBar(Component.text("SHIELD WALL ACTIVE", NamedTextColor.RED));
+    }
 
+    private void placeShieldWall(Player player, ClassData data) {
         int duration = 600 + (data.level() >= 6 ? 40 : 0); // 30s base, +2s at level 6
-        int absorption = 200 + (data.level() >= 8 ? 100 : 0); // 200 base, +100 at level 8
 
         // Place 3x3 barrier blocks in front of the player
         Location playerLoc = player.getLocation();
@@ -128,9 +170,6 @@ public class AbilityListener implements Listener {
         turretBlocks.put(player.getUniqueId(), wallBlocks);
         shieldWallActive.put(player.getUniqueId(), true);
 
-        player.sendMessage(plugin.getComponent("shield-wall-placed"));
-        player.sendActionBar(Component.text("SHIELD WALL ACTIVE", NamedTextColor.RED));
-
         // Visual effects
         player.getWorld().spawnParticle(Particle.CRIT, player.getLocation().add(direction.clone().multiply(2)), 50, 1, 1, 1, 0.1);
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_PLACE, 1.0f, 0.8f);
@@ -147,8 +186,25 @@ public class AbilityListener implements Listener {
                     }
                 }
             }
-            player.sendActionBar(Component.empty());
+            if (player.isOnline()) {
+                player.sendActionBar(Component.empty());
+            }
         }, duration);
+    }
+
+    // Vanguard ultimate: Fortress — indestructible wall + heavy ally resistance
+    private void activateFortress(Player player, ClassData data) {
+        int cooldown = getCooldown("vanguard", "ultimate", data.level());
+        setCooldown(player.getUniqueId(), "ultimate", cooldown);
+        placeShieldWall(player, data);
+        for (Entity entity : player.getNearbyEntities(10, 10, 10)) {
+            if (entity instanceof Player ally && !ally.equals(player)) {
+                ally.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 60, 3));
+            }
+        }
+        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 60, 3));
+        player.sendMessage(plugin.getComponent("fortress-active"));
+        player.playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.6f);
     }
 
     private void activateTaunt(Player player, ClassData data) {
@@ -197,6 +253,7 @@ public class AbilityListener implements Listener {
         switch (type) {
             case "prime" -> activateHealingPulse(player, data);
             case "tactical" -> activateReviveBeacon(player, data);
+            case "ultimate" -> activateGuardianAngel(player, data);
         }
     }
 
@@ -237,7 +294,7 @@ public class AbilityListener implements Listener {
         setCooldown(player.getUniqueId(), "tactical", cooldown);
 
         Location loc = player.getLocation();
-        int reviveTime = 60 - (data.level() >= 4 ? 20 : 0); // 3s base, -1s at level 4 (in ticks)
+        int channelTicks = 60 - (data.level() >= 4 ? 20 : 0); // 3s base, -1s at level 4
 
         player.sendMessage(plugin.getComponent("revive-placed"));
 
@@ -249,12 +306,90 @@ public class AbilityListener implements Listener {
         player.getWorld().spawnParticle(Particle.END_ROD, loc.add(0.5, 1, 0.5), 100, 0.3, 2, 0.3, 0.05);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.0f);
 
-        // Remove beacon after duration
+        // After the channel completes, surge-heal the most injured allies nearby
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            int maxTargets = data.level() >= 8 ? 2 : 1; // level 8 upgrade: can reach 2 allies
+            List<Player> allies = new ArrayList<>();
+            for (Entity entity : loc.getWorld().getNearbyEntities(loc, 5, 5, 5)) {
+                if (entity instanceof Player target && !target.equals(player) && !target.isDead()) {
+                    allies.add(target);
+                }
+            }
+            allies.sort(Comparator.comparingDouble(Player::getHealth));
+
+            int healed = 0;
+            for (Player target : allies) {
+                if (healed >= maxTargets) break;
+                double max = target.getAttribute(Attribute.MAX_HEALTH).getValue();
+                target.setHealth(max);
+                target.removePotionEffect(PotionEffectType.POISON);
+                target.removePotionEffect(PotionEffectType.WITHER);
+                target.removePotionEffect(PotionEffectType.SLOWNESS);
+                target.removePotionEffect(PotionEffectType.WEAKNESS);
+                target.removePotionEffect(PotionEffectType.HUNGER);
+                target.removePotionEffect(PotionEffectType.MINING_FATIGUE);
+                target.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 1));
+                healed++;
+            }
+            if (healed > 0 && player.isOnline()) {
+                player.sendMessage(plugin.getComponent("revive-healed"));
+            }
             if (beaconBlock.getType() == Material.BEACON) {
                 beaconBlock.setType(Material.AIR);
             }
-        }, reviveTime);
+        }, channelTicks);
+    }
+
+    // Warden ultimate: Guardian Angel — next fatal blow spares a protected ally
+    private void activateGuardianAngel(Player player, ClassData data) {
+        int cooldown = getCooldown("warden", "ultimate", data.level());
+        setCooldown(player.getUniqueId(), "ultimate", cooldown);
+
+        long until = System.currentTimeMillis() + 30_000L;
+        guardianProtection.put(player.getUniqueId(), until);
+        for (Entity entity : player.getNearbyEntities(10, 10, 10)) {
+            if (entity instanceof Player ally && !ally.equals(player)) {
+                guardianProtection.put(ally.getUniqueId(), until);
+                ally.sendMessage(plugin.getComponent("guardian-protected"));
+            }
+        }
+        player.sendMessage(plugin.getComponent("ultimate-activated"));
+        player.sendActionBar(Component.text("GUARDIAN ANGEL ACTIVE", NamedTextColor.GOLD));
+        player.getWorld().spawnParticle(Particle.END_ROD, player.getLocation().add(0, 1, 0), 60, 0.5, 2, 0.5, 0.05);
+        player.playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.5f);
+    }
+
+    @EventHandler
+    public void onDeathInvuln(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        UUID uuid = player.getUniqueId();
+        Long until = deathInvuln.get(uuid);
+        if (until == null) return;
+        if (until < System.currentTimeMillis()) {
+            deathInvuln.remove(uuid);
+            return;
+        }
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onGuardianSave(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        UUID uuid = player.getUniqueId();
+        Long until = guardianProtection.get(uuid);
+        if (until == null || until < System.currentTimeMillis()) {
+            guardianProtection.remove(uuid);
+            return;
+        }
+        // Only trigger on a blow that would kill the player
+        if (event.getFinalDamage() < player.getHealth() - 0.001) return;
+
+        guardianProtection.remove(uuid);
+        event.setCancelled(true);
+        player.setHealth(1.0);
+        deathInvuln.put(uuid, System.currentTimeMillis() + 3000L);
+        player.sendMessage(plugin.getComponent("guardian-saved"));
+        player.playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 2.0f);
     }
 
     // ==================== SPECTER ABILITIES ====================
@@ -263,6 +398,7 @@ public class AbilityListener implements Listener {
         switch (type) {
             case "prime" -> activateCloak(player, data);
             case "tactical" -> activateShadowStep(player, data);
+            case "ultimate" -> activateGhostProtocol(player, data);
         }
     }
 
@@ -337,12 +473,37 @@ public class AbilityListener implements Listener {
         player.sendMessage(plugin.getComponent("shadow-step"));
     }
 
+    // Specter ultimate: Ghost Protocol — 10s undetectable, 2x speed
+    private void activateGhostProtocol(Player player, ClassData data) {
+        int cooldown = getCooldown("specter", "ultimate", data.level());
+        setCooldown(player.getUniqueId(), "ultimate", cooldown);
+
+        int duration = 200; // 10 seconds
+        ghostUntil.put(player.getUniqueId(), System.currentTimeMillis() + duration * 50L);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, duration, 0));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 2)); // ~+40% speed
+        player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 20, 0)); // brief casting flash only
+
+        player.sendMessage(plugin.getComponent("ghost-protocol"));
+        player.sendActionBar(Component.text("GHOST PROTOCOL", NamedTextColor.DARK_PURPLE));
+        player.getWorld().spawnParticle(Particle.SMOKE, player.getLocation().add(0, 1, 0), 40, 0.4, 1, 0.4, 0.05);
+        player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.5f, 0.8f);
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            ghostUntil.remove(player.getUniqueId());
+            if (player.isOnline()) {
+                player.sendActionBar(Component.empty());
+            }
+        }, duration);
+    }
+
     // ==================== OPERATOR ABILITIES ====================
 
     private void activateOperatorAbility(Player player, String type, ClassData data) {
         switch (type) {
             case "prime" -> activateTurretDeploy(player, data);
             case "tactical" -> activateEMPGrenade(player, data);
+            case "ultimate" -> activateCataclysm(player, data);
         }
     }
 
@@ -353,6 +514,11 @@ public class AbilityListener implements Listener {
         int duration = 300 + (data.level() >= 3 ? 100 : 0); // 15s base, +5s at level 3
         int damage = 5 + (data.level() >= 6 ? 2 : 0); // 5 base, +2 at level 6
 
+        spawnTurret(player, damage, duration);
+    }
+
+    private void spawnTurret(Player player, int damage, int durationTicks) {
+        UUID uuid = player.getUniqueId();
         Location turretLoc = player.getLocation().add(player.getLocation().getDirection().multiply(3).setY(0));
 
         // Create turret — armor stand with dispenser head
@@ -365,25 +531,34 @@ public class AbilityListener implements Listener {
         turret.getEquipment().setHelmet(new ItemStack(Material.DISPENSER));
 
         // Set metadata for identification
-        turret.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, "turret_owner"),
-                PersistentDataType.STRING,
-                player.getUniqueId().toString());
-        turret.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, "turret_damage"),
-                PersistentDataType.INTEGER,
-                damage);
+        long baseExpiry = System.currentTimeMillis() + durationTicks * 50L;
+        turret.getPersistentDataContainer().set(turretOwnerKey, PersistentDataType.STRING, uuid.toString());
+        turret.getPersistentDataContainer().set(turretDamageKey, PersistentDataType.INTEGER, damage);
+        turret.getPersistentDataContainer().set(turretBaseExpiryKey, PersistentDataType.LONG, baseExpiry);
+
+        // Track lifecycle for Engineer repair + Cataclysm
+        turrets.put(uuid, turret);
+        turretExpiry.put(uuid, baseExpiry);
+        turretRepairs.put(uuid, 0);
 
         player.sendMessage(plugin.getComponent("turret-placed"));
         player.sendActionBar(Component.text("TURRET DEPLOYED", NamedTextColor.AQUA));
         player.playSound(player.getLocation(), Sound.BLOCK_DISPENSER_DISPENSE, 1.0f, 1.0f);
 
-        // Turret shooting loop
+        startTurretFireLoop(player, turret);
+        scheduleTurretRemoval(uuid, durationTicks);
+    }
+
+    private void startTurretFireLoop(Player player, ArmorStand turret) {
+        UUID uuid = player.getUniqueId();
+        int damage = turret.getPersistentDataContainer().getOrDefault(turretDamageKey, PersistentDataType.INTEGER, 5);
+        int rate = turretFireRate(uuid); // Resonance Surge: faster at level 3+, +50% at level 9
+
         final int[] ticks = {0};
         Bukkit.getScheduler().runTaskTimer(plugin, task -> {
             ticks[0]++;
-            if (ticks[0] > duration || turret.isDead()) {
-                turret.remove();
+            Long expiry = turretExpiry.get(uuid);
+            if (turret.isDead() || expiry == null || System.currentTimeMillis() >= expiry) {
                 task.cancel();
                 return;
             }
@@ -401,7 +576,7 @@ public class AbilityListener implements Listener {
                 }
             }
 
-            if (target != null && ticks[0] % 20 == 0) { // Shoot every second
+            if (target != null && ticks[0] % rate == 0) {
                 // Arrow projectile
                 Location eyeLoc = turret.getEyeLocation();
                 Vector dir = target.getEyeLocation().subtract(eyeLoc).toVector().normalize();
@@ -414,18 +589,115 @@ public class AbilityListener implements Listener {
                 turret.getWorld().playSound(turret.getLocation(), Sound.ENTITY_ARROW_SHOOT, 0.5f, 1.5f);
             }
         }, 1L, 1L);
+    }
 
-        // Remove turret after duration
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+    private int turretFireRate(UUID uuid) {
+        int level = classManager.getClassData(uuid).level();
+        if (level >= 9) return 10; // Overclock +50%
+        if (level >= 3) return 15; // Resonance Surge +25%
+        return 20;
+    }
+
+    private void scheduleTurretRemoval(UUID uuid, long delayTicks) {
+        BukkitTask old = turretTasks.remove(uuid);
+        if (old != null) {
+            old.cancel();
+        }
+        ArmorStand turret = turrets.get(uuid);
+        if (turret == null) return;
+
+        turretTasks.put(uuid, Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            turretTasks.remove(uuid);
+            turrets.remove(uuid);
+            turretExpiry.remove(uuid);
+            turretRepairs.remove(uuid);
             if (!turret.isDead()) {
                 turret.remove();
                 turret.getWorld().spawnParticle(Particle.CLOUD, turret.getLocation().add(0, 1, 0),
                         10, 0.3, 0.3, 0.3, 0.02);
             }
-            if (player.isOnline()) {
-                player.sendActionBar(Component.empty());
+            Player owner = Bukkit.getPlayer(uuid);
+            if (owner != null && owner.isOnline()) {
+                owner.sendActionBar(Component.empty());
             }
-        }, duration);
+        }, delayTicks));
+    }
+
+    // Operator ultimate: Cataclysm — turret detonates for 80 damage, deploys a new one
+    private void activateCataclysm(Player player, ClassData data) {
+        int cooldown = getCooldown("operator", "ultimate", data.level());
+        setCooldown(player.getUniqueId(), "ultimate", cooldown);
+
+        UUID uuid = player.getUniqueId();
+        ArmorStand turret = turrets.get(uuid);
+        if (turret != null && !turret.isDead()) {
+            turret.remove();
+            turrets.remove(uuid);
+            turretExpiry.remove(uuid);
+            BukkitTask task = turretTasks.remove(uuid);
+            if (task != null) {
+                task.cancel();
+            }
+        }
+
+        // Explosion: 80 damage to all hostiles within 10 blocks
+        int killed = 0;
+        for (Entity entity : player.getNearbyEntities(10, 10, 10)) {
+            if (entity instanceof Mob mob && isHostile(mob)) {
+                mob.damage(80, player);
+                killed++;
+            }
+        }
+        player.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, player.getLocation().add(0, 1, 0), 1);
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
+
+        // Deploy a fresh construct at full power
+        spawnTurret(player, 5 + (data.level() >= 6 ? 2 : 0), 300 + (data.level() >= 3 ? 100 : 0));
+        player.sendMessage(plugin.getComponent("cataclysm"));
+    }
+
+    // Operator trait 1: Engineer — right-click your turret to extend its duration
+    @EventHandler
+    public void onOperatorRepair(PlayerInteractEntityEvent event) {
+        Player player = event.getPlayer();
+        if (!isClass(player, "operator")) return;
+        if (!(event.getRightClicked() instanceof ArmorStand stand)) return;
+
+        PersistentDataContainer pdc = stand.getPersistentDataContainer();
+        String owner = pdc.get(turretOwnerKey, PersistentDataType.STRING);
+        if (owner == null || !owner.equals(player.getUniqueId().toString())) return;
+
+        event.setCancelled(true);
+        UUID uuid = player.getUniqueId();
+        long now = System.currentTimeMillis();
+
+        Long last = repairCooldown.get(uuid);
+        if (last != null && now - last < 30_000L) {
+            player.sendMessage(plugin.getComponent("turret-repair-cooldown",
+                    "<seconds>", String.valueOf((30_000L - (now - last)) / 1000L)));
+            return;
+        }
+        Integer repairs = turretRepairs.get(uuid);
+        if (repairs != null && repairs >= 3) {
+            player.sendMessage(Component.text("Construct fully reinforced.", NamedTextColor.YELLOW));
+            return;
+        }
+        Long expiry = turretExpiry.get(uuid);
+        if (expiry == null) return;
+
+        repairCooldown.put(uuid, now);
+        long base = pdc.getOrDefault(turretBaseExpiryKey, PersistentDataType.LONG, now);
+        long cap = base + 15_000L; // Engineer can extend a construct by up to 15s total
+        long remaining = Math.max(0L, expiry - now);
+        long extended = Math.min(now + remaining + 5_000L, cap);
+        if (extended <= now) return;
+
+        turretExpiry.put(uuid, extended);
+        turretRepairs.put(uuid, (repairs == null ? 0 : repairs) + 1);
+
+        scheduleTurretRemoval(uuid, Math.max(1L, (extended - now) / 50L));
+        player.sendMessage(plugin.getComponent("turret-repaired"));
+        player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 1.0f, 1.2f);
     }
 
     private void activateEMPGrenade(Player player, ClassData data) {
@@ -433,27 +705,43 @@ public class AbilityListener implements Listener {
         setCooldown(player.getUniqueId(), "tactical", cooldown);
 
         int range = 6 + (data.level() >= 4 ? 3 : 0); // 6 base, +3 at level 4
-        int duration = 100 + (data.level() >= 7 ? 40 : 0); // 5s base, +2s at level 7
+        int duration = 100 + (data.level() >= 3 ? 40 : 0); // 5s base, +2s at level 3 (Resonance Surge)
 
         // Throw grenade — snowball
         Snowball grenade = player.launchProjectile(Snowball.class);
         grenade.setVelocity(player.getLocation().getDirection().multiply(2));
-        grenade.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, "emp_grenade"),
-                PersistentDataType.BOOLEAN,
-                true);
-        grenade.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, "emp_range"),
-                PersistentDataType.INTEGER,
-                range);
-        grenade.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, "emp_duration"),
-                PersistentDataType.INTEGER,
-                duration);
+        grenade.getPersistentDataContainer().set(empGrenadeKey, PersistentDataType.BOOLEAN, true);
+        grenade.getPersistentDataContainer().set(empRangeKey, PersistentDataType.INTEGER, range);
+        grenade.getPersistentDataContainer().set(empDurationKey, PersistentDataType.INTEGER, duration);
 
         grenade.setItem(new ItemStack(Material.ENDER_PEARL));
         player.sendMessage(plugin.getComponent("emp-thrown"));
         player.playSound(player.getLocation(), Sound.ENTITY_SNOWBALL_THROW, 1.0f, 1.2f);
+    }
+
+    @EventHandler
+    public void onEMPImpact(ProjectileHitEvent event) {
+        PersistentDataContainer pdc = event.getEntity().getPersistentDataContainer();
+        if (!pdc.has(empGrenadeKey, PersistentDataType.BOOLEAN)) return;
+
+        int range = pdc.getOrDefault(empRangeKey, PersistentDataType.INTEGER, 6);
+        int duration = pdc.getOrDefault(empDurationKey, PersistentDataType.INTEGER, 100);
+        Location loc = event.getEntity().getLocation();
+
+        for (Entity entity : loc.getWorld().getNearbyEntities(loc, range, range, range)) {
+            if (entity instanceof Mob mob && isHostile(mob)) {
+                mob.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 0));
+                mob.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 1));
+                mob.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, duration, 0));
+            }
+        }
+        loc.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, loc, 1);
+        loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 0.6f, 1.6f);
+
+        Player thrower = event.getEntity().getShooter() instanceof Player p ? p : null;
+        if (thrower != null) {
+            thrower.sendMessage(plugin.getComponent("emp-detonated"));
+        }
     }
 
     // ==================== PASSIVE ABILITIES ====================
@@ -464,12 +752,7 @@ public class AbilityListener implements Listener {
         if (!(event.getEntity() instanceof Player player)) return;
         if (!isClass(player, "vanguard")) return;
         if (!hasShield(player)) return;
-
-        ClassData data = classManager.getClassData(player.getUniqueId());
-        if (data.level() < 1) return;
-
-        // Reduce knockback
-        event.setDamage(event.getDamage() * 0.5);
+        event.setKnockback(event.getKnockback() * 0.5);
     }
 
     // Vanguard Trait 2: Last Stand — damage resistance when low HP
@@ -479,7 +762,7 @@ public class AbilityListener implements Listener {
         if (!isClass(player, "vanguard")) return;
 
         ClassData data = classManager.getClassData(player.getUniqueId());
-        if (data.level() < 6) return;
+        if (data.level() < 3) return; // trait2 unlock level
 
         if (player.getHealth() <= player.getAttribute(Attribute.MAX_HEALTH).getValue() * 0.3) {
             UUID uuid = player.getUniqueId();
@@ -490,6 +773,9 @@ public class AbilityListener implements Listener {
                 lastStandCooldown.put(uuid, now);
                 int duration = 100 + (data.level() >= 6 ? 40 : 0); // 5s base, +2s at level 6
                 player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 1));
+                if (data.level() >= 7) { // level 7: +10% damage while Last Stand active
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, 0));
+                }
                 player.sendActionBar(Component.text("LAST STAND", NamedTextColor.RED));
                 player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 0.5f, 1.5f);
             }
@@ -524,8 +810,7 @@ public class AbilityListener implements Listener {
         }
     }
 
-    // Warden Trait 2: Vigilance — see ally health (handled in a tick task in GlitchClasses onEnable)
-    // This is handled separately — we'll add a ticker later
+    // Warden Trait 2: Vigilance — ally health through walls (ticker in startTickers)
 
     // Specter Trait 1: Lightweight — movement speed
     @EventHandler
@@ -556,17 +841,88 @@ public class AbilityListener implements Listener {
         event.setDamage(event.getDamage() * 0.9); // 10% reduction
     }
 
-    // Specter Trait 2: Scavenge — +loot (handled in GlitchLoot plugin, metadata-based)
+    // Specter Trait 2: Scavenge — +loot (GlitchItems reads the specter_scavenge
+    // scoreboard tag; synced in startTickers)
 
-    // Operator Trait 1: Engineer — repair turrets on right-click
+    // Operator Trait 1: Engineer — right-click repair (handled in onOperatorRepair)
+    // Operator Trait 2: Resonance Surge — turret fire rate + EMP duration
+    //                    (applied in turretFireRate and activateEMPGrenade)
+
+    // Cloak breaks when the specter attacks or takes damage
     @EventHandler
-    public void onOperatorRepair(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        Player player = event.getPlayer();
-        if (!isClass(player, "operator")) return;
+    public void onCloakBreak(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player attacker
+                && cloakActive.remove(attacker.getUniqueId()) != null) {
+            attacker.removePotionEffect(PotionEffectType.INVISIBILITY);
+            attacker.sendMessage(plugin.getComponent("cloak-broken"));
+        }
+        if (event.getEntity() instanceof Player victim
+                && cloakActive.remove(victim.getUniqueId()) != null) {
+            victim.removePotionEffect(PotionEffectType.INVISIBILITY);
+            victim.sendMessage(plugin.getComponent("cloak-broken"));
+        }
+    }
 
-        // Check for nearby turrets and repair
-        // Simplified — just check if the player is holding a wrench-like item
+    /**
+     * Periodic trait tickers:
+     * - syncs the specter_scavenge scoreboard tag (Scavenge, level 3+)
+     * - Warden Vigilance: ally health through walls (action bar, level 3+)
+     * - Ghost Protocol: hostiles cannot target the specter
+     */
+    public void startTickers() {
+        plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            for (Player player : plugin.getServer().getOnlinePlayers()) {
+                ClassData data = classManager.getClassData(player.getUniqueId());
+
+                // Scavenge tag sync (read by GlitchItems containers)
+                boolean scavenger = data.className().equals("specter") && data.level() >= 3;
+                if (scavenger) {
+                    player.addScoreboardTag("specter_scavenge");
+                } else {
+                    player.removeScoreboardTag("specter_scavenge");
+                }
+
+                // Ghost Protocol — clear hostiles' targets while active
+                Long ghost = ghostUntil.get(player.getUniqueId());
+                if (ghost != null) {
+                    if (ghost < System.currentTimeMillis()) {
+                        ghostUntil.remove(player.getUniqueId());
+                    } else {
+                        for (Entity entity : player.getNearbyEntities(16, 16, 16)) {
+                            if (entity instanceof Mob mob && isHostile(mob)) {
+                                mob.setTarget(null);
+                            }
+                        }
+                    }
+                }
+
+                // Vigilance — warden sees ally health through walls (level 3+)
+                if (!data.className().equals("warden") || data.level() < 3) continue;
+                if (!GAME_WORLDS.contains(player.getWorld().getName())) continue;
+
+                List<Player> allies = new ArrayList<>();
+                for (Entity entity : player.getNearbyEntities(20, 20, 20)) {
+                    if (entity instanceof Player ally && !ally.equals(player)) {
+                        allies.add(ally);
+                    }
+                }
+                allies.sort(Comparator.comparingDouble(a -> a.getLocation().distanceSquared(player.getLocation())));
+
+                if (allies.isEmpty()) continue;
+                StringBuilder bar = new StringBuilder();
+                int shown = 0;
+                for (Player ally : allies) {
+                    if (shown >= 3) break;
+                    double max = ally.getAttribute(Attribute.MAX_HEALTH).getValue();
+                    bar.append(NamedTextColor.GREEN).append(ally.getName()).append(" ")
+                            .append(NamedTextColor.WHITE).append((int) Math.max(0, ally.getHealth()))
+                            .append(NamedTextColor.DARK_GRAY).append("/")
+                            .append(NamedTextColor.WHITE).append((int) max).append("  ");
+                    shown++;
+                }
+                player.sendActionBar(Component.text(bar.toString().trim()));
+            }
+        }, 40L, 20L);
     }
 
     // ==================== UTILITY METHODS ====================
@@ -623,5 +979,9 @@ public class AbilityListener implements Listener {
         Long expiry = playerCooldowns.get(ability);
         if (expiry == null) return 0;
         return Math.max(0, expiry - System.currentTimeMillis());
+    }
+
+    private int getUltimateLevel() {
+        return plugin.getConfig().getInt("ultimate-level", 10);
     }
 }

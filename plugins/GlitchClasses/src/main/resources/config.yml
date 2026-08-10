@@ -4,6 +4,9 @@
 # Maximum class level
 max-level: 10
 
+# Level at which the class ultimate unlocks
+ultimate-level: 10
+
 # Cost in shards to reset class (0 = free)
 reset-cost: 500
 
@@ -72,6 +75,11 @@ abilities:
       name: "Last Stand"
       description: "Below 30% HP: +40% damage resistance for 5s"
       icon: "TOTEM_OF_UNDYING"
+    ultimate:
+      name: "Fortress"
+      description: "Aegis Wall becomes indestructible — allies gain massive damage resistance for 3s"
+      icon: "NETHER_STAR"
+      cooldown: 120
   warden:
     prime:
       name: "Healing Pulse"
@@ -91,6 +99,11 @@ abilities:
       name: "Vigilance"
       description: "See ally health bars through walls within 20 blocks"
       icon: "SPECTRAL_ARROW"
+    ultimate:
+      name: "Guardian Angel"
+      description: "Protect allies — the next fatal blow instead leaves 1 HP with 3s invulnerability (30s)"
+      icon: "TOTEM_OF_UNDYING"
+      cooldown: 120
   specter:
     prime:
       name: "Cloak"
@@ -110,6 +123,11 @@ abilities:
       name: "Scavenge"
       description: "+20% loot from containers, +1 inventory slot"
       icon: "CHEST"
+    ultimate:
+      name: "Ghost Protocol"
+      description: "10s undetectable — mobs cannot target you, move at 2x speed"
+      icon: "NETHER_STAR"
+      cooldown: 120
   operator:
     prime:
       name: "Turret Deploy"
@@ -129,6 +147,11 @@ abilities:
       name: "Overclock"
       description: "Turret fires 25% faster, EMP duration +2s"
       icon: "CLOCK"
+    ultimate:
+      name: "Cataclysm"
+      description: "Your turret explodes for 80 damage in a 10-block radius, then deploys a new one"
+      icon: "NETHER_STAR"
+      cooldown: 120
 
 # Upgrade scaling (per level)
 upgrades:

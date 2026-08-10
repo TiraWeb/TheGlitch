@@ -34,7 +34,8 @@ rules, and end-to-end testing still need work.
 | GlitchStash | Implemented | Extraction inventory storage, YAML persistence, retrieval GUI, overflow preservation, and recent duplication fixes exist. Fast/Silent extraction variants (key consumption, zone arming, payout bonus, `/extractadmin`) added in source 2026-08-06. Live extraction testing remains. |
 | Standard extraction | Partial | Repository VelKoth config is 30 seconds. Generated `arenas.yml` and live arena values require verification. |
 | Fast/Silent extraction | Source-only | GlitchStash variant zones + key consumption implemented in source; VelKoth arenas with 15s/10s capture timers must be created live and bounds mirrored into `extraction-variants.zones`. |
-| GlitchClasses | Partial | Four classes, persistence, GUI, ability items, and several abilities exist. Starter kit on first class select added in source 2026-08-06. Some traits/abilities, reset costs, and progression behavior are incomplete. |
+| GlitchClasses | Partial | Four classes, persistence, GUI, ability items, and several abilities exist. Starter kit on first class select added in source 2026-08-06. Abilities completed in source 2026-08-10: all four ultimates, missing traits (Vigilance, Scavenge tag hook, Resonance Surge, Engineer repair), EMP impact, cloak break, Ironclad knockback fix, Revive Beacon healing, real reset costs. Live build/test pending. |
+| GlitchHideout | Source-only | GlitchHideout plugin (2026-08-10): 7 stations with shard costs + prerequisites, per-player persistence, workbench crafting (ITEM_SYSTEM §7), extended stash + armory storage with auto-sort, med heal, intel hostile-glow, /hideout GUI. Needs live build/test; physical hub building is in-game work. |
 | MythicMobs | Partial | Ten mob definitions (2026-08-03) and per-tier drop tables exist in repo. Red Zone spawn areas seeded (2026-08-10); dungeon-slot spawners via setup-dungeon-regions.sh. Live test pending. |
 | Oraxen items | Configured | 18 item definitions, textures, and lore are present; Oraxen must be built/deployed on the server. |
 | GlitchItems | Implemented | Deployed and live-tested (gear rolls, `/identify`). Residual Glitch consumers added in source: loot luck applies at identify (star-luck + rarity surge), elite hunt spawns MythicMobs elites at 5+ stacks (2026-08-06); container loot-luck consumer added 2026-08-10. |
@@ -44,7 +45,7 @@ rules, and end-to-end testing still need work.
 | GlitchDungeons | Deferred (operator decision, 2026-08-03) | Party, slots, waves, timers, rewards, and GUI source exist, but configuration parsing, extraction startup, stash integration, and cleanup still need fixes. Working on the dungeon PvE world is deferred for now. |
 | Physical world content | Deferred | Hub facilities, dungeon shells, Red Zone POIs, and extraction structures are not reproducibly stored in Git. Container mechanic exists (2026-08-10); in-world placement of containers/spawn areas is operator work. |
 | Death rules | Source-only | GlitchDeathRules (2026-08-06): leggings+boots mercy keep on death in glitch_red + Red Zone entry invulnerability (30s, entry-point zones, cancel-on-action, glow). Shards-on-death verification (5.13.2) and tuning pass (5.13.3) remain. |
-| Game loops | Planned | Gear gating, hideout progression, dynamic events, insurance, and smart loot are not implemented. Residual Glitch loop is now fully wired (timer → damage/luck/payout/elite hunt). |
+| Game loops | Planned | Gear gating, dynamic events, insurance, and smart loot are not implemented. Residual Glitch loop is now fully wired (timer → damage/luck/payout/elite hunt). Hideout progression implemented in source (2026-08-10). |
 | Operations and launch | Planned | Backups, moderation/rollback, load testing, soft launch, and launch checklist remain. |
 
 ## Completed Foundation
@@ -61,8 +62,8 @@ rules, and end-to-end testing still need work.
 ## Highest-Priority Remaining Work
 
 1. Build/deploy/test Track 1 plugins on the box: GlitchDeathRules, starter kit, Residual consumers, extraction variants.
-2. Build/deploy/test the container system + Red Zone spawn areas (source complete 2026-08-10), then mark containers in-world.
-3. Finish the item loop: Identifier NPC flow, crafting recipes.
+2. Build/deploy/test the latest source on the box: GlitchClasses abilities/ultimates, GlitchHideout, container system, Red Zone spawn areas.
+3. Finish the item loop: Identifier NPC flow.
 4. Repair GlitchDungeons (deferred by operator; planned after the item loop).
 5. Build or provision the physical maps and dungeon/POI content.
 6. Run Bedrock, extraction, class, economy, and performance tests.

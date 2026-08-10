@@ -77,10 +77,8 @@ public class ClassGUI implements Listener {
             "operator", new Material[]{Material.DISPENSER, Material.ENDER_PEARL, Material.ANVIL, Material.CLOCK}
     );
 
-    // Ability types
-    private static final String[] ABILITY_TYPES = {"prime", "tactical", "trait1", "trait2"};
+    // Ability type labels
     private static final String[] ABILITY_TYPE_LABELS = {"PRIME", "TACTICAL", "TRAIT I", "TRAIT II"};
-    private static final int[] ABILITY_UNLOCK_LEVELS = {1, 1, 1, 3}; // Prime/Tactical at 1, Trait1 at 1, Trait2 at 3
 
     public ClassGUI(GlitchClasses plugin, ClassManager classManager) {
         this.plugin = plugin;
@@ -208,18 +206,19 @@ public class ClassGUI implements Listener {
         classIcon.setItemMeta(iconMeta);
         inv.setItem(4, classIcon);
 
-        // Abilities — row 2 (slots 10, 11, 12, 13)
-        String[] abilityKeys = {"prime", "tactical", "trait1", "trait2"};
-        int[] abilitySlots = {10, 11, 12, 13};
+        // Abilities — row 2 (slots 10-14: prime, tactical, trait1, trait2, ultimate)
+        String[] abilityKeys = {"prime", "tactical", "trait1", "trait2", "ultimate"};
+        int[] abilitySlots = {10, 11, 12, 13, 14};
+        int[] abilityUnlocks = {1, 1, 1, 3, 10};
         ConfigurationSection abilities = plugin.getConfig().getConfigurationSection("abilities." + className);
 
         for (int i = 0; i < abilityKeys.length; i++) {
             String abilityKey = abilityKeys[i];
             ConfigurationSection ability = abilities.getConfigurationSection(abilityKey);
-            Material abilityIcon = CLASS_ABILITY_ICONS.get(className)[i];
+            Material abilityIcon = CLASS_ABILITY_ICONS.get(className)[Math.min(i, 3)];
 
-            boolean unlocked = isSelected && (data.level() >= ABILITY_UNLOCK_LEVELS[i] || ABILITY_UNLOCK_LEVELS[i] <= 1);
-            boolean isUltimate = abilityKey.equals("prime") && data.level() >= 10 && isSelected;
+            boolean isUltimate = abilityKey.equals("ultimate");
+            boolean unlocked = isSelected && data.level() >= abilityUnlocks[i];
 
             ItemStack item = new ItemStack(isUltimate ? Material.NETHER_STAR : abilityIcon);
             ItemMeta itemMeta = item.getItemMeta();
@@ -245,7 +244,7 @@ public class ClassGUI implements Listener {
                     lore.add(Component.text("Cooldown: " + cooldown + "s", NamedTextColor.YELLOW));
                 }
             } else if (isSelected) {
-                lore.add(Component.text("LOCKED — Reach level " + ABILITY_UNLOCK_LEVELS[i] + " to unlock",
+                lore.add(Component.text("LOCKED — Reach level " + abilityUnlocks[i] + " to unlock",
                         NamedTextColor.RED));
             } else {
                 lore.add(Component.text("Select this class to unlock", NamedTextColor.GRAY));
@@ -480,8 +479,23 @@ public class ClassGUI implements Listener {
     private void handleClassReset(Player player) {
         int cost = classManager.getResetCost();
 
-        // Check shards (simplified — just check inventory for echo shards)
-        // In a real implementation, this would check the Coins plugin balance
+        // Charge the reset cost via Vault (shards)
+        try {
+            var eco = org.bukkit.Bukkit.getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
+            if (eco != null) {
+                net.milkbowl.vault.economy.Economy economy = eco.getProvider();
+                if (!economy.has(player, cost)) {
+                    player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.",
+                            NamedTextColor.RED));
+                    return;
+                }
+                economy.withdrawPlayer(player, cost);
+            }
+        } catch (Exception e) {
+            // Vault not available — log warning but allow reset anyway
+            plugin.getLogger().warning("Vault economy not available for reset check: " + e.getMessage());
+        }
+
         classManager.resetClass(player.getUniqueId());
         abilityItemManager.clearClassItems(player);
         switchingGui.add(player.getUniqueId());

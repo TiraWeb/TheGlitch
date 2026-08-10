@@ -1,0 +1,28 @@
+name: GlitchHideout
+version: '${project.version}'
+main: com.theglitch.glitchhideout.GlitchHideout
+api-version: '1.21'
+description: Hideout progression for The Glitch — stations, upgrades, workbench crafting, storage
+softdepend:
+  - Vault
+  - GlitchClasses
+  - GlitchItems
+  - Oraxen
+
+commands:
+  hideout:
+    description: Open the hideout
+    usage: /hideout
+    permission: glitchhideout.use
+  hideoutadmin:
+    description: Admin commands for GlitchHideout
+    usage: /hideoutadmin <reload|set <player> <station> <level>|reset <player>>
+    permission: glitchhideout.admin
+
+permissions:
+  glitchhideout.use:
+    description: Access the hideout
+    default: true
+  glitchhideout.admin:
+    description: Admin hideout commands
+    default: op

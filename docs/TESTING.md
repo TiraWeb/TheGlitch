@@ -12,6 +12,7 @@
   - `sudo ./plugins/GlitchClasses/build.sh`
   - `sudo ./plugins/GlitchItems/build.sh`
   - `sudo ./plugins/GlitchStash/build.sh`
+  - `sudo ./plugins/GlitchHideout/build.sh`
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./setup-mythicmobs.sh` (`mm reload` + verify mobs list)
 - [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses
@@ -62,6 +63,32 @@
 - [ ] Vault (Vault Key) and Rift Vault (Rift Key, decorated pot → drops at feet) behave the same
 - [ ] With Residual stacks: observe rarity surge + surge drop message
 - [ ] Hand-built rift from a container: `/identify` works, merchant sell price matches config
+
+## Class abilities + ultimates (GlitchClasses)
+
+- [ ] Ability items: prime (slot 0), tactical (slot 1), ultimate (slot 2, NETHER_STAR) given on class select
+- [ ] Ultimate locked below level 10 ("Ultimate locked" message), works at level 10
+- [ ] Vanguard Fortress: wall + ally Resistance III (3s); Taunt/Shield Wall unaffected
+- [ ] Warden Guardian Angel: fatal blow → 1 HP + 3s invuln; Revive Beacon now surge-heals the most-injured ally after channel (2 allies at level 8)
+- [ ] Specter Ghost Protocol: 10s invisibility + speed, hostiles untarget you; Cloak breaks on attack/damage
+- [ ] Operator Cataclysm: 80 damage to hostiles in 10 blocks + fresh turret; EMP grenade now applies slowness/weakness/glow on impact
+- [ ] Engineer: right-click own turret → +5s (30s cooldown, max +15s); Resonance Surge: turret fires faster at level 3+
+- [ ] Ironclad: shield reduces knockback (not damage)
+- [ ] Vigilance: warden sees ally HP in action bar (level 3+, game worlds)
+- [ ] Scavenge: specter at level 3+ gets +1 container roll (`specter_scavenge` tag)
+- [ ] Class reset charges shards (GUI + `/class reset`); insufficient balance blocks it
+
+## GlitchHideout
+
+- [ ] `/hideout` opens the station menu
+- [ ] Station upgrades charge shards and enforce prerequisites (e.g. Armory needs Stash 2 + Core 1); insufficient shards blocked
+- [ ] Workbench crafting: `/o give <you> rune_fragment 5` + `/o give <you> rift_crystal 1` → craft Healing Potion → 3x potions via `/o give`; materials consumed; missing materials message
+- [ ] Targeted resonance recipes give matching-resonance blades (`/glitchitems give uncommon blade <resonance> <player>` works from console)
+- [ ] Med Station heals to full, 30s cooldown message
+- [ ] Extended Stash: 27/45/54 slots by level; items persist after close/rejoin; taking items saves immediately
+- [ ] Armory: 27/45 slots, auto-sort reorders, items persist
+- [ ] Intel Center: hostiles glow within 20 blocks while in glitch_red/pve
+- [ ] `/hideoutadmin set/reset/reload` works
 
 ## Red Zone spawn areas (MythicMobs)
 

@@ -106,6 +106,9 @@ elite-hunt:
 # (per-roll rarity surge chance + surge drop chance = lootLuckBonus%).
 containers:
   enabled-worlds: [glitch_red, glitch_pve]
+  # Extra container rolls for Specters with the Scavenge trait (GlitchClasses
+  # keeps the specter_scavenge scoreboard tag in sync)
+  scavenge-bonus-rolls: 1
   types:
     debris:
       display: "<gray>Debris Pile"

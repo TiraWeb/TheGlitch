@@ -187,6 +187,10 @@ public final class ContainerManager {
         boolean surged = false;
 
         int rolls = type.maxRolls();
+        // Specter Scavenge (GlitchClasses trait, scoreboard tag) — extra rolls
+        if (player.getScoreboardTags().contains("specter_scavenge")) {
+            rolls += plugin.getConfig().getInt("containers.scavenge-bonus-rolls", 1);
+        }
         for (int i = 0; i < rolls; i++) {
             Rarity rarity = rollRarity(type, rand);
             if (rarity == null) continue;
