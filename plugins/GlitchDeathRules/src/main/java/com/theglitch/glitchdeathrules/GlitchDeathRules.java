@@ -44,7 +44,7 @@ public final class GlitchDeathRules extends JavaPlugin {
         getLogger().info("GlitchDeathRules disabled.");
     }
 
-    private boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             reloadPlugin();
             sender.sendMessage(getComponent("reloaded"));
