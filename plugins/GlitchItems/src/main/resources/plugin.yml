@@ -16,6 +16,10 @@ commands:
     description: Admin commands for GlitchItems
     usage: /glitchitems <give|glitch|reload>
     permission: glitchitems.admin
+  glitchcontainers:
+    description: Mark and manage in-world loot containers
+    usage: /glitchcontainers <set <type>|clear|info|types|reload>
+    permission: glitchitems.admin
 
 permissions:
   glitchitems.use:

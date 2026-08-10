@@ -83,7 +83,7 @@ Resolved:
 |---|---|---|---|
 | I1 | Warning | Loot integration | Drop tables now emit Unstable Rifts + materials in repo (2026-08-03); live drop verification pending. |
 | I2 | Warning | Mob integration | All 10 mobs now carry Resonance tags in repo (2026-08-03); live Resonance damage test pending. |
-| I3 | Warning | Residual Glitch | Loot-luck and elite-hunt methods have no world-population consumer. |
+| I3 | Warning | Residual Glitch | Loot-luck consumer now applies at identify + containers (2026-08-10); elite hunt wired via `mm spawn` (2026-08-06). Aggro-scaling (mob detection range at high stacks) still has no consumer — needs MythicMobs AI work or skip. |
 
 Resolved:
 

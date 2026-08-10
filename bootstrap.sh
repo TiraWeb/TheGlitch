@@ -291,7 +291,7 @@ fi
 if [[ -d "${REPO_DIR}/server/plugins/MythicMobs" ]]; then
   log "Phase 5.3 — seeding MythicMobs configs"
   install -d -m 755 "${PLUGIN_DIR}/MythicMobs"
-  for subdir in Mobs Skills DropTables; do
+  for subdir in Mobs Skills DropTables Spawners SpawnAreas; do
     if [[ -d "${REPO_DIR}/server/plugins/MythicMobs/${subdir}" ]]; then
       install -d -m 755 "${PLUGIN_DIR}/MythicMobs/${subdir}"
       for f in "${REPO_DIR}/server/plugins/MythicMobs/${subdir}"/*.yml; do

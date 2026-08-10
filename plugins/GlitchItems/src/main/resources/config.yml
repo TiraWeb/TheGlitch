@@ -97,3 +97,70 @@ elite-hunt:
   spawn-radius: 12
   announce: true
   message: "<dark_red><bold>An elite hunts you.</bold></dark_red> <gray>Something powerful is closing in.</gray>"
+
+# In-world loot containers (design GAME_DESIGN.md §3, ITEM_SYSTEM.md §9).
+# Mark blocks in-world with: /glitchcontainers set <type>
+# Opening rolls the rarity table into the block's inventory (or drops at the
+# block if it has none), respects a per-block regen cooldown, consumes the
+# required key, and applies the Residual Glitch loot-luck consumer
+# (per-roll rarity surge chance + surge drop chance = lootLuckBonus%).
+containers:
+  enabled-worlds: [glitch_red, glitch_pve]
+  types:
+    debris:
+      display: "<gray>Debris Pile"
+      material: BARREL
+      key-id: ""
+      key-material: ""
+      key-name: ""
+      regen-seconds: 300
+      max-rolls: 2
+      drops: { common: 60, uncommon: 25, nothing: 15 }
+      materials: { rune_fragment: 40 }
+      shards-min: 0
+      shards-max: 0
+    cache:
+      display: "<green>Loot Cache"
+      material: CHEST
+      key-id: "cache_key"
+      key-material: "TRIPWIRE_HOOK"
+      key-name: "Cache Key"
+      regen-seconds: 600
+      max-rolls: 2
+      drops: { uncommon: 40, rare: 30, common: 20, nothing: 10 }
+      materials: { rune_fragment: 30, aether_shard: 15, rift_crystal: 5 }
+      shards-min: 5
+      shards-max: 15
+    vault:
+      display: "<blue>Vault"
+      material: BLUE_SHULKER_BOX
+      key-id: "vault_key"
+      key-material: "TRIPWIRE_HOOK"
+      key-name: "Vault Key"
+      regen-seconds: 900
+      max-rolls: 2
+      drops: { rare: 30, epic: 40, uncommon: 20, nothing: 10 }
+      materials: { aether_shard: 20, rift_crystal: 15, void_essence: 8 }
+      shards-min: 15
+      shards-max: 40
+    rift_vault:
+      display: "<light_purple>Rift Vault"
+      material: DECORATED_POT
+      key-id: "rift_key"
+      key-material: "TRIPWIRE_HOOK"
+      key-name: "Rift Key"
+      regen-seconds: 1800
+      max-rolls: 3
+      drops: { epic: 30, legendary: 50, rare: 20 }
+      materials: { rift_crystal: 20, void_essence: 15, legendary_relic: 3 }
+      shards-min: 30
+      shards-max: 80
+  messages:
+    not-container: "<gray>That is not a Glitch container."
+    disabled-world: "<red>Containers are dormant here."
+    not-ready: "<red><container> is still glitching — <time>s left."
+    need-key: "<red><container> is sealed. You need a <gold><key></gold>."
+    emptied: "<gray>The <container> rustles and settles... nothing inside."
+    looted: "<gold>You loot the <container>!"
+    surge: "<light_purple>Residual Glitch surges — the container spits out extra loot!</light_purple>"
+    shards: "<gold>+<amount> Shards</gold> <gray>cling to the loot.</gray>"

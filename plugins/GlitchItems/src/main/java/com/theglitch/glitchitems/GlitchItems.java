@@ -11,6 +11,7 @@ public final class GlitchItems extends JavaPlugin {
     private GearManager gearManager;
     private ResidualGlitchManager glitchManager;
     private IdentifyManager identifyManager;
+    private ContainerManager containerManager;
     private Economy economy;
 
     @Override
@@ -26,8 +27,10 @@ public final class GlitchItems extends JavaPlugin {
         gearManager = new GearManager(this);
         glitchManager = new ResidualGlitchManager(this);
         identifyManager = new IdentifyManager(this, gearManager);
+        containerManager = new ContainerManager(this);
 
         Bukkit.getPluginManager().registerEvents(new CombatListener(this, gearManager, glitchManager), this);
+        Bukkit.getPluginManager().registerEvents(new ContainerListener(containerManager), this);
         glitchManager.start();
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -37,6 +40,7 @@ public final class GlitchItems extends JavaPlugin {
 
         getCommand("identify").setExecutor(new IdentifyCommand(identifyManager));
         getCommand("glitchitems").setExecutor(new GlitchItemsCommand(this, gearManager, glitchManager));
+        getCommand("glitchcontainers").setExecutor(new ContainerCommand(this, containerManager));
 
         getLogger().info("GlitchItems enabled.");
     }
@@ -52,6 +56,9 @@ public final class GlitchItems extends JavaPlugin {
 
     public void reloadPlugin() {
         reloadConfig();
+        if (containerManager != null) {
+            containerManager.reload();
+        }
         getLogger().info("GlitchItems reloaded.");
     }
 
@@ -69,6 +76,10 @@ public final class GlitchItems extends JavaPlugin {
 
     public IdentifyManager getIdentifyManager() {
         return identifyManager;
+    }
+
+    public ContainerManager getContainerManager() {
+        return containerManager;
     }
 
     public Economy getEconomy() {
