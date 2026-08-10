@@ -71,8 +71,9 @@ public class AbilityItemListener implements Listener {
         if (GAME_WORLDS.contains(worldName)) {
             ClassData data = classManager.getClassData(player.getUniqueId());
             if (!data.className().equals("none")) {
-                // Force re-place ability items in correct slots when entering game worlds
-                abilityItemManager.forceGiveClassItems(player, data.className());
+                // Re-give only when items are actually missing (e.g. dropped on
+                // death) — never overwrite hotbar loot the player is carrying.
+                abilityItemManager.giveClassItems(player, data.className());
             }
         }
     }

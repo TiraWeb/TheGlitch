@@ -528,8 +528,11 @@ public class ClassGUI implements Listener {
             plugin.getLogger().warning("Vault economy not available for upgrade check: " + e.getMessage());
         }
 
-        // Add XP to trigger level up
-        boolean leveledUp = classManager.addXp(player.getUniqueId(), cost);
+        // Add exactly enough XP to reach the next level — one purchase = one
+        // level (the XP curve requires 50 more XP than the upgrade cost, so
+        // granting raw shard amounts would silently make upgrades 2-3x costlier).
+        boolean leveledUp = classManager.addXp(player.getUniqueId(),
+                classManager.getXpForLevel(data.level() + 1));
 
         if (leveledUp) {
             ClassData newData = classManager.getClassData(player.getUniqueId());

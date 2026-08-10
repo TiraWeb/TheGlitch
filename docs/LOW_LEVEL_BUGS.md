@@ -1,6 +1,6 @@
 # Low-Level Bug Tracker - Custom Plugins
 
-Updated: 2026-08-03
+Updated: 2026-08-10
 
 This tracker lists known implementation issues. It is not a substitute for
 runtime testing. Source-only plugins must be built and tested on the target
@@ -27,6 +27,10 @@ Resolved in recent source:
 - Partial retrieval preserves item metadata.
 - GUI overflow items are preserved instead of discarded.
 - Partial replacement no longer duplicates old armor/offhand items.
+- **2026-08-10:** stash merge no longer drops items that overflow the 54-slot
+  temp inventory (leftovers are appended, never discarded).
+- **2026-08-10:** `ExtractionListener` uses an empty armor array instead of
+  `setArmorContents(null)`; stash-GUI close is null-safe during disable/reload.
 
 ## GlitchClasses
 
@@ -49,6 +53,19 @@ Resolved in recent source:
 | C25 | Warning | `plugin.yml` | API version/build target must be reconciled with the live Minecraft target. |
 | C26 | Warning | Multiple files | Runtime ability names still differ from the Arcane Ruins design names. |
 | C27 | Warning | `AbilityListener.java` | Vigilance, Scavenge, Engineer, and some designed traits are incomplete or stubbed. |
+
+Resolved (2026-08-10):
+
+- **C20:** class reset now charges shards via Vault (GUI + `/class reset`).
+- **C22:** Ironclad only halves knockback (no longer cuts all damage).
+- **C27:** Vigilance (ticker), Scavenge (`specter_scavenge` tag → GlitchItems
+  containers), Engineer (turret repair), Resonance Surge (fire rate/EMP) all
+  implemented; all four ultimates added.
+- **New:** one class-upgrade purchase now grants exactly one level (XP curve
+  mismatch made upgrades 2–3x costlier than the GUI displayed).
+- **New:** ability items no longer overwrite hotbar loot — displaced items
+  move to a free slot or drop at the player's feet; world-change re-give only
+  fires when items are genuinely missing.
 
 ## GlitchDungeons
 
@@ -76,6 +93,9 @@ Resolved in recent source:
 Resolved:
 
 - Mob type command input is sanitized before dispatch.
+- **2026-08-10:** `DungeonConfig` skips non-numeric `slots`/`dungeons` keys
+  instead of crashing startup (D18 list-vs-section parsing remains open — see
+  deferred GlitchDungeons repair).
 
 ## GlitchItems
 
@@ -97,6 +117,16 @@ Resolved:
 | H3 | Warning | Economy | Prices need a balance pass against actual loot and income after integration. |
 | H4 | Minor | GUI | Session maps and GUI transitions need disconnect/close lifecycle testing. |
 
-Resolved:
+Resolved (2026-08-10):
 
 - Buy/sell transactions (`/shop`) deployed and live-tested (2026-08-03).
+- Selling no longer consumes the item when the economy is missing
+  (previously items were removed without payment).
+
+## GlitchHideout
+
+Resolved (2026-08-10):
+
+- Fixed a compile-blocking type mismatch in `getStash`/`getArmory`
+  (lazy-load now registers station levels so storage always persists), and
+  `savePlayer` persists storage even without station data.

@@ -152,6 +152,11 @@ public class StashGUI implements Listener {
         openSession session = openSessions.remove(player.getUniqueId());
         if (session == null) return;
 
+        // Guard against the plugin being disabled (instance nulled) while a GUI
+        // is open — closing must never NPE during shutdown/reload.
+        GlitchStash instance = GlitchStash.getInstance();
+        if (instance == null) return;
+
         // Rebuild stash from remaining items in GUI
         List<ItemStack> remaining = new ArrayList<>();
         for (int i = 9; i < SIZE; i++) {
@@ -170,13 +175,13 @@ public class StashGUI implements Listener {
 
         if (remaining.isEmpty()) {
             // All items taken — clear stash
-            GlitchStash.getInstance().getStashManager().clearStash(player.getUniqueId());
-            player.sendMessage(GlitchStash.getInstance().getComponent("all-retrieved"));
+            instance.getStashManager().clearStash(player.getUniqueId());
+            player.sendMessage(instance.getComponent("all-retrieved"));
         } else {
             // Partial retrieval — rebuild stash from remaining items and persist
             ItemStack[] newContents = new ItemStack[remaining.size()];
             remaining.toArray(newContents);
-            GlitchStash.getInstance().getStashManager().replaceStash(
+            instance.getStashManager().replaceStash(
                     player.getUniqueId(), newContents);
         }
     }

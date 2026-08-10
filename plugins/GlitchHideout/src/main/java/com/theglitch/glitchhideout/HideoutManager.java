@@ -295,11 +295,21 @@ public final class HideoutManager {
     // --- storage ----------------------------------------------------------------
 
     public List<ItemStack> getStash(UUID uuid) {
-        return stash.computeIfAbsent(uuid, this::loadPlayer);
+        List<ItemStack> items = stash.get(uuid);
+        if (items == null) {
+            loadPlayer(uuid);
+            items = stash.get(uuid);
+        }
+        return items != null ? items : new ArrayList<>();
     }
 
     public List<ItemStack> getArmory(UUID uuid) {
-        return armory.computeIfAbsent(uuid, this::loadPlayer);
+        List<ItemStack> items = armory.get(uuid);
+        if (items == null) {
+            loadPlayer(uuid);
+            items = armory.get(uuid);
+        }
+        return items != null ? items : new ArrayList<>();
     }
 
     public void saveStorage(UUID uuid) {
@@ -366,12 +376,18 @@ public final class HideoutManager {
         }
         stash.put(uuid, loadedStash);
         armory.put(uuid, loadedArmory);
+        levels.put(uuid, playerLevels);
         return playerLevels;
     }
 
     private void savePlayer(UUID uuid) {
+        if (!levels.containsKey(uuid) && !stash.containsKey(uuid) && !armory.containsKey(uuid)) {
+            return;
+        }
         Map<String, Integer> playerLevels = levels.get(uuid);
-        if (playerLevels == null) return;
+        if (playerLevels == null) {
+            playerLevels = loadPlayer(uuid);
+        }
 
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("uuid", uuid.toString());

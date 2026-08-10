@@ -321,6 +321,13 @@ public final class ShopGUI implements Listener {
 
     private void handleSellClick(Player player, int slot, ItemStack item, ClickType click) {
         if (item == null || item.getType().isAir()) return;
+        Economy economy = plugin.getEconomy();
+        if (economy == null) {
+            // Never take the item if we cannot pay for it
+            message(player, "denied");
+            sound(player, false);
+            return;
+        }
         Integer price = shopManager.sellPrice(item);
         if (price == null) {
             message(player, "no-value");
@@ -339,10 +346,7 @@ public final class ShopGUI implements Listener {
             player.getInventory().setItem(slot, copy);
         }
 
-        Economy economy = plugin.getEconomy();
-        if (economy != null) {
-            economy.depositPlayer(player, total);
-        }
+        economy.depositPlayer(player, total);
 
         message(player, "sold", "{amount}", String.valueOf(amount),
                 "{item}", plainName(item), "{price}", String.valueOf(total));

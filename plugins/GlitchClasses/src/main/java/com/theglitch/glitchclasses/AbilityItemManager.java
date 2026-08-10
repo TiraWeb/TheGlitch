@@ -77,7 +77,7 @@ public final class AbilityItemManager {
         ConfigurationSection prime = abilities.getConfigurationSection("prime");
         if (prime != null) {
             ItemStack item = createAbilityItem(prime, "prime", className, color, true);
-            player.getInventory().setItem(PRIME_SLOT, item);
+            placeItem(player, PRIME_SLOT, item);
         } else {
             plugin.getLogger().warning("[AbilityItemManager] No prime ability config for: " + className);
         }
@@ -86,7 +86,7 @@ public final class AbilityItemManager {
         ConfigurationSection tactical = abilities.getConfigurationSection("tactical");
         if (tactical != null) {
             ItemStack item = createAbilityItem(tactical, "tactical", className, color, false);
-            player.getInventory().setItem(TACTICAL_SLOT, item);
+            placeItem(player, TACTICAL_SLOT, item);
         } else {
             plugin.getLogger().warning("[AbilityItemManager] No tactical ability config for: " + className);
         }
@@ -95,12 +95,26 @@ public final class AbilityItemManager {
         ConfigurationSection ultimate = abilities.getConfigurationSection("ultimate");
         if (ultimate != null) {
             ItemStack item = createAbilityItem(ultimate, "ultimate", className, color, false);
-            player.getInventory().setItem(ULTIMATE_SLOT, item);
+            placeItem(player, ULTIMATE_SLOT, item);
         } else {
             plugin.getLogger().warning("[AbilityItemManager] No ultimate ability config for: " + className);
         }
 
         player.updateInventory();
+    }
+
+    /**
+     * Place an ability item in a slot without destroying whatever the player
+     * had there — displaced non-ability items move to a free slot or drop at
+     * the player's feet.
+     */
+    private void placeItem(Player player, int slot, ItemStack item) {
+        ItemStack existing = player.getInventory().getItem(slot);
+        if (existing != null && !existing.getType().isAir() && !isAbilityItem(existing)) {
+            player.getInventory().addItem(existing).values()
+                    .forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
+        }
+        player.getInventory().setItem(slot, item);
     }
 
     /**

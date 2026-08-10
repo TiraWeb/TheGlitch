@@ -36,7 +36,7 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
 
         // 2. Clear inventory
         player.getInventory().clear();
-        player.getInventory().setArmorContents(null);
+        player.getInventory().setArmorContents(new ItemStack[4]);
         player.getInventory().setItemInOffHand(null);
 
         // 3. Residual Glitch payout: bonus shards = sell value x (multiplier - 1)

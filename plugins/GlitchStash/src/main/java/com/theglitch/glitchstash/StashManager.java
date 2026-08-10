@@ -58,19 +58,25 @@ public final class StashManager {
         ItemStack mergedOffhand;
 
         if (existing != null) {
-            // Merge: combine existing stash contents with new extraction
-            // Use a temporary inventory to handle stacking automatically
+            // Merge: combine existing stash contents with new extraction.
+            // A temp inventory handles stacking automatically; anything that
+            // does not fit (54-slot cap) is appended after it — never dropped.
             org.bukkit.inventory.Inventory temp = Bukkit.createInventory(null, 54);
 
+            Map<Integer, ItemStack> leftovers = new java.util.HashMap<>();
             // Add existing stash items first
             for (ItemStack item : existing.contents()) {
-                if (item != null) temp.addItem(item.clone());
+                if (item != null) leftovers.putAll(temp.addItem(item.clone()));
             }
             // Add new extraction items
             for (ItemStack item : contents) {
-                if (item != null) temp.addItem(item.clone());
+                if (item != null) leftovers.putAll(temp.addItem(item.clone()));
             }
-            mergedContents = temp.getContents();
+
+            List<ItemStack> merged = new ArrayList<>();
+            java.util.Collections.addAll(merged, temp.getContents());
+            merged.addAll(leftovers.values());
+            mergedContents = merged.toArray(new ItemStack[0]);
 
             // Merge armor — keep existing if new extraction has empty slots
             if (armor != null && armor.length > 0) {

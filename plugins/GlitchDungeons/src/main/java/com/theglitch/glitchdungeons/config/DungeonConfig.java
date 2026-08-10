@@ -24,10 +24,14 @@ public class DungeonConfig {
         ConfigurationSection slotSection = config.getConfigurationSection("slots");
         if (slotSection == null) return;
         for (String key : slotSection.getKeys(false)) {
-            int id = Integer.parseInt(key);
-            int x = slotSection.getInt(key + ".x");
-            int z = slotSection.getInt(key + ".z");
-            slots.put(id, new DungeonSlot(id, x, z));
+            try {
+                int id = Integer.parseInt(key);
+                int x = slotSection.getInt(key + ".x");
+                int z = slotSection.getInt(key + ".z");
+                slots.put(id, new DungeonSlot(id, x, z));
+            } catch (NumberFormatException e) {
+                // Non-numeric slot keys (comments/stray config) must not crash startup
+            }
         }
     }
 
@@ -35,7 +39,12 @@ public class DungeonConfig {
         ConfigurationSection dungeonSection = config.getConfigurationSection("dungeons");
         if (dungeonSection == null) return;
         for (String key : dungeonSection.getKeys(false)) {
-            int tier = Integer.parseInt(key);
+            int tier;
+            try {
+                tier = Integer.parseInt(key);
+            } catch (NumberFormatException e) {
+                continue;
+            }
             ConfigurationSection tierSection = dungeonSection.getConfigurationSection(key);
             if (tierSection == null) continue;
             String name = tierSection.getString("name", "Unknown");
