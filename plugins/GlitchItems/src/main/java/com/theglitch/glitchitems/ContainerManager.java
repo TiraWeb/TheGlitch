@@ -13,6 +13,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
@@ -126,7 +128,9 @@ public final class ContainerManager {
 
     public ContainerType typeOf(Block block) {
         if (block == null) return null;
-        String name = block.getPersistentDataContainer().get(TYPE_KEY, PersistentDataType.STRING);
+        PersistentDataContainer data = data(block);
+        if (data == null) return null;
+        String name = data.get(TYPE_KEY, PersistentDataType.STRING);
         return name == null ? null : types.get(name);
     }
 
@@ -138,14 +142,24 @@ public final class ContainerManager {
         return typeOf(block) != null;
     }
 
-    public void mark(Block block, ContainerType type) {
+    public boolean mark(Block block, ContainerType type) {
+        Material previous = block.getType();
         block.setType(type.material());
-        block.getPersistentDataContainer().set(TYPE_KEY, PersistentDataType.STRING, type.name());
+        PersistentDataContainer data = data(block);
+        if (data == null) {
+            block.setType(previous);
+            return false;
+        }
+        data.set(TYPE_KEY, PersistentDataType.STRING, type.name());
+        return block.getState().update(true, false);
     }
 
     public void clear(Block block) {
-        block.getPersistentDataContainer().remove(TYPE_KEY);
-        block.getPersistentDataContainer().remove(LAST_KEY);
+        PersistentDataContainer data = data(block);
+        if (data == null) return;
+        data.remove(TYPE_KEY);
+        data.remove(LAST_KEY);
+        block.getState().update(true, false);
     }
 
     /**
@@ -162,8 +176,12 @@ public final class ContainerManager {
             return false;
         }
 
-        long last = block.getPersistentDataContainer()
-                .getOrDefault(LAST_KEY, PersistentDataType.LONG, 0L);
+        PersistentDataContainer data = data(block);
+        if (data == null) {
+            player.sendMessage(msg("not-container"));
+            return false;
+        }
+        long last = data.getOrDefault(LAST_KEY, PersistentDataType.LONG, 0L);
         long now = System.currentTimeMillis();
         long remaining = last + type.regenSeconds() * 1000L - now;
         if (remaining > 0) {
@@ -223,7 +241,11 @@ public final class ContainerManager {
             }
         }
 
-        block.getPersistentDataContainer().set(LAST_KEY, PersistentDataType.LONG, now);
+        data = data(block);
+        if (data != null) {
+            data.set(LAST_KEY, PersistentDataType.LONG, now);
+            block.getState().update(true, false);
+        }
 
         if (emptied && !surged) {
             player.sendMessage(msg("emptied", "<container>", type.display()));
@@ -357,6 +379,12 @@ public final class ContainerManager {
             Location loc = block.getLocation().add(0.5, 0.5, 0.5);
             loot.forEach(stack -> player.getWorld().dropItemNaturally(loc, stack));
         }
+    }
+
+    private PersistentDataContainer data(Block block) {
+        BlockState state = block.getState();
+        return state instanceof PersistentDataHolder holder
+                ? holder.getPersistentDataContainer() : null;
     }
 
     private boolean depositShards(Player player, int amount) {

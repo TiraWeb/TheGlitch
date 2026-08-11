@@ -46,7 +46,10 @@ public record ContainerCommand(GlitchItems plugin, ContainerManager manager) imp
                     player.sendMessage(Component.text("Look at a block first.", NamedTextColor.RED));
                     return true;
                 }
-                manager.mark(block, type);
+                if (!manager.mark(block, type)) {
+                    player.sendMessage(Component.text("That block cannot store container data.", NamedTextColor.RED));
+                    return true;
+                }
                 player.sendMessage(MiniMessage.miniMessage().deserialize(
                         "<green>Set <white>" + type.display() + "</white> on "
                                 + block.getType() + " at " + block.getX() + "," + block.getY() + "," + block.getZ()));
