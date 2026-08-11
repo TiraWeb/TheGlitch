@@ -41,6 +41,7 @@ public final class GearManager {
     }
 
     public int sellValue(Rarity rarity) {
+        if (rarity == null) return 0;
         return plugin.getConfig().getInt("sell-values." + rarity.getId(), 0);
     }
 

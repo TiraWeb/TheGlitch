@@ -145,21 +145,24 @@ public final class ContainerManager {
     public boolean mark(Block block, ContainerType type) {
         Material previous = block.getType();
         block.setType(type.material());
-        PersistentDataContainer data = data(block);
-        if (data == null) {
+        // The PDC lives on the BlockState instance — mutate and update the SAME
+        // snapshot, or the change is silently discarded.
+        BlockState state = block.getState();
+        if (!(state instanceof PersistentDataHolder holder)) {
             block.setType(previous);
             return false;
         }
-        data.set(TYPE_KEY, PersistentDataType.STRING, type.name());
-        return block.getState().update(true, false);
+        holder.getPersistentDataContainer().set(TYPE_KEY, PersistentDataType.STRING, type.name());
+        return state.update(true, false);
     }
 
     public void clear(Block block) {
-        PersistentDataContainer data = data(block);
-        if (data == null) return;
+        BlockState state = block.getState();
+        if (!(state instanceof PersistentDataHolder holder)) return;
+        PersistentDataContainer data = holder.getPersistentDataContainer();
         data.remove(TYPE_KEY);
         data.remove(LAST_KEY);
-        block.getState().update(true, false);
+        state.update(true, false);
     }
 
     /**
@@ -241,10 +244,12 @@ public final class ContainerManager {
             }
         }
 
-        data = data(block);
-        if (data != null) {
-            data.set(LAST_KEY, PersistentDataType.LONG, now);
-            block.getState().update(true, false);
+        // Write the regen cooldown through the same snapshot that carries the
+        // PDC change — calling update() on a separate getState() would drop it.
+        BlockState state = block.getState();
+        if (state instanceof PersistentDataHolder holder) {
+            holder.getPersistentDataContainer().set(LAST_KEY, PersistentDataType.LONG, now);
+            state.update(true, false);
         }
 
         if (emptied && !surged) {
@@ -316,7 +321,7 @@ public final class ContainerManager {
         if (!type.keyMaterial().isEmpty()) {
             Material material;
             try {
-                material = Material.valueOf(type.keyMaterial().toUpperCase());
+                material = Material.valueOf(type.keyMaterial().toUpperCase(java.util.Locale.ROOT));
             } catch (IllegalArgumentException e) {
                 return false;
             }
@@ -326,7 +331,8 @@ public final class ContainerManager {
                 if (meta == null || !meta.hasCustomName()) return false;
                 String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
                         .plainText().serialize(meta.customName());
-                return name != null && name.toLowerCase().contains(type.keyName().toLowerCase());
+                return name != null && name.toLowerCase(java.util.Locale.ROOT)
+                        .contains(type.keyName().toLowerCase(java.util.Locale.ROOT));
             }
             return true;
         }

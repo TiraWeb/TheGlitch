@@ -156,7 +156,9 @@ public final class ClassManager {
      * Get all class names from config.
      */
     public Set<String> getClassNames() {
-        return plugin.getConfig().getConfigurationSection("classes").getKeys(false);
+        org.bukkit.configuration.ConfigurationSection section =
+                plugin.getConfig().getConfigurationSection("classes");
+        return section == null ? Set.of() : section.getKeys(false);
     }
 
     /**

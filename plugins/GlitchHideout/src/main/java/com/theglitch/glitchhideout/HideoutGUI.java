@@ -359,9 +359,11 @@ public final class HideoutGUI implements Listener {
             int leftoverAmount = leftover.values().stream().mapToInt(ItemStack::getAmount).sum();
             int given = clicked.getAmount() - leftoverAmount;
             if (given > 0) {
-                ItemStack partial = clicked.clone();
-                partial.setAmount(given);
-                player.getOpenInventory().getTopInventory().setItem(slot, partial);
+                // Leave what did NOT fit in the GUI — setting the slot to the
+                // given amount would silently delete the difference.
+                ItemStack remaining = clicked.clone();
+                remaining.setAmount(leftoverAmount);
+                player.getOpenInventory().getTopInventory().setItem(slot, remaining);
                 player.sendMessage(Component.text("Inventory full! Only took " + given + ".",
                         NamedTextColor.RED));
             } else {

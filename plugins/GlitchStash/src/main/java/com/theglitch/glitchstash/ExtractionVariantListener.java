@@ -8,6 +8,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +55,9 @@ public final class ExtractionVariantListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        // Fires once per hand — only consume on the main hand, otherwise the
+        // key is consumed twice per click.
+        if (event.getHand() != EquipmentSlot.HAND) return;
         if (!plugin.getConfig().getBoolean("extraction-variants.enabled", true)) return;
 
         Player player = event.getPlayer();

@@ -126,9 +126,11 @@ public class StashGUI implements Listener {
                 given = clicked.getAmount() - leftoverAmount;
             }
             if (given > 0) {
-                ItemStack partial = clicked.clone();
-                partial.setAmount(given);
-                event.getClickedInventory().setItem(slot, partial);
+                // Leave what did NOT fit in the GUI — setting the slot to the
+                // given amount would silently delete the difference.
+                ItemStack remaining = clicked.clone();
+                remaining.setAmount(clicked.getAmount() - given);
+                event.getClickedInventory().setItem(slot, remaining);
                 player.sendMessage(Component.text("Inventory full! Only took " + given + " items.",
                         NamedTextColor.RED));
             } else {

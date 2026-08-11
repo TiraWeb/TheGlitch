@@ -43,6 +43,10 @@ public final class GearRolls {
             rolls.speed = Integer.parseInt(parts[6]);
             rolls.maxhp = Integer.parseInt(parts[7]);
             rolls.boost = Integer.parseInt(parts[8]);
+            // Rarity.fromId returns null for unknown ids (it does not throw) —
+            // treat that as corrupt data so callers get null instead of a
+            // GearRolls whose rarity access NPEs.
+            if (rolls.rarity == null) return null;
             return rolls;
         } catch (IllegalArgumentException e) {
             return null;

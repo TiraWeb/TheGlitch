@@ -16,6 +16,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -94,6 +95,9 @@ public class AbilityListener implements Listener {
 
         // Only trigger on right-click actions
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        // The event fires once per hand — handle the main hand only, otherwise
+        // every activation runs twice (second pass trips the cooldown message).
+        if (event.getHand() != EquipmentSlot.HAND) return;
 
         ClassData data = classManager.getClassData(uuid);
         if (data.className().equals("none")) return;
@@ -303,8 +307,9 @@ public class AbilityListener implements Listener {
         Block beaconBlock = loc.getBlock();
         beaconBlock.setType(Material.BEACON);
 
-        // Particle beacon effect
-        player.getWorld().spawnParticle(Particle.END_ROD, loc.add(0.5, 1, 0.5), 100, 0.3, 2, 0.3, 0.05);
+        // Particle beacon effect — clone so the delayed ally search below
+        // still targets the beacon position (add() would mutate loc).
+        player.getWorld().spawnParticle(Particle.END_ROD, loc.clone().add(0.5, 1, 0.5), 100, 0.3, 2, 0.3, 0.05);
         player.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.0f);
 
         // After the channel completes, surge-heal the most injured allies nearby
@@ -660,6 +665,8 @@ public class AbilityListener implements Listener {
     // Operator trait 1: Engineer — right-click your turret to extend its duration
     @EventHandler
     public void onOperatorRepair(PlayerInteractEntityEvent event) {
+        // Fires once per hand — only act on the main hand.
+        if (event.getHand() != EquipmentSlot.HAND) return;
         Player player = event.getPlayer();
         if (!isClass(player, "operator")) return;
         if (!(event.getRightClicked() instanceof ArmorStand stand)) return;
@@ -918,18 +925,23 @@ public class AbilityListener implements Listener {
                 allies.sort(Comparator.comparingDouble(a -> a.getLocation().distanceSquared(player.getLocation())));
 
                 if (allies.isEmpty()) continue;
-                StringBuilder bar = new StringBuilder();
+                // Build a proper Component — appending NamedTextColor to a
+                // StringBuilder prints the color NAME ("green"/"white"), not
+                // the color itself.
+                Component bar = Component.empty();
                 int shown = 0;
                 for (Player ally : allies) {
                     if (shown >= 3) break;
                     double max = ally.getAttribute(Attribute.MAX_HEALTH).getValue();
-                    bar.append(NamedTextColor.GREEN).append(ally.getName()).append(" ")
-                            .append(NamedTextColor.WHITE).append((int) Math.max(0, ally.getHealth()))
-                            .append(NamedTextColor.DARK_GRAY).append("/")
-                            .append(NamedTextColor.WHITE).append((int) max).append("  ");
+                    bar = bar.append(Component.text(ally.getName(), NamedTextColor.GREEN))
+                            .append(Component.text(" ", NamedTextColor.DARK_GRAY))
+                            .append(Component.text((int) Math.max(0, ally.getHealth()), NamedTextColor.WHITE))
+                            .append(Component.text("/", NamedTextColor.DARK_GRAY))
+                            .append(Component.text((int) max, NamedTextColor.WHITE))
+                            .append(Component.text("  ", NamedTextColor.DARK_GRAY));
                     shown++;
                 }
-                player.sendActionBar(Component.text(bar.toString().trim()));
+                player.sendActionBar(bar);
             }
         }, 40L, 20L);
     }

@@ -115,7 +115,7 @@ public final class ExtractionVariantManager {
         if (!variant.keyMaterial().isEmpty()) {
             Material material;
             try {
-                material = Material.valueOf(variant.keyMaterial().toUpperCase());
+                material = Material.valueOf(variant.keyMaterial().toUpperCase(java.util.Locale.ROOT));
             } catch (IllegalArgumentException e) {
                 return false;
             }
@@ -124,7 +124,8 @@ public final class ExtractionVariantManager {
                 ItemMeta meta = stack.getItemMeta();
                 if (meta == null || !meta.hasCustomName()) return false;
                 String name = PlainTextComponentSerializer.plainText().serialize(meta.customName());
-                return name != null && name.toLowerCase().contains(variant.keyName().toLowerCase());
+                return name != null && name.toLowerCase(java.util.Locale.ROOT)
+                        .contains(variant.keyName().toLowerCase(java.util.Locale.ROOT));
             }
             return true;
         }

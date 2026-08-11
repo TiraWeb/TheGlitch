@@ -34,6 +34,9 @@ public final class ResidualGlitchManager {
     }
 
     private void tick() {
+        // Players who logged off keep a bar entry forever otherwise — the
+        // loop below only visits online players.
+        bars.keySet().removeIf(id -> plugin.getServer().getPlayer(id) == null);
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             if (!isEnabledWorld(player.getWorld().getName())) {
                 hide(player);
@@ -93,7 +96,10 @@ public final class ResidualGlitchManager {
         if (bar != null) {
             player.hideBossBar(bar);
         }
-        if (player.getLevel() != 0 || player.getExp() > 0.0f) {
+        // Only reset the XP bar when the plugin is the one driving it —
+        // otherwise this wipes the player's vanilla XP on world change.
+        if (plugin.getConfig().getBoolean("residual-glitch.show-xp-bar", false)
+                && (player.getLevel() != 0 || player.getExp() > 0.0f)) {
             player.setLevel(0);
             player.setExp(0.0f);
         }
