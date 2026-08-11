@@ -257,7 +257,7 @@ public final class HideoutManager {
             plugin.getLogger().warning("Hideout craft: could not dispatch '" + command + "'");
         }
         player.sendMessage(plugin.getComponent("crafted", "<output>", recipe.display()));
-        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_CRAFTING_TABLE_USE, 1.0f, 1.2f);
+        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_ANVIL_USE, 1.0f, 1.2f);
         return null;
     }
 

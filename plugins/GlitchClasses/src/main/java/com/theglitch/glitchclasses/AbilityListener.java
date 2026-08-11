@@ -7,6 +7,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -648,7 +649,7 @@ public class AbilityListener implements Listener {
                 killed++;
             }
         }
-        player.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, player.getLocation().add(0, 1, 0), 1);
+        player.getWorld().spawnParticle(Particle.EXPLOSION, player.getLocation().add(0, 1, 0), 1);
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
 
         // Deploy a fresh construct at full power
@@ -735,7 +736,7 @@ public class AbilityListener implements Listener {
                 mob.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, duration, 0));
             }
         }
-        loc.getWorld().spawnParticle(Particle.EXPLOSION_LARGE, loc, 1);
+        loc.getWorld().spawnParticle(Particle.EXPLOSION, loc, 1);
         loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 0.6f, 1.6f);
 
         Player thrower = event.getEntity().getShooter() instanceof Player p ? p : null;
@@ -747,12 +748,20 @@ public class AbilityListener implements Listener {
     // ==================== PASSIVE ABILITIES ====================
 
     // Vanguard Trait 1: Ironclad — knockback resistance while holding shield
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onVanguardKnockback(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (!isClass(player, "vanguard")) return;
         if (!hasShield(player)) return;
-        event.setKnockback(event.getKnockback() * 0.5);
+
+        // Paper 1.21.4 does not expose knockback getters on this event. Apply
+        // the passive after vanilla knockback has been calculated, preserving
+        // vertical lift while halving horizontal displacement.
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline() || player.isDead()) return;
+            Vector velocity = player.getVelocity();
+            player.setVelocity(new Vector(velocity.getX() * 0.5, velocity.getY(), velocity.getZ() * 0.5));
+        });
     }
 
     // Vanguard Trait 2: Last Stand — damage resistance when low HP
