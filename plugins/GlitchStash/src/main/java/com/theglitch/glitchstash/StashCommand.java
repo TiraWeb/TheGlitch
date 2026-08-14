@@ -22,24 +22,22 @@ public record StashCommand(GlitchStash plugin, StashManager stashManager) implem
                 return true;
             }
             player.sendMessage(plugin.getComponent("teleporting"));
-            // EssentialsX "spawn" does not work on MC 26.x — use Multiverse like
-            // the extraction teleport does, then fall back to direct teleport.
+            // Direct teleport first — dispatchCommand returns true even when
+            // the command fails internally, so commands are fallbacks only.
             Bukkit.getGlobalRegionScheduler().run(plugin, task -> {
-                boolean done = false;
+                org.bukkit.World hub = Bukkit.getWorld("hub");
+                if (hub != null) {
+                    player.teleport(hub.getSpawnLocation());
+                    return;
+                }
                 if (Bukkit.getPluginManager().getPlugin("Multiverse-Core") != null) {
-                    done = Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
                             "mv tp " + player.getName() + " hub");
+                    return;
                 }
-                if (!done) {
-                    org.bukkit.World hub = Bukkit.getWorld("hub");
-                    if (hub != null) {
-                        player.teleport(hub.getSpawnLocation());
-                    } else {
-                        plugin.getLogger().warning("Could not teleport " + player.getName()
-                                + " — hub world not found.");
-                        player.sendMessage(plugin.getComponent("teleport-failed"));
-                    }
-                }
+                plugin.getLogger().warning("Could not teleport " + player.getName()
+                        + " — hub world not found.");
+                player.sendMessage(plugin.getComponent("teleport-failed"));
             });
             return true;
         }

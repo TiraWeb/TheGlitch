@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,6 +16,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
@@ -27,6 +29,13 @@ public class StashGUI implements Listener {
     private static final int ROWS = 6;
     private static final int SIZE = ROWS * 9;
     private static final Map<UUID, openSession> openSessions = new HashMap<>();
+
+    /**
+     * Class ability items (prime/tactical/ultimate) are kit items, not loot —
+     * older builds stashed them by mistake; purge instead of handing them back
+     * (GlitchClasses re-gives them on world entry, so retrieval would duplicate).
+     */
+    private static final NamespacedKey CLASS_ABILITY_KEY = new NamespacedKey("glitchclasses", "class_ability");
 
     private record openSession(UUID playerUuid, List<ItemStack> allItems, int displayedCount) {}
 
@@ -46,18 +55,49 @@ public class StashGUI implements Listener {
         }
 
         StashManager.StashData data = dataOpt.get();
-        Inventory inv = Bukkit.createInventory(null, SIZE,
-                MiniMessage.miniMessage().deserialize(plugin.getConfig().getString("display-name", "<dark_purple>YOUR STASH</dark_purple>")));
 
-        // Collect all non-null items from stash
+        // Collect all non-null items from stash, dropping class ability items
+        // (kit items, not loot) — persisted immediately so they cannot return.
         List<ItemStack> stashItems = new ArrayList<>();
+        boolean purged = false;
         for (ItemStack item : data.contents()) {
-            if (item != null) stashItems.add(item.clone());
+            if (item == null) continue;
+            if (isClassAbilityItem(item)) {
+                purged = true;
+            } else {
+                stashItems.add(item.clone());
+            }
         }
         for (ItemStack item : data.armor()) {
-            if (item != null) stashItems.add(item.clone());
+            if (item == null) continue;
+            if (isClassAbilityItem(item)) {
+                purged = true;
+            } else {
+                stashItems.add(item.clone());
+            }
         }
-        if (data.offhand() != null) stashItems.add(data.offhand().clone());
+        if (data.offhand() != null) {
+            if (isClassAbilityItem(data.offhand())) {
+                purged = true;
+            } else {
+                stashItems.add(data.offhand().clone());
+            }
+        }
+        if (purged) {
+            if (stashItems.isEmpty()) {
+                stashManager.clearStash(uuid);
+            } else {
+                stashManager.replaceStash(uuid, stashItems.toArray(new ItemStack[0]));
+            }
+            plugin.getLogger().info("Purged class ability items from " + player.getName() + "'s stash.");
+        }
+        if (stashItems.isEmpty()) {
+            player.sendMessage(plugin.getComponent("stash-empty"));
+            return;
+        }
+
+        Inventory inv = Bukkit.createInventory(null, SIZE,
+                MiniMessage.miniMessage().deserialize(plugin.getConfig().getString("display-name", "<dark_purple>YOUR STASH</dark_purple>")));
 
         // Decorative border (top row only)
         ItemStack border = new ItemStack(Material.PURPLE_STAINED_GLASS_PANE);
@@ -83,6 +123,12 @@ public class StashGUI implements Listener {
 
         player.openInventory(inv);
         player.sendMessage(plugin.getComponent("stash-opened"));
+    }
+
+    private static boolean isClassAbilityItem(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return false;
+        return item.getItemMeta().getPersistentDataContainer()
+                .has(CLASS_ABILITY_KEY, PersistentDataType.STRING);
     }
 
     @EventHandler
