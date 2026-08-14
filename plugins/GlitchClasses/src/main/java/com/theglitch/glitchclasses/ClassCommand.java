@@ -39,7 +39,6 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                 }
                 boolean firstSelect = !classManager.hasClass(player.getUniqueId());
                 classManager.setClass(player.getUniqueId(), className);
-                plugin.getAbilityItemManager().forceGiveClassItems(player, className);
                 if (firstSelect) {
                     plugin.getStarterKit().giveIfFirstSelect(player);
                 }
@@ -47,20 +46,6 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                         className.substring(0, 1).toUpperCase() + className.substring(1)));
                 ClassData newData = classManager.getClassData(player.getUniqueId());
                 player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20 + (newData.level() * 2));
-                player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
-            }
-            case "kit" -> {
-                ClassData data = classManager.getClassData(player.getUniqueId());
-                if (data.className().equals("none")) {
-                    player.sendMessage(Component.text("Select a class first!", NamedTextColor.RED));
-                    return true;
-                }
-                if (plugin.getAbilityItemManager().hasClassItems(player)) {
-                    player.sendMessage(Component.text("You already have your ability items.", NamedTextColor.YELLOW));
-                    return true;
-                }
-                plugin.getAbilityItemManager().giveClassItems(player, data.className());
-                player.sendMessage(Component.text("Ability items given!", NamedTextColor.GREEN));
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
             }
             case "info" -> {
@@ -103,13 +88,12 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                 }
                 economy.withdrawPlayer(player, cost);
                 classManager.resetClass(player.getUniqueId());
-                plugin.getAbilityItemManager().clearClassItems(player);
                 player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
                 player.sendMessage(plugin.getComponent("class-reset"));
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 0.8f);
             }
             default -> {
-                player.sendMessage(Component.text("Usage: /class [select <class>|info|reset|kit]", NamedTextColor.RED));
+                player.sendMessage(Component.text("Usage: /class [select <class>|info|reset]", NamedTextColor.RED));
             }
         }
         return true;

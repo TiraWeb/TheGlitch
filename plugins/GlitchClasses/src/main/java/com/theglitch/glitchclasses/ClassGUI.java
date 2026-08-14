@@ -40,7 +40,6 @@ public class ClassGUI implements Listener {
 
     private final GlitchClasses plugin;
     private final ClassManager classManager;
-    private final AbilityItemManager abilityItemManager;
 
     // Class order in GUI
     private static final String[] CLASS_ORDER = {"vanguard", "warden", "specter", "operator"};
@@ -83,7 +82,6 @@ public class ClassGUI implements Listener {
     public ClassGUI(GlitchClasses plugin, ClassManager classManager) {
         this.plugin = plugin;
         this.classManager = classManager;
-        this.abilityItemManager = plugin.getAbilityItemManager();
     }
 
     /**
@@ -466,9 +464,6 @@ public class ClassGUI implements Listener {
         // Apply health boost
         player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20 + (classManager.getClassData(player.getUniqueId()).level() * 2));
 
-        // Give ability items (force — replaces any existing)
-        abilityItemManager.forceGiveClassItems(player, className);
-
         // Play select sound
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
 
@@ -497,7 +492,6 @@ public class ClassGUI implements Listener {
         }
 
         classManager.resetClass(player.getUniqueId());
-        abilityItemManager.clearClassItems(player);
         switchingGui.add(player.getUniqueId());
         player.closeInventory();
         player.sendMessage(plugin.getComponent("class-reset"));

@@ -9,16 +9,16 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
@@ -30,7 +30,7 @@ import java.util.*;
 
 /**
  * Handles all class abilities — activation, cooldowns, effects.
- * Right-click detection for prime/tactical abilities.
+ * Keybind activation (F, Sneak+F, Sneak+Q) for prime/tactical/ultimate abilities.
  * Event-based passive abilities (traits).
  */
 public class AbilityListener implements Listener {
@@ -65,8 +65,7 @@ public class AbilityListener implements Listener {
     private final Map<UUID, Long> lastStandCooldown = new HashMap<>();
     private final Map<UUID, Long> mendCooldown = new HashMap<>();
 
-    // NamespacedKey for class item identification
-    private final NamespacedKey classItemKey;
+    // NamespacedKey for turret / grenade identification
     private final NamespacedKey turretOwnerKey;
     private final NamespacedKey turretDamageKey;
     private final NamespacedKey turretBaseExpiryKey;
@@ -79,7 +78,6 @@ public class AbilityListener implements Listener {
     public AbilityListener(GlitchClasses plugin, ClassManager classManager) {
         this.plugin = plugin;
         this.classManager = classManager;
-        this.classItemKey = new NamespacedKey(plugin, "class_ability");
         this.turretOwnerKey = new NamespacedKey(plugin, "turret_owner");
         this.turretDamageKey = new NamespacedKey(plugin, "turret_damage");
         this.turretBaseExpiryKey = new NamespacedKey(plugin, "turret_base_expiry");
@@ -88,52 +86,74 @@ public class AbilityListener implements Listener {
         this.empDurationKey = new NamespacedKey(plugin, "emp_duration");
     }
 
-    @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        Player player = event.getPlayer();
+    // Activation gate + routing shared by all keybind handlers
+    private void tryActivate(Player player, String type) {
         UUID uuid = player.getUniqueId();
-
-        // Only trigger on right-click actions
-        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        // The event fires once per hand — handle the main hand only, otherwise
-        // every activation runs twice (second pass trips the cooldown message).
-        if (event.getHand() != EquipmentSlot.HAND) return;
-
         ClassData data = classManager.getClassData(uuid);
         if (data.className().equals("none")) return;
 
-        ItemStack item = player.getInventory().getItemInMainHand();
-        if (item.getType() == Material.AIR) return;
-
-        // Check if the item has our custom metadata
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-        String abilityType = meta.getPersistentDataContainer().get(classItemKey, PersistentDataType.STRING);
-        if (abilityType == null) return;
-
-        event.setCancelled(true);
-
         // Ultimates require level 10
-        if (abilityType.equals("ultimate") && data.level() < getUltimateLevel()) {
+        if (type.equals("ultimate") && data.level() < getUltimateLevel()) {
             player.sendMessage(plugin.getComponent("ultimate-locked",
                     "<level>", String.valueOf(getUltimateLevel())));
             return;
         }
 
         // Check cooldown
-        if (isOnCooldown(uuid, abilityType)) {
-            long remaining = getCooldownRemaining(uuid, abilityType);
+        if (isOnCooldown(uuid, type)) {
+            long remaining = getCooldownRemaining(uuid, type);
             player.sendMessage(plugin.getComponent("ability-cooldown", "<seconds>", String.valueOf(remaining / 1000)));
             return;
         }
 
-        // Activate ability based on class and type
         switch (data.className()) {
-            case "vanguard" -> activateVanguardAbility(player, abilityType, data);
-            case "warden" -> activateWardenAbility(player, abilityType, data);
-            case "specter" -> activateSpecterAbility(player, abilityType, data);
-            case "operator" -> activateOperatorAbility(player, abilityType, data);
+            case "vanguard" -> activateVanguardAbility(player, type, data);
+            case "warden" -> activateWardenAbility(player, type, data);
+            case "specter" -> activateSpecterAbility(player, type, data);
+            case "operator" -> activateOperatorAbility(player, type, data);
         }
+    }
+
+    @EventHandler
+    public void onSwapHands(PlayerSwapHandItemsEvent event) {
+        Player player = event.getPlayer();
+        if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
+        // F is fully hijacked in game worlds — swap is cancelled and the key
+        // activates abilities instead (offhand items move via the inventory).
+        event.setCancelled(true);
+        tryActivate(player, player.isSneaking() ? "tactical" : "prime");
+    }
+
+    @EventHandler
+    public void onDrop(PlayerDropItemEvent event) {
+        Player player = event.getPlayer();
+        if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
+        // Plain Q still drops items. Sneak + Q activates the ultimate instead.
+        // (Q only fires when an item is in hand — documented in the key hint.)
+        if (!player.isSneaking()) return;
+        event.setCancelled(true);
+        tryActivate(player, "ultimate");
+    }
+
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        Player player = event.getPlayer();
+        if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
+        ClassData data = classManager.getClassData(player.getUniqueId());
+        if (data.className().equals("none")) return;
+        player.sendActionBar(keyHint(data.className()));
+    }
+
+    private Component keyHint(String className) {
+        String prime = plugin.getConfig().getString("abilities." + className + ".prime.name", "Prime");
+        String tactical = plugin.getConfig().getString("abilities." + className + ".tactical.name", "Tactical");
+        String ultimate = plugin.getConfig().getString("abilities." + className + ".ultimate.name", "Ultimate");
+        return Component.text("F ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(prime, NamedTextColor.WHITE))
+                .append(Component.text("  Sneak+F ", NamedTextColor.DARK_GRAY))
+                .append(Component.text(tactical, NamedTextColor.WHITE))
+                .append(Component.text("  Sneak+Q ", NamedTextColor.DARK_GRAY))
+                .append(Component.text(ultimate, NamedTextColor.WHITE));
     }
 
     // ==================== VANGUARD ABILITIES ====================

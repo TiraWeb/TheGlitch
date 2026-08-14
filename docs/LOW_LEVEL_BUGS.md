@@ -38,11 +38,11 @@ Resolved in recent source:
 |---|---|---|---|
 | C9 | Warning | `ClassGUI.java` | Open class sessions need cleanup on disconnect. |
 | C10 | Warning | `AbilityListener.java` | Per-player cooldown/effect maps need cleanup on disconnect. |
-| C11 | Warning | `AbilityItemListener.java` | Ability items can be moved into external inventories and lost. |
-| C12 | Warning | `AbilityItemManager.java` | Ability items are not unbreakable. |
+| C11 | Warning | `AbilityItemListener.java` | Ability items can be moved into external inventories and lost. — **Obsolete:** ability items removed in favor of keybinds (F / Sneak+F / Sneak+Q). |
+| C12 | Warning | `AbilityItemManager.java` | Ability items are not unbreakable. — **Obsolete:** ability items removed in favor of keybinds (F / Sneak+F / Sneak+Q). |
 | C14 | Warning | `config.yml`, `AbilityListener.java` | Cooldown-reduction naming and units do not agree. |
 | C15 | Warning | `AbilityListener.java` | Specter speed effect refresh may flicker. |
-| C16 | Warning | `AbilityItemListener.java` | Non-ability items can interfere with protected ability slots. |
+| C16 | Warning | `AbilityItemListener.java` | Non-ability items can interfere with protected ability slots. — **Obsolete:** ability items removed in favor of keybinds (F / Sneak+F / Sneak+Q). |
 | C17 | Warning | `AbilityListener.java` | Revive beacon placement can overwrite an existing block. |
 | C18 | Warning | `AbilityListener.java` | Shield-wall placement needs a WorldGuard/build check. |
 | C19 | Warning | `ClassManager.java` | Missing class configuration can cause a null access. |
@@ -65,7 +65,9 @@ Resolved (2026-08-10):
   mismatch made upgrades 2–3x costlier than the GUI displayed).
 - **New:** ability items no longer overwrite hotbar loot — displaced items
   move to a free slot or drop at the player's feet; world-change re-give only
-  fires when items are genuinely missing.
+  fires when items are genuinely missing. _(Superseded: ability items removed —
+  abilities are now keybind-activated: F prime / Sneak+F tactical / Sneak+Q
+  ultimate, game worlds only.)_
 
 ## GlitchDungeons
 

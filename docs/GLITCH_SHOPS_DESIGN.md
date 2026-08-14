@@ -26,8 +26,9 @@ Maven, Paper API, no premium dependencies. Currency via Vault/Coins (Glitch Shar
   + a rotating **gear vendor**: 3 weapon + 2 armor slots, fresh rolls each
   restock (10 min default), 0.01% per slot chance of a Legendary max-roll
   **SUPER RARE** item.
-- Ability items (`class_ability` PDC) can never be sold. Class selection/shard
-  shop stay on DeluxeMenus as-is.
+- Ability items no longer exist — abilities are keybind-activated (F prime /
+  Sneak+F tactical / Sneak+Q ultimate), so the `class_ability` PDC sell block is
+  moot. Class selection/shard shop stay on DeluxeMenus as-is.
 
 ## Commands
 

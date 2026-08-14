@@ -110,16 +110,22 @@ the `specter_scavenge` tag), Engineer (turret repair), Resonance Surge
 - `/class` — open class selection GUI
 - `/class select <class>` — select a class directly
 - `/class info` — view your class and level
-- `/class kit` — re-receive ability items if missing
 - `/class reset` — reset your class for shards (500)
 - `/classadmin set|reset|list|reload` — admin tools
 
-**Ability items** (hotbar slots 0–2: prime, tactical, ultimate) are:
-- Auto-given on class select and when entering `glitch_pve` / `glitch_red`
-  (re-given only when actually missing — hotbar loot is never overwritten)
-- Non-movable, non-droppable, non-duplicatable
-- Re-given on login if missing
-- The ultimate item is locked until level 10
+**Abilities are keybind-activated** (no ability items — class select grants
+only the starter kit):
+
+| Key | Ability |
+|---|---|
+| `F` | Prime |
+| `Sneak + F` | Tactical |
+| `Sneak + Q` (holding any item) | Ultimate — locked until level 10 ("Ultimate locked") |
+| `Q` | Drops the held item normally |
+
+Keybinds work only in `glitch_pve` / `glitch_red`; entering a game world shows
+a keybind hint action bar (`F <prime> Sneak+F <tactical> Sneak+Q <ultimate>`).
+In the hub, `F` swaps items and `Q` drops normally.
 
 ## The item system (Phase 5.10, in progress)
 

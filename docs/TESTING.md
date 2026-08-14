@@ -66,8 +66,13 @@
 
 ## Class abilities + ultimates (GlitchClasses)
 
-- [ ] Ability items: prime (slot 0), tactical (slot 1), ultimate (slot 2, NETHER_STAR) given on class select
-- [ ] Ultimate locked below level 10 ("Ultimate locked" message), works at level 10
+- [ ] Class select grants NO ability items (only the starter kit)
+- [ ] Entering glitch_red/glitch_pve shows the keybind hint action bar (F <prime> Sneak+F <tactical> Sneak+Q <ultimate>)
+- [ ] Pressing F activates the prime ability (cooldown message if on cooldown)
+- [ ] Sneak + F activates the tactical ability
+- [ ] Sneak + Q (holding an item) activates the ultimate — "Ultimate locked" below level 10, works at level 10
+- [ ] Plain Q still drops the held item normally
+- [ ] In the hub, F swaps items normally and Q drops normally (no ability hijack)
 - [ ] Vanguard Fortress: wall + ally Resistance III (3s); Taunt/Shield Wall unaffected
 - [ ] Warden Guardian Angel: fatal blow → 1 HP + 3s invuln; Revive Beacon now surge-heals the most-injured ally after channel (2 allies at level 8)
 - [ ] Specter Ghost Protocol: 10s invisibility + speed, hostiles untarget you; Cloak breaks on attack/damage

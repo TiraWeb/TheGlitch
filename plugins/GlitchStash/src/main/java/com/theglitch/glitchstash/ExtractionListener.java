@@ -8,14 +8,12 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.util.logging.Level;
@@ -28,46 +26,23 @@ import java.util.logging.Level;
  */
 public record ExtractionListener(GlitchStash plugin, StashManager stashManager) implements Listener {
 
-    /**
-     * GlitchClasses marks class ability items (prime/tactical/ultimate) with
-     * this PDC key — they are kit items, not loot, and must survive extraction.
-     */
-    private static final NamespacedKey CLASS_ABILITY_KEY = new NamespacedKey("glitchclasses", "class_ability");
-
     @EventHandler
     public void onExtractionWin(KothWinEvent event) {
         Player player = event.getWinner();
         if (player == null) return;
 
-        // 1. Save inventory to stash — EXCEPT class ability items, which stay
-        //    with the player (they are kit items, not loot).
+        // 1. Save inventory to stash.
         ItemStack[] contents = player.getInventory().getContents();
         ItemStack[] armor = player.getInventory().getArmorContents();
         ItemStack offhand = player.getInventory().getItemInOffHand();
 
-        ItemStack[] lootContents = new ItemStack[contents.length];
-        ItemStack[] keepContents = new ItemStack[contents.length];
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack stack = contents[i];
-            if (isClassAbilityItem(stack)) {
-                keepContents[i] = stack;
-            } else {
-                lootContents[i] = stack;
-            }
-        }
-        boolean keepOffhand = isClassAbilityItem(offhand);
         stashManager.saveStash(player.getUniqueId(), player.getName(),
-                lootContents, armor, keepOffhand ? null : offhand);
+                contents, armor, offhand);
 
-        // 2. Clear inventory, then put ability items back in their slots.
+        // 2. Clear inventory.
         player.getInventory().clear();
         player.getInventory().setArmorContents(new ItemStack[4]);
-        player.getInventory().setItemInOffHand(keepOffhand ? offhand : null);
-        for (int i = 0; i < keepContents.length; i++) {
-            if (keepContents[i] != null) {
-                player.getInventory().setItem(i, keepContents[i]);
-            }
-        }
+        player.getInventory().setItemInOffHand(null);
 
         // 3. Residual Glitch payout + extraction variant bonus. Payout errors
         //    must never block the stash save or the teleport.
@@ -91,7 +66,7 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
                 }
                 plugin.getExtractionVariantManager().clearArmed(player);
             }
-            payGlitchBonus(player, lootContents, armor, keepOffhand ? null : offhand, variantBonusPct);
+            payGlitchBonus(player, contents, armor, offhand, variantBonusPct);
         } catch (RuntimeException e) {
             plugin.getLogger().log(Level.WARNING,
                     "Extraction payout failed for " + player.getName(), e);
@@ -108,12 +83,6 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
             if (!player.isOnline()) return;
             teleportToHub(player);
         }, 5L);
-    }
-
-    private boolean isClassAbilityItem(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return false;
-        return item.getItemMeta().getPersistentDataContainer()
-                .has(CLASS_ABILITY_KEY, PersistentDataType.STRING);
     }
 
     private void payGlitchBonus(Player player, ItemStack[] contents, ItemStack[] armor,

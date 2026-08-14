@@ -187,7 +187,7 @@ public final class ShopManager {
     }
 
     public Integer sellPrice(ItemStack item) {
-        if (item == null || item.getType().isAir() || isAbilityItem(item)) {
+        if (item == null || item.getType().isAir()) {
             return null;
         }
         String id = oraxenId(item);
@@ -219,15 +219,5 @@ public final class ShopManager {
         if (item == null || !item.hasItemMeta()) return null;
         String data = item.getItemMeta().getPersistentDataContainer().get(GEAR_KEY, PersistentDataType.STRING);
         return data == null ? null : GearRolls.deserialize(data);
-    }
-
-    public boolean isAbilityItem(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return false;
-        for (NamespacedKey key : item.getItemMeta().getPersistentDataContainer().getKeys()) {
-            if (key.getKey().equals("class_ability")) {
-                return true;
-            }
-        }
-        return false;
     }
 }
