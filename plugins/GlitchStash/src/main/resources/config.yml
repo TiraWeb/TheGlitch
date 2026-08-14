@@ -25,27 +25,20 @@ extraction-variants:
   enforce-key: true
   # How long a consumed key stays armed (seconds) — covers the capture duration
   arm-duration-seconds: 180
-  zones:
-    fast:
-      world: glitch_red
-      x1: 0.0
-      z1: 0.0
-      x2: 50.0
-      z2: 50.0
-      key-id: "fast_extract_key"
-      key-material: "TRIPWIRE_HOOK"
-      key-name: "Fast Extract Key"
-      payout-bonus: 5
-    silent:
-      world: glitch_red
-      x1: 100.0
-      z1: 100.0
-      x2: 150.0
-      z2: 150.0
-      key-id: "rift_key"
-      key-material: "TRIPWIRE_HOOK"
-      key-name: "Rift Key"
-      payout-bonus: 10
+  # Zones are rectangles (x/z bounds, y ignored) mirroring your in-game VelKoth
+  # arenas. Empty by default — the operator places arenas in-game, then adds the
+  # matching bounds here and runs /extractadmin reload. Example shape:
+  #   fast:
+  #     world: glitch_red
+  #     x1: -50.0
+  #     z1: -50.0
+  #     x2: -20.0
+  #     z2: -20.0
+  #     key-id: "fast_extract_key"
+  #     key-material: "TRIPWIRE_HOOK"
+  #     key-name: "Fast Extract Key"
+  #     payout-bonus: 5
+  zones: {}
 
 # Display settings
 display-name: "<dark_purple><bold>YOUR STASH</bold></dark_purple>"

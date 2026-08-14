@@ -7,10 +7,8 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.block.Container;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -30,10 +28,10 @@ import java.util.concurrent.ThreadLocalRandom;
  * Rift Vault (Rift Key).
  *
  * Containers are marked per-block via persistent data (admin command
- * /glitchcontainers set <type>). Opening rolls the type's rarity table into
- * the block's inventory (or drops at the block if it has none), respects a
- * per-block regen cooldown, consumes the required key, and applies the
- * Residual Glitch loot-luck consumer (per-roll rarity surge + surge drop).
+ * /glitchcontainers set <type>). Opening rolls the type's rarity table
+ * directly into the player's inventory (overflow drops at the block),
+ * respects a per-block regen cooldown, consumes the required key, and applies
+ * the Residual Glitch loot-luck consumer (per-roll rarity surge + surge drop).
  */
 public final class ContainerManager {
 
@@ -58,6 +56,7 @@ public final class ContainerManager {
             long regenSeconds,
             int maxRolls,
             Map<Rarity, Integer> rarityWeights,
+            int nothingWeight,
             Map<String, Integer> materialWeights,
             int shardsMin,
             int shardsMax) {
@@ -78,7 +77,12 @@ public final class ContainerManager {
     public void reload() {
         Map<String, ContainerType> loaded = new HashMap<>();
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("containers.types");
-        if (section != null) {
+        if (section == null) {
+            // Stale live configs (seeded before the containers feature) fail
+            // silently as zero types — make it visible in the log instead.
+            plugin.getLogger().warning("No 'containers.types' section in config.yml — "
+                    + "container types are empty. Restore the default config or add the section.");
+        } else {
             for (String name : section.getKeys(false)) {
                 ConfigurationSection t = section.getConfigurationSection(name);
                 if (t == null) continue;
@@ -87,9 +91,17 @@ public final class ContainerManager {
                     material = Material.CHEST;
                 }
                 Map<Rarity, Integer> rarityWeights = new HashMap<>();
+                int nothingWeight = 0;
                 ConfigurationSection drops = t.getConfigurationSection("drops");
                 if (drops != null) {
                     for (String rarityId : drops.getKeys(false)) {
+                        if (rarityId.equals("nothing")) {
+                            // "nothing" is a real outcome (e.g. debris 15%) — it is
+                            // not a Rarity, so it must be tracked separately or it
+                            // would be silently dropped and the weights skew.
+                            nothingWeight = Math.max(0, drops.getInt("nothing"));
+                            continue;
+                        }
                         Rarity rarity = Rarity.fromId(rarityId);
                         if (rarity != null) {
                             rarityWeights.put(rarity, Math.max(0, drops.getInt(rarityId)));
@@ -113,6 +125,7 @@ public final class ContainerManager {
                         t.getLong("regen-seconds", 600),
                         Math.max(1, t.getInt("max-rolls", 3)),
                         rarityWeights,
+                        nothingWeight,
                         materialWeights,
                         t.getInt("shards-min", 0),
                         t.getInt("shards-max", 0)));
@@ -266,7 +279,10 @@ public final class ContainerManager {
     // --- rolling -------------------------------------------------------------
 
     private Rarity rollRarity(ContainerType type, ThreadLocalRandom rand) {
-        int total = type.rarityWeights().values().stream().mapToInt(Integer::intValue).sum();
+        int total = type.nothingWeight();
+        for (int weight : type.rarityWeights().values()) {
+            total += weight;
+        }
         if (total <= 0) return null;
         int pick = rand.nextInt(total);
         for (Map.Entry<Rarity, Integer> entry : type.rarityWeights().entrySet()) {
@@ -275,6 +291,7 @@ public final class ContainerManager {
                 return entry.getKey();
             }
         }
+        // The roll landed on the "nothing" outcome — no drop this roll.
         return null;
     }
 
@@ -372,18 +389,14 @@ public final class ContainerManager {
 
     private void giveLoot(Player player, Block block, List<ItemStack> loot) {
         if (loot.isEmpty()) return;
-        BlockState state = block.getState();
-        if (state instanceof Container container) {
-            Inventory inventory = container.getInventory();
-            for (ItemStack stack : loot) {
-                Map<Integer, ItemStack> leftovers = inventory.addItem(stack);
-                leftovers.values().forEach(left ->
-                        player.getWorld().dropItemNaturally(block.getLocation(), left));
-            }
-            container.update();
-        } else {
+        // Loot goes straight into the player's inventory. The container's own
+        // inventory can never be opened (the right-click that rolls the loot is
+        // cancelled), so stashing loot in the block would make it unreachable.
+        Map<Integer, ItemStack> leftovers = player.getInventory().addItem(
+                loot.toArray(new ItemStack[0]));
+        if (!leftovers.isEmpty()) {
             Location loc = block.getLocation().add(0.5, 0.5, 0.5);
-            loot.forEach(stack -> player.getWorld().dropItemNaturally(loc, stack));
+            leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(loc, left));
         }
     }
 

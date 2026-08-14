@@ -65,7 +65,7 @@ cat <<'EOF'
   Spawners: block-based spawners in setup-dungeon-regions.sh (dungeon slots)
   Spawn areas: glitch_red population seeded from repo (RedZone_SpawnAreas.yml)
                — T1 fodder everywhere, T2 mid cross-ring, T3 elites at
-               Core (0,0) + extraction beacons X1/X2/X3
+               Core (0,0) + the extraction sites (operator-placed in-game)
 
   Test a mob spawn (as op):
     /mm spawn GlitchStalker ~ ~ ~

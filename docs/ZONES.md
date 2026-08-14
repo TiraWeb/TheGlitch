@@ -144,14 +144,11 @@ camper at one entry point cannot even see arrivals at its neighbors. The
 Phase 6 entry manager rotates/randomizes assignment (weighted by gear score);
 until then these are documented teleport targets.
 
-**Extraction beacons — 3 sites** (asymmetric on purpose; equidistance would
-make rotations trivially predictable):
-
-| Site | X | Z |
-|---|---|---|
-| X1 | 450 | -250 |
-| X2 | -520 | 180 |
-| X3 | 60 | 540 |
+**Extraction sites — operator-placed** (3 arenas recommended; asymmetric on
+purpose — equidistance would make rotations trivially predictable). Site
+coordinates are chosen in-game by the operator: create the VelKoth arenas with
+`/koth wand` → `/koth create <name>` → `/koth set time <name> 30` → `/koth start <name>`
+and mirror Fast/Silent variant bounds into `GlitchStash/config.yml`.
 
 **Loot topology:** risk scales inward. Tier 4/5 loot and bosses only at/near
 **The Core (0, 0)** — the center POI every extraction route has to gamble

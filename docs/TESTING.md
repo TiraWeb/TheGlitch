@@ -96,5 +96,5 @@
 - [ ] `/mm mobs listactive` shows spawns in `glitch_red` once a player is there
 - [ ] T1 fodder (Wisp/Crawler) common across the map quadrants
 - [ ] T2 (Stalker/Brute/Phantom) in the mid cross-ring
-- [ ] T3 elites (Sentinel/Sniper/Warden) near Core (0,0) and extraction beacons X1/X2/X3
+- [ ] T3 elites (Sentinel/Sniper/Warden) near Core (0,0) and the extraction sites
 - [ ] No T1 fodder spawning at the Core

@@ -54,10 +54,8 @@ mc "setwarp red_e4 -700 -60 0 glitch_red"
 mc "setwarp red_e5 -350 -60 -606 glitch_red"
 mc "setwarp red_e6 350 -60 -606 glitch_red"
 
-# Red Zone extraction beacons
-mc "setwarp extract_x1 450 -60 -250 glitch_red"
-mc "setwarp extract_x2 -520 -60 180 glitch_red"
-mc "setwarp extract_x3 60 -60 540 glitch_red"
+# Red Zone extraction sites — operator-placed in-game (VelKoth arenas);
+# no fixed warp coordinates (EssentialsX is incompatible with MC 26.x anyway).
 
 # --- starting kit ----------------------------------------------------------
 log "Configuring starter kit (Glitch Kit)..."
@@ -102,9 +100,6 @@ mc "lp group default permission set essentials.warp.red_e3 true"
 mc "lp group default permission set essentials.warp.red_e4 true"
 mc "lp group default permission set essentials.warp.red_e5 true"
 mc "lp group default permission set essentials.warp.red_e6 true"
-mc "lp group default permission set essentials.warp.extract_x1 true"
-mc "lp group default permission set essentials.warp.extract_x2 true"
-mc "lp group default permission set essentials.warp.extract_x3 true"
 
 # Spawn access
 mc "lp group default permission set essentials.spawn true"
@@ -141,7 +136,7 @@ cat <<'EOF'
 ============================================================
 
   Spawn:     Hub (0, -60, 0)
-  Warps:     pve_staging, red_e1-e6, extract_x1-x3
+  Warps:     pve_staging, red_e1-e6
   Kit:       glitch-starter (iron sword, leather armor, bread, torches, 5 shards)
   Chat:      color + format enabled
   Economy:   VaultUnlocked auto-detects EssentialsX economy
