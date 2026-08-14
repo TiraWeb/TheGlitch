@@ -4,6 +4,7 @@ main: com.theglitch.glitchitems.GlitchItems
 api-version: '1.21'
 description: Item system for The Glitch — gear rolls, rifts, Resonance, Residual Glitch
 softdepend:
+  - Oraxen
   - VaultUnlocked
   - PlaceholderAPI
 

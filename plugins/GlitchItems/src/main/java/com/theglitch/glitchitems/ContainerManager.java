@@ -308,7 +308,7 @@ public final class ContainerManager {
                 return true;
             }
         }
-        return false;
+        return isKey(player.getInventory().getItemInOffHand(), type);
     }
 
     private void consumeKey(Player player, ContainerType type) {
@@ -323,14 +323,23 @@ public final class ContainerManager {
                 return;
             }
         }
+        ItemStack offhand = player.getInventory().getItemInOffHand();
+        if (offhand != null && isKey(offhand, type)) {
+            if (offhand.getAmount() > 1) {
+                offhand.setAmount(offhand.getAmount() - 1);
+            } else {
+                player.getInventory().setItemInOffHand(null);
+            }
+        }
     }
 
     private boolean isKey(ItemStack stack, ContainerType type) {
         if (stack == null || stack.getType().isAir()) return false;
 
-        if (!type.keyId().isEmpty() && stack.hasItemMeta()) {
-            String id = stack.getItemMeta().getPersistentDataContainer()
-                    .get(ORAXEN_KEY, PersistentDataType.STRING);
+        // Real Oraxen items carry their id under Oraxen's own PDC key, which is
+        // why we scan (see OraxenUtil) instead of trusting one hardcoded key.
+        if (!type.keyId().isEmpty()) {
+            String id = OraxenUtil.idOf(stack);
             if (type.keyId().equalsIgnoreCase(id)) {
                 return true;
             }
@@ -357,14 +366,25 @@ public final class ContainerManager {
     }
 
     private String keyDisplayName(ContainerType type) {
-        return type.keyName() != null && !type.keyName().isEmpty() ? type.keyName() : type.keyId();
+        String name = type.keyName() != null && !type.keyName().isEmpty() ? type.keyName() : type.keyId();
+        // Show the Oraxen id too — it is what /o give expects, which makes
+        // mismatches obvious when testing.
+        return type.requiresKey() && !type.keyId().isEmpty() && !name.equals(type.keyId())
+                ? name + " (" + type.keyId() + ")"
+                : name;
     }
 
     // --- item building ---------------------------------------------------------
 
     private ItemStack buildRift(Rarity rarity) {
-        ItemStack item = new ItemStack(Material.AMETHYST_SHARD);
-        ItemMeta meta = item.getItemMeta();
+        // Real Oraxen item: pack texture, lore and sell-price line. Hand-built
+        // lookalikes would render as plain amethyst shards with no sell price.
+        ItemStack item = OraxenUtil.build("unstable_rift_" + rarity.getId());
+        if (item != null) {
+            return item;
+        }
+        ItemStack fallback = new ItemStack(Material.AMETHYST_SHARD);
+        ItemMeta meta = fallback.getItemMeta();
         meta.customName(MiniMessage.miniMessage().deserialize(
                 "<white>Unstable Rift (" + rarity.getDisplayName() + ")</white>"));
         meta.lore(List.of(
@@ -372,19 +392,23 @@ public final class ContainerManager {
                 MiniMessage.miniMessage().deserialize("<gray>Identify it at the hub.</gray>")));
         meta.getPersistentDataContainer().set(ORAXEN_KEY, PersistentDataType.STRING,
                 "unstable_rift_" + rarity.getId());
-        item.setItemMeta(meta);
-        return item;
+        fallback.setItemMeta(meta);
+        return fallback;
     }
 
     private ItemStack buildMaterial(String id) {
-        ItemStack item = new ItemStack(MATERIAL_MATERIALS.getOrDefault(id, Material.PAPER), 1);
-        ItemMeta meta = item.getItemMeta();
+        ItemStack item = OraxenUtil.build(id);
+        if (item != null) {
+            return item;
+        }
+        ItemStack fallback = new ItemStack(MATERIAL_MATERIALS.getOrDefault(id, Material.PAPER), 1);
+        ItemMeta meta = fallback.getItemMeta();
         String label = id.replace('_', ' ');
         label = label.substring(0, 1).toUpperCase() + label.substring(1);
         meta.customName(MiniMessage.miniMessage().deserialize("<white>" + label + "</white>"));
         meta.getPersistentDataContainer().set(ORAXEN_KEY, PersistentDataType.STRING, id);
-        item.setItemMeta(meta);
-        return item;
+        fallback.setItemMeta(meta);
+        return fallback;
     }
 
     private void giveLoot(Player player, Block block, List<ItemStack> loot) {

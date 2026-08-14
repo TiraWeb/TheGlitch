@@ -268,6 +268,10 @@ public final class HideoutManager {
                 count += stack.getAmount();
             }
         }
+        ItemStack offhand = player.getInventory().getItemInOffHand();
+        if (offhand != null && isItem(offhand, id)) {
+            count += offhand.getAmount();
+        }
         return count;
     }
 
@@ -283,13 +287,34 @@ public final class HideoutManager {
             }
             amount -= take;
         }
+        ItemStack offhand = player.getInventory().getItemInOffHand();
+        if (amount > 0 && offhand != null && isItem(offhand, id)) {
+            int take = Math.min(amount, offhand.getAmount());
+            if (offhand.getAmount() > take) {
+                offhand.setAmount(offhand.getAmount() - take);
+            } else {
+                player.getInventory().setItemInOffHand(null);
+            }
+        }
     }
 
     private boolean isItem(ItemStack stack, String id) {
-        if (!stack.hasItemMeta()) return false;
-        String pdcId = stack.getItemMeta().getPersistentDataContainer()
-                .get(ORAXEN_KEY, PersistentDataType.STRING);
-        return id.equalsIgnoreCase(pdcId);
+        if (stack == null || !stack.hasItemMeta()) return false;
+        // Real Oraxen items carry their id under Oraxen's own PDC key — check
+        // the known key, then scan all string values (same as the shop does).
+        org.bukkit.persistence.PersistentDataContainer pdc =
+                stack.getItemMeta().getPersistentDataContainer();
+        String pdcId = pdc.get(ORAXEN_KEY, PersistentDataType.STRING);
+        if (pdcId != null && !pdcId.isEmpty()) {
+            return id.equalsIgnoreCase(pdcId);
+        }
+        for (NamespacedKey key : pdc.getKeys()) {
+            String value = pdc.get(key, PersistentDataType.STRING);
+            if (value != null && value.matches("[a-z_]+")) {
+                return id.equalsIgnoreCase(value);
+            }
+        }
+        return false;
     }
 
     // --- storage ----------------------------------------------------------------

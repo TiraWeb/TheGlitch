@@ -8,6 +8,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
@@ -90,22 +91,36 @@ public final class ExtractionVariantManager {
                 && z >= Math.min(variant.z1(), variant.z2()) && z <= Math.max(variant.z1(), variant.z2());
     }
 
+    private String oraxenId(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return null;
+        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        String id = pdc.get(ORAXEN_KEY, PersistentDataType.STRING);
+        if (id != null && !id.isEmpty()) return id;
+        for (NamespacedKey key : pdc.getKeys()) {
+            String value = pdc.get(key, PersistentDataType.STRING);
+            if (value != null && value.matches("[a-z_]+")) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     public boolean hasKey(Player player, Variant variant) {
         for (ItemStack stack : player.getInventory().getContents()) {
             if (stack != null && isKey(stack, variant)) {
                 return true;
             }
         }
-        return false;
+        return isKey(player.getInventory().getItemInOffHand(), variant);
     }
 
     public boolean isKey(ItemStack stack, Variant variant) {
         if (stack == null || stack.getType().isAir()) return false;
 
-        // Oraxen id match first (custom_item_id PDC), e.g. "fast_extract_key".
-        if (!variant.keyId().isEmpty() && stack.hasItemMeta()) {
-            String id = stack.getItemMeta().getPersistentDataContainer()
-                    .get(ORAXEN_KEY, PersistentDataType.STRING);
+        // Real Oraxen items carry their id under Oraxen's own PDC key — scan
+        // all string values (same strategy as the shop) instead of one key.
+        if (!variant.keyId().isEmpty()) {
+            String id = oraxenId(stack);
             if (variant.keyId().equalsIgnoreCase(id)) {
                 return true;
             }
@@ -168,6 +183,15 @@ public final class ExtractionVariantManager {
                 }
                 return true;
             }
+        }
+        ItemStack offhand = player.getInventory().getItemInOffHand();
+        if (offhand != null && isKey(offhand, variant)) {
+            if (offhand.getAmount() > 1) {
+                offhand.setAmount(offhand.getAmount() - 1);
+            } else {
+                player.getInventory().setItemInOffHand(null);
+            }
+            return true;
         }
         return false;
     }

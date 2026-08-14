@@ -43,6 +43,14 @@ else
     log "PlaceholderAPI JAR copied for compilation."
 fi
 
+# Oraxen needed to build custom items (container rifts/materials) at compile-time
+ORAXEN_JAR=$(ls "${LIVE_PLUGIN_DIR}/Oraxen.jar" 2>/dev/null || ls "${SERVER_DIR}/plugins/Oraxen.jar" 2>/dev/null || true)
+if [[ -z "${ORAXEN_JAR}" ]]; then
+    die "Oraxen.jar not found in live plugins — needed for compilation (container items)."
+fi
+cp "${ORAXEN_JAR}" "${PLUGIN_DIR}/lib/Oraxen.jar"
+log "Oraxen JAR copied for compilation."
+
 cd "${PLUGIN_DIR}"
 log "Running Maven build..."
 if ! mvn clean package -DskipTests 2>&1; then

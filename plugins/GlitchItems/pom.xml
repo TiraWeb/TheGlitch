@@ -45,6 +45,13 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/PlaceholderAPI.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>io.th0rgal.oraxen</groupId>
+            <artifactId>Oraxen</artifactId>
+            <version>1.218.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/Oraxen.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>
