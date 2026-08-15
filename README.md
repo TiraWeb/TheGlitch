@@ -120,11 +120,11 @@ only the starter kit):
 |---|---|
 | `F` | Prime |
 | `Sneak + F` | Tactical |
-| `Sneak + Q` (holding any item) | Ultimate — locked until level 10 ("Ultimate locked") |
+| `Sneak + Right-click` (or `Sneak + Q` while holding an item) | Ultimate — locked until level 10 ("Ultimate locked") |
 | `Q` | Drops the held item normally |
 
 Keybinds work only in `glitch_pve` / `glitch_red`; entering a game world shows
-a keybind hint action bar (`F <prime> Sneak+F <tactical> Sneak+Q <ultimate>`).
+a keybind hint action bar (`F <prime> Sneak+F <tactical> Sneak+RMB <ultimate>`).
 In the hub, `F` swaps items and `Q` drops normally.
 
 ## The item system (Phase 5.10, in progress)

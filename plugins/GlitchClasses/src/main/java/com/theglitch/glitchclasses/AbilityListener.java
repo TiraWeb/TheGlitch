@@ -9,12 +9,14 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -136,6 +138,19 @@ public class AbilityListener implements Listener {
     }
 
     @EventHandler
+    public void onInteractAir(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_AIR) return;
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        Player player = event.getPlayer();
+        if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
+        // Sneak + right-click = ultimate. Unlike Q, this fires even with an
+        // empty hand, so the ultimate always has a working trigger.
+        if (!player.isSneaking()) return;
+        event.setCancelled(true);
+        tryActivate(player, "ultimate");
+    }
+
+    @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
         if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
@@ -152,7 +167,7 @@ public class AbilityListener implements Listener {
                 .append(Component.text(prime, NamedTextColor.WHITE))
                 .append(Component.text("  Sneak+F ", NamedTextColor.DARK_GRAY))
                 .append(Component.text(tactical, NamedTextColor.WHITE))
-                .append(Component.text("  Sneak+Q ", NamedTextColor.DARK_GRAY))
+                .append(Component.text("  Sneak+RMB ", NamedTextColor.DARK_GRAY))
                 .append(Component.text(ultimate, NamedTextColor.WHITE));
     }
 
@@ -998,8 +1013,11 @@ public class AbilityListener implements Listener {
 
     private int getCooldown(String className, String abilityType, int level) {
         int baseCooldown = plugin.getConfig().getInt("abilities." + className + "." + abilityType + ".cooldown", 20);
-        int reduction = plugin.getConfig().getInt("cooldown-reduction-per-level", 3);
-        return Math.max(5, baseCooldown - (level * reduction));
+        int reduction = plugin.getConfig().getInt("cooldown-reduction-per-level", 2);
+        int floor = plugin.getConfig().getInt("cooldown-floor", 12);
+        // A hard floor keeps max-level abilities from becoming spammable —
+        // a 5s floor (old value) made primes/tacticals feel cooldown-free.
+        return Math.max(floor, baseCooldown - (level * reduction));
     }
 
     private void setCooldown(UUID uuid, String ability, int seconds) {

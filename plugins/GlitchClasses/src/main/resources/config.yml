@@ -25,7 +25,10 @@ starter-kit:
     rune-fragments: { oraxen: rune_fragment, amount: 5 }
 
 # Cooldown reduction per level (percentage)
-cooldown-reduction-per-level: 3
+cooldown-reduction-per-level: 2
+# Hard floor for any ability cooldown — keeps max-level abilities from
+# becoming spammable.
+cooldown-floor: 12
 
 # Class definitions
 classes:
@@ -61,12 +64,12 @@ abilities:
       name: "Shield Wall"
       description: "Deploy a barrier that absorbs 200 damage"
       icon: "BARRIER"
-      cooldown: 30
+      cooldown: 35
     tactical:
       name: "Taunt"
       description: "Force mobs to target you for 5s, +20% damage reduction"
       icon: "RED_BED"
-      cooldown: 15
+      cooldown: 20
     trait1:
       name: "Ironclad"
       description: "Knockback resistance while holding a shield"
@@ -85,12 +88,12 @@ abilities:
       name: "Healing Pulse"
       description: "Burst heal allies within 8 blocks for 40 HP"
       icon: "GLISTERING_MELON_SLICE"
-      cooldown: 25
+      cooldown: 30
     tactical:
       name: "Revive Beacon"
       description: "Place a beacon that revives downed allies"
       icon: "BEACON"
-      cooldown: 20
+      cooldown: 25
     trait1:
       name: "Mend"
       description: "When you eat food, nearby allies also heal 10 HP"
@@ -109,12 +112,12 @@ abilities:
       name: "Cloak"
       description: "Turn invisible for 5s. Attacking or taking damage breaks it"
       icon: "PHANTOM_MEMBRANE"
-      cooldown: 30
+      cooldown: 35
     tactical:
       name: "Shadow Step"
       description: "Teleport 10 blocks forward (line of sight)"
       icon: "ENDER_PEARL"
-      cooldown: 12
+      cooldown: 15
     trait1:
       name: "Lightweight"
       description: "+15% movement speed, -10% fall damage"
@@ -133,12 +136,12 @@ abilities:
       name: "Turret Deploy"
       description: "Place an auto-targeting turret for 15s"
       icon: "DISPENSER"
-      cooldown: 40
+      cooldown: 45
     tactical:
       name: "EMP Grenade"
       description: "Disable mob abilities in 6-block radius for 5s"
       icon: "ENDER_PEARL"
-      cooldown: 15
+      cooldown: 20
     trait1:
       name: "Engineer"
       description: "Repair turrets and barriers by right-clicking them"

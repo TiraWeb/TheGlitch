@@ -67,10 +67,11 @@
 ## Class abilities + ultimates (GlitchClasses)
 
 - [ ] Class select grants NO ability items (only the starter kit)
-- [ ] Entering glitch_red/glitch_pve shows the keybind hint action bar (F <prime> Sneak+F <tactical> Sneak+Q <ultimate>)
+- [ ] Entering glitch_red/glitch_pve shows the keybind hint action bar (F <prime> Sneak+F <tactical> Sneak+RMB <ultimate>)
 - [ ] Pressing F activates the prime ability (cooldown message if on cooldown)
 - [ ] Sneak + F activates the tactical ability
-- [ ] Sneak + Q (holding an item) activates the ultimate — "Ultimate locked" below level 10, works at level 10
+- [ ] Sneak + Right-click activates the ultimate (works with empty hands) — "Ultimate locked" below level 10, works at level 10; Sneak + Q with an item also works
+- [ ] Abilities cannot be spammed — cooldown floor applies at level 10 (12s+ for primes/tacticals)
 - [ ] Plain Q still drops the held item normally
 - [ ] In the hub, F swaps items normally and Q drops normally (no ability hijack)
 - [ ] Vanguard Fortress: wall + ally Resistance III (3s); Taunt/Shield Wall unaffected
