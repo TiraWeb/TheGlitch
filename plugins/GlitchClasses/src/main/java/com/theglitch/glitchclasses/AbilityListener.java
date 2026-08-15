@@ -14,7 +14,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
@@ -124,17 +123,6 @@ public class AbilityListener implements Listener {
         // activates abilities instead (offhand items move via the inventory).
         event.setCancelled(true);
         tryActivate(player, player.isSneaking() ? "tactical" : "prime");
-    }
-
-    @EventHandler
-    public void onDrop(PlayerDropItemEvent event) {
-        Player player = event.getPlayer();
-        if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
-        // Plain Q still drops items. Sneak + Q activates the ultimate instead.
-        // (Q only fires when an item is in hand — documented in the key hint.)
-        if (!player.isSneaking()) return;
-        event.setCancelled(true);
-        tryActivate(player, "ultimate");
     }
 
     @EventHandler

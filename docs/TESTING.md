@@ -70,7 +70,7 @@
 - [ ] Entering glitch_red/glitch_pve shows the keybind hint action bar (F <prime> Sneak+F <tactical> Sneak+RMB <ultimate>)
 - [ ] Pressing F activates the prime ability (cooldown message if on cooldown)
 - [ ] Sneak + F activates the tactical ability
-- [ ] Sneak + Right-click activates the ultimate (works with empty hands) — "Ultimate locked" below level 10, works at level 10; Sneak + Q with an item also works
+- [ ] Sneak + Right-click activates the ultimate (works with empty hands) — "Ultimate locked" below level 10, works at level 10
 - [ ] Abilities cannot be spammed — cooldown floor applies at level 10 (12s+ for primes/tacticals)
 - [ ] Plain Q still drops the held item normally
 - [ ] In the hub, F swaps items normally and Q drops normally (no ability hijack)

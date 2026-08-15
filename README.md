@@ -120,7 +120,7 @@ only the starter kit):
 |---|---|
 | `F` | Prime |
 | `Sneak + F` | Tactical |
-| `Sneak + Right-click` (or `Sneak + Q` while holding an item) | Ultimate — locked until level 10 ("Ultimate locked") |
+| `Sneak + Right-click` | Ultimate — locked until level 10 ("Ultimate locked") |
 | `Q` | Drops the held item normally |
 
 Keybinds work only in `glitch_pve` / `glitch_red`; entering a game world shows
