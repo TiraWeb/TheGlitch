@@ -472,6 +472,11 @@ public class ClassGUI implements Listener {
                 20 + (newData.level() * 2));
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 
+        // Close + reopen like class select — switchingGui keeps the session
+        // alive across the close event, otherwise the reopened GUI has no
+        // session and every click is dead.
+        switchingGui.add(player.getUniqueId());
+        player.closeInventory();
         Bukkit.getScheduler().runTaskLater(plugin, () -> openClassMenu(player, newData.className()), 10L);
     }
 

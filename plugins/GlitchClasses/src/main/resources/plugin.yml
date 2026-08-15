@@ -5,11 +5,12 @@ api-version: '1.21'
 description: Class system for The Glitch — Vanguard, Warden, Specter, Operator
 softdepend:
   - LuckPerms
+  - PlaceholderAPI
 
 commands:
   class:
     description: Open class selection GUI or view class info
-    usage: /class [select <class>|info|reset|kit]
+    usage: /class [select <class>|info|reset]
     permission: glitchclasses.use
   classadmin:
     description: Admin commands for GlitchClasses

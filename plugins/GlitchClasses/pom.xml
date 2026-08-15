@@ -48,6 +48,13 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/VaultUnlocked.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>PlaceholderAPI</artifactId>
+            <version>2.11.10</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/PlaceholderAPI.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>

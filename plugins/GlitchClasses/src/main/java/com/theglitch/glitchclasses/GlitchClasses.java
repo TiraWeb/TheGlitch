@@ -36,6 +36,11 @@ public final class GlitchClasses extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(classGUI, this);
         Bukkit.getPluginManager().registerEvents(abilityListener, this);
 
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new ClassExpansion(this).register();
+            getLogger().info("PlaceholderAPI expansion registered (%glitchclasses_*%).");
+        }
+
         getCommand("class").setExecutor(new ClassCommand(this, classManager));
         getCommand("classadmin").setExecutor(new ClassAdminCommand(this, classManager));
 

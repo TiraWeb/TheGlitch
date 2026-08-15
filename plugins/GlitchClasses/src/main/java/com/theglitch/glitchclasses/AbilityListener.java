@@ -127,13 +127,15 @@ public class AbilityListener implements Listener {
 
     @EventHandler
     public void onInteractAir(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_AIR) return;
+        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (event.getHand() != EquipmentSlot.HAND) return;
         Player player = event.getPlayer();
         if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
-        // Sneak + right-click = ultimate. Unlike Q, this fires even with an
-        // empty hand, so the ultimate always has a working trigger.
         if (!player.isSneaking()) return;
+        // Sneak + right-click with an EMPTY hand = ultimate. With an item in
+        // hand, right-click keeps its normal behavior (eat, place, shoot),
+        // and aiming at a block instead of air still counts.
+        if (!player.getInventory().getItemInMainHand().getType().isAir()) return;
         event.setCancelled(true);
         tryActivate(player, "ultimate");
     }

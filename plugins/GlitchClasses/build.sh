@@ -36,6 +36,15 @@ else
     log "VaultUnlocked JAR copied for compilation."
 fi
 
+# PlaceholderAPI needed for the %glitchclasses_*% expansion (compile-time)
+PAPI_JAR=$(ls "${LIVE_PLUGIN_DIR}/PlaceholderAPI.jar" 2>/dev/null || ls "${SERVER_DIR}/plugins/PlaceholderAPI.jar" 2>/dev/null || true)
+if [[ -z "${PAPI_JAR}" ]]; then
+    warn "PlaceholderAPI.jar not found. Place it in ${PLUGIN_DIR}/lib/ or the build fails."
+else
+    cp "${PAPI_JAR}" "${PLUGIN_DIR}/lib/PlaceholderAPI.jar"
+    log "PlaceholderAPI JAR copied for compilation."
+fi
+
 cd "${PLUGIN_DIR}"
 log "Running Maven build..."
 if ! mvn clean package -DskipTests 2>&1; then
