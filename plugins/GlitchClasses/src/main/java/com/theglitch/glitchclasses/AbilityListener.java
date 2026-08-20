@@ -9,13 +9,12 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -126,16 +125,13 @@ public class AbilityListener implements Listener {
     }
 
     @EventHandler
-    public void onInteractAir(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        if (event.getHand() != EquipmentSlot.HAND) return;
+    public void onDrop(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
         if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
+        // Plain Q still drops items. Sneak+Q with ANY item in hand = ultimate.
+        // (Q never fires with an empty hand; inventory drag-drop still works
+        // as the alternate drop path.)
         if (!player.isSneaking()) return;
-        // Sneak + right-click with an EMPTY hand = ultimate. With an item in
-        // hand, right-click keeps its normal behavior (eat, place, shoot),
-        // and aiming at a block instead of air still counts.
-        if (!player.getInventory().getItemInMainHand().getType().isAir()) return;
         event.setCancelled(true);
         tryActivate(player, "ultimate");
     }
@@ -157,7 +153,7 @@ public class AbilityListener implements Listener {
                 .append(Component.text(prime, NamedTextColor.WHITE))
                 .append(Component.text("  Sneak+F ", NamedTextColor.DARK_GRAY))
                 .append(Component.text(tactical, NamedTextColor.WHITE))
-                .append(Component.text("  Sneak+RMB ", NamedTextColor.DARK_GRAY))
+                .append(Component.text("  Sneak+Q ", NamedTextColor.DARK_GRAY))
                 .append(Component.text(ultimate, NamedTextColor.WHITE));
     }
 
