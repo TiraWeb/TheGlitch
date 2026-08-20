@@ -8,11 +8,8 @@
 
 - [ ] `git pull && sudo ./bootstrap.sh` (seeds new MythicMobs SpawnAreas + Spawners subdirs)
 - [ ] Build all changed plugins:
-  - `sudo ./plugins/GlitchDeathRules/build.sh`
-  - `sudo ./plugins/GlitchClasses/build.sh`
-  - `sudo ./plugins/GlitchItems/build.sh`
-  - `sudo ./plugins/GlitchStash/build.sh`
-  - `sudo ./plugins/GlitchHideout/build.sh`
+  - `sudo ./scripts/build-all.sh`  *(preferred: reactor, topological order)*
+  - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar`
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./setup-mythicmobs.sh` (`mm reload` + verify mobs list)
 - [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses
@@ -67,7 +64,7 @@
 ## Class abilities + ultimates (GlitchClasses)
 
 - [ ] Class select grants NO ability items (only the starter kit)
-- [ ] Entering glitch_red/glitch_pve shows the keybind hint action bar (F <prime> Sneak+F <tactical> Sneak+RMB <ultimate>)
+- [ ] Entering glitch_red/glitch_pve shows the keybind hint action bar (F <prime> Sneak+F <tactical> Sneak+Q <ultimate> — hold any item)
 - [ ] Pressing F activates the prime ability (cooldown message if on cooldown)
 - [ ] Sneak + F activates the tactical ability
 - [ ] Sneak + Q (holding any item in hand) activates the ultimate — "Ultimate locked" below level 10, works at level 10; right-click with an item in hand still eats/places normally

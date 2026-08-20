@@ -124,7 +124,7 @@ only the starter kit):
 | `Q` | Drops the held item normally |
 
 Keybinds work only in `glitch_pve` / `glitch_red`; entering a game world shows
-a keybind hint action bar (`F <prime> Sneak+F <tactical> Sneak+RMB <ultimate>`).
+a keybind hint action bar (`F <prime> Sneak+F <tactical> Sneak+Q <ultimate>` — hold any item for `Sneak+Q`).
 In the hub, `F` swaps items and `Q` drops normally.
 
 ## The item system (Phase 5.10, in progress)
@@ -240,24 +240,31 @@ Full blueprint with coordinates: [docs/ZONES.md](docs/ZONES.md).
 
 ## Building Custom Plugins
 
-Built from source on the server:
+Built from source on the server — **preferred: single reactor build** (Paper resolved once, parallel):
 
 ```bash
 cd ~/TheGlitch
-sudo ./plugins/GlitchStash/build.sh
-sudo ./plugins/GlitchClasses/build.sh
-sudo ./plugins/GlitchDeathRules/build.sh
-sudo ./plugins/GlitchHideout/build.sh
-sudo ./plugins/GlitchDungeons/build.sh   # deferred — source only, not deployed
-sudo ./plugins/GlitchItems/build.sh
-sudo ./plugins/GlitchShops/build.sh
-sudo ./plugins/GlitchHealthBar/build.sh
+sudo ./scripts/build-all.sh              # Track 1 plugins in topological order
+# sudo ./scripts/build-all.sh --clean    # full clean build
 sudo systemctl restart theglitch
 ```
 
-Requires: Maven (`sudo apt install maven`) and a Java toolchain compatible with the
-plugin build files. The custom projects currently declare Paper API 1.21.4; verify
-compatibility with the live Minecraft/Paper target before deployment.
+Legacy per-plugin (still works for first-time lib seeding or single-plugin debug — order matters):
+
+```bash
+# Topological order: Items → Shops → Stash → Classes → Hideout → DeathRules → HealthBar
+sudo ./plugins/GlitchItems/build.sh
+sudo ./plugins/GlitchShops/build.sh
+sudo ./plugins/GlitchStash/build.sh
+sudo ./plugins/GlitchClasses/build.sh
+sudo ./plugins/GlitchHideout/build.sh
+sudo ./plugins/GlitchDeathRules/build.sh
+sudo ./plugins/GlitchHealthBar/build.sh
+# sudo ./plugins/GlitchDungeons/build.sh   # deferred — source only, not deployed
+sudo systemctl restart theglitch
+```
+
+Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25) — bump there for all 8 plugins. CI validate: `./scripts/build-all.sh --no-deploy`.
 
 ## Building Oraxen (custom items)
 

@@ -1,2 +1,42 @@
 __pycache__/
 *.pyc
+
+# Maven / Java
+target/
+*.jar
+!server/plugins/Oraxen/pack/textures/*.png
+*.class
+*.log
+hs_err_pid*
+
+# Plugin lib jars (system-scope, live-only; seeded by build.sh)
+plugins/*/lib/
+server/plugins/*.jar
+server/plugins/*.jar.*
+server/plugins/Glitch*/config.yml
+server/plugins/Glitch*/messages.yml
+server/plugins/Glitch*/shops.yml
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build / deploy artefacts
+build/
+logs/
+*.schem
+*.nbt
+
+# Local overrides
+server/logs/
+server/world/
+server/world_nether/
+server/world_the_end/
