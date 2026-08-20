@@ -17,8 +17,9 @@ public final class NpcListener implements Listener {
     @EventHandler
     public void onNpcInteract(NpcInteractEvent event) {
         String npcName = event.getNpc().getData().getName();
-        if (plugin.getConfig().getStringList("bazaar-npc-names").contains(npcName)) {
-            shopGUI.open(event.getPlayer(), plugin.getConfig().getString("default-tab", "materials"));
+        // Use cached HashSet lookup — no getConfig() polling per interact
+        if (plugin.getBazaarNpcNames().contains(npcName)) {
+            shopGUI.open(event.getPlayer(), plugin.getDefaultTab());
         }
     }
 }

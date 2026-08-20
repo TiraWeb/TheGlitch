@@ -8,6 +8,8 @@ import org.bukkit.entity.Player;
 
 public final class ShopCommand implements CommandExecutor {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
     private final GlitchShops plugin;
     private final ShopGUI shopGUI;
 
@@ -20,41 +22,38 @@ public final class ShopCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             if (sender instanceof Player player) {
-                shopGUI.open(player, plugin.getConfig().getString("default-tab", "materials"));
+                shopGUI.open(player, plugin.getDefaultTab());
             } else {
-                sender.sendMessage(MiniMessage.miniMessage().deserialize(
-                        "<red>Only players can open the bazaar.</red>"));
+                sender.sendMessage(MM.deserialize("<red>Only players can open the bazaar.</red>"));
             }
             return true;
         }
         switch (args[0].toLowerCase()) {
             case "open":
                 if (!(sender instanceof Player player)) {
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize(
-                            "<red>Only players can open the bazaar.</red>"));
+                    sender.sendMessage(MM.deserialize("<red>Only players can open the bazaar.</red>"));
                     return true;
                 }
-                shopGUI.open(player, args.length > 1 ? args[1] : plugin.getConfig().getString("default-tab", "materials"));
+                shopGUI.open(player, args.length > 1 ? args[1] : plugin.getDefaultTab());
                 return true;
             case "reload":
                 if (!sender.hasPermission("glitchshops.admin")) {
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>No permission.</red>"));
+                    sender.sendMessage(MM.deserialize("<red>No permission.</red>"));
                     return true;
                 }
                 plugin.reloadPlugin();
-                sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>GlitchShops reloaded.</green>"));
+                sender.sendMessage(MM.deserialize("<green>GlitchShops reloaded.</green>"));
                 return true;
             case "restock":
                 if (!sender.hasPermission("glitchshops.admin")) {
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>No permission.</red>"));
+                    sender.sendMessage(MM.deserialize("<red>No permission.</red>"));
                     return true;
                 }
                 plugin.getShopManager().restockGear();
-                sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>Gear vendor restocked.</green>"));
+                sender.sendMessage(MM.deserialize("<green>Gear vendor restocked.</green>"));
                 return true;
             default:
-                sender.sendMessage(MiniMessage.miniMessage().deserialize(
-                        "<gray>Usage: /shop [open <tab>|reload|restock]</gray>"));
+                sender.sendMessage(MM.deserialize("<gray>Usage: /shop [open <tab>|reload|restock]</gray>"));
                 return true;
         }
     }

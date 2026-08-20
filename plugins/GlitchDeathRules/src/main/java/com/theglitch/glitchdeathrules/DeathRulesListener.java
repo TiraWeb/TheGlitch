@@ -20,7 +20,8 @@ public record DeathRulesListener(GlitchDeathRules plugin) implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
-        if (!plugin.getConfig().getStringList("mercy-worlds").contains(player.getWorld().getName())) {
+        // Cached HashSet lookup — no getStringList + List.contains per death
+        if (!plugin.isMercyWorld(player.getWorld().getName())) {
             return;
         }
 
@@ -28,10 +29,6 @@ public record DeathRulesListener(GlitchDeathRules plugin) implements Listener {
         ItemStack leggings = inv.getLeggings();
         ItemStack boots = inv.getBoots();
 
-        // keepInventory is OFF in the Red Zone, so the drop list contains every
-        // item including armor. Move the mercy slots from the drops into the
-        // kept list (Paper getItemsToKeep) — merely removing them from the
-        // drops only deletes them; the player does NOT get them back.
         boolean kept = false;
         Iterator<ItemStack> drops = event.getDrops().iterator();
         while (drops.hasNext()) {

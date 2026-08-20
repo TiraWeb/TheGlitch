@@ -32,8 +32,22 @@ import java.util.UUID;
 
 public final class ShopGUI implements Listener {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+    private static final Component BAZAAR_TITLE = MM.deserialize("<dark_purple><bold>✧ GRAND BAZAAR ✧</bold></dark_purple>");
+
+    // Cached border — single allocation cloned per slot instead of new ItemStack per open * per slot
+    private static final ItemStack CACHED_BORDER_PANE;
+    static {
+        ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta meta = pane.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Component.empty());
+            pane.setItemMeta(meta);
+        }
+        CACHED_BORDER_PANE = pane;
+    }
+
     private static final int SIZE = 54;
-    private static final List<String> TAB_ORDER = List.of("materials", "keys", "alchemy", "rifts", "gear");
 
     private static final NamespacedKey ACTION_KEY = new NamespacedKey("glitchshops", "action");
     private static final NamespacedKey CATEGORY_KEY = new NamespacedKey("glitchshops", "category");
@@ -49,9 +63,31 @@ public final class ShopGUI implements Listener {
     private final GlitchShops plugin;
     private final ShopManager shopManager;
 
+    // Cached hot-path config — refreshed on reload, no getConfig() per click/open
+    private volatile List<String> cachedTabOrder;
+    private volatile String cachedDefaultTab;
+    private volatile int cachedBuyStackSize;
+    private volatile Economy cachedEconomy;
+
     public ShopGUI(GlitchShops plugin, ShopManager shopManager) {
         this.plugin = plugin;
         this.shopManager = shopManager;
+        refreshCache();
+    }
+
+    /** Refresh cached config after reload — called by GlitchShops.reloadPlugin(). */
+    public void refreshCache() {
+        this.cachedTabOrder = shopManager.getTabOrder();
+        this.cachedDefaultTab = shopManager.getDefaultTab();
+        this.cachedBuyStackSize = shopManager.getBuyStackSize();
+        this.cachedEconomy = plugin.getEconomy(); // invalidated already in plugin
+        if (this.cachedTabOrder == null || this.cachedTabOrder.isEmpty()) {
+            plugin.getLogger().warning("ShopGUI: cached tab order empty — using fallback.");
+            this.cachedTabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear");
+        }
+        if (this.cachedDefaultTab == null || this.cachedDefaultTab.isBlank()) {
+            this.cachedDefaultTab = this.cachedTabOrder.get(0);
+        }
     }
 
     public void open(Player player, String category) {
@@ -59,11 +95,15 @@ public final class ShopGUI implements Listener {
     }
 
     public void open(Player player, String category, boolean sellMode) {
-        if (!TAB_ORDER.contains(category)) {
-            category = plugin.getConfig().getString("default-tab", "materials");
+        // No getConfig() — use cached default tab and cached tab order
+        if (cachedTabOrder == null) refreshCache();
+        if (!cachedTabOrder.contains(category)) {
+            category = cachedDefaultTab;
+            if (category == null || !cachedTabOrder.contains(category)) {
+                category = cachedTabOrder.get(0);
+            }
         }
-        String title = "<dark_purple><bold>✧ GRAND BAZAAR ✧</bold></dark_purple>";
-        Inventory inv = Bukkit.createInventory(null, SIZE, MiniMessage.miniMessage().deserialize(title));
+        Inventory inv = Bukkit.createInventory(null, SIZE, BAZAAR_TITLE);
 
         fillBorder(inv);
 
@@ -76,8 +116,8 @@ public final class ShopGUI implements Listener {
                 "<gray>Click items in your inventory below.</gray>", sellMode));
         inv.setItem(8, closeButton());
 
-        for (int i = 0; i < TAB_ORDER.size(); i++) {
-            String tab = TAB_ORDER.get(i);
+        for (int i = 0; i < cachedTabOrder.size(); i++) {
+            String tab = cachedTabOrder.get(i);
             inv.setItem(9 + i, categoryTab(tab, tab.equals(category)));
         }
 
@@ -105,10 +145,10 @@ public final class ShopGUI implements Listener {
                 ItemStack display = entry.item().clone();
                 ItemMeta meta = display.getItemMeta();
                 List<Component> lore = meta.lore() == null ? new java.util.ArrayList<>() : meta.lore();
-                lore.add(MiniMessage.miniMessage().deserialize(
+                lore.add(MM.deserialize(
                         entry.superRare() ? "<gold>SUPER RARE — max rolls</gold>" : ""));
                 lore.add(Component.empty());
-                lore.add(MiniMessage.miniMessage().deserialize("<aqua>Buy: " + entry.price() + " Shards</aqua>"));
+                lore.add(MM.deserialize("<aqua>Buy: " + entry.price() + " Shards</aqua>"));
                 meta.lore(lore);
                 display.setItemMeta(meta);
                 int gearIndex = i;
@@ -131,11 +171,22 @@ public final class ShopGUI implements Listener {
         if (shop == null) return;
         for (Map.Entry<String, ShopManager.StockEntry> entry : shop.stock().entrySet()) {
             if (slot >= 27) break;
-            ItemStack item = OraxenItems.getItemById(entry.getKey()).build().clone();
+            ItemStack item;
+            try {
+                ItemBuilder builder = OraxenItems.getItemById(entry.getKey());
+                if (builder == null) {
+                    plugin.getLogger().warning("Unknown Oraxen item in shop " + category + ": " + entry.getKey());
+                    continue;
+                }
+                item = builder.build().clone();
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to build Oraxen item " + entry.getKey() + ": " + e.getMessage());
+                continue;
+            }
             ItemMeta meta = item.getItemMeta();
             List<Component> lore = meta.lore() == null ? new java.util.ArrayList<>() : meta.lore();
             lore.add(Component.empty());
-            lore.add(MiniMessage.miniMessage().deserialize("<aqua>Buy: " + entry.getValue().buy() + " Shards</aqua>"));
+            lore.add(MM.deserialize("<aqua>Buy: " + entry.getValue().buy() + " Shards</aqua>"));
             meta.lore(lore);
             item.setItemMeta(meta);
             item.editMeta(ItemMeta.class, m -> {
@@ -157,13 +208,13 @@ public final class ShopGUI implements Listener {
         }
         ItemMeta meta = item.getItemMeta();
         if (name != null && !name.equals(" ")) {
-            meta.customName(MiniMessage.miniMessage().deserialize(name));
+            meta.customName(MM.deserialize(name));
         }
         if (lore != null && lore.length > 0 && !lore[0].equals(" ")) {
             List<Component> lines = new java.util.ArrayList<>();
             for (String line : lore) {
                 if (line != null && !line.equals(" ")) {
-                    lines.add(MiniMessage.miniMessage().deserialize(line));
+                    lines.add(MM.deserialize(line));
                 }
             }
             meta.lore(lines);
@@ -173,7 +224,9 @@ public final class ShopGUI implements Listener {
     }
 
     private ItemStack balanceItem(Player player) {
-        Economy economy = plugin.getEconomy();
+        // Use cached economy — no provider lookup per open
+        Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
+        if (cachedEconomy == null) cachedEconomy = economy;
         int balance = economy == null ? 0 : (int) economy.getBalance(player);
         return guiIcon("gui_coin", Material.ECHO_SHARD,
                 "<aqua><bold>" + balance + " Shards</bold></aqua>",
@@ -181,7 +234,7 @@ public final class ShopGUI implements Listener {
     }
 
     private ItemStack tabButton(String action, String iconId, Material fallback,
-                                String label, String activeName, String lore, boolean active) {
+                                 String label, String activeName, String lore, boolean active) {
         ItemStack item = guiIcon(iconId, fallback,
                 active ? activeName : "<gray>" + label + "</gray>", lore);
         item.editMeta(ItemMeta.class, m -> {
@@ -243,10 +296,10 @@ public final class ShopGUI implements Listener {
     }
 
     private void fillBorder(Inventory inv) {
-        ItemStack border = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        // Reuse static pane — clone per slot to prevent inventory mutation side effects
         for (int i = 0; i < SIZE; i++) {
             if (i < 18 || i >= 27) {
-                inv.setItem(i, border);
+                inv.setItem(i, CACHED_BORDER_PANE.clone());
             }
         }
     }
@@ -321,9 +374,9 @@ public final class ShopGUI implements Listener {
 
     private void handleSellClick(Player player, int slot, ItemStack item, ClickType click) {
         if (item == null || item.getType().isAir()) return;
-        Economy economy = plugin.getEconomy();
+        Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
+        if (cachedEconomy == null) cachedEconomy = economy;
         if (economy == null) {
-            // Never take the item if we cannot pay for it
             message(player, "denied");
             sound(player, false);
             return;
@@ -355,7 +408,8 @@ public final class ShopGUI implements Listener {
     }
 
     private void buyItem(Player player, String itemId, int price, int amount, int gearSlot) {
-        Economy economy = plugin.getEconomy();
+        Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
+        if (cachedEconomy == null) cachedEconomy = economy;
         if (economy == null) {
             message(player, "denied");
             return;
@@ -410,7 +464,7 @@ public final class ShopGUI implements Listener {
     }
 
     private int buyStackSize() {
-        return plugin.getConfig().getInt("buy-stack-size", 64);
+        return cachedBuyStackSize > 0 ? cachedBuyStackSize : shopManager.getBuyStackSize();
     }
 
     private String plainName(ItemStack item) {
@@ -428,11 +482,11 @@ public final class ShopGUI implements Listener {
     }
 
     private void message(Player player, String key, String... replacements) {
-        String template = plugin.getConfig().getString("messages." + key, key);
+        String template = shopManager.getMessageTemplate(key);
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             template = template.replace(replacements[i], replacements[i + 1]);
         }
-        player.sendMessage(MiniMessage.miniMessage().deserialize(template));
+        player.sendMessage(MM.deserialize(template));
     }
 
     private void sound(Player player, boolean success) {

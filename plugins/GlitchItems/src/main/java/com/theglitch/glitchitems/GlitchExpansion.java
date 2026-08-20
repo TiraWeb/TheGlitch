@@ -41,14 +41,13 @@ public final class GlitchExpansion extends PlaceholderExpansion {
             case "stacks":
                 return String.valueOf(glitch.getStacks(player));
             case "max_stacks":
-                return String.valueOf(plugin.getConfig().getInt("residual-glitch.max-stacks", 8));
+                return String.valueOf(glitch.getMaxStacks());
             case "payout":
                 return String.valueOf((int) Math.round((glitch.getPayoutMultiplier(player) - 1.0) * 100));
             case "payout_multiplier":
                 return String.format("%.1f", glitch.getPayoutMultiplier(player));
             case "dmg_taken":
-                return String.valueOf(glitch.getStacks(player)
-                        * plugin.getConfig().getInt("residual-glitch.damage-taken-per-stack", 5));
+                return String.valueOf(glitch.getStacks(player) * glitch.getDamageTakenPerStack());
             default:
                 return null;
         }

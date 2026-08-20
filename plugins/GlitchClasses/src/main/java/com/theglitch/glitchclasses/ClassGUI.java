@@ -35,12 +35,25 @@ import java.util.UUID;
  */
 public class ClassGUI implements Listener {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
     private static final String[] CLASS_ORDER = {"vanguard", "warden", "specter", "operator"};
     private static final String[] ABILITY_KEYS = {"prime", "tactical", "trait1", "trait2", "ultimate"};
     private static final String[] ABILITY_LABELS = {"PRIME", "TACTICAL", "TRAIT I", "TRAIT II", "ULTIMATE"};
     private static final int[] ABILITY_UNLOCKS = {1, 1, 1, 3, -1}; // -1 = ultimate (config level)
     private static final Material[] ABILITY_FALLBACK_ICONS = {
             Material.AMETHYST_SHARD, Material.ENDER_PEARL, Material.BOOK, Material.BOOK, Material.NETHER_STAR};
+    private static final Map<String, Integer> KEY_TO_INDEX = Map.of(
+            "prime", 0, "tactical", 1, "trait1", 2, "trait2", 3, "ultimate", 4);
+    private static final ItemStack CACHED_BORDER;
+
+    static {
+        ItemStack b = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta m = b.getItemMeta();
+        m.customName(Component.empty());
+        b.setItemMeta(m);
+        CACHED_BORDER = b;
+    }
 
     private static final Map<String, NamedTextColor> COLOR_FALLBACKS = Map.of(
             "RED", NamedTextColor.RED,
@@ -53,10 +66,28 @@ public class ClassGUI implements Listener {
 
     private final GlitchClasses plugin;
     private final ClassManager classManager;
+    private volatile int cachedUltimateLevel = 10;
+    private net.milkbowl.vault.economy.Economy cachedEconomy;
+    private long economyCacheTime;
 
     public ClassGUI(GlitchClasses plugin, ClassManager classManager) {
         this.plugin = plugin;
         this.classManager = classManager;
+        reloadConfig();
+    }
+
+    public void reloadConfig() {
+        cachedUltimateLevel = plugin.getConfig().getInt("ultimate-level", 10);
+        cachedEconomy = null;
+    }
+
+    private net.milkbowl.vault.economy.Economy getEconomy() {
+        long now = System.currentTimeMillis();
+        if (cachedEconomy != null && now - economyCacheTime < 30_000L) return cachedEconomy;
+        var reg = org.bukkit.Bukkit.getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
+        cachedEconomy = reg != null ? reg.getProvider() : null;
+        economyCacheTime = now;
+        return cachedEconomy;
     }
 
     // ==================== MAIN MENU (27 slots) ====================
@@ -64,7 +95,7 @@ public class ClassGUI implements Listener {
     public void openMainMenu(Player player) {
         String title = plugin.getConfig().getString("gui.title",
                 "<dark_purple><bold>CHOOSE YOUR CLASS</bold></dark_purple>");
-        Inventory inv = Bukkit.createInventory(null, 27, MiniMessage.miniMessage().deserialize(title));
+        Inventory inv = Bukkit.createInventory(null, 27, MM.deserialize(title));
         fillBorder(inv, 27);
 
         ClassData data = classManager.getClassData(player.getUniqueId());
@@ -95,7 +126,7 @@ public class ClassGUI implements Listener {
 
         String display = cls != null ? cls.getString("display-name", "") : "";
         if (!display.isEmpty()) {
-            meta.customName(MiniMessage.miniMessage().deserialize(display));
+            meta.customName(MM.deserialize(display));
         } else {
             meta.customName(Component.text(className.toUpperCase(), color, TextDecoration.BOLD));
         }
@@ -107,7 +138,7 @@ public class ClassGUI implements Listener {
             lore.add(Component.text(role, NamedTextColor.GRAY, TextDecoration.ITALIC));
         }
         if (!description.isEmpty()) {
-            lore.add(MiniMessage.miniMessage().deserialize(description));
+            lore.add(MM.deserialize(description));
         }
         lore.add(Component.empty());
         if (selected) {
@@ -170,7 +201,7 @@ public class ClassGUI implements Listener {
 
         String title = "<" + colorName(className) + "><bold>" + className.toUpperCase()
                 + "</bold></" + colorName(className) + ">";
-        Inventory inv = Bukkit.createInventory(null, 45, MiniMessage.miniMessage().deserialize(title));
+        Inventory inv = Bukkit.createInventory(null, 45, MM.deserialize(title));
         fillBorder(inv, 45);
 
         // Ability info — row 2, slots 10-14
@@ -204,17 +235,15 @@ public class ClassGUI implements Listener {
     }
 
     private ItemStack abilityItem(String className, String key, ConfigurationSection ability,
-                                  boolean selected, ClassData data) {
+                                   boolean selected, ClassData data) {
+        int idx = KEY_TO_INDEX.getOrDefault(key, 0);
         boolean ultimate = key.equals("ultimate");
-        int unlockLevel = ultimate
-                ? plugin.getConfig().getInt("ultimate-level", 10)
-                : ABILITY_UNLOCKS[Math.min(ArraysIndexOf(ABILITY_KEYS, key), ABILITY_UNLOCKS.length - 1)];
+        int unlockLevel = ultimate ? cachedUltimateLevel : ABILITY_UNLOCKS[Math.min(idx, ABILITY_UNLOCKS.length - 1)];
         boolean unlocked = selected && data.level() >= unlockLevel;
 
         Material icon = ultimate
                 ? Material.NETHER_STAR
-                : material(ability.getString("icon", ""),
-                        ABILITY_FALLBACK_ICONS[Math.min(ArraysIndexOf(ABILITY_KEYS, key), ABILITY_FALLBACK_ICONS.length - 1)]);
+                : material(ability.getString("icon", ""), ABILITY_FALLBACK_ICONS[Math.min(idx, ABILITY_FALLBACK_ICONS.length - 1)]);
 
         ItemStack item = new ItemStack(icon);
         ItemMeta meta = item.getItemMeta();
@@ -223,7 +252,7 @@ public class ClassGUI implements Listener {
         int cooldown = ability.getInt("cooldown", 0);
         NamedTextColor color = classColor(className);
 
-        meta.customName(Component.text(ABILITY_LABELS[ArraysIndexOf(ABILITY_KEYS, key)] + ": " + name,
+        meta.customName(Component.text(ABILITY_LABELS[idx] + ": " + name,
                 unlocked ? (ultimate ? NamedTextColor.GOLD : color) : NamedTextColor.DARK_GRAY,
                 TextDecoration.BOLD));
 
@@ -403,8 +432,7 @@ public class ClassGUI implements Listener {
         }
         player.sendMessage(plugin.getComponent("class-selected", "<class>",
                 className.substring(0, 1).toUpperCase() + className.substring(1)));
-        player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(
-                20 + (classManager.getClassData(player.getUniqueId()).level() * 2));
+        classManager.applyMaxHealth(player, classManager.getClassData(player.getUniqueId()).level());
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
 
         switchingGui.add(player.getUniqueId());
@@ -414,15 +442,11 @@ public class ClassGUI implements Listener {
 
     private void handleClassReset(Player player) {
         int cost = classManager.getResetCost();
-
         try {
-            var eco = org.bukkit.Bukkit.getServicesManager()
-                    .getRegistration(net.milkbowl.vault.economy.Economy.class);
-            if (eco != null) {
-                net.milkbowl.vault.economy.Economy economy = eco.getProvider();
+            var economy = getEconomy();
+            if (economy != null) {
                 if (!economy.has(player, cost)) {
-                    player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.",
-                            NamedTextColor.RED));
+                    player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
                     return;
                 }
                 economy.withdrawPlayer(player, cost);
@@ -430,9 +454,8 @@ public class ClassGUI implements Listener {
         } catch (Exception e) {
             plugin.getLogger().warning("Vault economy not available for reset check: " + e.getMessage());
         }
-
         classManager.resetClass(player.getUniqueId());
-        player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
+        classManager.applyMaxHealth(player, 0);
         player.sendMessage(plugin.getComponent("class-reset"));
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 0.8f);
 
@@ -442,15 +465,11 @@ public class ClassGUI implements Listener {
 
     private void handleUpgrade(Player player, ClassData data) {
         int cost = classManager.getUpgradeCost(data.level());
-
         try {
-            var eco = org.bukkit.Bukkit.getServicesManager()
-                    .getRegistration(net.milkbowl.vault.economy.Economy.class);
-            if (eco != null) {
-                net.milkbowl.vault.economy.Economy economy = eco.getProvider();
+            var economy = getEconomy();
+            if (economy != null) {
                 if (!economy.has(player, cost)) {
-                    player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.",
-                            NamedTextColor.RED));
+                    player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
                     return;
                 }
                 economy.withdrawPlayer(player, cost);
@@ -458,18 +477,14 @@ public class ClassGUI implements Listener {
         } catch (Exception e) {
             plugin.getLogger().warning("Vault economy not available for upgrade check: " + e.getMessage());
         }
-
-        boolean leveledUp = classManager.addXp(player.getUniqueId(),
-                classManager.getXpForLevel(data.level() + 1));
+        boolean leveledUp = classManager.addXp(player.getUniqueId(), classManager.getXpForLevel(data.level() + 1));
         if (!leveledUp) return;
 
         ClassData newData = classManager.getClassData(player.getUniqueId());
         player.sendMessage(plugin.getComponent("level-up",
                 "<level>", String.valueOf(newData.level()),
-                "<class>", newData.className().substring(0, 1).toUpperCase()
-                        + newData.className().substring(1)));
-        player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(
-                20 + (newData.level() * 2));
+                "<class>", newData.className().substring(0, 1).toUpperCase() + newData.className().substring(1)));
+        classManager.applyMaxHealth(player, newData.level());
         player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 
         // Close + reopen like class select — switchingGui keeps the session
@@ -490,12 +505,8 @@ public class ClassGUI implements Listener {
     // ==================== HELPERS ====================
 
     private void fillBorder(Inventory inv, int size) {
-        ItemStack border = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta meta = border.getItemMeta();
-        meta.customName(Component.empty());
-        border.setItemMeta(meta);
         for (int i = 0; i < size; i++) {
-            inv.setItem(i, border);
+            inv.setItem(i, CACHED_BORDER.clone());
         }
     }
 

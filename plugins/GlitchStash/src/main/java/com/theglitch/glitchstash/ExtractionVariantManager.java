@@ -12,16 +12,13 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Fast/Silent extraction variants (design ROADMAP 5.11.5):
  * key-requiring extraction zones with shorter VelKoth capture timers.
- *
- * Zones are rectangles defined in config (world + x/z bounds) so no
- * WorldGuard or VelKoth API dependency is needed. A player arms a variant by
- * right-clicking the required key while standing inside the zone; the key is
- * consumed and the arming flag lasts arm-duration-seconds.
  */
 public final class ExtractionVariantManager {
 
@@ -31,9 +28,16 @@ public final class ExtractionVariantManager {
     private final NamespacedKey variantKey;
     private final NamespacedKey variantExpiryKey;
     private volatile List<Variant> variants = new ArrayList<>();
+    // World-indexed for fast variantAt without scanning all zones
+    private volatile Map<String, List<Variant>> byWorld = new HashMap<>();
+
+    // Cached hot-path values — refreshed on reload
+    private volatile int cachedArmDuration = 180;
+    private volatile boolean cachedEnabled = true;
+    private volatile boolean cachedEnforceKey = true;
 
     public record Variant(String name, String world, double x1, double z1, double x2, double z2,
-                          String keyId, String keyMaterial, String keyName, int payoutBonus) {
+                           String keyId, String keyMaterial, String keyName, int payoutBonus) {
         boolean requiresKey() {
             return keyId != null && !keyId.isEmpty();
         }
@@ -47,37 +51,81 @@ public final class ExtractionVariantManager {
     }
 
     public void reload() {
+        // Refresh cached config values from plugin (already cached there) — no getConfig() polling later
+        cachedEnabled = plugin.isVariantEnabled();
+        cachedEnforceKey = plugin.isVariantEnforceKey();
+        int arm = plugin.getVariantArmDuration();
+        if (arm < 1) {
+            plugin.getLogger().warning("Invalid arm-duration " + arm + " — clamped to 1.");
+            arm = 1;
+        }
+        cachedArmDuration = arm;
+
         List<Variant> loaded = new ArrayList<>();
+        Map<String, List<Variant>> worldMap = new HashMap<>();
         ConfigurationSection zones = plugin.getConfig().getConfigurationSection("extraction-variants.zones");
         if (zones != null) {
             for (String name : zones.getKeys(false)) {
                 ConfigurationSection z = zones.getConfigurationSection(name);
                 if (z == null) continue;
-                loaded.add(new Variant(
-                        name,
-                        z.getString("world", ""),
-                        z.getDouble("x1", 0),
-                        z.getDouble("z1", 0),
-                        z.getDouble("x2", 0),
-                        z.getDouble("z2", 0),
-                        z.getString("key-id", ""),
-                        z.getString("key-material", ""),
-                        z.getString("key-name", ""),
-                        z.getInt("payout-bonus", 0)));
+                String world = z.getString("world", "");
+                if (world == null || world.isBlank()) {
+                    plugin.getLogger().warning("Extraction variant '" + name + "' missing world — skipped.");
+                    continue;
+                }
+                double x1 = z.getDouble("x1", 0);
+                double z1 = z.getDouble("z1", 0);
+                double x2 = z.getDouble("x2", 0);
+                double z2 = z.getDouble("z2", 0);
+                String keyId = z.getString("key-id", "");
+                String keyMat = z.getString("key-material", "");
+                String keyName = z.getString("key-name", "");
+                int bonus = z.getInt("payout-bonus", 0);
+                if (bonus < 0 || bonus > 1000) {
+                    plugin.getLogger().warning("Variant '" + name + "' payout-bonus " + bonus + " out of range — clamped.");
+                    bonus = Math.max(0, Math.min(bonus, 1000));
+                }
+                if (!keyMat.isEmpty()) {
+                    try {
+                        Material.valueOf(keyMat.toUpperCase(java.util.Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Variant '" + name + "' invalid key-material " + keyMat + " — zone still loaded but key will never match.");
+                    }
+                }
+                Variant v = new Variant(name, world, x1, z1, x2, z2, keyId, keyMat, keyName, bonus);
+                loaded.add(v);
+                worldMap.computeIfAbsent(world, k -> new ArrayList<>()).add(v);
             }
         }
         variants = loaded;
-        plugin.getLogger().info("Extraction variants loaded: " + loaded.size());
+        byWorld = worldMap;
+        plugin.getLogger().info("Extraction variants loaded: " + loaded.size()
+                + " (enabled=" + cachedEnabled + ", arm=" + cachedArmDuration + "s)");
     }
 
     public List<Variant> getVariants() {
         return variants;
     }
 
+    public boolean isEnabledCached() {
+        return cachedEnabled;
+    }
+
+    public boolean isEnforceKeyCached() {
+        return cachedEnforceKey;
+    }
+
+    public int getArmDurationCached() {
+        return cachedArmDuration;
+    }
+
     public Variant variantAt(Location location) {
-        if (location == null) return null;
-        for (Variant variant : variants) {
-            if (variant.world().equals(location.getWorld().getName()) && inBounds(location, variant)) {
+        if (location == null || location.getWorld() == null) return null;
+        // Fast path: lookup by world
+        List<Variant> list = byWorld.get(location.getWorld().getName());
+        if (list == null) return null;
+        for (Variant variant : list) {
+            if (inBounds(location, variant)) {
                 return variant;
             }
         }
@@ -117,8 +165,6 @@ public final class ExtractionVariantManager {
     public boolean isKey(ItemStack stack, Variant variant) {
         if (stack == null || stack.getType().isAir()) return false;
 
-        // Real Oraxen items carry their id under Oraxen's own PDC key — scan
-        // all string values (same strategy as the shop) instead of one key.
         if (!variant.keyId().isEmpty()) {
             String id = oraxenId(stack);
             if (variant.keyId().equalsIgnoreCase(id)) {
@@ -126,7 +172,6 @@ public final class ExtractionVariantManager {
             }
         }
 
-        // Fallback: material (+ custom name) match for servers without Oraxen.
         if (!variant.keyMaterial().isEmpty()) {
             Material material;
             try {
@@ -148,7 +193,8 @@ public final class ExtractionVariantManager {
     }
 
     public void arm(Player player, Variant variant) {
-        int armSeconds = plugin.getConfig().getInt("extraction-variants.arm-duration-seconds", 180);
+        // Use cached duration — no getConfig() per arm
+        int armSeconds = cachedArmDuration;
         player.getPersistentDataContainer().set(variantKey, PersistentDataType.STRING, variant.name());
         player.getPersistentDataContainer().set(variantExpiryKey, PersistentDataType.LONG,
                 System.currentTimeMillis() + armSeconds * 1000L);

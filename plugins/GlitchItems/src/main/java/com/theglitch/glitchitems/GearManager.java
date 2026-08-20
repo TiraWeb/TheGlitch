@@ -13,6 +13,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,48 +22,134 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class GearManager {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
     private final GlitchItems plugin;
     private final NamespacedKey gearKey;
+
+    // Cached config — refreshed in reload()
+    private final Map<String, Map<Rarity, int[]>> statRanges = new HashMap<>();
+    private final Map<Rarity, Integer> identifyFees = new EnumMap<>(Rarity.class);
+    private final Map<Rarity, Integer> sellValues = new EnumMap<>(Rarity.class);
+    private final Map<Rarity, Integer> resonanceBoosts = new EnumMap<>(Rarity.class);
+    private final Map<Rarity, String> rarityColors = new EnumMap<>(Rarity.class);
+    private final Map<GearType, List<Material>> materialsCache = new EnumMap<>(GearType.class);
+    private final Map<Rarity, Integer> weaponLifesteal = new EnumMap<>(Rarity.class);
+    private final Map<Rarity, Integer> weaponFireAspect = new EnumMap<>(Rarity.class);
+    private final Map<Rarity, Integer> armorDamageReduction = new EnumMap<>(Rarity.class);
+    private int weaponResonanceBase = 25;
+    private int armorReductionPerPiece = 10;
+    private int armorReductionCap = 40;
+    private int armorPointsReductionPerPoint = 2;
+    private int armorPointsCap = 25;
+    private int armorAttributeReductionCap = 30;
 
     public GearManager(GlitchItems plugin) {
         this.plugin = plugin;
         this.gearKey = new NamespacedKey(plugin, GearRolls.SERIAL_KEY);
+        reload();
+    }
+
+    public void reload() {
+        statRanges.clear();
+        identifyFees.clear();
+        sellValues.clear();
+        resonanceBoosts.clear();
+        rarityColors.clear();
+        materialsCache.clear();
+        weaponLifesteal.clear();
+        weaponFireAspect.clear();
+        armorDamageReduction.clear();
+
+        ConfigurationSection sr = plugin.getConfig().getConfigurationSection("stat-ranges");
+        if (sr != null) {
+            for (String stat : sr.getKeys(false)) {
+                ConfigurationSection sec = sr.getConfigurationSection(stat);
+                if (sec == null) continue;
+                Map<Rarity, int[]> perRarity = new EnumMap<>(Rarity.class);
+                for (Rarity r : Rarity.values()) {
+                    List<Integer> range = sec.getIntegerList(r.getId());
+                    if (range.size() >= 2) perRarity.put(r, new int[]{range.get(0), range.get(1)});
+                    else perRarity.put(r, new int[]{0, 0});
+                }
+                statRanges.put(stat, perRarity);
+            }
+        }
+        for (Rarity r : Rarity.values()) {
+            identifyFees.put(r, plugin.getConfig().getInt("identify-fees." + r.getId(), 0));
+            sellValues.put(r, plugin.getConfig().getInt("sell-values." + r.getId(), 0));
+            resonanceBoosts.put(r, plugin.getConfig().getInt("resonance-boost." + r.getId(), 0));
+            String col = plugin.getConfig().getString("rarity-colors." + r.getId(), "<white>");
+            rarityColors.put(r, col);
+        }
+        for (GearType type : GearType.values()) {
+            List<String> mats = plugin.getConfig().getStringList("materials." + type.getMaterialKey());
+            List<Material> resolved = new ArrayList<>();
+            for (String name : mats) {
+                try {
+                    resolved.add(Material.valueOf(name));
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("Unknown material '" + name + "' for materials." + type.getMaterialKey());
+                    resolved.add(Material.STICK);
+                }
+            }
+            if (resolved.isEmpty()) resolved.add(Material.STICK);
+            materialsCache.put(type, List.copyOf(resolved));
+        }
+        ConfigurationSection weaponSec = plugin.getConfig().getConfigurationSection("attributes.weapon");
+        if (weaponSec != null) {
+            ConfigurationSection ls = weaponSec.getConfigurationSection("lifesteal");
+            if (ls != null) for (Rarity r : Rarity.values()) weaponLifesteal.put(r, ls.getInt(r.getId(), 0));
+            ConfigurationSection fa = weaponSec.getConfigurationSection("fire-aspect");
+            if (fa != null) for (Rarity r : Rarity.values()) weaponFireAspect.put(r, fa.getInt(r.getId(), 0));
+        }
+        ConfigurationSection armorSec = plugin.getConfig().getConfigurationSection("attributes.armor");
+        if (armorSec != null) {
+            ConfigurationSection dr = armorSec.getConfigurationSection("damage-reduction");
+            if (dr != null) for (Rarity r : Rarity.values()) armorDamageReduction.put(r, dr.getInt(r.getId(), 0));
+        }
+        weaponResonanceBase = plugin.getConfig().getInt("resonance.weapon-damage-vs-matching", 25);
+        armorReductionPerPiece = plugin.getConfig().getInt("resonance.armor-reduction-per-piece", 10);
+        armorReductionCap = plugin.getConfig().getInt("resonance.armor-reduction-cap", 40);
+        armorPointsReductionPerPoint = plugin.getConfig().getInt("resonance.armor-points-reduction-per-point", 2);
+        armorPointsCap = plugin.getConfig().getInt("resonance.armor-points-cap", 25);
+        armorAttributeReductionCap = plugin.getConfig().getInt("resonance.armor-attribute-reduction-cap", 30);
     }
 
     public int[] statRange(Rarity rarity, String stat) {
-        ConfigurationSection ranges = plugin.getConfig().getConfigurationSection("stat-ranges." + stat);
-        if (ranges == null) return new int[]{0, 0};
-        List<Integer> range = ranges.getIntegerList(rarity.getId());
-        if (range.size() < 2) return new int[]{0, 0};
-        return new int[]{range.get(0), range.get(1)};
+        Map<Rarity, int[]> perRarity = statRanges.get(stat);
+        if (perRarity == null) return new int[]{0, 0};
+        int[] range = perRarity.get(rarity);
+        return range != null ? range : new int[]{0, 0};
     }
 
     public int identifyFee(Rarity rarity) {
-        return plugin.getConfig().getInt("identify-fees." + rarity.getId(), 0);
+        return identifyFees.getOrDefault(rarity, 0);
     }
 
     public int sellValue(Rarity rarity) {
         if (rarity == null) return 0;
-        return plugin.getConfig().getInt("sell-values." + rarity.getId(), 0);
+        return sellValues.getOrDefault(rarity, 0);
     }
 
     public int resonanceBoost(Rarity rarity) {
-        return plugin.getConfig().getInt("resonance-boost." + rarity.getId(), 0);
+        return resonanceBoosts.getOrDefault(rarity, 0);
     }
 
     public int weaponResonanceBase() {
-        return plugin.getConfig().getInt("resonance.weapon-damage-vs-matching", 25);
+        return weaponResonanceBase;
     }
 
+    public int getArmorReductionPerPiece() { return armorReductionPerPiece; }
+    public int getArmorReductionCap() { return armorReductionCap; }
+    public int getArmorPointsReductionPerPoint() { return armorPointsReductionPerPoint; }
+    public int getArmorPointsCap() { return armorPointsCap; }
+    public int getArmorAttributeReductionCap() { return armorAttributeReductionCap; }
+
     public Material materialFor(GearType type, Rarity rarity) {
-        List<String> mats = plugin.getConfig().getStringList("materials." + type.getMaterialKey());
-        if (mats.isEmpty()) return Material.STICK;
-        String name = mats.get(Math.min(rarity.getTier(), mats.size() - 1));
-        try {
-            return Material.valueOf(name);
-        } catch (IllegalArgumentException e) {
-            return Material.STICK;
-        }
+        List<Material> mats = materialsCache.get(type);
+        if (mats == null || mats.isEmpty()) return Material.STICK;
+        return mats.get(Math.min(rarity.getTier(), mats.size() - 1));
     }
 
     public ItemStack generateGear(GearType type, Rarity rarity) {
@@ -86,12 +174,12 @@ public final class GearManager {
 
         if (type.isWeapon()) {
             rolls.damage = statRange(rarity, "damage")[1];
-            int lifesteal = plugin.getConfig().getInt("attributes.weapon.lifesteal.legendary", 8);
-            int fire = plugin.getConfig().getInt("attributes.weapon.fire-aspect.legendary", 2);
+            int lifesteal = weaponLifesteal.getOrDefault(Rarity.LEGENDARY, 8);
+            int fire = weaponFireAspect.getOrDefault(Rarity.LEGENDARY, 2);
             rolls.attributes = "lifesteal:" + lifesteal + ";fire-aspect:" + fire;
         } else {
             rolls.armor = statRange(rarity, "armor")[1];
-            int reduction = plugin.getConfig().getInt("attributes.armor.damage-reduction.legendary", 12);
+            int reduction = armorDamageReduction.getOrDefault(Rarity.LEGENDARY, 12);
             rolls.attributes = "damage-reduction:" + reduction;
         }
         rolls.speed = statRange(rarity, "speed")[1];
@@ -145,8 +233,8 @@ public final class GearManager {
 
     private String rollWeaponAttribute(Rarity rarity, ThreadLocalRandom rand) {
         if (rarity.getTier() < Rarity.RARE.getTier()) return "";
-        int lifesteal = plugin.getConfig().getInt("attributes.weapon.lifesteal." + rarity.getId(), 0);
-        int fire = plugin.getConfig().getInt("attributes.weapon.fire-aspect." + rarity.getId(), 0);
+        int lifesteal = weaponLifesteal.getOrDefault(rarity, 0);
+        int fire = weaponFireAspect.getOrDefault(rarity, 0);
         if (rarity == Rarity.LEGENDARY) {
             return "lifesteal:" + lifesteal + ";fire-aspect:" + fire;
         }
@@ -160,7 +248,7 @@ public final class GearManager {
 
     private String rollArmorAttribute(Rarity rarity, ThreadLocalRandom rand) {
         if (rarity.getTier() < Rarity.RARE.getTier()) return "";
-        int reduction = plugin.getConfig().getInt("attributes.armor.damage-reduction." + rarity.getId(), 0);
+        int reduction = armorDamageReduction.getOrDefault(rarity, 0);
         return reduction > 0 ? "damage-reduction:" + reduction : "";
     }
 
@@ -169,44 +257,44 @@ public final class GearManager {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
 
-        String color = rarityColor(rolls.rarity);
+        String color = rarityColors.getOrDefault(rolls.rarity, "<white>");
         String name = color + "<bold>[" + rolls.rarity.getDisplayName() + "]</bold> <white>" + rolls.type.getLabel() + "</white>";
-        meta.customName(MiniMessage.miniMessage().deserialize(name));
+        meta.customName(MM.deserialize(name));
 
         List<Component> lore = new ArrayList<>();
 
         if (rolls.type.isWeapon()) {
-            lore.add(MiniMessage.miniMessage().deserialize(
+            lore.add(MM.deserialize(
                     "<gray>Damage: <white>+" + rolls.damage + "%</white> " + stars(rolls.starsPrimary)));
         } else {
-            lore.add(MiniMessage.miniMessage().deserialize(
+            lore.add(MM.deserialize(
                     "<gray>Armor: <white>+" + rolls.armor + "</white> " + stars(rolls.starsPrimary)));
         }
         if (rolls.speed > 0) {
-            lore.add(MiniMessage.miniMessage().deserialize(
+            lore.add(MM.deserialize(
                     "<gray>Speed: <white>+" + rolls.speed + "%</white> " + stars(rolls.starsSpeed)));
         }
         if (rolls.maxhp > 0) {
-            lore.add(MiniMessage.miniMessage().deserialize(
+            lore.add(MM.deserialize(
                     "<gray>Max HP: <white>+" + rolls.maxhp + "</white> " + stars(rolls.starsHp)));
         }
-        lore.add(MiniMessage.miniMessage().deserialize(
+        lore.add(MM.deserialize(
                 rolls.resonance.getColorTag() + "Resonance: " + rolls.resonance.getLabel() + "</" + tagSuffix(rolls.resonance.getColorTag()) + ">"));
 
         if (!rolls.attributes.isEmpty()) {
             for (String attr : rolls.attributes.split(";")) {
                 String line = attributeLore(attr);
                 if (line != null) {
-                    lore.add(MiniMessage.miniMessage().deserialize("<aqua>" + line + "</aqua>"));
+                    lore.add(MM.deserialize("<aqua>" + line + "</aqua>"));
                 }
             }
         }
         if (rolls.type.isWeapon()) {
-            lore.add(MiniMessage.miniMessage().deserialize(
-                    "<dark_gray>+" + (weaponResonanceBase() + rolls.boost) + "% dmg vs " + rolls.resonance.getLabel() + " mobs</dark_gray>"));
+            lore.add(MM.deserialize(
+                    "<dark_gray>+" + (weaponResonanceBase + rolls.boost) + "% dmg vs " + rolls.resonance.getLabel() + " mobs</dark_gray>"));
         }
         lore.add(Component.empty());
-        lore.add(MiniMessage.miniMessage().deserialize(
+        lore.add(MM.deserialize(
                 "<gray>Sell price: <aqua>" + sellValue(rolls.rarity) + " Shards</aqua></gray>"));
 
         meta.lore(lore);
@@ -248,10 +336,6 @@ public final class GearManager {
             sb.append("<gold>★</gold>");
         }
         return sb.toString();
-    }
-
-    private String rarityColor(Rarity rarity) {
-        return plugin.getConfig().getString("rarity-colors." + rarity.getId(), "<white>");
     }
 
     private String tagSuffix(String tag) {

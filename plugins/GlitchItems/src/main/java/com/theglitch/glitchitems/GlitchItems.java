@@ -13,6 +13,7 @@ public final class GlitchItems extends JavaPlugin {
     private IdentifyManager identifyManager;
     private ContainerManager containerManager;
     private Economy economy;
+    private boolean economyLookupDone;
 
     @Override
     public void onEnable() {
@@ -56,10 +57,19 @@ public final class GlitchItems extends JavaPlugin {
 
     public void reloadPlugin() {
         reloadConfig();
+        invalidateEconomyCache();
+        if (gearManager != null) gearManager.reload();
+        if (glitchManager != null) glitchManager.reload();
+        if (identifyManager != null) identifyManager.reload();
         if (containerManager != null) {
             containerManager.reload();
         }
         getLogger().info("GlitchItems reloaded.");
+    }
+
+    public void invalidateEconomyCache() {
+        economy = null;
+        economyLookupDone = false;
     }
 
     public static GlitchItems getInstance() {
@@ -83,9 +93,7 @@ public final class GlitchItems extends JavaPlugin {
     }
 
     public Economy getEconomy() {
-        if (economy != null) {
-            return economy;
-        }
+        if (economyLookupDone) return economy;
         RegisteredServiceProvider<Economy> provider =
                 getServer().getServicesManager().getRegistration(Economy.class);
         if (provider != null) {
@@ -94,6 +102,7 @@ public final class GlitchItems extends JavaPlugin {
                 getLogger().info("Economy provider found: " + economy.getName());
             }
         }
+        economyLookupDone = true;
         return economy;
     }
 }

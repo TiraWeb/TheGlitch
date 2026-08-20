@@ -5,13 +5,15 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class GlitchHealthBar extends JavaPlugin {
 
     private HealthBarManager manager;
-    private List<String> enabledWorlds;
+    private Set<String> enabledWorlds = new HashSet<>();
     private int barLength;
     private boolean showNumbers;
     private double offsetExtra;
@@ -20,6 +22,14 @@ public final class GlitchHealthBar extends JavaPlugin {
     private TextColor colorLow;
     private TextColor colorEmpty;
 
+    // Cached hot-path config — refreshed on reload
+    private int tickPeriod = 5;
+    private int rescanPeriod = 40;
+    private String trackMode = "monster"; // monster | hostile | all
+
+    private BukkitTask tickTask;
+    private BukkitTask rescanTask;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -27,22 +37,29 @@ public final class GlitchHealthBar extends JavaPlugin {
 
         manager = new HealthBarManager(this);
         Bukkit.getPluginManager().registerEvents(new HealthBarListener(this, manager), this);
-        // 5 ticks = 0.25s: smooth bar tracking without excess packets.
-        Bukkit.getScheduler().runTaskTimer(this, manager::tick, 5L, 5L);
-        // Safety net: scan for untracked hostiles every 2s. Events are a
-        // fast-path; this is the mechanism that cannot miss a spawn.
-        Bukkit.getScheduler().runTaskTimer(this, manager::rescan, 40L, 40L);
+        scheduleTasks();
 
         GhBarCommand command = new GhBarCommand(this);
         if (getCommand("ghb") != null) {
             getCommand("ghb").setExecutor(command);
         }
 
-        getLogger().info("GlitchHealthBar enabled (worlds=" + enabledWorlds + ").");
+        getLogger().info("GlitchHealthBar enabled (worlds=" + enabledWorlds + ", tick=" + tickPeriod + ").");
+    }
+
+    private void scheduleTasks() {
+        if (tickTask != null) tickTask.cancel();
+        if (rescanTask != null) rescanTask.cancel();
+        // 5 ticks = 0.25s: smooth bar tracking without excess packets.
+        tickTask = Bukkit.getScheduler().runTaskTimer(this, manager::tick, tickPeriod, tickPeriod);
+        // Safety net: scan for untracked hostiles
+        rescanTask = Bukkit.getScheduler().runTaskTimer(this, manager::rescan, rescanPeriod, rescanPeriod);
     }
 
     @Override
     public void onDisable() {
+        if (tickTask != null) tickTask.cancel();
+        if (rescanTask != null) rescanTask.cancel();
         if (manager != null) {
             manager.clearAll();
         }
@@ -51,20 +68,60 @@ public final class GlitchHealthBar extends JavaPlugin {
 
     public void reloadPlugin() {
         loadSettings();
+        scheduleTasks(); // apply new periods
         manager.rescan();
-        getLogger().info("GlitchHealthBar reloaded (worlds=" + enabledWorlds + ").");
+        getLogger().info("GlitchHealthBar reloaded (worlds=" + enabledWorlds + ", tick=" + tickPeriod + ").");
     }
 
     private void loadSettings() {
         reloadConfig();
-        enabledWorlds = getConfig().getStringList("enabled-worlds");
-        barLength = Math.max(1, getConfig().getInt("bar-length", 10));
-        showNumbers = getConfig().getBoolean("show-numbers", true);
-        offsetExtra = Math.max(0, getConfig().getDouble("offset-extra", 0.6));
-        colorHigh = parseColor("colors.high", 0x55FF55);
-        colorMid = parseColor("colors.mid", 0xFFFF55);
-        colorLow = parseColor("colors.low", 0xFF5555);
-        colorEmpty = parseColor("colors.empty", 0x4A4A4A);
+        try {
+            Set<String> worlds = new HashSet<>(getConfig().getStringList("enabled-worlds"));
+            if (worlds.isEmpty()) {
+                getLogger().warning("enabled-worlds empty — no health bars will show until configured.");
+            }
+            enabledWorlds = worlds;
+
+            barLength = Math.max(1, getConfig().getInt("bar-length", 10));
+            if (barLength > 20) {
+                getLogger().warning("bar-length " + barLength + " large — clamped to 20.");
+                barLength = 20;
+            }
+            showNumbers = getConfig().getBoolean("show-numbers", true);
+            offsetExtra = Math.max(0, getConfig().getDouble("offset-extra", 0.6));
+            if (offsetExtra > 5) {
+                getLogger().warning("offset-extra " + offsetExtra + " large — clamped to 5.");
+                offsetExtra = 5;
+            }
+            colorHigh = parseColor("colors.high", 0x55FF55);
+            colorMid = parseColor("colors.mid", 0xFFFF55);
+            colorLow = parseColor("colors.low", 0xFF5555);
+            colorEmpty = parseColor("colors.empty", 0x4A4A4A);
+
+            int tp = getConfig().getInt("tick-period", 5);
+            if (tp < 1 || tp > 20) {
+                getLogger().warning("Invalid tick-period " + tp + " — clamped to 5.");
+                tp = 5;
+            }
+            tickPeriod = tp;
+
+            int rp = getConfig().getInt("rescan-period", 40);
+            if (rp < 10 || rp > 200) {
+                getLogger().warning("Invalid rescan-period " + rp + " — clamped to 40.");
+                rp = 40;
+            }
+            rescanPeriod = rp;
+
+            String mode = getConfig().getString("track-mode", "monster");
+            if (mode == null || (!mode.equalsIgnoreCase("monster") && !mode.equalsIgnoreCase("all") && !mode.equalsIgnoreCase("hostile"))) {
+                if (mode != null && !mode.isBlank()) getLogger().warning("Unknown track-mode '" + mode + "' — falling back to monster.");
+                mode = "monster";
+            }
+            trackMode = mode.toLowerCase(java.util.Locale.ROOT);
+
+        } catch (Exception e) {
+            getLogger().warning("Failed to load GlitchHealthBar settings: " + e.getMessage());
+        }
     }
 
     private TextColor parseColor(String path, int fallback) {
@@ -74,6 +131,9 @@ public final class GlitchHealthBar extends JavaPlugin {
             if (color != null) {
                 return color;
             }
+            getLogger().warning("Invalid color hex at " + path + ": " + hex + " — using fallback.");
+        } else if (hex != null) {
+            getLogger().warning("Invalid color format at " + path + ": " + hex + " — using fallback.");
         }
         return TextColor.color(fallback);
     }
@@ -81,11 +141,18 @@ public final class GlitchHealthBar extends JavaPlugin {
     public boolean shouldTrack(Mob mob) {
         if (mob instanceof Player) return false;
         if (!isEnabledWorld(mob.getWorld().getName())) return false;
+        // Cached mobs mode — no getConfig() per spawn/tick
+        if ("all".equals(trackMode)) return true;
+        // default: only Monster (hostile) — covers MythicMobs that are monsters too
         return mob instanceof org.bukkit.entity.Monster;
     }
 
     public boolean isEnabledWorld(String world) {
         return enabledWorlds.contains(world);
+    }
+
+    public Set<String> getEnabledWorlds() {
+        return enabledWorlds;
     }
 
     public HealthBarManager getManager() {
@@ -118,5 +185,17 @@ public final class GlitchHealthBar extends JavaPlugin {
 
     public TextColor colorEmpty() {
         return colorEmpty;
+    }
+
+    public int tickPeriod() {
+        return tickPeriod;
+    }
+
+    public int rescanPeriod() {
+        return rescanPeriod;
+    }
+
+    public String trackMode() {
+        return trackMode;
     }
 }

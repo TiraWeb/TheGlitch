@@ -14,24 +14,30 @@ import org.bukkit.persistence.PersistentDataType;
  */
 public final class StarterKit {
 
-    private static final NamespacedKey KIT_KEY = new NamespacedKey(
-            GlitchClasses.getInstance(), "starter_kit_received");
-
+    private final NamespacedKey kitKey;
     private final GlitchClasses plugin;
+    private volatile boolean kitEnabled = true;
+    private volatile boolean oncePerPlayer = true;
 
     public StarterKit(GlitchClasses plugin) {
         this.plugin = plugin;
+        this.kitKey = new NamespacedKey(plugin, "starter_kit_received");
+        reloadConfig();
+    }
+
+    public void reloadConfig() {
+        kitEnabled = plugin.getConfig().getBoolean("starter-kit.enabled", true);
+        oncePerPlayer = plugin.getConfig().getBoolean("starter-kit.once-per-player", true);
     }
 
     public void giveIfFirstSelect(Player player) {
-        if (!plugin.getConfig().getBoolean("starter-kit.enabled", true)) return;
-        if (plugin.getConfig().getBoolean("starter-kit.once-per-player", true)
-                && player.getPersistentDataContainer().has(KIT_KEY, PersistentDataType.BOOLEAN)) {
+        if (!kitEnabled) return;
+        if (oncePerPlayer && player.getPersistentDataContainer().has(kitKey, PersistentDataType.BOOLEAN)) {
             return;
         }
 
         give(player);
-        player.getPersistentDataContainer().set(KIT_KEY, PersistentDataType.BOOLEAN, true);
+        player.getPersistentDataContainer().set(kitKey, PersistentDataType.BOOLEAN, true);
         player.sendMessage(plugin.getComponent("starter-kit-given"));
     }
 

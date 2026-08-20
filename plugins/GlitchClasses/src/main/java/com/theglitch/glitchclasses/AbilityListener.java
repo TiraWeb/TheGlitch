@@ -2,6 +2,7 @@ package com.theglitch.glitchclasses;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -35,8 +36,18 @@ import java.util.*;
  */
 public class AbilityListener implements Listener {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+    private static final String SCAVENGE_TAG = "specter_scavenge";
+
     private final GlitchClasses plugin;
     private final ClassManager classManager;
+    private final Map<String, Integer> baseCooldowns = new HashMap<>();
+    private final Map<String, Component> keyHintCache = new HashMap<>();
+    private volatile int cooldownReduction = 2;
+    private volatile int cooldownFloor = 12;
+    private volatile int ultimateLevel = 10;
+    private volatile Set<String> gameWorlds = Set.of("glitch_pve", "glitch_red");
+    private volatile Component lastVigilanceBar = Component.empty();
 
     // Cooldown tracking: UUID -> ability name -> expiry timestamp
     private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
@@ -73,8 +84,6 @@ public class AbilityListener implements Listener {
     private final NamespacedKey empRangeKey;
     private final NamespacedKey empDurationKey;
 
-    private static final Set<String> GAME_WORLDS = Set.of("glitch_pve", "glitch_red");
-
     public AbilityListener(GlitchClasses plugin, ClassManager classManager) {
         this.plugin = plugin;
         this.classManager = classManager;
@@ -84,6 +93,38 @@ public class AbilityListener implements Listener {
         this.empGrenadeKey = new NamespacedKey(plugin, "emp_grenade");
         this.empRangeKey = new NamespacedKey(plugin, "emp_range");
         this.empDurationKey = new NamespacedKey(plugin, "emp_duration");
+        reloadConfig();
+    }
+
+    public void reloadConfig() {
+        cooldownReduction = plugin.getConfig().getInt("cooldown-reduction-per-level", 2);
+        cooldownFloor = plugin.getConfig().getInt("cooldown-floor", 12);
+        ultimateLevel = plugin.getConfig().getInt("ultimate-level", 10);
+        List<String> worlds = plugin.getConfig().getStringList("game-worlds");
+        if (worlds == null || worlds.isEmpty()) worlds = List.of("glitch_pve", "glitch_red");
+        gameWorlds = Set.copyOf(worlds);
+        baseCooldowns.clear();
+        keyHintCache.clear();
+        lastVigilanceBar = Component.empty();
+        for (String cls : new String[]{"vanguard", "warden", "specter", "operator"}) {
+            for (String type : new String[]{"prime", "tactical", "ultimate"}) {
+                String key = cls + "." + type;
+                int base = plugin.getConfig().getInt("abilities." + cls + "." + type + ".cooldown", 20);
+                baseCooldowns.put(key, base);
+            }
+        }
+        for (String cls : new String[]{"vanguard", "warden", "specter", "operator"}) {
+            String prime = plugin.getConfig().getString("abilities." + cls + ".prime.name", "Prime");
+            String tactical = plugin.getConfig().getString("abilities." + cls + ".tactical.name", "Tactical");
+            String ultimate = plugin.getConfig().getString("abilities." + cls + ".ultimate.name", "Ultimate");
+            Component hint = Component.text("F ", NamedTextColor.DARK_GRAY)
+                    .append(Component.text(prime, NamedTextColor.WHITE))
+                    .append(Component.text("  Sneak+F ", NamedTextColor.DARK_GRAY))
+                    .append(Component.text(tactical, NamedTextColor.WHITE))
+                    .append(Component.text("  Sneak+Q ", NamedTextColor.DARK_GRAY))
+                    .append(Component.text(ultimate, NamedTextColor.WHITE));
+            keyHintCache.put(cls, hint);
+        }
     }
 
     // Activation gate + routing shared by all keybind handlers
@@ -117,9 +158,7 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onSwapHands(PlayerSwapHandItemsEvent event) {
         Player player = event.getPlayer();
-        if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
-        // F is fully hijacked in game worlds — swap is cancelled and the key
-        // activates abilities instead (offhand items move via the inventory).
+        if (!gameWorlds.contains(player.getWorld().getName())) return;
         event.setCancelled(true);
         tryActivate(player, player.isSneaking() ? "tactical" : "prime");
     }
@@ -127,10 +166,7 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onDrop(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
-        if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
-        // Plain Q still drops items. Sneak+Q with ANY item in hand = ultimate.
-        // (Q never fires with an empty hand; inventory drag-drop still works
-        // as the alternate drop path.)
+        if (!gameWorlds.contains(player.getWorld().getName())) return;
         if (!player.isSneaking()) return;
         event.setCancelled(true);
         tryActivate(player, "ultimate");
@@ -139,22 +175,26 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
-        if (!GAME_WORLDS.contains(player.getWorld().getName())) return;
+        if (!gameWorlds.contains(player.getWorld().getName())) return;
         ClassData data = classManager.getClassData(player.getUniqueId());
         if (data.className().equals("none")) return;
         player.sendActionBar(keyHint(data.className()));
     }
 
     private Component keyHint(String className) {
+        Component cached = keyHintCache.get(className);
+        if (cached != null) return cached;
         String prime = plugin.getConfig().getString("abilities." + className + ".prime.name", "Prime");
         String tactical = plugin.getConfig().getString("abilities." + className + ".tactical.name", "Tactical");
         String ultimate = plugin.getConfig().getString("abilities." + className + ".ultimate.name", "Ultimate");
-        return Component.text("F ", NamedTextColor.DARK_GRAY)
+        Component hint = Component.text("F ", NamedTextColor.DARK_GRAY)
                 .append(Component.text(prime, NamedTextColor.WHITE))
                 .append(Component.text("  Sneak+F ", NamedTextColor.DARK_GRAY))
                 .append(Component.text(tactical, NamedTextColor.WHITE))
                 .append(Component.text("  Sneak+Q ", NamedTextColor.DARK_GRAY))
                 .append(Component.text(ultimate, NamedTextColor.WHITE));
+        keyHintCache.put(className, hint);
+        return hint;
     }
 
     // ==================== VANGUARD ABILITIES ====================
@@ -908,21 +948,22 @@ public class AbilityListener implements Listener {
      */
     public void startTickers() {
         plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            long now = System.currentTimeMillis();
             for (Player player : plugin.getServer().getOnlinePlayers()) {
                 ClassData data = classManager.getClassData(player.getUniqueId());
 
-                // Scavenge tag sync (read by GlitchItems containers)
-                boolean scavenger = data.className().equals("specter") && data.level() >= 3;
-                if (scavenger) {
-                    player.addScoreboardTag("specter_scavenge");
-                } else {
-                    player.removeScoreboardTag("specter_scavenge");
+                // Scavenge tag sync — only mutate when state flips (saves NBT + packet)
+                boolean shouldHave = data.className().equals("specter") && data.level() >= 3;
+                boolean has = player.getScoreboardTags().contains(SCAVENGE_TAG);
+                if (shouldHave != has) {
+                    if (shouldHave) player.addScoreboardTag(SCAVENGE_TAG);
+                    else player.removeScoreboardTag(SCAVENGE_TAG);
                 }
 
                 // Ghost Protocol — clear hostiles' targets while active
                 Long ghost = ghostUntil.get(player.getUniqueId());
                 if (ghost != null) {
-                    if (ghost < System.currentTimeMillis()) {
+                    if (ghost < now) {
                         ghostUntil.remove(player.getUniqueId());
                     } else {
                         for (Entity entity : player.getNearbyEntities(16, 16, 16)) {
@@ -935,7 +976,7 @@ public class AbilityListener implements Listener {
 
                 // Vigilance — warden sees ally health through walls (level 3+)
                 if (!data.className().equals("warden") || data.level() < 3) continue;
-                if (!GAME_WORLDS.contains(player.getWorld().getName())) continue;
+                if (!gameWorlds.contains(player.getWorld().getName())) continue;
 
                 List<Player> allies = new ArrayList<>();
                 for (Entity entity : player.getNearbyEntities(20, 20, 20)) {
@@ -943,12 +984,15 @@ public class AbilityListener implements Listener {
                         allies.add(ally);
                     }
                 }
+                if (allies.isEmpty()) {
+                    if (!lastVigilanceBar.equals(Component.empty())) {
+                        lastVigilanceBar = Component.empty();
+                        player.sendActionBar(Component.empty());
+                    }
+                    continue;
+                }
                 allies.sort(Comparator.comparingDouble(a -> a.getLocation().distanceSquared(player.getLocation())));
 
-                if (allies.isEmpty()) continue;
-                // Build a proper Component — appending NamedTextColor to a
-                // StringBuilder prints the color NAME ("green"/"white"), not
-                // the color itself.
                 Component bar = Component.empty();
                 int shown = 0;
                 for (Player ally : allies) {
@@ -962,7 +1006,10 @@ public class AbilityListener implements Listener {
                             .append(Component.text("  ", NamedTextColor.DARK_GRAY));
                     shown++;
                 }
-                player.sendActionBar(bar);
+                if (!bar.equals(lastVigilanceBar)) {
+                    lastVigilanceBar = bar;
+                    player.sendActionBar(bar);
+                }
             }
         }, 40L, 20L);
     }
@@ -998,12 +1045,8 @@ public class AbilityListener implements Listener {
     }
 
     private int getCooldown(String className, String abilityType, int level) {
-        int baseCooldown = plugin.getConfig().getInt("abilities." + className + "." + abilityType + ".cooldown", 20);
-        int reduction = plugin.getConfig().getInt("cooldown-reduction-per-level", 2);
-        int floor = plugin.getConfig().getInt("cooldown-floor", 12);
-        // A hard floor keeps max-level abilities from becoming spammable —
-        // a 5s floor (old value) made primes/tacticals feel cooldown-free.
-        return Math.max(floor, baseCooldown - (level * reduction));
+        int baseCooldown = baseCooldowns.getOrDefault(className + "." + abilityType, 20);
+        return Math.max(cooldownFloor, baseCooldown - (level * cooldownReduction));
     }
 
     private void setCooldown(UUID uuid, String ability, int seconds) {
@@ -1027,6 +1070,6 @@ public class AbilityListener implements Listener {
     }
 
     private int getUltimateLevel() {
-        return plugin.getConfig().getInt("ultimate-level", 10);
+        return ultimateLevel;
     }
 }

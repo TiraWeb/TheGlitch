@@ -14,8 +14,15 @@ import java.util.List;
 /**
  * Admin commands for GlitchClasses — /classadmin
  */
-public record ClassAdminCommand(GlitchClasses plugin, ClassManager classManager)
-        implements CommandExecutor, TabCompleter {
+public final class ClassAdminCommand implements CommandExecutor, TabCompleter {
+
+    private final GlitchClasses plugin;
+    private final ClassManager classManager;
+
+    public ClassAdminCommand(GlitchClasses plugin, ClassManager classManager) {
+        this.plugin = plugin;
+        this.classManager = classManager;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -60,7 +67,7 @@ public record ClassAdminCommand(GlitchClasses plugin, ClassManager classManager)
                 }
                 classManager.setClass(target.getUniqueId(), className);
                 classManager.setLevel(target.getUniqueId(), level);
-                target.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20 + (level * 2));
+                classManager.applyMaxHealth(target, level);
                 sender.sendMessage(plugin.getComponent("admin-set",
                         "<player>", target.getName(),
                         "<class>", className,
@@ -79,7 +86,7 @@ public record ClassAdminCommand(GlitchClasses plugin, ClassManager classManager)
                     return true;
                 }
                 classManager.resetClass(target.getUniqueId());
-                target.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
+                classManager.applyMaxHealth(target, 0);
                 sender.sendMessage(plugin.getComponent("admin-reset", "<player>", target.getName()));
             }
             case "list" -> {

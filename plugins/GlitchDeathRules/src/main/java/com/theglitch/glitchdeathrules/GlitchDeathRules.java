@@ -11,19 +11,30 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 public final class GlitchDeathRules extends JavaPlugin {
+
+    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private static GlitchDeathRules instance;
     private RedZoneInvulnerability invulnerability;
     private FileConfiguration messagesConfig;
     private File messagesFile;
 
+    // Cached hot-path config — refreshed on reload
+    private volatile Set<String> mercyWorlds = new HashSet<>();
+    private final Map<String, String> messageCache = new ConcurrentHashMap<>();
+
     @Override
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
         loadMessages();
+        cacheConfig();
 
         invulnerability = new RedZoneInvulnerability(this);
 
@@ -32,7 +43,7 @@ public final class GlitchDeathRules extends JavaPlugin {
 
         getCommand("deathrules").setExecutor((CommandExecutor) this::onCommand);
 
-        getLogger().info("GlitchDeathRules enabled.");
+        getLogger().info("GlitchDeathRules enabled (mercyWorlds=" + mercyWorlds + ").");
     }
 
     @Override
@@ -60,24 +71,66 @@ public final class GlitchDeathRules extends JavaPlugin {
             saveResource("messages.yml", false);
         }
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+        messageCache.clear();
+        for (String k : messagesConfig.getKeys(false)) {
+            String v = messagesConfig.getString(k);
+            if (v != null) messageCache.put(k, v);
+        }
+        for (String k : messagesConfig.getKeys(true)) {
+            if (!messageCache.containsKey(k)) {
+                String v = messagesConfig.getString(k);
+                if (v != null) messageCache.put(k, v);
+            }
+        }
+    }
+
+    private void cacheConfig() {
+        try {
+            Set<String> set = new HashSet<>(getConfig().getStringList("mercy-worlds"));
+            if (set.isEmpty()) {
+                getLogger().warning("mercy-worlds empty — no world will have mercy rule.");
+            }
+            mercyWorlds = set;
+        } catch (Exception e) {
+            getLogger().warning("Failed to cache GlitchDeathRules config: " + e.getMessage());
+            mercyWorlds = new HashSet<>(Set.of("glitch_red"));
+        }
     }
 
     public void reloadPlugin() {
         reloadConfig();
         loadMessages();
-        getLogger().info("GlitchDeathRules reloaded.");
+        cacheConfig();
+        if (invulnerability != null) {
+            invulnerability.reloadCache();
+        }
+        getLogger().info("GlitchDeathRules reloaded (mercyWorlds=" + mercyWorlds + ").");
     }
 
     public String getMessage(String key) {
+        String c = messageCache.get(key);
+        if (c != null) return c;
         return messagesConfig.getString(key, key);
     }
 
     public Component getComponent(String key) {
-        return MiniMessage.miniMessage().deserialize(getMessage(key));
+        return MM.deserialize(getMessage(key));
     }
 
     public Component getComponent(String key, String ph1, String v1) {
-        return MiniMessage.miniMessage().deserialize(getMessage(key).replace(ph1, v1));
+        return MM.deserialize(getMessage(key).replace(ph1, v1));
+    }
+
+    public Set<String> getMercyWorlds() {
+        return mercyWorlds;
+    }
+
+    public boolean isMercyWorld(String world) {
+        return mercyWorlds.contains(world);
+    }
+
+    public static MiniMessage mm() {
+        return MM;
     }
 
     public static GlitchDeathRules getInstance() {

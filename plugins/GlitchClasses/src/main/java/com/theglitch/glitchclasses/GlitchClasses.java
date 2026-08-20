@@ -13,10 +13,13 @@ import java.util.logging.Level;
 
 public final class GlitchClasses extends JavaPlugin {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
     private static GlitchClasses instance;
     private ClassManager classManager;
     private ClassGUI classGUI;
     private StarterKit starterKit;
+    private AbilityListener abilityListener;
     private FileConfiguration messagesConfig;
     private File messagesFile;
 
@@ -31,7 +34,7 @@ public final class GlitchClasses extends JavaPlugin {
         starterKit = new StarterKit(this);
 
         classGUI = new ClassGUI(this, classManager);
-        AbilityListener abilityListener = new AbilityListener(this, classManager);
+        abilityListener = new AbilityListener(this, classManager);
         abilityListener.startTickers();
         Bukkit.getPluginManager().registerEvents(classGUI, this);
         Bukkit.getPluginManager().registerEvents(abilityListener, this);
@@ -67,31 +70,34 @@ public final class GlitchClasses extends JavaPlugin {
     public void reloadPlugin() {
         reloadConfig();
         loadMessages();
+        if (classManager != null) classManager.reloadCaches();
+        if (abilityListener != null) abilityListener.reloadConfig();
+        if (classGUI != null) classGUI.reloadConfig();
+        if (starterKit != null) starterKit.reloadConfig();
         getLogger().info("GlitchClasses reloaded.");
     }
 
     public String getMessage(String key) {
-        return messagesConfig.getString("messages." + key, key);
+        return messagesConfig.getString(key, key);
     }
 
     public Component getComponent(String key) {
-        return MiniMessage.miniMessage().deserialize(getMessage(key));
+        return MM.deserialize(getMessage(key));
     }
 
     public Component getComponent(String key, String placeholder, String value) {
-        return MiniMessage.miniMessage().deserialize(
-                getMessage(key).replace(placeholder, value));
+        return MM.deserialize(getMessage(key).replace(placeholder, value));
     }
 
     public Component getComponent(String key, String ph1, String v1, String ph2, String v2) {
-        return MiniMessage.miniMessage().deserialize(
-                getMessage(key).replace(ph1, v1).replace(ph2, v2));
+        return MM.deserialize(getMessage(key).replace(ph1, v1).replace(ph2, v2));
     }
 
     public Component getComponent(String key, String ph1, String v1, String ph2, String v2, String ph3, String v3) {
-        return MiniMessage.miniMessage().deserialize(
-                getMessage(key).replace(ph1, v1).replace(ph2, v2).replace(ph3, v3));
+        return MM.deserialize(getMessage(key).replace(ph1, v1).replace(ph2, v2).replace(ph3, v3));
     }
+
+    public MiniMessage mm() { return MM; }
 
     public static GlitchClasses getInstance() {
         return instance;

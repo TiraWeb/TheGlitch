@@ -123,29 +123,28 @@ public final class CombatListener implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
-        if (plugin.getConfig().getStringList("residual-glitch.enabled-worlds")
-                .contains(player.getWorld().getName())) {
+        if (glitchManager.isEnabledWorld(player.getWorld().getName())) {
             glitchManager.clear(player);
         }
     }
 
     private int armorReductionPerPiece() {
-        return plugin.getConfig().getInt("resonance.armor-reduction-per-piece", 10);
+        return gearManager.getArmorReductionPerPiece();
     }
 
     private int armorReductionCap() {
-        return plugin.getConfig().getInt("resonance.armor-reduction-cap", 40);
+        return gearManager.getArmorReductionCap();
     }
 
     private int armorPointsReductionPerPoint() {
-        return plugin.getConfig().getInt("resonance.armor-points-reduction-per-point", 2);
+        return gearManager.getArmorPointsReductionPerPoint();
     }
 
     private int armorPointsCap() {
-        return plugin.getConfig().getInt("resonance.armor-points-cap", 25);
+        return gearManager.getArmorPointsCap();
     }
 
     private int armorAttributeReductionCap() {
-        return plugin.getConfig().getInt("resonance.armor-attribute-reduction-cap", 30);
+        return gearManager.getArmorAttributeReductionCap();
     }
 }

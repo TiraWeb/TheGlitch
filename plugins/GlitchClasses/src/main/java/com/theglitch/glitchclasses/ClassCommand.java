@@ -2,15 +2,36 @@ package com.theglitch.glitchclasses;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 
 /**
  * Handles /class command — opens GUI or direct class operations.
  */
-public record ClassCommand(GlitchClasses plugin, ClassManager classManager) implements CommandExecutor {
+public final class ClassCommand implements CommandExecutor {
+
+    private final GlitchClasses plugin;
+    private final ClassManager classManager;
+    private Economy cachedEconomy;
+    private long economyCacheTime;
+
+    public ClassCommand(GlitchClasses plugin, ClassManager classManager) {
+        this.plugin = plugin;
+        this.classManager = classManager;
+    }
+
+    private Economy getEconomy() {
+        long now = System.currentTimeMillis();
+        if (cachedEconomy != null && now - economyCacheTime < 30_000L) return cachedEconomy;
+        RegisteredServiceProvider<Economy> reg = org.bukkit.Bukkit.getServicesManager().getRegistration(Economy.class);
+        cachedEconomy = reg != null ? reg.getProvider() : null;
+        economyCacheTime = now;
+        return cachedEconomy;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -44,8 +65,7 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                 }
                 player.sendMessage(plugin.getComponent("class-selected", "<class>",
                         className.substring(0, 1).toUpperCase() + className.substring(1)));
-                ClassData newData = classManager.getClassData(player.getUniqueId());
-                player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20 + (newData.level() * 2));
+                classManager.applyMaxHealth(player, classManager.getClassData(player.getUniqueId()).level());
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
             }
             case "info" -> {
@@ -73,13 +93,11 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                     return true;
                 }
                 int cost = classManager.getResetCost();
-                var eco = org.bukkit.Bukkit.getServicesManager()
-                        .getRegistration(net.milkbowl.vault.economy.Economy.class);
-                if (eco == null) {
+                Economy economy = getEconomy();
+                if (economy == null) {
                     player.sendMessage(Component.text("Economy unavailable.", NamedTextColor.RED));
                     return true;
                 }
-                net.milkbowl.vault.economy.Economy economy = eco.getProvider();
                 if (!economy.has(player, cost)) {
                     player.sendMessage(plugin.getComponent("class-reset-cost",
                             "<cost>", String.valueOf(cost),
@@ -88,7 +106,7 @@ public record ClassCommand(GlitchClasses plugin, ClassManager classManager) impl
                 }
                 economy.withdrawPlayer(player, cost);
                 classManager.resetClass(player.getUniqueId());
-                player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).setBaseValue(20);
+                classManager.applyMaxHealth(player, 0);
                 player.sendMessage(plugin.getComponent("class-reset"));
                 player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 0.8f);
             }

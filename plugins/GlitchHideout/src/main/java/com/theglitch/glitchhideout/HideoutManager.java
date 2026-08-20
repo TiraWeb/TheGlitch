@@ -1,6 +1,7 @@
 package com.theglitch.glitchhideout;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -32,6 +33,7 @@ import java.util.logging.Level;
 public final class HideoutManager {
 
     private static final NamespacedKey ORAXEN_KEY = new NamespacedKey("oraxen", "custom_item_id");
+    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     public record Station(String id, String display, String icon, String description,
                           int[] costs, Map<Integer, String> requires) {
@@ -41,7 +43,7 @@ public final class HideoutManager {
     }
 
     public record Recipe(String id, String display, String icon, String output,
-                         Map<String, Integer> materials) {
+                          Map<String, Integer> materials) {
     }
 
     public enum UpgradeResult {
@@ -58,6 +60,9 @@ public final class HideoutManager {
     private final Map<UUID, Long> medCooldown = new ConcurrentHashMap<>();
     private final Path dataDir;
 
+    // Cached economy — invalidated on reload
+    private volatile Economy cachedEconomy;
+
     public HideoutManager(GlitchHideout plugin) {
         this.plugin = plugin;
         this.dataDir = plugin.getDataFolder().toPath().resolve("players");
@@ -70,26 +75,51 @@ public final class HideoutManager {
     }
 
     public void reload() {
+        // Invalidate cached economy
+        cachedEconomy = null;
         stations = loadStations();
         recipes = loadRecipes();
         plugin.getLogger().info("Hideout stations loaded: " + stations.size()
                 + ", recipes loaded: " + recipes.size());
     }
 
+    public void invalidateEconomy() {
+        cachedEconomy = null;
+    }
+
     private Map<String, Station> loadStations() {
         Map<String, Station> loaded = new LinkedHashMap<>();
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("stations");
-        if (section == null) return loaded;
+        if (section == null) {
+            plugin.getLogger().warning("No stations section in config — hideout will have no upgrades.");
+            return loaded;
+        }
         for (String id : section.getKeys(false)) {
             ConfigurationSection s = section.getConfigurationSection(id);
             if (s == null) continue;
             List<Integer> costs = s.getIntegerList("costs");
+            if (costs.isEmpty()) {
+                plugin.getLogger().warning("Station '" + id + "' has no costs — skipped.");
+                continue;
+            }
+            for (int c : costs) {
+                if (c < 0) plugin.getLogger().warning("Station '" + id + "' negative cost " + c + " — will allow but check config.");
+            }
             int[] costArray = costs.stream().mapToInt(Integer::intValue).toArray();
             Map<Integer, String> requires = new LinkedHashMap<>();
             ConfigurationSection req = s.getConfigurationSection("requires");
             if (req != null) {
                 for (String level : req.getKeys(false)) {
-                    requires.put(Integer.parseInt(level), req.getString(level, ""));
+                    try {
+                        int lvl = Integer.parseInt(level);
+                        String val = req.getString(level, "");
+                        requires.put(lvl, val);
+                        if (val != null && !val.isEmpty() && !val.contains(":")) {
+                            plugin.getLogger().warning("Station '" + id + "' prerequisite '" + val + "' at level " + lvl + " missing ':' — format should be station:level");
+                        }
+                    } catch (NumberFormatException e) {
+                        plugin.getLogger().warning("Station '" + id + "' invalid prerequisite level key '" + level + "' — ignored.");
+                    }
                 }
             }
             loaded.put(id, new Station(id,
@@ -112,8 +142,12 @@ public final class HideoutManager {
             ConfigurationSection mats = r.getConfigurationSection("materials");
             if (mats != null) {
                 for (String mat : mats.getKeys(false)) {
-                    materials.put(mat, Math.max(1, mats.getInt(mat)));
+                    int amt = Math.max(1, mats.getInt(mat));
+                    materials.put(mat, amt);
                 }
+            }
+            if (materials.isEmpty()) {
+                plugin.getLogger().warning("Recipe '" + id + "' has no materials — will be uncraftable.");
             }
             loaded.put(id, new Recipe(id,
                     r.getString("display", id),
@@ -170,10 +204,6 @@ public final class HideoutManager {
         return 0;
     }
 
-    /**
-     * Attempt an upgrade. Returns the result type; on OK the shards are paid
-     * and the level persisted. Caller shows the appropriate message.
-     */
     public UpgradeResult upgrade(Player player, Station station) {
         UUID uuid = player.getUniqueId();
         int current = getLevel(uuid, station.id());
@@ -183,8 +213,15 @@ public final class HideoutManager {
         String req = station.requires().get(next);
         if (req != null && !req.isEmpty()) {
             String[] parts = req.split(":");
-            if (getLevel(uuid, parts[0]) < Integer.parseInt(parts[1])) {
-                return UpgradeResult.PREREQ;
+            if (parts.length == 2) {
+                try {
+                    if (getLevel(uuid, parts[0]) < Integer.parseInt(parts[1])) {
+                        return UpgradeResult.PREREQ;
+                    }
+                } catch (NumberFormatException e) {
+                    plugin.getLogger().warning("Bad prerequisite '" + req + "' for station " + station.id());
+                    return UpgradeResult.PREREQ;
+                }
             }
         }
 
@@ -205,7 +242,7 @@ public final class HideoutManager {
     public void medHeal(Player player) {
         UUID uuid = player.getUniqueId();
         long now = System.currentTimeMillis();
-        int cooldown = plugin.getConfig().getInt("med-cooldown-seconds", 30) * 1000;
+        int cooldown = plugin.getMedCooldownSeconds() * 1000;
 
         Long last = medCooldown.get(uuid);
         if (last != null && now - last < cooldown) {
@@ -228,12 +265,6 @@ public final class HideoutManager {
         player.sendMessage(plugin.getComponent("med-heal"));
     }
 
-    // --- workbench crafting ----------------------------------------------------
-
-    /**
-     * Try to craft a recipe. Returns null on success, otherwise the rendered
-     * error message to send.
-     */
     public Component craft(Player player, Recipe recipe) {
         if (getLevel(player.getUniqueId(), "workbench") < 1) {
             return plugin.getComponent("craft-locked");
@@ -300,8 +331,6 @@ public final class HideoutManager {
 
     private boolean isItem(ItemStack stack, String id) {
         if (stack == null || !stack.hasItemMeta()) return false;
-        // Real Oraxen items carry their id under Oraxen's own PDC key — check
-        // the known key, then scan all string values (same as the shop does).
         org.bukkit.persistence.PersistentDataContainer pdc =
                 stack.getItemMeta().getPersistentDataContainer();
         String pdcId = pdc.get(ORAXEN_KEY, PersistentDataType.STRING);
@@ -316,8 +345,6 @@ public final class HideoutManager {
         }
         return false;
     }
-
-    // --- storage ----------------------------------------------------------------
 
     public List<ItemStack> getStash(UUID uuid) {
         List<ItemStack> items = stash.get(uuid);
@@ -361,8 +388,6 @@ public final class HideoutManager {
             plugin.getLogger().warning("Could not delete player data for " + uuid);
         }
     }
-
-    // --- persistence --------------------------------------------------------------
 
     private Map<String, Integer> loadPlayer(UUID uuid) {
         Map<String, Integer> playerLevels = new ConcurrentHashMap<>();
@@ -443,8 +468,10 @@ public final class HideoutManager {
     }
 
     private Economy economy() {
-        RegisteredServiceProvider<Economy> provider =
-                Bukkit.getServicesManager().getRegistration(Economy.class);
-        return provider == null ? null : provider.getProvider();
+        if (cachedEconomy != null) return cachedEconomy;
+        // Delegate to plugin's cached economy — single provider lookup, invalidated on reload
+        Economy e = plugin.getEconomy();
+        cachedEconomy = e;
+        return e;
     }
 }

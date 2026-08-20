@@ -49,6 +49,7 @@ public final class StashManager {
      * Save a player's inventory to their stash.
      * If a stash already exists, items are MERGED (appended) — not replaced.
      * This allows multiple extractions to accumulate items.
+     * Optimized: no Bukkit.createInventory allocation — manual stack merging.
      */
     public void saveStash(UUID uuid, String playerName, ItemStack[] contents, ItemStack[] armor, ItemStack offhand) {
         StashData existing = stashes.get(uuid);
@@ -58,24 +59,21 @@ public final class StashManager {
         ItemStack mergedOffhand;
 
         if (existing != null) {
-            // Merge: combine existing stash contents with new extraction.
-            // A temp inventory handles stacking automatically; anything that
-            // does not fit (54-slot cap) is appended after it — never dropped.
-            org.bukkit.inventory.Inventory temp = Bukkit.createInventory(null, 54);
-
-            Map<Integer, ItemStack> leftovers = new java.util.HashMap<>();
-            // Add existing stash items first
+            // Merge without allocating a Bukkit inventory — stack manually into list
+            List<ItemStack> merged = new ArrayList<>(existing.contents().length + contents.length + 5);
+            // Add existing stash items first, stacking where possible
             for (ItemStack item : existing.contents()) {
-                if (item != null) leftovers.putAll(temp.addItem(item.clone()));
+                if (item != null && item.getType() != Material.AIR) {
+                    mergeStack(merged, item.clone());
+                }
             }
             // Add new extraction items
             for (ItemStack item : contents) {
-                if (item != null) leftovers.putAll(temp.addItem(item.clone()));
+                if (item != null && item.getType() != Material.AIR) {
+                    mergeStack(merged, item.clone());
+                }
             }
 
-            List<ItemStack> merged = new ArrayList<>();
-            java.util.Collections.addAll(merged, temp.getContents());
-            merged.addAll(leftovers.values());
             mergedContents = merged.toArray(new ItemStack[0]);
 
             // Merge armor — keep existing if new extraction has empty slots
@@ -99,7 +97,14 @@ public final class StashManager {
                 mergedOffhand = existing.offhand();
             }
         } else {
-            mergedContents = contents;
+            // No merge needed — filter null AIR but keep array as is for first save
+            // Defensive copy to avoid external mutation
+            List<ItemStack> filtered = new ArrayList<>(contents.length);
+            for (ItemStack item : contents) {
+                if (item != null && item.getType() != Material.AIR) filtered.add(item.clone());
+                else filtered.add(item);
+            }
+            mergedContents = filtered.toArray(new ItemStack[0]);
             mergedArmor = armor;
             mergedOffhand = offhand;
         }
@@ -108,14 +113,12 @@ public final class StashManager {
         stashes.put(uuid, data);
         saveToFile(uuid, data);
 
-        // Warn when the stash exceeds the 45-slot GUI display — items stay saved
-        // (tail is preserved on close) but won't all be visible until retrieved.
         int itemCount = 0;
         for (ItemStack item : mergedContents) {
             if (item != null) itemCount++;
         }
         for (ItemStack item : mergedArmor) {
-            if (item != null) itemCount++;
+            if (item != null && item.getType() != Material.AIR) itemCount++;
         }
         if (mergedOffhand != null && mergedOffhand.getType() != Material.AIR) itemCount++;
         if (itemCount > 45) {
@@ -123,6 +126,30 @@ public final class StashManager {
             if (player != null) {
                 player.sendMessage(plugin.getComponent("stash-full"));
             }
+        }
+    }
+
+    private static void mergeStack(List<ItemStack> target, ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) return;
+        int remaining = stack.getAmount();
+        int max = stack.getMaxStackSize();
+        // Try to top-up existing similar stacks
+        for (ItemStack existing : target) {
+            if (existing.isSimilar(stack) && existing.getAmount() < existing.getMaxStackSize()) {
+                int space = existing.getMaxStackSize() - existing.getAmount();
+                int toAdd = Math.min(remaining, space);
+                existing.setAmount(existing.getAmount() + toAdd);
+                remaining -= toAdd;
+                if (remaining <= 0) return;
+            }
+        }
+        // Add remainder as new stack(s), splitting if > max
+        while (remaining > 0) {
+            int chunk = Math.min(remaining, max);
+            ItemStack part = stack.clone();
+            part.setAmount(chunk);
+            target.add(part);
+            remaining -= chunk;
         }
     }
 
@@ -255,13 +282,10 @@ public final class StashManager {
         }
     }
 
-    /**
-     * Serialize an ItemStack to a Base64 string.
-     */
     public static String serializeItemStack(ItemStack item) {
         if (item == null) return null;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-             BukkitObjectOutputStream oos = new BukkitObjectOutputStream(bos)) {
+              BukkitObjectOutputStream oos = new BukkitObjectOutputStream(bos)) {
             oos.writeObject(item);
             return Base64.getEncoder().encodeToString(bos.toByteArray());
         } catch (IOException e) {
@@ -269,22 +293,16 @@ public final class StashManager {
         }
     }
 
-    /**
-     * Deserialize a Base64 string to an ItemStack.
-     */
     public static ItemStack deserializeItemStack(String encoded) {
         if (encoded == null || encoded.isEmpty()) return null;
         try (ByteArrayInputStream bis = new ByteArrayInputStream(Base64.getDecoder().decode(encoded));
-             BukkitObjectInputStream ois = new BukkitObjectInputStream(bis)) {
+              BukkitObjectInputStream ois = new BukkitObjectInputStream(bis)) {
             return (ItemStack) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             return null;
         }
     }
 
-    /**
-     * Serialize an array of ItemStacks to a list of Base64 strings.
-     */
     public static List<String> serializeItemStacks(ItemStack[] items) {
         List<String> result = new ArrayList<>();
         for (ItemStack item : items) {
@@ -293,9 +311,6 @@ public final class StashManager {
         return result;
     }
 
-    /**
-     * Deserialize a list of Base64 strings to an array of ItemStacks.
-     */
     public static ItemStack[] deserializeItemStacks(List<String> encoded) {
         ItemStack[] items = new ItemStack[encoded.size()];
         for (int i = 0; i < encoded.size(); i++) {
@@ -305,7 +320,6 @@ public final class StashManager {
     }
 
     public void shutdown() {
-        // Save any in-memory stashes that might not be persisted
         stashes.forEach(this::saveToFile);
     }
 }

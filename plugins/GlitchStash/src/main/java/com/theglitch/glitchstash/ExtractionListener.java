@@ -14,7 +14,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.util.logging.Level;
 
@@ -25,6 +24,8 @@ import java.util.logging.Level;
  * Handles teleport to hub directly (EssentialsX is incompatible with MC 26.x).
  */
 public record ExtractionListener(GlitchStash plugin, StashManager stashManager) implements Listener {
+
+    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     @EventHandler
     public void onExtractionWin(KothWinEvent event) {
@@ -44,8 +45,7 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
         player.getInventory().setArmorContents(new ItemStack[4]);
         player.getInventory().setItemInOffHand(null);
 
-        // 3. Residual Glitch payout + extraction variant bonus. Payout errors
-        //    must never block the stash save or the teleport.
+        // 3. Residual Glitch payout + extraction variant bonus.
         int variantBonusPct = 0;
         try {
             ExtractionVariantManager.Variant variant = variantAt(player.getLocation());
@@ -57,9 +57,7 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
                                 "<variant>", variant.name(),
                                 "<pct>", String.valueOf(variantBonusPct)));
                     }
-                } else if (plugin.getConfig().getBoolean("extraction-variants.enforce-key", true)) {
-                    // VelKoth still counts the win — we cannot cancel it — but a keyless
-                    // win in a key zone earns no variant bonus and is logged.
+                } else if (plugin.isVariantEnforceKey()) {
                     player.sendMessage(plugin.getComponent("variant-no-key", "<variant>", variant.name()));
                     plugin.getLogger().warning(player.getName() + " extracted in key zone '"
                             + variant.name() + "' without consuming the required key.");
@@ -72,13 +70,13 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
                     "Extraction payout failed for " + player.getName(), e);
         }
 
-        // 4. Clear glitch stacks (design: clears on extraction or death)
+        // 4. Clear glitch stacks
         clearGlitchStacks(player);
 
         // 5. Notify player
         player.sendMessage(plugin.getComponent("extracted"));
 
-        // 6. Teleport to hub (delay 1 tick so client processes the inventory clear)
+        // 6. Teleport to hub
         Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
             if (!player.isOnline()) return;
             teleportToHub(player);
@@ -87,7 +85,8 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
 
     private void payGlitchBonus(Player player, ItemStack[] contents, ItemStack[] armor,
                                 ItemStack offhand, int variantBonusPct) {
-        if (!plugin.getConfig().getBoolean("payout-enabled", true)) return;
+        // Cached config check — no getConfig() per extraction
+        if (!plugin.isPayoutEnabled()) return;
         GlitchItems glitchItems = GlitchItems.getInstance();
         if (glitchItems == null) return;
         double multiplier = glitchItems.getGlitchManager().getPayoutMultiplier(player);
@@ -108,13 +107,16 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
         }
         if (bonus <= 0) return;
 
-        RegisteredServiceProvider<Economy> provider =
-                Bukkit.getServicesManager().getRegistration(Economy.class);
-        if (provider == null) return;
-        provider.getProvider().depositPlayer(player, bonus);
+        // Cached economy — no provider lookup per payout
+        Economy economy = plugin.getEconomy();
+        if (economy == null) {
+            plugin.getLogger().warning("No economy provider for payout to " + player.getName());
+            return;
+        }
+        economy.depositPlayer(player, bonus);
 
         String raw = plugin.getMessage("glitch-payout");
-        player.sendMessage(MiniMessage.miniMessage().deserialize(raw
+        player.sendMessage(MM.deserialize(raw
                 .replace("<multiplier>", String.format(java.util.Locale.ROOT, "%.1f", multiplier))
                 .replace("<amount>", String.valueOf(bonus))));
     }
@@ -145,26 +147,17 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
         return plugin.getExtractionVariantManager().variantAt(location);
     }
 
-    /**
-     * Teleport player to hub spawn. Direct teleport first — dispatchCommand
-     * returns true even when the underlying command fails, so command-based
-     * paths must only be fallbacks.
-     */
     private void teleportToHub(Player player) {
-        // 1. Direct teleport (hub is the main world, always loaded).
         World hub = Bukkit.getWorld("hub");
         if (hub != null) {
             player.teleport(hub.getSpawnLocation());
             plugin.getLogger().info("Teleported " + player.getName() + " to hub via direct teleport.");
             return;
         }
-
-        // 2. Multiverse fallback (e.g. hub not loaded under that name yet).
         if (Bukkit.getPluginManager().getPlugin("Multiverse-Core") != null) {
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "mv tp " + player.getName() + " hub");
             return;
         }
-
         plugin.getLogger().warning("Could not teleport " + player.getName() + " — hub world not found.");
         player.sendMessage(plugin.getComponent("teleport-failed"));
     }
@@ -173,7 +166,6 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         if (stashManager.hasStash(player.getUniqueId())) {
-            // Delay message to ensure client is ready
             Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> {
                 if (player.isOnline()) {
                     player.sendMessage(plugin.getComponent("stash-saved"));
@@ -181,7 +173,7 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
                             "Use /stash to retrieve your items",
                             net.kyori.adventure.text.format.NamedTextColor.GRAY));
                 }
-            }, 40L); // 2 second delay
+            }, 40L);
         }
     }
 }

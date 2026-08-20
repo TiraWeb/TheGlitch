@@ -1,6 +1,8 @@
 package com.theglitch.glitchclasses;
 
+import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,6 +11,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 /**
  * Manages all player class data — YAML-based persistent storage.
@@ -16,9 +19,15 @@ import java.util.logging.Level;
  */
 public final class ClassManager {
 
+    private static final Pattern SANITIZE_PATTERN = Pattern.compile("[^a-z]");
+    private static final int BASE_HEALTH = 20;
+    private static final int HEALTH_PER_LEVEL = 2;
+
     private final GlitchClasses plugin;
     private final Map<UUID, ClassData> players = new ConcurrentHashMap<>();
     private final Path playerDir;
+    private volatile int cachedMaxLevel = 10;
+    private volatile int cachedResetCost = 500;
 
     public ClassManager(GlitchClasses plugin) {
         this.plugin = plugin;
@@ -29,6 +38,12 @@ public final class ClassManager {
             plugin.getLogger().log(Level.SEVERE, "Failed to create players directory", e);
         }
         loadAllPlayers();
+        reloadCaches();
+    }
+
+    public void reloadCaches() {
+        cachedMaxLevel = plugin.getConfig().getInt("max-level", 10);
+        cachedResetCost = plugin.getConfig().getInt("reset-cost", 500);
     }
 
     /**
@@ -128,14 +143,28 @@ public final class ClassManager {
      * Get max level from config.
      */
     public int getMaxLevel() {
-        return plugin.getConfig().getInt("max-level", 10);
+        return cachedMaxLevel;
     }
 
     /**
      * Get reset cost from config.
      */
     public int getResetCost() {
-        return plugin.getConfig().getInt("reset-cost", 500);
+        return cachedResetCost;
+    }
+
+    public static int getMaxHealthForLevel(int level) {
+        return BASE_HEALTH + level * HEALTH_PER_LEVEL;
+    }
+
+    public void applyMaxHealth(Player player, int level) {
+        var attr = player.getAttribute(Attribute.MAX_HEALTH);
+        if (attr != null) attr.setBaseValue(getMaxHealthForLevel(level));
+    }
+
+    public void applyMaxHealth(Player player) {
+        ClassData data = getClassData(player.getUniqueId());
+        applyMaxHealth(player, data.level());
     }
 
     /**
@@ -214,6 +243,6 @@ public final class ClassManager {
 
     private String sanitizeClassName(String className) {
         if (className == null) return "none";
-        return className.toLowerCase().replaceAll("[^a-z]", "");
+        return SANITIZE_PATTERN.matcher(className.toLowerCase(java.util.Locale.ROOT)).replaceAll("");
     }
 }

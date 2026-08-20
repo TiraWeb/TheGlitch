@@ -45,6 +45,15 @@ public final class OraxenUtil {
      * a scan of all string PDC values for an id-shaped value — the same
      * strategy GlitchShops uses successfully for sell prices on real items.
      */
+    private static boolean isIdShaped(String value) {
+        if (value == null || value.isEmpty()) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c != '_' && (c < 'a' || c > 'z')) return false;
+        }
+        return true;
+    }
+
     public static String idOf(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
@@ -52,7 +61,7 @@ public final class OraxenUtil {
         if (id != null && !id.isEmpty()) return id;
         for (NamespacedKey key : pdc.getKeys()) {
             String value = pdc.get(key, PersistentDataType.STRING);
-            if (value != null && value.matches("[a-z_]+")) {
+            if (isIdShaped(value)) {
                 return value;
             }
         }

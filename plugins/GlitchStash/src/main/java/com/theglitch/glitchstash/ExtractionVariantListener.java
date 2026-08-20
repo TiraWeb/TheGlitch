@@ -14,11 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Key consumption for Fast/Silent extraction variants:
- * - warns players entering a key zone without the required key
- * - right-clicking the key inside the zone consumes it and arms the variant
- */
 public final class ExtractionVariantListener implements Listener {
 
     private static final long WARNING_INTERVAL_MS = 10_000L;
@@ -35,7 +30,8 @@ public final class ExtractionVariantListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onMove(PlayerMoveEvent event) {
         if (!event.hasChangedBlock()) return;
-        if (!plugin.getConfig().getBoolean("extraction-variants.enabled", true)) return;
+        // Cached check — no getConfig() per move
+        if (!manager.isEnabledCached()) return;
 
         Player player = event.getPlayer();
         ExtractionVariantManager.Variant variant = manager.variantAt(player.getLocation());
@@ -55,10 +51,8 @@ public final class ExtractionVariantListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        // Fires once per hand — only consume on the main hand, otherwise the
-        // key is consumed twice per click.
         if (event.getHand() != EquipmentSlot.HAND) return;
-        if (!plugin.getConfig().getBoolean("extraction-variants.enabled", true)) return;
+        if (!manager.isEnabledCached()) return;
 
         Player player = event.getPlayer();
         ExtractionVariantManager.Variant variant = manager.variantAt(player.getLocation());

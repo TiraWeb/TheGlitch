@@ -24,19 +24,25 @@ import java.util.*;
  */
 public class StashGUI implements Listener {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final int ROWS = 6;
     private static final int SIZE = ROWS * 9;
     private static final Map<UUID, openSession> openSessions = new HashMap<>();
 
+    // Cached border — single allocation, cloned per slot
+    private static final ItemStack CACHED_BORDER;
+    static {
+        ItemStack b = new ItemStack(Material.PURPLE_STAINED_GLASS_PANE);
+        ItemMeta m = b.getItemMeta();
+        if (m != null) {
+            m.customName(Component.empty());
+            b.setItemMeta(m);
+        }
+        CACHED_BORDER = b;
+    }
+
     private record openSession(UUID playerUuid, List<ItemStack> allItems, int displayedCount) {}
 
-    /**
-     * Open the stash GUI for a player.
-     * Border = top row only; items fill slots 9-53 (45 slots, covers a full
-     * extraction: 36 inventory + 4 armor + 1 offhand = 41 items).
-     * Items beyond the display (rare merge overflow) are preserved on close,
-     * never silently deleted.
-     */
     public static void open(Player player, StashManager stashManager, GlitchStash plugin) {
         UUID uuid = player.getUniqueId();
         Optional<StashManager.StashData> dataOpt = stashManager.peekStash(uuid);
@@ -47,7 +53,6 @@ public class StashGUI implements Listener {
 
         StashManager.StashData data = dataOpt.get();
 
-        // Collect all non-null items from stash.
         List<ItemStack> stashItems = new ArrayList<>();
         for (ItemStack item : data.contents()) {
             if (item != null) stashItems.add(item.clone());
@@ -57,19 +62,15 @@ public class StashGUI implements Listener {
         }
         if (data.offhand() != null) stashItems.add(data.offhand().clone());
 
-        Inventory inv = Bukkit.createInventory(null, SIZE,
-                MiniMessage.miniMessage().deserialize(plugin.getConfig().getString("display-name", "<dark_purple>YOUR STASH</dark_purple>")));
+        // Use cached display-name — no getConfig() polling per open
+        String titleRaw = plugin.getCachedDisplayName();
+        Inventory inv = Bukkit.createInventory(null, SIZE, MM.deserialize(titleRaw));
 
-        // Decorative border (top row only)
-        ItemStack border = new ItemStack(Material.PURPLE_STAINED_GLASS_PANE);
-        ItemMeta borderMeta = border.getItemMeta();
-        borderMeta.customName(Component.empty());
-        border.setItemMeta(borderMeta);
+        // Decorative border (top row only) — reuse cached pane
         for (int i = 0; i < 9; i++) {
-            inv.setItem(i, border);
+            inv.setItem(i, CACHED_BORDER.clone());
         }
 
-        // Fill items starting at slot 9 (row 2, full width)
         int slot = 9;
         int displayed = 0;
         for (ItemStack item : stashItems) {
@@ -79,7 +80,6 @@ public class StashGUI implements Listener {
             displayed++;
         }
 
-        // Register session
         openSessions.put(uuid, new openSession(uuid, stashItems, displayed));
 
         player.openInventory(inv);
@@ -91,7 +91,7 @@ public class StashGUI implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!openSessions.containsKey(player.getUniqueId())) return;
 
-        event.setCancelled(true); // Prevent moving items out of stash directly
+        event.setCancelled(true);
 
         if (event.getClickedInventory() == null) return;
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
@@ -99,27 +99,22 @@ public class StashGUI implements Listener {
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= SIZE) return;
 
-        // Skip border (top row)
         if (slot < 9) return;
 
         ItemStack clicked = event.getClickedInventory().getItem(slot);
         if (clicked == null || clicked.getType() == Material.AIR) return;
 
-        // Give item to player
         ItemStack toGive = clicked.clone();
         HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(toGive);
 
         if (leftover.isEmpty()) {
-            // All items fit — remove from GUI
             event.getClickedInventory().setItem(slot, null);
             player.sendMessage(Component.text("+ " + clicked.getAmount() + " " +
                     clicked.getType().name().toLowerCase().replace("_", " "),
                     NamedTextColor.GREEN));
         } else {
-            // Some items didn't fit — calculate how many were actually given
             int given = clicked.getAmount();
             if (!leftover.isEmpty()) {
-                // Sum up all leftover amounts
                 int leftoverAmount = 0;
                 for (ItemStack left : leftover.values()) {
                     leftoverAmount += left.getAmount();
@@ -127,8 +122,6 @@ public class StashGUI implements Listener {
                 given = clicked.getAmount() - leftoverAmount;
             }
             if (given > 0) {
-                // Leave what did NOT fit in the GUI — setting the slot to the
-                // given amount would silently delete the difference.
                 ItemStack remaining = clicked.clone();
                 remaining.setAmount(clicked.getAmount() - given);
                 event.getClickedInventory().setItem(slot, remaining);
@@ -145,7 +138,6 @@ public class StashGUI implements Listener {
     public void onInventoryDrag(InventoryDragEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!openSessions.containsKey(player.getUniqueId())) return;
-        // Cancel all drag events in stash GUI to prevent bypass
         event.setCancelled(true);
     }
 
@@ -155,12 +147,9 @@ public class StashGUI implements Listener {
         openSession session = openSessions.remove(player.getUniqueId());
         if (session == null) return;
 
-        // Guard against the plugin being disabled (instance nulled) while a GUI
-        // is open — closing must never NPE during shutdown/reload.
         GlitchStash instance = GlitchStash.getInstance();
         if (instance == null) return;
 
-        // Rebuild stash from remaining items in GUI
         List<ItemStack> remaining = new ArrayList<>();
         for (int i = 9; i < SIZE; i++) {
             ItemStack item = event.getInventory().getItem(i);
@@ -169,19 +158,15 @@ public class StashGUI implements Listener {
             }
         }
 
-        // Items beyond the displayed count were never shown in the GUI, so they
-        // could not have been taken — preserve them instead of silently deleting.
         if (session.displayedCount() < session.allItems().size()) {
             remaining.addAll(
                     session.allItems().subList(session.displayedCount(), session.allItems().size()));
         }
 
         if (remaining.isEmpty()) {
-            // All items taken — clear stash
             instance.getStashManager().clearStash(player.getUniqueId());
             player.sendMessage(instance.getComponent("all-retrieved"));
         } else {
-            // Partial retrieval — rebuild stash from remaining items and persist
             ItemStack[] newContents = new ItemStack[remaining.size()];
             remaining.toArray(newContents);
             instance.getStashManager().replaceStash(

@@ -22,6 +22,7 @@ public final class HealthBarListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onSpawn(EntitySpawnEvent event) {
         if (!(event.getEntity() instanceof Mob mob)) return;
+        // Cached enabledWorlds Set and trackMode — no getConfig per spawn
         if (plugin.shouldTrack(mob)) {
             manager.attach(mob);
         }
@@ -30,6 +31,8 @@ public final class HealthBarListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity entity)) return;
+        // Skip if world not enabled — avoids map lookup for irrelevant worlds
+        if (!plugin.isEnabledWorld(entity.getWorld().getName())) return;
         manager.refresh(entity);
     }
 

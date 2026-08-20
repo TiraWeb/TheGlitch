@@ -2,6 +2,7 @@ package com.theglitch.glitchhideout;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,15 +13,21 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class GlitchHideout extends JavaPlugin {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final Set<String> GAME_WORLDS = Set.of("glitch_pve", "glitch_red");
 
     private static GlitchHideout instance;
@@ -29,11 +36,20 @@ public final class GlitchHideout extends JavaPlugin {
     private FileConfiguration messagesConfig;
     private File messagesFile;
 
+    // Cached hot-path & economy
+    private volatile int medCooldownSeconds = 30;
+    private volatile int intelGlowTicks = 30;
+    private volatile int intelRange = 20;
+    private volatile Economy cachedEconomy;
+    private final Map<String, String> messageCache = new ConcurrentHashMap<>();
+    private BukkitTask intelTask;
+
     @Override
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
         loadMessages();
+        cacheConfig();
 
         manager = new HideoutManager(this);
         gui = new HideoutGUI(this, manager);
@@ -50,6 +66,10 @@ public final class GlitchHideout extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (intelTask != null) {
+            intelTask.cancel();
+            intelTask = null;
+        }
         if (manager != null) {
             manager.saveAll();
         }
@@ -123,14 +143,25 @@ public final class GlitchHideout extends JavaPlugin {
     }
 
     private void startIntelTicker() {
-        getServer().getScheduler().runTaskTimer(this, () -> {
-            for (Player player : getServer().getOnlinePlayers()) {
-                if (manager.intelLevel(player.getUniqueId()) < 1) continue;
-                if (!GAME_WORLDS.contains(player.getWorld().getName())) continue;
-                for (Entity entity : player.getNearbyEntities(20, 20, 20)) {
+        if (intelTask != null) intelTask.cancel();
+        intelTask = getServer().getScheduler().runTaskTimer(this, () -> {
+            if (manager == null) return;
+            int glowTicks = intelGlowTicks; // cached — no getConfig() per tick
+            int range = intelRange;
+            // Single-pass collection of candidates — avoids double iteration
+            java.util.List<Player> candidates = null;
+            for (Player p : getServer().getOnlinePlayers()) {
+                if (manager.intelLevel(p.getUniqueId()) >= 1 && GAME_WORLDS.contains(p.getWorld().getName())) {
+                    if (candidates == null) candidates = new java.util.ArrayList<>(4);
+                    candidates.add(p);
+                }
+            }
+            if (candidates == null || candidates.isEmpty()) return;
+            for (Player player : candidates) {
+                for (Entity entity : player.getNearbyEntities(range, range, range)) {
                     if (entity instanceof Monster || isGlitchMob(entity)) {
                         ((LivingEntity) entity).addPotionEffect(
-                                new PotionEffect(PotionEffectType.GLOWING, 30, 0));
+                                new PotionEffect(PotionEffectType.GLOWING, glowTicks, 0));
                     }
                 }
             }
@@ -150,37 +181,108 @@ public final class GlitchHideout extends JavaPlugin {
             saveResource("messages.yml", false);
         }
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+        messageCache.clear();
+        for (String key : messagesConfig.getKeys(false)) {
+            String v = messagesConfig.getString(key);
+            if (v != null) messageCache.put(key, v);
+        }
+        for (String key : messagesConfig.getKeys(true)) {
+            if (!messageCache.containsKey(key)) {
+                String v = messagesConfig.getString(key);
+                if (v != null) messageCache.put(key, v);
+            }
+        }
+    }
+
+    private void cacheConfig() {
+        try {
+            int cd = getConfig().getInt("med-cooldown-seconds", 30);
+            if (cd < 1 || cd > 3600) {
+                getLogger().warning("Invalid med-cooldown-seconds " + cd + " — clamped to 30.");
+                cd = Math.max(1, Math.min(cd, 3600));
+            }
+            medCooldownSeconds = cd;
+
+            int glow = getConfig().getInt("intel-glow-ticks", 30);
+            if (glow < 5 || glow > 200) {
+                getLogger().warning("Invalid intel-glow-ticks " + glow + " — clamped to 30.");
+                glow = 30;
+            }
+            intelGlowTicks = glow;
+
+            int range = getConfig().getInt("intel-range", 20);
+            if (range < 5 || range > 64) range = 20;
+            intelRange = range;
+
+            // Invalidate economy cache
+            cachedEconomy = null;
+        } catch (Exception e) {
+            getLogger().warning("Failed to cache GlitchHideout config: " + e.getMessage());
+        }
     }
 
     public void reloadPlugin() {
         reloadConfig();
         loadMessages();
+        cacheConfig();
         if (manager != null) {
             manager.reload();
+            manager.invalidateEconomy();
         }
-        getLogger().info("GlitchHideout reloaded.");
+        startIntelTicker(); // restart with new cached periods
+        getLogger().info("GlitchHideout reloaded (medCooldown=" + medCooldownSeconds + "s, glow=" + intelGlowTicks + ").");
     }
 
     public String getMessage(String key) {
+        String cached = messageCache.get(key);
+        if (cached != null) return cached;
         return messagesConfig.getString(key, key);
     }
 
     public Component getComponent(String key) {
-        return MiniMessage.miniMessage().deserialize(getMessage(key));
+        return MM.deserialize(getMessage(key));
     }
 
     public Component getComponent(String key, String ph1, String v1) {
-        return MiniMessage.miniMessage().deserialize(getMessage(key).replace(ph1, v1));
+        return MM.deserialize(getMessage(key).replace(ph1, v1));
     }
 
     public Component getComponent(String key, String ph1, String v1, String ph2, String v2) {
-        return MiniMessage.miniMessage().deserialize(
-                getMessage(key).replace(ph1, v1).replace(ph2, v2));
+        return MM.deserialize(getMessage(key).replace(ph1, v1).replace(ph2, v2));
     }
 
     public Component getComponent(String key, String ph1, String v1, String ph2, String v2, String ph3, String v3) {
-        return MiniMessage.miniMessage().deserialize(
-                getMessage(key).replace(ph1, v1).replace(ph2, v2).replace(ph3, v3));
+        return MM.deserialize(getMessage(key).replace(ph1, v1).replace(ph2, v2).replace(ph3, v3));
+    }
+
+    public Economy getEconomy() {
+        if (cachedEconomy != null) return cachedEconomy;
+        RegisteredServiceProvider<Economy> prov = Bukkit.getServicesManager().getRegistration(Economy.class);
+        if (prov != null) {
+            cachedEconomy = prov.getProvider();
+            if (cachedEconomy != null) getLogger().info("Economy provider found: " + cachedEconomy.getName());
+        }
+        return cachedEconomy;
+    }
+
+    public void invalidateEconomy() {
+        cachedEconomy = null;
+    }
+
+    public int getMedCooldownSeconds() {
+        return medCooldownSeconds;
+    }
+
+    public int getIntelGlowTicks() {
+        return intelGlowTicks;
+    }
+
+    public int getIntelRange() {
+        return intelRange;
+    }
+
+    public static MiniMessage mm() {
+        return MM;
     }
 
     public static GlitchHideout getInstance() {

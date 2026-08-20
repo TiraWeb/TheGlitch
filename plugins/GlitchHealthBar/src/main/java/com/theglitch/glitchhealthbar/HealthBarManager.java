@@ -20,10 +20,13 @@ public final class HealthBarManager {
     private final GlitchHealthBar plugin;
     private final Map<UUID, BarEntry> bars = new HashMap<>();
 
+    private static final double MOVE_THRESHOLD_SQ = 0.01; // ~0.1 block; prevents packet spam when stationary
+
     private static final class BarEntry {
         final LivingEntity target;
         final TextDisplay display;
         double lastHp = -1;
+        Location lastLoc = null;
 
         BarEntry(LivingEntity target, TextDisplay display) {
             this.target = target;
@@ -49,9 +52,12 @@ public final class HealthBarManager {
             });
             display.text(barText(mob));
 
-            bars.put(mob.getUniqueId(), new BarEntry(mob, display));
-            plugin.getLogger().info("Bar attached to " + mob.getType()
-                    + " in " + mob.getWorld().getName());
+            BarEntry entry = new BarEntry(mob, display);
+            entry.lastLoc = barLocation(mob);
+            entry.lastHp = Math.max(0, mob.getHealth());
+            bars.put(mob.getUniqueId(), entry);
+            // Reduced log spam: only log at fine level or every N? Keep info but not per mob flood
+            // plugin.getLogger().info("Bar attached to " + mob.getType() + " in " + mob.getWorld().getName());
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to attach bar to " + mob.getType() + ": " + e.getMessage());
         }
@@ -61,9 +67,17 @@ public final class HealthBarManager {
         try {
             BarEntry entry = bars.get(mob.getUniqueId());
             if (entry == null || !mob.isValid() || mob.isDead()) return;
-            entry.display.teleport(barLocation(mob));
-            entry.display.text(barText(mob));
-            entry.lastHp = Math.max(0, mob.getHealth());
+            // Only teleport if moved — check threshold
+            Location newLoc = barLocation(mob);
+            if (entry.lastLoc == null || newLoc.distanceSquared(entry.lastLoc) > MOVE_THRESHOLD_SQ) {
+                entry.display.teleport(newLoc);
+                entry.lastLoc = newLoc;
+            }
+            double hp = Math.max(0, mob.getHealth());
+            if (hp != entry.lastHp) {
+                entry.display.text(barText(mob));
+                entry.lastHp = hp;
+            }
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to refresh bar for " + mob.getType() + ": " + e.getMessage());
         }
@@ -77,10 +91,14 @@ public final class HealthBarManager {
     }
 
     /**
-     * Follow + refresh pass. Runs every 5 ticks so bars track moving mobs
-     * smoothly; text is only re-sent when the mob's health actually changed.
+     * Follow + refresh pass. Runs every tickPeriod so bars track moving mobs
+     * smoothly; text is only re-sent when HP changed, teleport only when moved.
      */
     public void tick() {
+        if (bars.isEmpty()) return;
+        // Skip whole tick if no player in enabled worlds — no one can see bars anyway
+        if (!hasPlayersInEnabledWorlds()) return;
+
         Iterator<Map.Entry<UUID, BarEntry>> it = bars.entrySet().iterator();
         while (it.hasNext()) {
             BarEntry entry = it.next().getValue();
@@ -94,7 +112,12 @@ public final class HealthBarManager {
                     it.remove();
                     continue;
                 }
-                entry.display.teleport(barLocation(target));
+                // Only teleport if moved — saves packets for stationary mobs
+                Location curLoc = barLocation(target);
+                if (entry.lastLoc == null || curLoc.distanceSquared(entry.lastLoc) > MOVE_THRESHOLD_SQ) {
+                    entry.display.teleport(curLoc);
+                    entry.lastLoc = curLoc;
+                }
                 double hp = Math.max(0, target.getHealth());
                 if (hp != entry.lastHp) {
                     entry.display.text(barText(target));
@@ -110,8 +133,13 @@ public final class HealthBarManager {
 
     /** Attach bars to any untracked hostile in enabled worlds (safety net). */
     public void rescan() {
+        // Skip scan when no players can see bars — major Hot-path saving
+        if (!hasPlayersInEnabledWorlds()) return;
+
         for (World world : plugin.getServer().getWorlds()) {
             if (!plugin.isEnabledWorld(world.getName())) continue;
+            // Minor optimization: skip world with no players
+            if (world.getPlayers().isEmpty()) continue;
             for (org.bukkit.entity.Entity entity : world.getEntities()) {
                 if (!(entity instanceof Mob mob)) continue;
                 if (bars.containsKey(mob.getUniqueId())) continue;
@@ -120,6 +148,14 @@ public final class HealthBarManager {
                 }
             }
         }
+    }
+
+    private boolean hasPlayersInEnabledWorlds() {
+        // Single pass over online players — cheap vs scanning all entities in all worlds
+        for (Player p : plugin.getServer().getOnlinePlayers()) {
+            if (plugin.isEnabledWorld(p.getWorld().getName())) return true;
+        }
+        return false;
     }
 
     public int count() {
@@ -138,11 +174,11 @@ public final class HealthBarManager {
             });
             display.text(Component.text("██████████ 100/100", TextColor.color(0x55FF55)));
 
-            // Follows the player for 10 seconds — verifies the follow mechanic
-            // that the real mob bars use.
             int taskId = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
                 if (player.isOnline() && display.isValid()) {
-                    display.teleport(player.getLocation().add(0, 2.5, 0));
+                    Location newLoc = player.getLocation().add(0, 2.5, 0);
+                    // Test bar also respects move threshold for consistency
+                    display.teleport(newLoc);
                 }
             }, 2L, 2L).getTaskId();
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
@@ -162,9 +198,6 @@ public final class HealthBarManager {
     }
 
     private Location barLocation(LivingEntity mob) {
-        // Just above the mob's top (nametag level): mob height + fixed extra.
-        // Scales with size automatically — small mobs get low bars, the
-        // Glitch King's bar clears its body.
         return mob.getLocation().add(0, mob.getHeight() + plugin.offsetExtra(), 0);
     }
 

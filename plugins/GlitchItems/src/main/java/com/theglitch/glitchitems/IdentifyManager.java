@@ -16,13 +16,24 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class IdentifyManager {
 
     private static final NamespacedKey ORAXEN_ID_KEY = new NamespacedKey("oraxen", "custom_item_id");
+    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private final GlitchItems plugin;
     private final GearManager gearManager;
+    private volatile double revealWeaponChance = 0.6;
+    private volatile int cachedRarityUpgradePerStack = 2;
 
     public IdentifyManager(GlitchItems plugin, GearManager gearManager) {
         this.plugin = plugin;
         this.gearManager = gearManager;
+        reload();
+    }
+
+    public void reload() {
+        revealWeaponChance = plugin.getConfig().getDouble("reveal-weapon-chance", 0.6);
+        cachedRarityUpgradePerStack = plugin.getGlitchManager() != null
+                ? plugin.getGlitchManager().getRarityUpgradePercentPerStack()
+                : plugin.getConfig().getInt("residual-glitch.rarity-upgrade-percent-per-stack", 2);
     }
 
     public Rarity riftRarity(ItemStack item) {
@@ -79,7 +90,7 @@ public final class IdentifyManager {
         ItemStack held = player.getInventory().getItemInMainHand();
         Rarity rarity = riftRarity(held);
         if (rarity == null || held.getType().isAir()) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(
+            player.sendMessage(MM.deserialize(
                     "<red>Hold an Unstable Rift to identify it.</red>"));
             return false;
         }
@@ -88,12 +99,12 @@ public final class IdentifyManager {
         Economy economy = plugin.getEconomy();
         if (!force) {
             if (economy == null) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(
+                player.sendMessage(MM.deserialize(
                         "<red>Economy not available.</red>"));
                 return false;
             }
             if (economy.getBalance(player) < fee) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(
+                player.sendMessage(MM.deserialize(
                         "<red>You need " + fee + " Shards to identify this rift (you have "
                                 + (int) economy.getBalance(player) + ").</red>"));
                 return false;
@@ -101,7 +112,7 @@ public final class IdentifyManager {
         }
 
         if (!force && !economy.withdrawPlayer(player, fee).transactionSuccess()) {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(
+            player.sendMessage(MM.deserialize(
                     "<red>Could not take the identify fee.</red>"));
             return false;
         }
@@ -113,8 +124,7 @@ public final class IdentifyManager {
             player.getInventory().setItemInMainHand(null);
         }
 
-        boolean weapon = ThreadLocalRandom.current().nextDouble()
-                < plugin.getConfig().getDouble("reveal-weapon-chance", 0.6);
+        boolean weapon = ThreadLocalRandom.current().nextDouble() < revealWeaponChance;
         GearType type = weapon ? GearType.randomWeapon() : GearType.randomArmor();
 
         // Residual Glitch loot luck (design ITEM_SYSTEM.md §6):
@@ -122,12 +132,11 @@ public final class IdentifyManager {
         // - chance of +1 star on each stat roll
         int stacks = plugin.getGlitchManager().getStacks(player);
         Rarity revealed = rarity;
-        int upgradePercent = stacks * plugin.getConfig().getInt(
-                "residual-glitch.rarity-upgrade-percent-per-stack", 2);
+        int upgradePercent = stacks * cachedRarityUpgradePerStack;
         if (upgradePercent > 0 && revealed != Rarity.LEGENDARY
                 && ThreadLocalRandom.current().nextInt(100) < upgradePercent) {
             revealed = Rarity.values()[revealed.getTier() + 1];
-            player.sendMessage(MiniMessage.miniMessage().deserialize(
+            player.sendMessage(MM.deserialize(
                     "<gold>The rift surges — a higher rarity shines through!</gold>"));
         }
         int luck = plugin.getGlitchManager().lootLuckBonus(player);
@@ -135,7 +144,7 @@ public final class IdentifyManager {
 
         if (player.getInventory().firstEmpty() == -1) {
             player.getWorld().dropItem(player.getLocation(), gear);
-            player.sendMessage(MiniMessage.miniMessage().deserialize(
+            player.sendMessage(MM.deserialize(
                     "<gold>The rift stabilizes... your inventory is full, the gear drops at your feet.</gold>"));
         } else {
             player.getInventory().addItem(gear);

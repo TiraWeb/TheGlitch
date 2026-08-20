@@ -22,12 +22,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Hideout GUIs: main station menu, workbench crafting, extended stash and
- * armory storage. All clicks are locked; taking storage items and crafting
- * happen through the handlers below.
- */
 public final class HideoutGUI implements Listener {
+
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+    private static final ItemStack CACHED_BORDER;
+    static {
+        ItemStack b = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta m = b.getItemMeta();
+        if (m != null) {
+            m.customName(Component.empty());
+            b.setItemMeta(m);
+        }
+        CACHED_BORDER = b;
+    }
 
     private static final int SIZE = 54;
     private static final int[] STATION_SLOTS = {10, 11, 12, 13, 14, 15, 16};
@@ -50,13 +57,10 @@ public final class HideoutGUI implements Listener {
         this.manager = manager;
     }
 
-    // --- main menu ------------------------------------------------------------
-
     public void openMain(Player player) {
         Inventory inv = Bukkit.createInventory(null, SIZE,
-                MiniMessage.miniMessage().deserialize("<dark_purple><bold>THE HIDEOUT</bold></dark_purple>"));
+                MM.deserialize("<dark_purple><bold>THE HIDEOUT</bold></dark_purple>"));
 
-        // Border
         for (int i = 0; i < 9; i++) {
             inv.setItem(i, border());
         }
@@ -84,11 +88,11 @@ public final class HideoutGUI implements Listener {
         ItemStack item = new ItemStack(material == null ? Material.STONE : material);
         ItemMeta meta = item.getItemMeta();
 
-        meta.customName(MiniMessage.miniMessage().deserialize(station.display()));
+        meta.customName(MM.deserialize(station.display()));
 
         List<Component> lore = new ArrayList<>();
         lore.add(Component.empty());
-        lore.add(MiniMessage.miniMessage().deserialize(station.description()));
+        lore.add(MM.deserialize(station.description()));
         lore.add(Component.empty());
         lore.add(Component.text("Level: ", NamedTextColor.GRAY)
                 .append(Component.text(level + "/" + station.maxLevel(), NamedTextColor.GOLD)));
@@ -114,7 +118,7 @@ public final class HideoutGUI implements Listener {
     private ItemStack useButton(Material material, String display, String description) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        meta.customName(MiniMessage.miniMessage().deserialize(display));
+        meta.customName(MM.deserialize(display));
         meta.lore(List.of(
                 Component.empty(),
                 Component.text(description, NamedTextColor.GRAY),
@@ -124,15 +128,13 @@ public final class HideoutGUI implements Listener {
         return item;
     }
 
-    // --- workbench -------------------------------------------------------------
-
     private void openWorkbench(Player player) {
         if (manager.getLevel(player.getUniqueId(), "workbench") < 1) {
             player.sendMessage(plugin.getComponent("craft-locked"));
             return;
         }
         Inventory inv = Bukkit.createInventory(null, SIZE,
-                MiniMessage.miniMessage().deserialize("<gold><bold>WORKBENCH</bold></gold>"));
+                MM.deserialize("<gold><bold>WORKBENCH</bold></gold>"));
 
         for (int i = 0; i < 9; i++) {
             inv.setItem(i, border());
@@ -152,7 +154,7 @@ public final class HideoutGUI implements Listener {
         Material material = Material.matchMaterial(recipe.icon());
         ItemStack item = new ItemStack(material == null ? Material.STONE : material);
         ItemMeta meta = item.getItemMeta();
-        meta.customName(MiniMessage.miniMessage().deserialize(recipe.display()));
+        meta.customName(MM.deserialize(recipe.display()));
 
         List<Component> lore = new ArrayList<>();
         lore.add(Component.empty());
@@ -166,8 +168,6 @@ public final class HideoutGUI implements Listener {
         return item;
     }
 
-    // --- storage (extended stash + armory) --------------------------------------
-
     private void openStash(Player player) {
         int slots = manager.stashSlots(player.getUniqueId());
         if (slots < 1) {
@@ -175,7 +175,7 @@ public final class HideoutGUI implements Listener {
             return;
         }
         openStorage(player, "stash", slots,
-                MiniMessage.miniMessage().deserialize("<dark_purple><bold>EXTENDED STASH</bold></dark_purple>"),
+                MM.deserialize("<dark_purple><bold>EXTENDED STASH</bold></dark_purple>"),
                 manager.getStash(player.getUniqueId()));
         player.sendMessage(plugin.getComponent("stash-opened", "<slots>", String.valueOf(slots)));
     }
@@ -187,7 +187,7 @@ public final class HideoutGUI implements Listener {
             return;
         }
         openStorage(player, "armory", slots,
-                MiniMessage.miniMessage().deserialize("<blue><bold>ARMORY</bold></blue>"),
+                MM.deserialize("<blue><bold>ARMORY</bold></blue>"),
                 manager.getArmory(player.getUniqueId()));
         player.sendMessage(plugin.getComponent("armory-opened", "<slots>", String.valueOf(slots)));
     }
@@ -235,14 +235,8 @@ public final class HideoutGUI implements Listener {
     }
 
     private ItemStack border() {
-        ItemStack item = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta meta = item.getItemMeta();
-        meta.customName(Component.empty());
-        item.setItemMeta(meta);
-        return item;
+        return CACHED_BORDER.clone();
     }
-
-    // --- clicks ----------------------------------------------------------------
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
@@ -336,8 +330,6 @@ public final class HideoutGUI implements Listener {
 
     private void handleStorageClick(Player player, int slot, boolean isArmory) {
         if (isArmory && slot == 4) {
-            // Auto-sort: drop the current session first so the pending GUI state
-            // is not saved, then re-open sorted from the manager list.
             sessions.remove(player.getUniqueId());
             manager.sortArmory(player.getUniqueId());
             player.sendMessage(plugin.getComponent("armory-sorted"));
@@ -359,8 +351,6 @@ public final class HideoutGUI implements Listener {
             int leftoverAmount = leftover.values().stream().mapToInt(ItemStack::getAmount).sum();
             int given = clicked.getAmount() - leftoverAmount;
             if (given > 0) {
-                // Leave what did NOT fit in the GUI — setting the slot to the
-                // given amount would silently delete the difference.
                 ItemStack remaining = clicked.clone();
                 remaining.setAmount(leftoverAmount);
                 player.getOpenInventory().getTopInventory().setItem(slot, remaining);
@@ -385,8 +375,6 @@ public final class HideoutGUI implements Listener {
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
         Session session = sessions.get(player.getUniqueId());
-        // Only clear when this exact inventory closes — reopening a new GUI
-        // replaces the session before the old inventory's close fires.
         if (session != null && session.inventory() == event.getInventory()) {
             sessions.remove(player.getUniqueId());
         }
