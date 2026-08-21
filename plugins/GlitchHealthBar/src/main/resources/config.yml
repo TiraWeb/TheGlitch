@@ -1,3 +1,4 @@
+config-version: 1
 # GlitchHealthBar — floating health bars above mobs
 # Shows a color-coded HP bar over each hostile mob's head, e.g.  ██████░░░░ 32/80
 # Every hostile mob (MythicMobs + vanilla) in the enabled worlds gets a bar.

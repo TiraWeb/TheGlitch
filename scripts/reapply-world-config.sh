@@ -6,46 +6,52 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 mc() { sudo "${SCRIPT_DIR}/mc-cmd.py" "$@"; }
 
 log()  { echo -e "\033[1;36m[config]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[config]\033[0m $*"; }
 
-# ---- gamerules ----
-apply_rule() {
-  local rule="$1" dim="$2"
-  out="$(mc "execute in minecraft:${dim} run gamerule ${rule}" 2>&1 || true)"
-  echo "$out" | grep -qi "error" && warn "gamerule '${rule}' REJECTED in ${dim}" || true
-}
+# ---- gamerules (canonical 26.x snake_case — see scripts/lib/gamerules.sh) ----
+# Source the shared gamerule tables so reapply-world-config.sh can never drift
+# from setup-worlds.sh (previously used stale camelCase which is rejected as
+# "unknown" on 26.x; correct names are snake_case like spawn_mobs).
+# Handles both call sites: scripts/reapply-world-config.sh (SCRIPT_DIR/lib/...)
+# and repo-root callers (REPO_DIR/scripts/lib/...).
+if [[ -f "${SCRIPT_DIR}/lib/gamerules.sh" ]]; then
+  # shellcheck source=lib/gamerules.sh
+  source "${SCRIPT_DIR}/lib/gamerules.sh"
+elif [[ -f "${REPO_DIR}/scripts/lib/gamerules.sh" ]]; then
+  # shellcheck source=scripts/lib/gamerules.sh
+  source "${REPO_DIR}/scripts/lib/gamerules.sh"
+elif [[ -f "$(dirname "${BASH_SOURCE[0]}")/lib/gamerules.sh" ]]; then
+  source "$(dirname "${BASH_SOURCE[0]}")/lib/gamerules.sh"
+else
+  warn "gamerules lib not found at ${SCRIPT_DIR}/lib/gamerules.sh nor ${REPO_DIR}/scripts/lib/gamerules.sh — gamerules will not be applied"
+fi
 
-log "Applying gamerules..."
+log "Applying gamerules (canonical 26.x snake_case via scripts/lib/gamerules.sh)..."
 
-# glitch_pve — keep_inventory ON, no natural spawns
-GAMERULES_PVE=(
-  "doMobSpawning false"
-  "doMobLoot false"
-  "mobGriefing false"
-  "keepInventory true"
-  "doDaylightCycle false"
-  "doWeatherCycle false"
-  "playersSleepingPercentage 0"
-  "spawnRadius 0"
-)
-for rule in "${GAMERULES_PVE[@]}"; do
-  apply_rule "$rule" glitch_pve
-done
+# Apply the canonical tables via shared helper (handles unknown detection + warn).
+# Replaces the old hardcoded GAMERULES_PVE / GAMERULES_RED camelCase arrays
+# (legacy names rejected as "unknown" on 26.x) with shared snake_case tables.
+if declare -p GAMERULES_PVE_SNAKE >/dev/null 2>&1; then
+  apply_world_gamerules "glitch_pve" "GAMERULES_PVE_SNAKE"
+else
+  warn "GAMERULES_PVE_SNAKE not loaded — skipping glitch_pve gamerules"
+fi
 
-# glitch_red — full-loot, natural spawns, no phantoms
-GAMERULES_RED=(
-  "doMobSpawning true"
-  "keepInventory false"
-  "doDaylightCycle true"
-  "doWeatherCycle true"
-  "doInsomnia false"
-)
-for rule in "${GAMERULES_RED[@]}"; do
-  apply_rule "$rule" glitch_red
-done
+if declare -p GAMERULES_RED_SNAKE >/dev/null 2>&1; then
+  apply_world_gamerules "glitch_red" "GAMERULES_RED_SNAKE"
+else
+  warn "GAMERULES_RED_SNAKE not loaded — skipping glitch_red gamerules"
+fi
+
+if declare -p GAMERULES_HUB_SNAKE >/dev/null 2>&1; then
+  apply_world_gamerules "overworld" "GAMERULES_HUB_SNAKE"
+else
+  warn "GAMERULES_HUB_SNAKE not loaded — skipping hub gamerules"
+fi
 
 # glitch_pve — dark always
 mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null

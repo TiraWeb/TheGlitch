@@ -29,6 +29,7 @@
     </properties>
 
     <modules>
+        <module>plugins/GlitchCommon</module>
         <module>plugins/GlitchItems</module>
         <module>plugins/GlitchClasses</module>
         <module>plugins/GlitchShops</module>

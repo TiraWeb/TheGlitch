@@ -1,3 +1,4 @@
+config-version: 1
 # GlitchHideout — The Glitch hideout progression (design GAME_DESIGN.md §4)
 # Stations upgrade with Glitch Shards. Prerequisites are "station:level".
 

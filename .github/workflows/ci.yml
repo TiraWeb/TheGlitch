@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21 (Temurin) + Maven 3.9
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+
+      - name: Verify Java and Maven
+        run: |
+          java -version
+          mvn --version
+
+      # --- ShellCheck ---
+      # Primary: ludeeus/action-shellcheck. Falls back to apt-get if the action is unavailable.
+      - name: ShellCheck (action)
+        uses: ludeeus/action-shellcheck@master
+        continue-on-error: true
+        with:
+          scandir: "./scripts"
+          # Scan additional top-level and per-plugin scripts
+          additional_files: "bootstrap.sh setup-*.sh plugins/GlitchItems/build.sh plugins/GlitchShops/build.sh plugins/GlitchStash/build.sh plugins/GlitchClasses/build.sh plugins/GlitchHideout/build.sh plugins/GlitchDeathRules/build.sh plugins/GlitchHealthBar/build.sh plugins/GlitchDungeons/build.sh"
+
+      - name: ShellCheck (fallback via apt-get)
+        if: always()
+        continue-on-error: true
+        run: |
+          if ! command -v shellcheck >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y shellcheck
+          fi
+          echo "Running shellcheck on scripts and build scripts..."
+          shellcheck -S warning -x scripts/*.sh bootstrap.sh setup-*.sh plugins/*/build.sh 2>&1 || {
+            echo "::warning::shellcheck found issues (see log above)"
+            exit 0
+          }
+
+      # --- YAML lint (lightweight, no extra deps) ---
+      - name: YAML syntax check
+        run: |
+          python3 -c "
+          import pathlib, sys, yaml
+          bad = []
+          for p in pathlib.Path('.').rglob('*.yml'):
+              # skip server live data and target
+              if 'target' in p.parts or 'server/world' in str(p) or '.git' in p.parts:
+                  continue
+              try:
+                  yaml.safe_load(p.read_text(encoding='utf-8'))
+                  print(f'OK  {p}')
+              except Exception as e:
+                  print(f'FAIL {p}: {e}')
+                  bad.append(str(p))
+          # also check yaml extension
+          for p in pathlib.Path('.').rglob('*.yaml'):
+              if 'target' in p.parts:
+                  continue
+              try:
+                  yaml.safe_load(p.read_text(encoding='utf-8'))
+                  print(f'OK  {p}')
+              except Exception as e:
+                  print(f'FAIL {p}: {e}')
+                  bad.append(str(p))
+          if bad:
+              print(f'{len(bad)} YAML file(s) failed to parse', file=sys.stderr)
+              sys.exit(1)
+          "
+
+      # --- Maven validate (offline-friendly) ---
+      - name: Maven validate
+        run: mvn -B --no-transfer-progress -DskipTests validate
+
+      # Best-effort offline validate fallback (no network, e.g. fork PRs / cached runner)
+      - name: Maven validate (offline fallback)
+        if: failure()
+        continue-on-error: true
+        run: mvn -B -o -DskipTests validate || echo "::warning::offline validate also failed (network/cache needed)"
+
+      # --- Maven package (best-effort) ---
+      # Package is heavier (downloads Paper, etc.) so allow failure on shallow clones / no-cache.
+      - name: Maven package (best-effort)
+        continue-on-error: true
+        run: mvn -B --no-transfer-progress -DskipTests -Dmaven.test.skip=true package

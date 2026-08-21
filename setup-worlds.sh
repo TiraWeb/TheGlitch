@@ -85,6 +85,25 @@ fi
 # box. This does NOT depend on Multiverse having imported each world.
 # NOTE: the main world 'hub' has dimension key minecraft:overworld; the
 # Multiverse-created worlds use minecraft:<name>.
+#
+# Deduplication: canonical 26.x snake_case tables + apply_rule() + 
+# apply_world_gamerules() also live in scripts/lib/gamerules.sh.
+#   Source:  source "${REPO_DIR}/scripts/lib/gamerules.sh"
+#   Then:    apply_world_gamerules "overworld" "GAMERULES_HUB_SNAKE"
+#            apply_world_gamerules "glitch_pve" "GAMERULES_PVE_SNAKE"
+#            apply_world_gamerules "glitch_red" "GAMERULES_RED_SNAKE"
+# This file keeps inline definitions as the reference source (values below
+# are the canonical ones copied into the lib). scripts/reapply-world-config.sh
+# sources the lib directly so values can never drift.
+# Optional sourcing (safe if lib missing; guarded so re-sourcing is no-op):
+if [[ -f "${REPO_DIR}/scripts/lib/gamerules.sh" ]]; then
+  # shellcheck source=scripts/lib/gamerules.sh
+  source "${REPO_DIR}/scripts/lib/gamerules.sh" 2>/dev/null || true
+fi
+# Future: shared RCON/wait helpers live in scripts/lib/preflight.sh — see
+# scripts/lib/README.md. Not sourced here yet to avoid changing preflight
+# behaviour in this critical setup script; new scripts should source it:
+#   source "${REPO_DIR}/scripts/lib/preflight.sh"  # gives wait_for_rcon, wait_for_plugin, require_root
 log "Applying gamerules"
 
 # Minecraft 26.x (snapshot 25w44a / MC 1.21.11+) renamed all gamerules from
@@ -96,6 +115,7 @@ log "Applying gamerules"
 #   mobGriefing->mob_griefing  doTraderSpawning->spawn_wandering_traders
 #   doInsomnia->spawn_phantoms  doFireTick->REMOVED (use
 #   fire_spread_radius_around_player 0)  spawnChunkRadius->REMOVED (dropped)
+if ! declare -F apply_rule >/dev/null 2>&1; then
 apply_rule() {
   local rule="$1" val="$2" dim="$3" out
   out="$(mc "execute in minecraft:${dim} run gamerule ${rule} ${val}" 2>&1 || true)"
@@ -103,6 +123,7 @@ apply_rule() {
     warn "gamerule '${rule}' REJECTED in ${dim} (wrong name for this MC version?): ${out}"
   fi
 }
+fi
 
 # hub (dim overworld) — safe, frozen, silent
 for rule in "advance_time false" "advance_weather false" "spawn_mobs false" \
