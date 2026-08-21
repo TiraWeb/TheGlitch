@@ -1,0 +1,15 @@
+name: GlitchLoot
+version: '${project.version}'
+main: com.theglitch.glitchloot.GlitchLoot
+api-version: '1.21'
+description: Smart loot system for The Glitch — adaptive drop rates, contextual loot, item power budget, anti-funneling
+depend: []
+commands:
+  glitchloot:
+    description: GlitchLoot admin commands — reload, status
+    usage: /glitchloot <reload|status>
+    permission: glitchloot.admin
+permissions:
+  glitchloot.admin:
+    description: Admin access to GlitchLoot commands
+    default: op

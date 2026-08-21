@@ -1,0 +1,45 @@
+config-version: 1
+# GlitchEvents — Dynamic world events (ROADMAP 5.9.6)
+# Server-wide broadcasts, timed extraction windows, roaming bosses, supply drops.
+
+events:
+  # Worlds where dynamic events may occur
+  enabled-worlds:
+    - glitch_red
+  # Automatically schedule random events between min/max interval
+  auto-events-enabled: true
+  min-interval-minutes: 20
+  max-interval-minutes: 45
+  # Broadcast radius for event announcements (blocks from event location, 0 = server-wide)
+  announcement-radius-blocks: 100
+
+supply-drop:
+  enabled: true
+  # How long the drop barrel stays before destabilizing
+  duration-seconds: 300
+  # Loot item names — matched against vanilla materials via Material.matchMaterial, unknown entries are skipped
+  items:
+    - unstable_rift_common
+    - rune_fragment
+  # Bonus shard stack range placed alongside loot
+  shards-min: 10
+  shards-max: 40
+
+roaming-boss:
+  enabled: true
+  # MythicMobs internal mob id — spawned via console "mm mobs spawn" (MythicMobs is soft-depend)
+  mob: GlitchSentinel
+  announce: "<dark_red>A Glitch Sentinel prowls the wastes!</dark_red>"
+  # Broadcast-only despawn notice after this many seconds (boss itself is not force-removed)
+  despawn-seconds: 180
+
+extraction-window:
+  enabled: false
+
+messages:
+  supply-drop-start: "<gold><bold>Supply Drop</bold></gold> <gray>A supply barrel has glitched into reality at <white><world> <x>, <y>, <z></white>!</gray>"
+  supply-drop-end: "<gray>The supply drop at <white><x>, <y>, <z></white> in <white><world></white> has destabilized.</gray>"
+  boss-spawned: "<dark_red><bold>Roaming Boss</bold></dark_red> <gray><white><mob></white> prowls near <white><world> <x>, <y>, <z></white>!</gray>"
+  boss-despawned: "<gray>The roaming <white><mob></white> has slunk back into the Glitch.</gray>"
+  event-none: "<red>No active world events.</red>"
+  reloaded: "<green>GlitchEvents configuration reloaded.</green>"

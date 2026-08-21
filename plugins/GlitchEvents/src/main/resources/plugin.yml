@@ -1,0 +1,16 @@
+name: GlitchEvents
+version: '${project.version}'
+main: com.theglitch.glitchevents.GlitchEvents
+api-version: '1.21'
+description: Dynamic world events for The Glitch — server-wide broadcasts, timed extraction windows, roaming bosses, supply drops
+softdepend:
+  - MythicMobs
+commands:
+  glitchevents:
+    description: Dynamic world event commands — start supply drops / roaming bosses, stop, reload, status
+    usage: /glitchevents <start supply_drop|start roaming_boss|stop|reload|status>
+    permission: glitchevents.admin
+permissions:
+  glitchevents.admin:
+    description: Admin access to dynamic world events
+    default: op

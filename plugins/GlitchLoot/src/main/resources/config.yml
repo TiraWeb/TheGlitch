@@ -1,0 +1,44 @@
+config-version: 1
+# GlitchLoot — Smart loot system (ROADMAP 5.9.7)
+# Adaptive drop rates (dry-streak bonus), contextual loot on monster deaths,
+# server-wide item power budget per hour, and anti-funneling cooldowns.
+
+loot:
+  # Worlds in which GlitchLoot bonus drops can trigger
+  enabled-worlds:
+    - glitch_red
+    - glitch_pve
+
+adaptive:
+  # Master switch for the dry-streak adaptive bonus
+  enabled: true
+  # How many seconds a player's dry streak persists before being considered stale
+  window-seconds: 600
+  # Each consecutive dry roll adds this percent to the next roll's chance
+  dry-streak-bonus-percent-per-roll: 2
+  # Hard cap for the accumulated bonus percent
+  max-bonus-percent: 25
+  # Percent of the streak removed when loot is finally obtained
+  luck-decay-on-loot: 50
+
+power-budget:
+  # Master switch for the hourly server-wide power budget
+  enabled: true
+  # Total power that may be spent on bonus loot per hour across all players
+  max-power-per-hour: 400
+  rare-cost: 20
+  epic-cost: 60
+  legendary-cost: 150
+
+anti-funnel:
+  # Master switch for per-player rarity cooldown after obtaining loot
+  enabled: true
+  # Seconds a player must wait before another bonus drop from the same kill chain
+  per-player-rarity-cooldown-seconds: 120
+  cooldown-message: "<gray>Loot surge cooling down here.</gray>"
+
+messages:
+  bonus-applied: "<dark_purple><bold>GLITCH</bold> <gray>surge! The Glitch rewards your persistence.</gray>"
+  power-capped: "<red>The Glitch is exhausted here — try again later.</red>"
+  reload: "<green>GlitchLoot configuration reloaded.</green>"
+  status: "<gold><bold>GlitchLoot Status</bold></gold>"

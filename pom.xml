@@ -40,6 +40,8 @@
         <module>plugins/GlitchHealthBar</module>
         <module>plugins/GlitchDungeons</module>
         <module>plugins/GlitchInsurance</module>
+        <module>plugins/GlitchEvents</module>
+        <module>plugins/GlitchLoot</module>
     </modules>
 
     <repositories>
