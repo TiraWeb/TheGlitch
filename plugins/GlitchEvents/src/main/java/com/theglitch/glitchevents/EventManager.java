@@ -188,14 +188,19 @@ public final class EventManager {
         plugin.getLogger().info("Supply drop placed at " + coords + " (" + world.getName() + ").");
 
         UUID eventId = UUID.randomUUID();
+        // Lambdas capture only effectively-final locals — snapshot the mutable
+        // Block/Location references before scheduling the removal task.
+        final Block dropBlock = target;
+        final Location dropSpot = spot;
+        final World dropWorld = world;
         BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             activeTasks.remove(eventId);
-            if (target.getType() == Material.BARREL) {
-                target.setType(Material.AIR);
+            if (dropBlock.getType() == Material.BARREL) {
+                dropBlock.setType(Material.AIR);
             }
-            broadcastNear(spot, Messages.msg(plugin, "supply-drop-end",
-                    "world", world.getName(), "x", String.valueOf(spot.getBlockX()),
-                    "y", String.valueOf(spot.getBlockY()), "z", String.valueOf(spot.getBlockZ())));
+            broadcastNear(dropSpot, Messages.msg(plugin, "supply-drop-end",
+                    "world", dropWorld.getName(), "x", String.valueOf(dropSpot.getBlockX()),
+                    "y", String.valueOf(dropSpot.getBlockY()), "z", String.valueOf(dropSpot.getBlockZ())));
         }, supplyDurationSeconds * 20L);
         activeTasks.put(eventId, task);
         return true;
