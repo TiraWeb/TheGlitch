@@ -30,6 +30,7 @@
 
     <modules>
         <module>plugins/GlitchCommon</module>
+        <module>plugins/GlitchRaid</module>
         <module>plugins/GlitchItems</module>
         <module>plugins/GlitchClasses</module>
         <module>plugins/GlitchShops</module>
@@ -38,6 +39,7 @@
         <module>plugins/GlitchDeathRules</module>
         <module>plugins/GlitchHealthBar</module>
         <module>plugins/GlitchDungeons</module>
+        <module>plugins/GlitchInsurance</module>
     </modules>
 
     <repositories>

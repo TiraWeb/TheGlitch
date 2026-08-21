@@ -1,0 +1,25 @@
+name: GlitchInsurance
+version: '${project.version}'
+main: com.theglitch.glitchinsurance.GlitchInsurance
+api-version: '1.21'
+description: Shard-backed item insurance for The Glitch — pay premium to protect gear on death
+softdepend: [VaultUnlocked]
+
+commands:
+  insurance:
+    description: Manage shard-backed item insurance
+    usage: /insurance <buy|list|claim|help>
+    permission: glitchinsurance.use
+    aliases: [ins, insure]
+  insuranceadmin:
+    description: Admin commands for GlitchInsurance
+    usage: /insuranceadmin <reload|list <player>|clear <player>>
+    permission: glitchinsurance.admin
+
+permissions:
+  glitchinsurance.use:
+    description: Use insurance commands
+    default: true
+  glitchinsurance.admin:
+    description: Admin insurance commands
+    default: op

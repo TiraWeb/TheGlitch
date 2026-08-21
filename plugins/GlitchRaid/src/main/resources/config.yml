@@ -1,0 +1,25 @@
+config-version: 1
+# GlitchRaid — Raid lifecycle manager (ROADMAP 5.9.3)
+# Timers, party assignment, post-raid summary screen, death recap, loot accounting.
+
+raid:
+  # Total raid duration in seconds (30 minutes default)
+  duration-seconds: 1800
+  # Delay in ticks before showing post-raid summary screen (40 ticks = 2 seconds)
+  summary-delay-ticks: 40
+  # Maximum party size for a raid
+  party-max-size: 4
+  # Loot payout multiplier (applied on raid end: final = lootValue * payout)
+  payout-multiplier: 1.0
+
+messages:
+  raid-started: "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>"
+  raid-ended: "<red>Raid ended <gray>(<reason>)</gray> — returning to hub...</red>"
+  raid-time-left: "<aqua>Time left: <white><time></white></aqua>"
+  not-in-raid: "<red>You are not in a raid.</red>"
+  already-in-raid: "<red>You are already in a raid!</red>"
+  raid-summary-title: "<gold><bold>Raid Summary</bold></gold>"
+  death-recap: "<red>Death recap: <white>You died! <gray>(Death #<deaths> this raid)</gray></white></red>"
+  party-member-died: "<red>Party member <white><player></white> died! <gray>(Deaths: <deaths>)</gray></red>"
+  raid-status: "<gray>Time left: <white><time></white> <gray>| Loot: <gold><loot></gold> <gray>| Deaths: <red><deaths></red>"
+  loot-added: "<gold>+<amount> loot value</gold>"

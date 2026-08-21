@@ -1,0 +1,25 @@
+name: GlitchRaid
+version: '${project.version}'
+main: com.theglitch.glitchraid.GlitchRaid
+api-version: '1.21'
+description: Raid lifecycle manager for The Glitch — timers, party assignment, post-raid summary, death recap, loot accounting
+depend: []
+softdepend:
+  - VaultUnlocked
+  - PlaceholderAPI
+commands:
+  raid:
+    description: Raid lifecycle commands — start, end, status, help
+    usage: /raid <start|end|status|help>
+    permission: glitchraid.raid
+  raidadmin:
+    description: Admin commands for GlitchRaid — reload, list, end
+    usage: /raidadmin <reload|list|end <player>>
+    permission: glitchraid.admin
+permissions:
+  glitchraid.raid:
+    description: Use raid commands
+    default: true
+  glitchraid.admin:
+    description: Admin raid commands
+    default: op
