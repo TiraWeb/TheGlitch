@@ -8,11 +8,11 @@
 
 - [ ] `git pull && sudo ./bootstrap.sh` (seeds new MythicMobs SpawnAreas + Spawners subdirs)
 - [ ] Build all changed plugins:
-  - `sudo ./scripts/build-all.sh`  *(preferred: reactor, topological order)*
-  - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar`
+  - `sudo ./scripts/build-all.sh`  *(preferred: reactor, topological order — covers all 11 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents/GlitchLoot)*
+  - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar` (newer four are reactor-only)
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./setup-mythicmobs.sh` (`mm reload` + verify mobs list)
-- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses
+- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot
 
 ## GlitchDeathRules (mercy rule + entry protection)
 
@@ -101,3 +101,46 @@
 - [ ] T2 (Stalker/Brute/Phantom) in the mid cross-ring
 - [ ] T3 elites (Sentinel/Sniper/Warden) near Core (0,0) and the extraction sites
 - [ ] No T1 fodder spawning at the Core
+
+## GlitchRaid (raid lifecycle)
+
+- [ ] `/raid start` begins a raid: BossBar timer appears (default 1800s), party leader assigned
+- [ ] Invite up to 3 members (`max 4`) — invites work, declines/left players removed from party
+- [ ] Loot picked up and kills/deaths during the raid are counted (`/raid status` reflects them)
+- [ ] `/raid status` shows timer, party, loot, deaths
+- [ ] Dying during the raid increments the death recap (no crash; mercy rules still apply)
+- [ ] Timer expiry ends the raid with a summary message (loot + deaths per member)
+- [ ] `/raid end` by the leader ends early with the same summary
+- [ ] `%glitchraid_*%` placeholders resolve in TAB/scoreboard (test via `papi parse <you> %glitchraid_time%`)
+- [ ] `/raidadmin list|end|reload` works for ops
+
+## GlitchInsurance (gear insurance)
+
+- [ ] `/insurance buy` while holding/insuring gear charges 100 shards per item (Vault withdraw confirmed via `/coins` or balance)
+- [ ] Buying a 4th policy is blocked (max 3) with a clear message
+- [ ] `/insurance list` shows active policies with remaining claim windows
+- [ ] Die in `glitch_red` with an insured item → item moved to keep-slot instead of dropping; 300s claim window opens
+- [ ] `/insurance claim` within the window returns the insured item(s); cooldown of 60s between claims enforced
+- [ ] Claiming after the window expires fails gracefully (policy lost)
+- [ ] Data persists across restart: buy → restart → `/insurance list` still shows policies
+- [ ] Insufficient balance blocks purchase without side effects
+
+## GlitchEvents (world events)
+
+- [ ] On enable, log shows `dynamic world events ready` and MythicMobs detected
+- [ ] `/glitchevents status` shows active tasks count, next auto-event ETA, enabled worlds/flags
+- [ ] `/glitchevents start supply_drop` places a filled BARREL near a random player in `glitch_red`; nearby players get the coordinates broadcast
+- [ ] Opening the drop yields configured items + amethyst shards; after `duration-seconds` (300) the barrel disappears (air again)
+- [ ] `/glitchevents start roaming_boss` dispatches `mm mobs spawn GlitchSentinel …`; announce broadcast fires; despawn broadcast after 180s
+- [ ] Auto-scheduler: temporarily set `min-interval-minutes: 1`, reload, confirm a random event fires within ~2 min, then restore config
+- [ ] `/glitchevents stop` cancels pending tasks; `/glitchevents reload` applies config changes
+
+## GlitchLoot (smart loot)
+
+- [ ] On enable, log shows adaptive/budget/anti-funnel summary with correct worlds `[glitch_red, glitch_pve]`
+- [ ] `/glitchloot status` prints your dry streak, current bonus %, power remaining (400/400 fresh hour), cooldown state
+- [ ] Kill monsters without loot drops → dry streak climbs; bonus percent rises (+2% per roll, capped at 25%)
+- [ ] When a bonus roll hits: named bonus item drops (Glitch-touched EMERALD / AMETHYST_SHARD / DIAMOND), action-bar feedback fires, streak decays (50%)
+- [ ] Power budget drains by rarity cost (20/60/150); when exhausted, no bonus items until next hourly reset (log/action-bar says capped)
+- [ ] Anti-funnel: two qualifying kills within 120s → second one suppressed with "cooling down" message
+- [ ] Bonus drops never break normal death loot (vanilla + MythicMobs tables unaffected)

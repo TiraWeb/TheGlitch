@@ -213,10 +213,16 @@ Admin: `/hideoutadmin set <player> <station> <level> | reset <player> | reload`
 | **GlitchHealthBar** | **Mob health bars** (custom: floating HP bar above mobs) | `plugins/GlitchHealthBar/` |
 | **GlitchDeathRules** | **Red Zone death rules** (custom: mercy keep, entry invulnerability) | `plugins/GlitchDeathRules/` |
 | **GlitchHideout** | **Hideout progression** (custom: stations, crafting, storage) | `plugins/GlitchHideout/` |
+| **GlitchRaid** | **Raid lifecycle** (custom: `/raid` timer, party, loot/death recap, `%glitchraid_*%`) | `plugins/GlitchRaid/` |
+| **GlitchInsurance** | **Gear insurance** (custom: shard premiums, claim window, `/insurance`) | `plugins/GlitchInsurance/` |
+| **GlitchEvents** | **World events** (custom: supply drops, roaming bosses, auto scheduler) | `plugins/GlitchEvents/` |
+| **GlitchLoot** | **Smart loot** (custom: adaptive drop rates, power budget, anti-funneling) | `plugins/GlitchLoot/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
 | GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
 | Chunky | World pre-generation | `server/plugins/Chunky/` |
+
+All 11 deployable custom plugins share the `com.theglitch` Maven reactor; `plugins/GlitchCommon/` is a shared library module (no plugin.yml — never deployed).
 
 ## The three zones (Phase 4)
 
@@ -244,12 +250,13 @@ Built from source on the server — **preferred: single reactor build** (Paper r
 
 ```bash
 cd ~/TheGlitch
-sudo ./scripts/build-all.sh              # Track 1 plugins in topological order
+sudo ./scripts/build-all.sh              # all 11 deployable plugins in topological order (reactor, -T 1C)
 # sudo ./scripts/build-all.sh --clean    # full clean build
+# sudo ./scripts/build-all.sh GlitchDungeons   # deferred dungeon plugin — opt-in only
 sudo systemctl restart theglitch
 ```
 
-Legacy per-plugin (still works for first-time lib seeding or single-plugin debug — order matters):
+Legacy per-plugin (still works for first-time lib seeding or single-plugin debug — order matters; the four newest plugins have no `build.sh` and are built by the reactor only):
 
 ```bash
 # Topological order: Items → Shops → Stash → Classes → Hideout → DeathRules → HealthBar
@@ -260,11 +267,15 @@ sudo ./plugins/GlitchClasses/build.sh
 sudo ./plugins/GlitchHideout/build.sh
 sudo ./plugins/GlitchDeathRules/build.sh
 sudo ./plugins/GlitchHealthBar/build.sh
-# sudo ./plugins/GlitchDungeons/build.sh   # deferred — source only, not deployed
+# GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot: reactor-only
+#   mvn -B -DskipTests package -pl :GlitchRaid -am   (etc.)
+# sudo ./plugins/GlitchDungeons/build.sh   # deferred — source only, not deployed by default
 sudo systemctl restart theglitch
 ```
 
-Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25) — bump there for all 8 plugins. CI validate: `./scripts/build-all.sh --no-deploy`.
+Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25) — bump there for all 13 modules. CI validate: `./scripts/build-all.sh --no-deploy`.
+
+GlitchInsurance additionally needs `lib/VaultUnlocked.jar` for its compile-time Vault API (`systemPath`) — `build-all.sh` auto-seeds it from `/opt/theglitch/server/plugins/` or `server/plugins/`.
 
 ## Building Oraxen (custom items)
 
@@ -307,7 +318,12 @@ plugins/GlitchShops/      GlitchShops source (built via build.sh)
 plugins/GlitchHealthBar/  GlitchHealthBar source (built via build.sh)
 plugins/GlitchDeathRules/ GlitchDeathRules source (built via build.sh)
 plugins/GlitchHideout/    GlitchHideout source (built via build.sh)
-plugins/GlitchDungeons/   GlitchDungeons source (deferred — not deployed)
+plugins/GlitchCommon/     shared library module (no plugin.yml — reference/shade, not deployed)
+plugins/GlitchRaid/       GlitchRaid source (reactor-only build)
+plugins/GlitchInsurance/  GlitchInsurance source (reactor-only; needs lib/VaultUnlocked.jar)
+plugins/GlitchEvents/     GlitchEvents source (reactor-only build)
+plugins/GlitchLoot/       GlitchLoot source (reactor-only build)
+plugins/GlitchDungeons/   GlitchDungeons source (deferred — not deployed by default)
 server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
 console.sh                attach to the live server console
 scripts/mc-cmd.py         local RCON client

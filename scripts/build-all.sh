@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# The Glitch — Build all plugins in correct topological order via Maven reactor.
-# Replaces 8 individual `sudo ./plugins/<name>/build.sh` calls for routine deploys.
+# The Glitch — Build all custom plugins in correct topological order via Maven reactor.
+# Replaces the individual per-plugin `sudo ./plugins/<name>/build.sh` calls for routine deploys.
 #
 # Usage:
 #   sudo ./scripts/build-all.sh              # build + deploy all Track 1 plugins (reactor -T 1C)
@@ -26,6 +26,7 @@ REPO_DEPLOY="${REPO_DIR}/server/plugins"
 
 # Topological order: dependencies first (Items before Shops/Stash, etc.)
 # GlitchDungeons is deferred — excluded by default, opt-in via args.
+# GlitchCommon is a library module (no plugin.yml) — never deploy it; it is not listed here.
 TRACK1_ORDER=(
   "GlitchItems"
   "GlitchShops"
@@ -34,6 +35,10 @@ TRACK1_ORDER=(
   "GlitchHideout"
   "GlitchDeathRules"
   "GlitchHealthBar"
+  "GlitchRaid"
+  "GlitchInsurance"
+  "GlitchEvents"
+  "GlitchLoot"
 )
 ALL_WITH_DUNGEONS=(
   "GlitchItems"
@@ -43,6 +48,10 @@ ALL_WITH_DUNGEONS=(
   "GlitchHideout"
   "GlitchDeathRules"
   "GlitchHealthBar"
+  "GlitchRaid"
+  "GlitchInsurance"
+  "GlitchEvents"
+  "GlitchLoot"
   "GlitchDungeons"
 )
 
@@ -192,6 +201,12 @@ for plugin in "${SELECTED[@]}"; do
             log "Seeded GlitchHideout/lib/VaultUnlocked.jar from GlitchClasses/lib"
           fi
         fi
+      fi
+      ;;
+    GlitchInsurance)
+      # systemPath dependency — must exist before compile (seeded from live server or repo)
+      if [[ ! -f "${REPO_DIR}/plugins/GlitchInsurance/lib/VaultUnlocked.jar" ]]; then
+        seed_lib GlitchInsurance VaultUnlocked || warn "Missing VaultUnlocked.jar for GlitchInsurance — run: sudo cp ${LIVE_PLUGIN_DIR}/VaultUnlocked.jar plugins/GlitchInsurance/lib/"
       fi
       ;;
     GlitchDungeons)

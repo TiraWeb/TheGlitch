@@ -1,6 +1,6 @@
 # Config Versioning
 
-How `config.yml` upgrades work for The Glitch custom plugins (GlitchItems, GlitchShops, GlitchStash, GlitchClasses, GlitchHideout, GlitchDeathRules, GlitchHealthBar, GlitchDungeons).
+How `config.yml` upgrades work for The Glitch custom plugins: GlitchItems, GlitchShops, GlitchStash, GlitchClasses, GlitchHideout, GlitchDeathRules, GlitchHealthBar, GlitchRaid, GlitchInsurance, GlitchEvents, and GlitchLoot. (GlitchCommon has no config; GlitchDungeons is deferred.)
 
 ## Rule: live configs are seeded only if missing
 
@@ -95,7 +95,7 @@ Notes:
 
 ### Which plugins use which?
 
-- Current default for all 8 plugins is **auto-migration off** (manual). Add `copyDefaults(true)` only where you want silent healing.
+- Current default for all custom plugins is **auto-migration off** (manual). Add `copyDefaults(true)` only where you want silent healing. (GlitchCommon is a library — no config.)
 - If you enable auto-merge, keep the `if [[ ! -f ... ]]` guard in `build.sh` — it still protects live files at deploy time; the merge happens at **plugin enable** instead.
 
 ## Checklist for a config change

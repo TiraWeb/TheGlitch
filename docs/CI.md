@@ -68,3 +68,4 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 - Workflow: `.github/workflows/ci.yml`
 - Config versioning: `docs/CONFIG_VERSIONING.md` (why bumping `config-version` needs manual merge or `copyDefaults(true)`)
 - Build order: `HANDOFF.md` (Build Order) and `README.md` (Building section)
+- The reactor covers all 13 modules: 11 deployable plugins + the GlitchCommon library + deferred GlitchDungeons. `scripts/build-all.sh` (no args) builds/deploys the 11 deployable plugins; GlitchCommon builds only when something depends on it or via full-reactor fallback.
