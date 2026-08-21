@@ -147,8 +147,8 @@ public final class GlitchHideout extends JavaPlugin {
         intelTask = getServer().getScheduler().runTaskTimer(this, () -> {
             if (manager == null) return;
             int glowTicks = intelGlowTicks; // cached — no getConfig() per tick
-            int range = intelRange;
-            // Single-pass collection of candidates — avoids double iteration
+            int range = intelRange; // cached — no getConfig() per tick
+            // Single-pass candidate collection — skip tick if no candidates
             java.util.List<Player> candidates = null;
             for (Player p : getServer().getOnlinePlayers()) {
                 if (manager.intelLevel(p.getUniqueId()) >= 1 && GAME_WORLDS.contains(p.getWorld().getName())) {
@@ -158,14 +158,18 @@ public final class GlitchHideout extends JavaPlugin {
             }
             if (candidates == null || candidates.isEmpty()) return;
             for (Player player : candidates) {
-                for (Entity entity : player.getNearbyEntities(range, range, range)) {
+                // y=10 cheaper than 20x20x20 cube — intel is horizontal scouting
+                for (Entity entity : player.getNearbyEntities(range, 10, range)) {
                     if (entity instanceof Monster || isGlitchMob(entity)) {
-                        ((LivingEntity) entity).addPotionEffect(
-                                new PotionEffect(PotionEffectType.GLOWING, glowTicks, 0));
+                        LivingEntity living = (LivingEntity) entity;
+                        // Skip if already glowing with >10 ticks remaining — avoids re-adding effect
+                        PotionEffect existing = living.getPotionEffect(PotionEffectType.GLOWING);
+                        if (existing != null && existing.getDuration() > 10) continue;
+                        living.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, glowTicks, 0));
                     }
                 }
             }
-        }, 60L, 10L);
+        }, 60L, 20L);
     }
 
     private boolean isGlitchMob(Entity entity) {

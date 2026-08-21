@@ -37,7 +37,8 @@ import java.util.*;
 public class AbilityListener implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
-    private static final String SCAVENGE_TAG = "specter_scavenge";
+    /** Scoreboard tag that marks a Specter with Scavenge active — read by GlitchItems containers. */
+    public static final String SCAVENGE_TAG = "specter_scavenge";
 
     private final GlitchClasses plugin;
     private final ClassManager classManager;
@@ -218,18 +219,29 @@ public class AbilityListener implements Listener {
     private void placeShieldWall(Player player, ClassData data) {
         int duration = 600 + (data.level() >= 6 ? 40 : 0); // 30s base, +2s at level 6
 
-        // Place 3x3 barrier blocks in front of the player
+        // Place 3x3 barrier wall in front of the player, oriented perpendicular to facing.
         Location playerLoc = player.getLocation();
         Vector direction = playerLoc.getDirection().setY(0).normalize();
+        // Guard against zero direction (e.g. looking straight up/down)
+        if (direction.lengthSquared() < 1e-6) direction = new Vector(0, 0, 1);
+        Vector right = direction.clone().crossProduct(new Vector(0, 1, 0)).normalize();
+        // Fallback if normalize produced NaN (collinear)
+        if (Double.isNaN(right.getX()) || right.lengthSquared() < 1e-6) {
+            right = new Vector(1, 0, 0);
+        }
+        Location base = playerLoc.clone().add(direction.clone().multiply(2));
         List<Block> wallBlocks = new ArrayList<>();
 
         for (int x = -1; x <= 1; x++) {
             for (int y = 0; y <= 2; y++) {
-                Block block = playerLoc.clone().add(direction.clone().multiply(2)).add(x, y, 0).getBlock();
-                if (block.getType() == Material.AIR) {
-                    block.setType(Material.BARRIER);
-                    wallBlocks.add(block);
-                }
+                Location wallPos = base.clone().add(right.clone().multiply(x)).add(0, y, 0);
+                Block block = wallPos.getBlock();
+                // Never overwrite solid terrain — preserves builds and prevents grief
+                if (block.getType().isSolid()) continue;
+                // Only replace air (skip water, grass, etc.) — wall is temporary visual cover
+                if (!block.getType().isAir()) continue;
+                block.setType(Material.BARRIER);
+                wallBlocks.add(block);
             }
         }
 
@@ -1021,12 +1033,27 @@ public class AbilityListener implements Listener {
         return data.className().equals(className);
     }
 
+    /**
+     * Vanguard Ironclad check — shield must be equipped.
+     * Historically only offhand was checked (Vanguard holds sword in main hand);
+     * we now accept either hand for flexibility but keep offhand as the primary
+     * documented slot.
+     */
     private boolean hasShield(Player player) {
         ItemStack offhand = player.getInventory().getItemInOffHand();
-        return offhand.getType() == Material.SHIELD;
+        if (offhand.getType() == Material.SHIELD) return true;
+        // Also accept main hand — allows sword+shield swap or plugins that force main-hand shield
+        ItemStack main = player.getInventory().getItemInMainHand();
+        return main.getType() == Material.SHIELD;
     }
 
-    private boolean isHostile(Mob mob) {
+    /**
+     * Hostile predicate for taunt / turret targeting.
+     * Covers vanilla hostiles + Pillager variants + Phantom, with a MythicMobs
+     * fallback that checks the display name for our custom Glitch mobs.
+     * Made static so other plugins/utilities can reuse the same decision.
+     */
+    public static boolean isHostile(Mob mob) {
         if (mob instanceof Zombie) return true;
         if (mob instanceof Skeleton) return true;
         if (mob instanceof Creeper) return true;
@@ -1036,12 +1063,17 @@ public class AbilityListener implements Listener {
         if (mob instanceof Vindicator) return true;
         if (mob instanceof Pillager) return true;
         if (mob instanceof Vex) return true;
-        // Check for MythicMobs by display name
+        if (mob instanceof Phantom) return true;
+        if (mob instanceof Evoker) return true;
+        if (mob instanceof Ravager) return true;
+        if (mob instanceof Illusioner) return true;
+        // Check for MythicMobs by display name — our Glitch mobs are custom-named
         if (mob.getCustomName() != null) {
             String name = mob.getCustomName();
-            return name.contains("Glitch") || name.contains("Corrupted");
+            if (name.contains("Glitch") || name.contains("Corrupted")) return true;
         }
-        return false;
+        // Final fallback: any Monster is hostile (covers Husk, Stray, Drowned, WitherSkeleton, Zoglin, etc.)
+        return mob instanceof org.bukkit.entity.Monster;
     }
 
     private int getCooldown(String className, String abilityType, int level) {

@@ -32,6 +32,8 @@ public final class ContainerManager {
 
     private static final NamespacedKey ORAXEN_KEY = new NamespacedKey("oraxen", "custom_item_id");
     private static final MiniMessage MM = MiniMessage.miniMessage();
+    /** Must match AbilityListener.SCAVENGE_TAG — scoreboard tag that grants bonus rolls. */
+    public static final String SCAVENGE_TAG = "specter_scavenge";
 
     private static final Map<String, Material> MATERIAL_MATERIALS = Map.of(
             "rune_fragment", Material.PAPER,
@@ -239,7 +241,7 @@ public final class ContainerManager {
         boolean surged = false;
 
         int rolls = type.maxRolls();
-        if (player.getScoreboardTags().contains("specter_scavenge")) {
+        if (player.getScoreboardTags().contains(SCAVENGE_TAG)) {
             rolls += scavengeBonusRolls;
         }
         for (int i = 0; i < rolls; i++) {

@@ -332,6 +332,15 @@ public final class ShopManager {
         return null;
     }
 
+    private static boolean isIdShaped(String value) {
+        if (value == null || value.isEmpty()) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c != '_' && (c < 'a' || c > 'z')) return false;
+        }
+        return true;
+    }
+
     public String oraxenId(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
@@ -339,7 +348,7 @@ public final class ShopManager {
         if (id != null && !id.isEmpty()) return id;
         for (NamespacedKey key : pdc.getKeys()) {
             String value = pdc.get(key, PersistentDataType.STRING);
-            if (value != null && value.matches("[a-z_]+")) {
+            if (isIdShaped(value)) {
                 return value;
             }
         }

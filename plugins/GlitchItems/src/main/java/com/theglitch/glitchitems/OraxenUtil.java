@@ -44,8 +44,11 @@ public final class OraxenUtil {
      * Best-effort Oraxen id of an item: the old custom_item_id key first, then
      * a scan of all string PDC values for an id-shaped value — the same
      * strategy GlitchShops uses successfully for sell prices on real items.
+     * Shared helper so ContainerManager, ExtractionVariantManager,
+     * HideoutManager and ShopManager do not re-implement the same loop or
+     * regex.
      */
-    private static boolean isIdShaped(String value) {
+    public static boolean isIdShaped(String value) {
         if (value == null || value.isEmpty()) return false;
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);

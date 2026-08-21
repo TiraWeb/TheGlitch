@@ -13,7 +13,7 @@ import java.util.Set;
 public final class GlitchHealthBar extends JavaPlugin {
 
     private HealthBarManager manager;
-    private Set<String> enabledWorlds = new HashSet<>();
+    private volatile Set<String> enabledWorlds = Set.of();
     private int barLength;
     private boolean showNumbers;
     private double offsetExtra;
@@ -76,7 +76,7 @@ public final class GlitchHealthBar extends JavaPlugin {
     private void loadSettings() {
         reloadConfig();
         try {
-            Set<String> worlds = new HashSet<>(getConfig().getStringList("enabled-worlds"));
+            Set<String> worlds = Set.copyOf(getConfig().getStringList("enabled-worlds"));
             if (worlds.isEmpty()) {
                 getLogger().warning("enabled-worlds empty — no health bars will show until configured.");
             }

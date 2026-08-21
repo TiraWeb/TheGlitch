@@ -25,8 +25,8 @@ public final class GlitchDeathRules extends JavaPlugin {
     private FileConfiguration messagesConfig;
     private File messagesFile;
 
-    // Cached hot-path config — refreshed on reload
-    private volatile Set<String> mercyWorlds = new HashSet<>();
+    // Cached hot-path config — refreshed on reload (immutable Set.copyOf for thread safety)
+    private volatile Set<String> mercyWorlds = Set.of();
     private final Map<String, String> messageCache = new ConcurrentHashMap<>();
 
     @Override
@@ -86,14 +86,14 @@ public final class GlitchDeathRules extends JavaPlugin {
 
     private void cacheConfig() {
         try {
-            Set<String> set = new HashSet<>(getConfig().getStringList("mercy-worlds"));
+            Set<String> set = Set.copyOf(getConfig().getStringList("mercy-worlds"));
             if (set.isEmpty()) {
                 getLogger().warning("mercy-worlds empty — no world will have mercy rule.");
             }
             mercyWorlds = set;
         } catch (Exception e) {
             getLogger().warning("Failed to cache GlitchDeathRules config: " + e.getMessage());
-            mercyWorlds = new HashSet<>(Set.of("glitch_red"));
+            mercyWorlds = Set.of("glitch_red");
         }
     }
 

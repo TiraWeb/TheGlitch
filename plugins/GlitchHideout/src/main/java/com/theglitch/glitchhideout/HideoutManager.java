@@ -14,12 +14,16 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -29,6 +33,12 @@ import java.util.logging.Level;
  * payments, prerequisites, extended stash / armory storage, med station,
  * and the workbench crafting recipes (ITEM_SYSTEM.md §7).
  * Player data persists per-player under plugins/GlitchHideout/players/.
+ * <p>
+ * Persistence is async + atomic: savePlayer builds a YamlConfiguration snapshot
+ * on the calling thread then schedules an async task that writes to a temp file
+ * and atomically moves it. saveAll() performs synchronous atomic writes for
+ * all dirty/remaining entries (union of levels/stash/armory) to guarantee flush
+ * on disable.
  */
 public final class HideoutManager {
 
@@ -59,6 +69,7 @@ public final class HideoutManager {
     private final Map<UUID, List<ItemStack>> armory = new ConcurrentHashMap<>();
     private final Map<UUID, Long> medCooldown = new ConcurrentHashMap<>();
     private final Path dataDir;
+    private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
 
     // Cached economy — invalidated on reload
     private volatile Economy cachedEconomy;
@@ -329,21 +340,35 @@ public final class HideoutManager {
         }
     }
 
-    private boolean isItem(ItemStack stack, String id) {
-        if (stack == null || !stack.hasItemMeta()) return false;
+    /**
+     * Local mirror of OraxenUtil.isIdShaped — avoids cross-plugin dependency
+     * and the regex cost of {@code value.matches("[a-z_]+")}.
+     */
+    private static boolean isIdShaped(String value) {
+        if (value == null || value.isEmpty()) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c != '_' && (c < 'a' || c > 'z')) return false;
+        }
+        return true;
+    }
+
+    private String oraxenIdOf(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) return null;
         org.bukkit.persistence.PersistentDataContainer pdc =
                 stack.getItemMeta().getPersistentDataContainer();
         String pdcId = pdc.get(ORAXEN_KEY, PersistentDataType.STRING);
-        if (pdcId != null && !pdcId.isEmpty()) {
-            return id.equalsIgnoreCase(pdcId);
-        }
+        if (pdcId != null && !pdcId.isEmpty()) return pdcId;
         for (NamespacedKey key : pdc.getKeys()) {
             String value = pdc.get(key, PersistentDataType.STRING);
-            if (value != null && value.matches("[a-z_]+")) {
-                return id.equalsIgnoreCase(value);
-            }
+            if (isIdShaped(value)) return value;
         }
-        return false;
+        return null;
+    }
+
+    private boolean isItem(ItemStack stack, String id) {
+        String found = oraxenIdOf(stack);
+        return found != null && id.equalsIgnoreCase(found);
     }
 
     public List<ItemStack> getStash(UUID uuid) {
@@ -383,6 +408,7 @@ public final class HideoutManager {
         stash.remove(uuid);
         armory.remove(uuid);
         medCooldown.remove(uuid);
+        dirty.remove(uuid);
         File file = dataDir.resolve(uuid + ".yml").toFile();
         if (file.exists() && !file.delete()) {
             plugin.getLogger().warning("Could not delete player data for " + uuid);
@@ -439,6 +465,66 @@ public final class HideoutManager {
             playerLevels = loadPlayer(uuid);
         }
 
+        // Snapshot to avoid concurrent modification during async write
+        Map<String, Integer> levelsSnapshot = new LinkedHashMap<>(playerLevels);
+        List<ItemStack> stashSnapshot = stash.get(uuid) == null ? null : new ArrayList<>(stash.get(uuid));
+        List<ItemStack> armorySnapshot = armory.get(uuid) == null ? null : new ArrayList<>(armory.get(uuid));
+
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("uuid", uuid.toString());
+        for (Map.Entry<String, Integer> entry : levelsSnapshot.entrySet()) {
+            yaml.set("stations." + entry.getKey(), entry.getValue());
+        }
+        if (stashSnapshot != null) {
+            yaml.set("stash", stashSnapshot.stream()
+                    .filter(s -> s != null && s.getType() != org.bukkit.Material.AIR).toList());
+        }
+        if (armorySnapshot != null) {
+            yaml.set("armory", armorySnapshot.stream()
+                    .filter(s -> s != null && s.getType() != org.bukkit.Material.AIR).toList());
+        }
+
+        Path file = dataDir.resolve(uuid + ".yml");
+        dirty.add(uuid);
+        try {
+            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+                try {
+                    atomicSave(yaml, file);
+                } finally {
+                    dirty.remove(uuid);
+                }
+            });
+        } catch (Throwable t) {
+            try {
+                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                    try {
+                        atomicSave(yaml, file);
+                    } finally {
+                        dirty.remove(uuid);
+                    }
+                });
+            } catch (Throwable t2) {
+                try {
+                    atomicSave(yaml, file);
+                } finally {
+                    dirty.remove(uuid);
+                }
+                plugin.getLogger().log(Level.WARNING, "Async scheduler unavailable, saved synchronously for " + uuid, t2);
+            }
+        }
+    }
+
+    /**
+     * Synchronous variant — used by saveAll/shutdown to guarantee flush.
+     */
+    private void savePlayerSync(UUID uuid) {
+        if (!levels.containsKey(uuid) && !stash.containsKey(uuid) && !armory.containsKey(uuid)) {
+            return;
+        }
+        Map<String, Integer> playerLevels = levels.get(uuid);
+        if (playerLevels == null) {
+            playerLevels = loadPlayer(uuid);
+        }
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("uuid", uuid.toString());
         for (Map.Entry<String, Integer> entry : playerLevels.entrySet()) {
@@ -454,17 +540,70 @@ public final class HideoutManager {
             yaml.set("armory", playerArmory.stream()
                     .filter(s -> s != null && s.getType() != org.bukkit.Material.AIR).toList());
         }
+        Path file = dataDir.resolve(uuid + ".yml");
         try {
-            yaml.save(dataDir.resolve(uuid + ".yml").toFile());
+            Path parent = file.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Path tmp = Files.createTempFile(parent, uuid.toString() + "-", ".tmp");
+            try {
+                yaml.save(tmp.toFile());
+                try {
+                    Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException ex) {
+                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
+            }
         } catch (IOException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to save hideout data for " + uuid, e);
         }
     }
 
-    public void saveAll() {
-        for (UUID uuid : levels.keySet()) {
-            savePlayer(uuid);
+    /**
+     * Static utility for atomic YAML persistence.
+     * Writes to a temp file in the same directory then atomically moves to target.
+     * Falls back to non-atomic move if ATOMIC_MOVE is unsupported.
+     */
+    static void atomicSave(YamlConfiguration yaml, Path target) {
+        atomicSave(yaml, target, Bukkit.getLogger());
+    }
+
+    static void atomicSave(YamlConfiguration yaml, Path target, java.util.logging.Logger logger) {
+        try {
+            Path parent = target.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Path tmp = Files.createTempFile(parent, target.getFileName().toString() + "-", ".tmp");
+            try {
+                yaml.save(tmp.toFile());
+                try {
+                    Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException ex) {
+                    Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to atomically save " + target, e);
         }
+    }
+
+    public void saveAll() {
+        Set<UUID> all = new HashSet<>();
+        all.addAll(levels.keySet());
+        all.addAll(stash.keySet());
+        all.addAll(armory.keySet());
+        // Also include dirty entries that may have been removed from maps but still pending
+        all.addAll(dirty);
+        for (UUID uuid : all) {
+            savePlayerSync(uuid);
+        }
+        dirty.clear();
+    }
+
+    public void shutdown() {
+        saveAll();
     }
 
     private Economy economy() {

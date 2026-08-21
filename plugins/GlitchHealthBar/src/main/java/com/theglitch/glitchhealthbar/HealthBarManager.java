@@ -135,13 +135,16 @@ public final class HealthBarManager {
     public void rescan() {
         // Skip scan when no players can see bars — major Hot-path saving
         if (!hasPlayersInEnabledWorlds()) return;
+        // Early exit if too many bars — prevents runaway scanning/allocations
+        if (bars.size() > 200) return;
 
         for (World world : plugin.getServer().getWorlds()) {
             if (!plugin.isEnabledWorld(world.getName())) continue;
-            // Minor optimization: skip world with no players
+            // Skip world with no players — avoids scanning empty worlds
             if (world.getPlayers().isEmpty()) continue;
-            for (org.bukkit.entity.Entity entity : world.getEntities()) {
-                if (!(entity instanceof Mob mob)) continue;
+            // Filtered API avoids iterating all entities (items, armor stands, etc.)
+            for (Mob mob : world.getEntitiesByClass(Mob.class)) {
+                if (bars.size() > 200) return;
                 if (bars.containsKey(mob.getUniqueId())) continue;
                 if (plugin.shouldTrack(mob)) {
                     attach(mob);

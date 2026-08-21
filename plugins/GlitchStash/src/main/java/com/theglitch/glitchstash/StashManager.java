@@ -9,8 +9,10 @@ import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 
 import java.io.*;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -18,12 +20,18 @@ import java.util.logging.Level;
 /**
  * Manages player stashes — YAML-based persistent storage.
  * Each player gets their own file under plugins/GlitchStash/stashes/
+ * <p>
+ * Persistence is async + atomic: saveToFile builds a YamlConfiguration snapshot
+ * on the main thread then schedules an async task that writes to a temp file and
+ * atomically moves it to the target. shutdown()/saveAll() perform synchronous
+ * atomic writes to guarantee no data-loss on crash/disable.
  */
 public final class StashManager {
 
     private final GlitchStash plugin;
     private final Map<UUID, StashData> stashes = new ConcurrentHashMap<>();
     private final Path stashDir;
+    private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
 
     public record StashData(
             UUID uuid,
@@ -266,10 +274,88 @@ public final class StashManager {
         yaml.set("armor", serializeItemStacks(data.armor()));
         yaml.set("offhand", serializeItemStack(data.offhand()));
 
+        dirty.add(uuid);
         try {
-            yaml.save(file.toFile());
+            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+                try {
+                    atomicSave(yaml, file);
+                } finally {
+                    dirty.remove(uuid);
+                }
+            });
+        } catch (Throwable t) {
+            try {
+                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                    try {
+                        atomicSave(yaml, file);
+                    } finally {
+                        dirty.remove(uuid);
+                    }
+                });
+            } catch (Throwable t2) {
+                try {
+                    atomicSave(yaml, file);
+                } finally {
+                    dirty.remove(uuid);
+                }
+                plugin.getLogger().log(Level.WARNING, "Async scheduler unavailable, saved synchronously for " + uuid, t2);
+            }
+        }
+    }
+
+    private void saveToFileSync(UUID uuid, StashData data) {
+        Path file = stashDir.resolve(uuid.toString() + ".yml");
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("player-name", data.playerName());
+        yaml.set("timestamp", data.timestamp());
+        yaml.set("contents", serializeItemStacks(data.contents()));
+        yaml.set("armor", serializeItemStacks(data.armor()));
+        yaml.set("offhand", serializeItemStack(data.offhand()));
+        try {
+            Path parent = file.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Path tmp = Files.createTempFile(parent, uuid.toString() + "-", ".tmp");
+            try {
+                yaml.save(tmp.toFile());
+                try {
+                    Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException ex) {
+                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
+            }
         } catch (IOException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to save stash for " + data.playerName(), e);
+        }
+    }
+
+    /**
+     * Static utility for atomic YAML persistence.
+     * Writes to a temp file in the same directory then atomically moves to target.
+     * Falls back to non-atomic move if ATOMIC_MOVE is unsupported.
+     */
+    static void atomicSave(YamlConfiguration yaml, Path target) {
+        atomicSave(yaml, target, Bukkit.getLogger());
+    }
+
+    static void atomicSave(YamlConfiguration yaml, Path target, java.util.logging.Logger logger) {
+        try {
+            Path parent = target.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Path tmp = Files.createTempFile(parent, target.getFileName().toString() + "-", ".tmp");
+            try {
+                yaml.save(tmp.toFile());
+                try {
+                    Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException ex) {
+                    Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to atomically save " + target, e);
         }
     }
 
@@ -319,7 +405,14 @@ public final class StashManager {
         return items;
     }
 
+    public void saveAll() {
+        for (Map.Entry<UUID, StashData> entry : stashes.entrySet()) {
+            saveToFileSync(entry.getKey(), entry.getValue());
+        }
+        dirty.clear();
+    }
+
     public void shutdown() {
-        stashes.forEach(this::saveToFile);
+        saveAll();
     }
 }

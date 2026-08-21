@@ -139,6 +139,19 @@ public final class ExtractionVariantManager {
                 && z >= Math.min(variant.z1(), variant.z2()) && z <= Math.max(variant.z1(), variant.z2());
     }
 
+    /**
+     * Mirror of GlitchItems' OraxenUtil.isIdShaped — avoids a cross-plugin dependency
+     * while eliminating the costly regex {@code value.matches("[a-z_]+")} on the hot path.
+     */
+    private static boolean isIdShaped(String value) {
+        if (value == null || value.isEmpty()) return false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c != '_' && (c < 'a' || c > 'z')) return false;
+        }
+        return true;
+    }
+
     private String oraxenId(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
@@ -146,7 +159,7 @@ public final class ExtractionVariantManager {
         if (id != null && !id.isEmpty()) return id;
         for (NamespacedKey key : pdc.getKeys()) {
             String value = pdc.get(key, PersistentDataType.STRING);
-            if (value != null && value.matches("[a-z_]+")) {
+            if (isIdShaped(value)) {
                 return value;
             }
         }

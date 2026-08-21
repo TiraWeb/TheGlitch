@@ -1,13 +1,15 @@
 package com.theglitch.glitchclasses;
 
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -16,6 +18,11 @@ import java.util.regex.Pattern;
 /**
  * Manages all player class data — YAML-based persistent storage.
  * Each player gets their own file under plugins/GlitchClasses/players/
+ * <p>
+ * Persistence is async + atomic: main-thread callers build a YamlConfiguration
+ * snapshot and schedule an async write that saves to a temp file then atomically
+ * moves it over the target. shutdown()/saveAll() perform synchronous atomic
+ * writes to guarantee flush before disable.
  */
 public final class ClassManager {
 
@@ -28,6 +35,7 @@ public final class ClassManager {
     private final Path playerDir;
     private volatile int cachedMaxLevel = 10;
     private volatile int cachedResetCost = 500;
+    private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
 
     public ClassManager(GlitchClasses plugin) {
         this.plugin = plugin;
@@ -230,15 +238,107 @@ public final class ClassManager {
         yaml.set("level", data.level());
         yaml.set("xp", data.xp());
 
+        dirty.add(uuid);
+        // Schedule async atomic write — offloads YAML IO from main thread
         try {
-            yaml.save(file.toFile());
+            // Paper async scheduler (1.20+)
+            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+                try {
+                    atomicSave(yaml, file);
+                } finally {
+                    dirty.remove(uuid);
+                }
+            });
+        } catch (Throwable t) {
+            // Fallback to Bukkit scheduler for compatibility / unit tests
+            try {
+                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                    try {
+                        atomicSave(yaml, file);
+                    } finally {
+                        dirty.remove(uuid);
+                    }
+                });
+            } catch (Throwable t2) {
+                // Last resort: synchronous atomic save (e.g. scheduler shut down during disable)
+                try {
+                    atomicSave(yaml, file);
+                } finally {
+                    dirty.remove(uuid);
+                }
+                plugin.getLogger().log(Level.WARNING, "Async scheduler unavailable, saved synchronously for " + uuid, t2);
+            }
+        }
+    }
+
+    /**
+     * Synchronous atomic save — used by shutdown/saveAll to guarantee flush.
+     */
+    private void saveToFileSync(UUID uuid, ClassData data) {
+        Path file = playerDir.resolve(uuid.toString() + ".yml");
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("uuid", uuid.toString());
+        yaml.set("class", data.className());
+        yaml.set("level", data.level());
+        yaml.set("xp", data.xp());
+        try {
+            Path parent = file.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Path tmp = Files.createTempFile(parent, uuid.toString() + "-", ".tmp");
+            try {
+                yaml.save(tmp.toFile());
+                try {
+                    Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException ex) {
+                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
+            }
         } catch (IOException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to save player data for " + uuid, e);
         }
     }
 
+    /**
+     * Static utility for atomic YAML persistence.
+     * Writes to a temp file in the same directory then atomically moves to target.
+     * Falls back to non-atomic move if ATOMIC_MOVE is unsupported.
+     * Logs warnings on failure via global logger (used for async tasks).
+     */
+    static void atomicSave(YamlConfiguration yaml, Path target) {
+        atomicSave(yaml, target, Bukkit.getLogger());
+    }
+
+    static void atomicSave(YamlConfiguration yaml, Path target, java.util.logging.Logger logger) {
+        try {
+            Path parent = target.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            Path tmp = Files.createTempFile(parent, target.getFileName().toString() + "-", ".tmp");
+            try {
+                yaml.save(tmp.toFile());
+                try {
+                    Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException ex) {
+                    Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+            } finally {
+                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to atomically save " + target, e);
+        }
+    }
+
+    public void saveAll() {
+        for (Map.Entry<UUID, ClassData> entry : players.entrySet()) {
+            saveToFileSync(entry.getKey(), entry.getValue());
+        }
+        dirty.clear();
+    }
+
     public void shutdown() {
-        players.forEach(this::saveToFile);
+        saveAll();
     }
 
     private String sanitizeClassName(String className) {
