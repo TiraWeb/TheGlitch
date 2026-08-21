@@ -92,22 +92,139 @@ if $DO_CLEAN; then log "Mode: clean package"; else log "Mode: package (increment
 $OFFLINE && log "Offline: true"
 $NO_DEPLOY && log "Deploy: skipped (--no-deploy)"
 
-# --- Pre-flight: verify lib jars exist (otherwise individual build.sh handles fetching) ---
-missing_libs=()
+# --- Pre-flight: auto-seed missing lib jars from live/server (no network) ---
+seed_lib() {
+  local plugin="$1" jar="$2" src=""
+  # Common live locations
+  for cand in \
+    "${LIVE_PLUGIN_DIR}/${jar}.jar" \
+    "${REPO_DIR}/server/plugins/${jar}.jar" \
+    "${REPO_DIR}/server/plugins/${jar}/"*.jar \
+    "${LIVE_PLUGIN_DIR}/${jar}/"*.jar; do
+    # expand globs; first existing wins
+    for f in $cand; do [[ -f "$f" ]] && src="$f" && break 2; done
+  done
+  if [[ -n "$src" ]]; then
+    mkdir -p "${REPO_DIR}/plugins/${plugin}/lib"
+    cp -f "$src" "${REPO_DIR}/plugins/${plugin}/lib/${jar}.jar"
+    log "Seeded ${plugin}/lib/${jar}.jar from ${src}"
+    return 0
+  fi
+  return 1
+}
+# VelKoth has versioned file VelKoth-*.jar under server/plugins/VelKoth/
+seed_velkoth() {
+  local plugin="$1"
+  local src=""
+  for cand in "${REPO_DIR}/server/plugins/VelKoth/VelKoth-"*.jar "${LIVE_PLUGIN_DIR}/VelKoth-"*.jar "${LIVE_PLUGIN_DIR}/VelKoth.jar" "${REPO_DIR}/plugins/GlitchStash/lib/VelKoth.jar"; do
+    for f in $cand; do [[ -f "$f" ]] && src="$f" && break 2; done
+  done
+  if [[ -n "$src" ]]; then
+    mkdir -p "${REPO_DIR}/plugins/${plugin}/lib"
+    cp -f "$src" "${REPO_DIR}/plugins/${plugin}/lib/VelKoth.jar"
+    log "Seeded ${plugin}/lib/VelKoth.jar from ${src}"
+    return 0
+  fi
+  return 1
+}
 for plugin in "${SELECTED[@]}"; do
   case "$plugin" in
-    GlitchItems)   for jar in VaultUnlocked PlaceholderAPI Oraxen; do [[ -f "${REPO_DIR}/plugins/GlitchItems/lib/${jar}.jar" ]] || missing_libs+=("GlitchItems/lib/${jar}.jar"); done ;;
-    GlitchShops)   for jar in VaultUnlocked Oraxen FancyNpcs GlitchItems; do [[ -f "${REPO_DIR}/plugins/GlitchShops/lib/${jar}.jar" ]] || missing_libs+=("GlitchShops/lib/${jar}.jar"); done ;;
-    GlitchStash)   for jar in VelKoth VaultUnlocked GlitchItems GlitchShops; do [[ -f "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar" ]] || missing_libs+=("GlitchStash/lib/${jar}.jar"); done ;;
-    GlitchClasses) for jar in VaultUnlocked PlaceholderAPI; do [[ -f "${REPO_DIR}/plugins/GlitchClasses/lib/${jar}.jar" ]] || missing_libs+=("GlitchClasses/lib/${jar}.jar"); done ;;
-    GlitchHideout) [[ -f "${REPO_DIR}/plugins/GlitchHideout/lib/VaultUnlocked.jar" ]] || missing_libs+=("GlitchHideout/lib/VaultUnlocked.jar") ;;
-    GlitchDungeons) [[ -f "${REPO_DIR}/plugins/GlitchDungeons/lib/MythicMobs.jar" ]] || missing_libs+=("GlitchDungeons/lib/MythicMobs.jar") ;;
+    GlitchItems)
+      for jar in VaultUnlocked PlaceholderAPI Oraxen; do
+        if [[ ! -f "${REPO_DIR}/plugins/GlitchItems/lib/${jar}.jar" ]]; then
+          seed_lib GlitchItems "$jar" || warn "Missing ${jar}.jar for GlitchItems — run sudo ./plugins/GlitchItems/build.sh once"
+        fi
+      done
+      ;;
+    GlitchClasses)
+      for jar in VaultUnlocked PlaceholderAPI; do
+        if [[ ! -f "${REPO_DIR}/plugins/GlitchClasses/lib/${jar}.jar" ]]; then
+          seed_lib GlitchClasses "$jar" || warn "Missing ${jar}.jar for GlitchClasses — run sudo ./plugins/GlitchClasses/build.sh once"
+        fi
+      done
+      ;;
+    GlitchShops)
+      for jar in VaultUnlocked Oraxen FancyNpcs; do
+        if [[ ! -f "${REPO_DIR}/plugins/GlitchShops/lib/${jar}.jar" ]]; then
+          seed_lib GlitchShops "$jar" || warn "Missing ${jar}.jar for GlitchShops"
+        fi
+      done
+      # GlitchItems inter-plugin jar — seed from live/target if missing
+      if [[ ! -f "${REPO_DIR}/plugins/GlitchShops/lib/GlitchItems.jar" ]]; then
+        if ! seed_lib GlitchShops GlitchItems; then
+          if [[ -f "${REPO_DIR}/plugins/GlitchItems/target/GlitchItems-1.0.0.jar" ]]; then
+            mkdir -p "${REPO_DIR}/plugins/GlitchShops/lib"
+            cp -f "${REPO_DIR}/plugins/GlitchItems/target/GlitchItems-1.0.0.jar" "${REPO_DIR}/plugins/GlitchShops/lib/GlitchItems.jar"
+            log "Seeded GlitchShops/lib/GlitchItems.jar from GlitchItems/target"
+          fi
+        fi
+      fi
+      ;;
+    GlitchStash)
+      for jar in VaultUnlocked; do
+        if [[ ! -f "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar" ]]; then
+          seed_lib GlitchStash "$jar" || true
+        fi
+      done
+      if [[ ! -f "${REPO_DIR}/plugins/GlitchStash/lib/VelKoth.jar" ]]; then
+        seed_velkoth GlitchStash || warn "Missing VelKoth.jar for GlitchStash"
+      fi
+      for jar in GlitchItems GlitchShops; do
+        if [[ ! -f "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar" ]]; then
+          seed_lib GlitchStash "$jar" || {
+            local src2="${REPO_DIR}/plugins/${jar}/target/${jar}-1.0.0.jar"
+            if [[ -f "$src2" ]]; then
+              mkdir -p "${REPO_DIR}/plugins/GlitchStash/lib"
+              cp -f "$src2" "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar"
+              log "Seeded GlitchStash/lib/${jar}.jar from ${src2}"
+            fi
+          }
+        fi
+      done
+      ;;
+    GlitchHideout)
+      if [[ ! -f "${REPO_DIR}/plugins/GlitchHideout/lib/VaultUnlocked.jar" ]]; then
+        if ! seed_lib GlitchHideout VaultUnlocked; then
+          # Fallback: copy from GlitchClasses lib (old behavior)
+          if [[ -f "${REPO_DIR}/plugins/GlitchClasses/lib/VaultUnlocked.jar" ]]; then
+            mkdir -p "${REPO_DIR}/plugins/GlitchHideout/lib"
+            cp -f "${REPO_DIR}/plugins/GlitchClasses/lib/VaultUnlocked.jar" "${REPO_DIR}/plugins/GlitchHideout/lib/VaultUnlocked.jar"
+            log "Seeded GlitchHideout/lib/VaultUnlocked.jar from GlitchClasses/lib"
+          fi
+        fi
+      fi
+      ;;
+    GlitchDungeons)
+      if [[ ! -f "${REPO_DIR}/plugins/GlitchDungeons/lib/MythicMobs.jar" ]]; then
+        # Try multiple live locations
+        src=""
+        for cand in "${REPO_DIR}/server/plugins/MythicMobs/MythicMobs.jar" "${LIVE_PLUGIN_DIR}/MythicMobs.jar" "${REPO_DIR}/server/plugins/MythicMobs.jar"; do
+          for f in $cand; do [[ -f "$f" ]] && src="$f" && break 2; done
+        done
+        if [[ -n "$src" ]]; then
+          mkdir -p "${REPO_DIR}/plugins/GlitchDungeons/lib"
+          cp -f "$src" "${REPO_DIR}/plugins/GlitchDungeons/lib/MythicMobs.jar"
+          log "Seeded GlitchDungeons/lib/MythicMobs.jar from ${src}"
+        else
+          warn "Missing MythicMobs.jar for GlitchDungeons"
+        fi
+      fi
+      ;;
   esac
 done
-if [[ "${#missing_libs[@]}" -gt 0 ]]; then
-  warn "Some lib jars are missing (first build will be slower or fail):"
-  for m in "${missing_libs[@]}"; do warn "  - $m"; done
-  warn "Run the individual plugin build.sh once to seed them, or ensure live jars exist."
+
+# If any inter-plugin lib is still missing, reactor parallel will race — force sequential
+needs_sequential=false
+for jar in "${REPO_DIR}/plugins/GlitchShops/lib/GlitchItems.jar" "${REPO_DIR}/plugins/GlitchStash/lib/GlitchItems.jar" "${REPO_DIR}/plugins/GlitchStash/lib/GlitchShops.jar"; do
+  if [[ ! -f "$jar" ]]; then
+    # Check if respective plugin is in SELECTED and would provide it
+    needs_sequential=true
+    break
+  fi
+done
+if $needs_sequential && $USE_REACTOR; then
+  warn "Inter-plugin jars still missing (first build) — switching to sequential build to avoid race"
+  USE_REACTOR=false
 fi
 
 # --- Build ---
