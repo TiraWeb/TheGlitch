@@ -2,6 +2,7 @@ package com.theglitch.glitchitems;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -267,6 +268,28 @@ public final class ContainerManager {
         }
 
         boolean emptied = loot.isEmpty();
+        // Hook: count loot toward active GlitchRaid (if installed) — fixes raid loot not ticking for containers
+        if (!loot.isEmpty()) {
+            try {
+                org.bukkit.plugin.Plugin raidPlugin = Bukkit.getPluginManager().getPlugin("GlitchRaid");
+                if (raidPlugin != null && raidPlugin.isEnabled()) {
+                    Object raidMgr = raidPlugin.getClass().getMethod("getRaidManager").invoke(raidPlugin);
+                    if (raidMgr != null) {
+                        java.util.UUID pid = player.getUniqueId();
+                        Boolean inRaid = (Boolean) raidMgr.getClass().getMethod("isInRaid", java.util.UUID.class).invoke(raidMgr, pid);
+                        if (Boolean.TRUE.equals(inRaid)) {
+                            try {
+                                raidMgr.getClass().getMethod("addLootFromItems", Player.class, java.util.Collection.class).invoke(raidMgr, player, loot);
+                            } catch (NoSuchMethodException nsme) {
+                                int est = loot.stream().filter(s -> s != null && !s.getType().isAir()).mapToInt(s -> s.getAmount() * 10).sum();
+                                raidMgr.getClass().getMethod("addLoot", java.util.UUID.class, int.class).invoke(raidMgr, pid, est);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
         giveLoot(player, block, loot);
 
         if (type.shardsMin() > 0 && type.shardsMax() >= type.shardsMin()) {

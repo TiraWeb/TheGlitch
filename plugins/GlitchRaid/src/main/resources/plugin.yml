@@ -7,6 +7,8 @@ depend: []
 softdepend:
   - VaultUnlocked
   - PlaceholderAPI
+  - GlitchShops
+  - GlitchItems
 commands:
   raid:
     description: Raid lifecycle commands — start, end, status, help

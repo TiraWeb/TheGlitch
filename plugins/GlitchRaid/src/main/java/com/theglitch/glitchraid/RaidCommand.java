@@ -57,6 +57,13 @@ public final class RaidCommand implements CommandExecutor {
                     player.sendMessage(MM.deserialize(notInRaw));
                     return true;
                 }
+                // Raids end only by extraction or admin — block normal /raid end unless player is admin
+                if (!player.hasPermission("glitchraid.admin")) {
+                    String blocked = plugin.getConfig().getString("messages.raid-end-blocked",
+                            "<red>Raids end only by extracting or by an admin. Use the extraction beacons!</red>");
+                    player.sendMessage(MM.deserialize(blocked));
+                    return true;
+                }
                 manager.endRaid(player.getUniqueId(), RaidEndReason.MANUAL);
             }
             case "status" -> {
