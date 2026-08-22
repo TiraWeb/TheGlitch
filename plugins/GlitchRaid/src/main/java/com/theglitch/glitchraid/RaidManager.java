@@ -22,12 +22,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Manages active raid sessions, bossbars, and timers.
  * Each player UUID maps to a shared RaidSession instance (party support).
+ * Loot and deaths are per-player (not shared) as requested.
  */
 public final class RaidManager {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private final GlitchRaid plugin;
+    private final PartyManager partyManager;
 
     private final Map<UUID, RaidSession> activeRaids = new ConcurrentHashMap<>();
     private final Map<UUID, BossBar> bossBars = new ConcurrentHashMap<>();
@@ -46,6 +48,7 @@ public final class RaidManager {
     public RaidManager(GlitchRaid plugin) {
         this.plugin = plugin;
         cacheConfig();
+        this.partyManager = new PartyManager(plugin);
     }
 
     public void cacheConfig() {
@@ -89,7 +92,12 @@ public final class RaidManager {
 
     public void reload() {
         cacheConfig();
+        if (partyManager != null) partyManager.reload();
         plugin.getLogger().info("RaidManager reloaded (duration=" + durationSeconds + "s, payout=" + payoutMultiplier + ", partyMax=" + partyMaxSize + ", hub=" + hubWorld + ", autoWorld=" + autoStartWorld + ").");
+    }
+
+    public PartyManager getPartyManager() {
+        return partyManager;
     }
 
     public boolean isInRaid(UUID uuid) {
@@ -150,7 +158,9 @@ public final class RaidManager {
     }
 
     /**
-     * Starts a new raid for the given leader.
+     * Starts a new raid for the given leader. If leader is in a party, the
+     * entire party is pulled into the same raid session and party members
+     * not yet in glitch_red are teleported to the leader.
      *
      * @return false if already in a raid
      */
@@ -166,10 +176,22 @@ public final class RaidManager {
         long now = System.currentTimeMillis();
         long end = now + (durationSeconds * 1000L);
         Set<UUID> members = ConcurrentHashMap.newKeySet();
-        members.add(uuid);
+
+        // Include party members if leader has a party
+        Party party = partyManager.getParty(uuid);
+        if (party != null) {
+            members.addAll(party.getMembers());
+        } else {
+            members.add(uuid);
+            // Also ensure leader is in map even if solo party not created
+        }
+
         RaidSession session = new RaidSession(uuid, members, now, end);
 
-        activeRaids.put(uuid, session);
+        // Map every member to the same session so they share timer but keep per-player loot
+        for (UUID mid : members) {
+            activeRaids.put(mid, session);
+        }
 
         String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
         String formatted = formatTime(durationSeconds);
@@ -177,18 +199,48 @@ public final class RaidManager {
         BossBar bar = BossBar.bossBar(initialName, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
         bossBars.put(uuid, bar);
         leader.showBossBar(bar);
+        // Also show to party members already online in same world
+        for (UUID mid : members) {
+            if (mid.equals(uuid)) continue;
+            Player p = Bukkit.getPlayer(mid);
+            if (p != null && p.isOnline()) {
+                p.showBossBar(bar);
+            }
+        }
 
         String key = auto ? "messages.raid-auto-started" : "messages.raid-started";
         String fallback = auto ? "<green><bold>Raid started!</bold> <gray>You entered the Glitch — 30:00 to extract!</gray>" : "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>";
         String startedRaw = plugin.getConfig().getString(key, fallback);
         if (startedRaw == null) startedRaw = fallback;
-        leader.sendMessage(MM.deserialize(startedRaw));
-        leader.sendActionBar(MM.deserialize("<gray>Extract before <white>" + formatted + "</white> or lose everything!</gray>"));
+        for (UUID mid : members) {
+            Player p = Bukkit.getPlayer(mid);
+            if (p != null && p.isOnline()) {
+                p.sendMessage(MM.deserialize(startedRaw));
+                p.sendActionBar(MM.deserialize("<gray>Extract before <white>" + formatted + "</white> or lose everything!</gray>"));
+            }
+        }
 
         BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> tick(uuid), 20L, 20L);
         timers.put(uuid, task);
 
-        plugin.getLogger().info("Raid started for " + leader.getName() + (auto ? " (auto)" : "") + " (duration=" + durationSeconds + "s, partyMax=" + partyMaxSize + ")");
+        // Teleport party members not yet in the raid world to the leader
+        if (party != null) {
+            for (UUID mid : members) {
+                if (mid.equals(uuid)) continue;
+                Player p = Bukkit.getPlayer(mid);
+                if (p != null && p.isOnline() && !p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                    try {
+                        p.teleport(leader.getLocation());
+                        p.sendMessage(MM.deserialize("<gray>Teleported to raid leader <white>" + leader.getName() + "</white> in <white>" + autoStartWorld + "</white>.</gray>"));
+                        plugin.getLogger().info("Auto-teleported party member " + p.getName() + " to raid leader " + leader.getName() + " in " + autoStartWorld);
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("Failed to teleport party member " + p.getName() + " to raid: " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        plugin.getLogger().info("Raid started for " + leader.getName() + (auto ? " (auto)" : "") + " members=" + members.size() + " (duration=" + durationSeconds + "s)");
         return true;
     }
 
@@ -236,20 +288,15 @@ public final class RaidManager {
             leaderTask.cancel();
         }
 
-        int baseLoot = session.getLootValue();
-        int computedPayout = (int) Math.round(baseLoot * payoutMultiplier);
-        if (reason == RaidEndReason.TIMEOUT || reason == RaidEndReason.TIMEOUT_DEATH) {
-            computedPayout = 0;
-        }
-        final int finalPayout = computedPayout;
-        final RaidSession summarySession = session;
-        final RaidEndReason summaryReason = reason;
+        boolean lost = (reason == RaidEndReason.TIMEOUT || reason == RaidEndReason.TIMEOUT_DEATH);
+        // Per-player payout handling happens in sendSummary; base for logging is total
+        int totalLoot = session.getLootValue();
 
         Component endedComp;
         if (reason == RaidEndReason.EXTRACTED) {
             String raw = plugin.getConfig().getString("messages.raid-extracted", "<green><bold>Extracted!</bold> <gray>Loot secured.</gray></green>");
             endedComp = MM.deserialize(raw);
-        } else if (reason == RaidEndReason.TIMEOUT || reason == RaidEndReason.TIMEOUT_DEATH) {
+        } else if (lost) {
             String raw = plugin.getConfig().getString("messages.raid-timeout-killed", "<dark_red><bold>The Glitch consumed you.</bold> <gray>Loot lost.</gray></dark_red>");
             endedComp = MM.deserialize(raw);
         } else {
@@ -264,34 +311,58 @@ public final class RaidManager {
             }
         }
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> sendSummary(summarySession, summaryReason, finalPayout), summaryDelayTicks);
-
-        // For non-timeout cases that are not extraction, teleport survivors to hub after a short delay (except death cases where they already died)
-        if (reason != RaidEndReason.TIMEOUT && reason != RaidEndReason.TIMEOUT_DEATH && reason != RaidEndReason.EXTRACTED) {
-            for (UUID memberId : membersSnapshot) {
-                Player p = Bukkit.getPlayer(memberId);
-                if (p != null && p.isOnline() && !p.isDead()) {
-                    String wn = p.getWorld().getName();
-                    if (wn.equalsIgnoreCase(autoStartWorld)) {
-                        // Don't auto-teleport manual ends that are not timeout — let admin decide?
-                        // For now, keep players in place; admin can teleport.
-                    }
-                }
-            }
-        }
+        final RaidSession summarySession = session;
+        final RaidEndReason summaryReason = reason;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> sendSummary(summarySession, summaryReason), summaryDelayTicks);
 
         String leaderName = Bukkit.getOfflinePlayer(leaderId).getName();
         if (leaderName == null) leaderName = leaderId.toString();
-        plugin.getLogger().info("Raid ended for " + leaderName + " reason=" + reason + " loot=" + baseLoot + " payout=" + finalPayout + " deaths=" + session.getDeaths() + " members=" + membersSnapshot.size());
+        plugin.getLogger().info("Raid ended for " + leaderName + " reason=" + reason + " totalLoot=" + totalLoot + " members=" + membersSnapshot.size());
     }
 
     /**
      * Called when a player successfully extracts (Koth win / hub teleport).
      * Ends their raid as EXTRACTED — loot is preserved (already stashed).
+     * If party, the entire raid ends together and other members are pulled to hub.
      */
     public void handleExtraction(Player player) {
         if (!isInRaid(player.getUniqueId())) return;
+        RaidSession session = activeRaids.get(player.getUniqueId());
+        Set<UUID> membersSnapshot = session != null ? new HashSet<>(session.getMembers()) : Set.of(player.getUniqueId());
+        membersSnapshot.add(player.getUniqueId());
         endRaid(player.getUniqueId(), RaidEndReason.EXTRACTED);
+        // Pull remaining party/raid members who are still in glitch_red to hub (shared extraction)
+        for (UUID mid : membersSnapshot) {
+            if (mid.equals(player.getUniqueId())) continue; // winner already teleported by GlitchStash
+            Player other = Bukkit.getPlayer(mid);
+            if (other != null && other.isOnline() && other.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    Player p2 = Bukkit.getPlayer(mid);
+                    if (p2 != null && p2.isOnline() && p2.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                        teleportToHub(p2);
+                        p2.sendMessage(MM.deserialize("<green>Party extraction — pulled to hub with <white>" + player.getName() + "</white>.</green>"));
+                    }
+                }, 20L);
+            }
+        }
+    }
+
+    /** Adds a party member who accepted mid-raid to the ongoing session. */
+    public void handlePartyMemberAddedToActiveRaid(Player newMember, RaidSession session) {
+        UUID nid = newMember.getUniqueId();
+        if (isInRaid(nid)) return;
+        session.getMembers().add(nid);
+        activeRaids.put(nid, session);
+        BossBar bar = bossBars.get(session.getLeader());
+        if (bar != null) {
+            try { newMember.showBossBar(bar); } catch (Exception ignored) {}
+        }
+        newMember.sendMessage(MM.deserialize("<green>Joined ongoing raid! <gray>Time left: <white>" + formatTime(session.getRemainingSeconds()) + "</white></gray>"));
+    }
+
+    public BossBar getBossBarForSession(RaidSession session) {
+        if (session == null) return null;
+        return bossBars.get(session.getLeader());
     }
 
     /**
@@ -332,19 +403,19 @@ public final class RaidManager {
     public void addLoot(UUID uuid, int amount) {
         RaidSession session = activeRaids.get(uuid);
         if (session == null) return;
-        session.addLoot(amount);
+        session.addLoot(uuid, amount);
     }
 
     /**
      * Add loot value derived from ItemStacks' sell prices (GlitchShops) or fallback.
      * Used for container loot and other item-based rewards so the BossBar/status reflects real value.
+     * Per-player — does not share across party.
      */
     public void addLootFromItems(Player player, Collection<ItemStack> items) {
         if (items == null || items.isEmpty()) return;
         RaidSession session = activeRaids.get(player.getUniqueId());
         if (session == null) return;
         int value = 0;
-        // Try GlitchShops sellPrice via reflection (soft dep — no compile-time)
         try {
             Plugin shopsPlugin = Bukkit.getPluginManager().getPlugin("GlitchShops");
             if (shopsPlugin != null && shopsPlugin.isEnabled()) {
@@ -369,17 +440,14 @@ public final class RaidManager {
         } catch (Exception ignored) {
         }
         if (value <= 0) {
-            // Fallback: small value per item amount so containers still tick the counter
             for (ItemStack item : items) {
                 if (item == null || item.getType().isAir()) continue;
-                // Oraxen materials are Paper/GLOWSTONE_DUST etc. — give modest value
                 value += item.getAmount() * 5;
-                // Gear or rifts could be higher? Use amount * 10 as fallback for unknown
             }
             if (value <= 0) value = items.size() * 10;
         }
         if (value > 0) {
-            session.addLoot(value);
+            session.addLoot(player.getUniqueId(), value);
             String lootRaw = plugin.getConfig().getString("messages.loot-added", "<gold>+<amount> loot value</gold>");
             try {
                 player.sendActionBar(MM.deserialize(lootRaw.replace("<amount>", String.valueOf(value))));
@@ -391,7 +459,7 @@ public final class RaidManager {
     public void incrementDeaths(UUID uuid) {
         RaidSession session = activeRaids.get(uuid);
         if (session == null) return;
-        session.incrementDeaths();
+        session.incrementDeaths(uuid);
     }
 
     /**
@@ -440,7 +508,6 @@ public final class RaidManager {
             }
         }
 
-        // Warnings in the last minute
         if (remainingSeconds == 60 || remainingSeconds == 30 || remainingSeconds == 10
                 || (remainingSeconds <= 5 && remainingSeconds > 0)) {
             sendTimeoutWarning(session, remainingSeconds);
@@ -489,7 +556,6 @@ public final class RaidManager {
                 p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.4f);
             }
         }
-        // Include leader if not in members (edge)
         if (!session.getMembers().contains(session.getLeader())) {
             Player lp = Bukkit.getPlayer(session.getLeader());
             if (lp != null && lp.isOnline() && lp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
@@ -502,14 +568,12 @@ public final class RaidManager {
         RaidSession session = activeRaids.get(leaderId);
         if (session == null) return;
         Set<UUID> membersSnapshot = new HashSet<>(session.getMembers());
-        // Ensure leader is included if party logic missed him
         membersSnapshot.add(leaderId);
         for (UUID memberId : membersSnapshot) {
             Player p = Bukkit.getPlayer(memberId);
             if (p == null || !p.isOnline()) continue;
             if (!p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) continue;
             if (p.getGameMode() == org.bukkit.GameMode.CREATIVE || p.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
-                // Don't kill creatives — just teleport
                 teleportToHub(p);
                 continue;
             }
@@ -525,14 +589,12 @@ public final class RaidManager {
                         MM.deserialize("<red>The Glitch consumed you</red>"), times));
             } catch (Exception ignored) {}
             try { p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_WITHER_DEATH, 1.0f, 0.8f); } catch (Exception ignored) {}
-            session.incrementDeaths();
-            // Kill — triggers PlayerDeathEvent (mercy keep still applies, stash safe because not extracted)
+            session.incrementDeaths(victimId);
             try {
                 p.setHealth(0.0);
             } catch (Exception e) {
                 try { p.damage(1000.0); } catch (Exception ignored) {}
             }
-            // Failsafe teleport a bit later (after respawn) in case death was cancelled or player survived
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 Player pp = Bukkit.getPlayer(victimId);
                 if (pp != null && pp.isOnline() && pp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
@@ -556,7 +618,7 @@ public final class RaidManager {
         } catch (Exception ignored) {}
     }
 
-    private void sendSummary(RaidSession session, RaidEndReason reason, int payout) {
+    private void sendSummary(RaidSession session, RaidEndReason reason) {
         String titleRaw = plugin.getConfig().getString("messages.raid-summary-title", "<gold><bold>Raid Summary</bold></gold>");
         Component title = MM.deserialize(titleRaw);
         long durationMs = System.currentTimeMillis() - session.getStartTime();
@@ -567,6 +629,9 @@ public final class RaidManager {
         for (UUID memberId : session.getMembers()) {
             Player p = Bukkit.getPlayer(memberId);
             if (p == null) continue;
+            int myLoot = session.getLootValue(memberId);
+            int myDeaths = session.getDeaths(memberId);
+            int payout = lost ? 0 : (int) Math.round(myLoot * payoutMultiplier);
             p.sendMessage(Component.empty());
             p.sendMessage(title);
             p.sendMessage(MM.deserialize("<gray>Duration: <white>" + durationStr + "</white>"));
@@ -575,16 +640,20 @@ public final class RaidManager {
             else if (reason == RaidEndReason.EXTRACTED) reasonLabel = "EXTRACTED";
             p.sendMessage(MM.deserialize("<gray>Reason: <white>" + reasonLabel + "</white>"));
             if (lost) {
-                p.sendMessage(MM.deserialize("<gray>Loot value: <gold>" + session.getLootValue() + "</gold> <gray>→ <red>LOST</red> <gray>(not extracted)</gray>"));
+                p.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>→ <red>LOST</red> <gray>(not extracted)</gray>"));
                 p.sendMessage(MM.deserialize("<gray>Payout: <red>0</red> <gray>(stash safe)</gray>"));
             } else {
-                p.sendMessage(MM.deserialize("<gray>Loot value: <gold>" + session.getLootValue() + "</gold> <gray>x" + payoutMultiplier + " = <green>" + payout + "</green>"));
+                p.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>x" + payoutMultiplier + " = <green>" + payout + "</green>"));
             }
-            p.sendMessage(MM.deserialize("<gray>Deaths: <red>" + session.getDeaths() + "</red>"));
-            if (session.getDeaths() > 0) {
-                p.sendMessage(MM.deserialize("<gray>Death recap: <red>" + session.getDeaths() + " death(s) this raid</red>"));
+            p.sendMessage(MM.deserialize("<gray>Your deaths: <red>" + myDeaths + "</red>"));
+            if (myDeaths > 0) {
+                p.sendMessage(MM.deserialize("<gray>Death recap: <red>" + myDeaths + " death(s) this raid</red>"));
             } else {
                 p.sendMessage(MM.deserialize("<gray>Death recap: <green>Flawless — no deaths!</green>"));
+            }
+            // Party loot recap for context
+            if (session.getMembers().size() > 1) {
+                p.sendMessage(MM.deserialize("<dark_gray>Party loot total: <gray>" + session.getLootValue() + "</gray></dark_gray>"));
             }
             p.sendMessage(Component.empty());
 
@@ -593,26 +662,28 @@ public final class RaidManager {
             if (lost) {
                 subtitle = MM.deserialize("<red>consumed • Loot lost</red>");
             } else if (reason == RaidEndReason.EXTRACTED) {
-                subtitle = MM.deserialize("<green>extracted • Loot " + payout + " • Deaths " + session.getDeaths() + "</green>");
+                subtitle = MM.deserialize("<green>extracted • Loot " + payout + " • Deaths " + myDeaths + "</green>");
             } else {
-                subtitle = MM.deserialize("<gray>" + reason.name().toLowerCase() + " • Loot " + payout + " • Deaths " + session.getDeaths() + "</gray>");
+                subtitle = MM.deserialize("<gray>" + reason.name().toLowerCase() + " • Loot " + payout + " • Deaths " + myDeaths + "</gray>");
             }
             p.showTitle(Title.title(title, subtitle, times));
         }
-        // Also show to leader if not in members set
         if (!session.getMembers().contains(session.getLeader())) {
             Player lp = Bukkit.getPlayer(session.getLeader());
             if (lp != null) {
+                int myLoot = session.getLootValue(session.getLeader());
+                int myDeaths = session.getDeaths(session.getLeader());
+                int payout = lost ? 0 : (int) Math.round(myLoot * payoutMultiplier);
                 lp.sendMessage(Component.empty());
                 lp.sendMessage(title);
                 lp.sendMessage(MM.deserialize("<gray>Duration: <white>" + durationStr + "</white>"));
                 lp.sendMessage(MM.deserialize("<gray>Reason: <white>" + reason.name() + "</white>"));
                 if (lost) {
-                    lp.sendMessage(MM.deserialize("<gray>Loot value: <gold>" + session.getLootValue() + "</gold> <gray>→ <red>LOST</red></gray>"));
+                    lp.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>→ <red>LOST</red></gray>"));
                 } else {
-                    lp.sendMessage(MM.deserialize("<gray>Loot value: <gold>" + session.getLootValue() + "</gold> <gray>x" + payoutMultiplier + " = <green>" + payout + "</green>"));
+                    lp.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>x" + payoutMultiplier + " = <green>" + payout + "</green>"));
                 }
-                lp.sendMessage(MM.deserialize("<gray>Deaths: <red>" + session.getDeaths() + "</red>"));
+                lp.sendMessage(MM.deserialize("<gray>Your deaths: <red>" + myDeaths + "</red>"));
                 lp.sendMessage(Component.empty());
             }
         }

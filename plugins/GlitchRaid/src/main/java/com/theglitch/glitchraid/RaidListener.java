@@ -3,6 +3,8 @@ package com.theglitch.glitchraid;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
+import java.util.UUID;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -46,6 +48,24 @@ public final class RaidListener implements Listener {
             if (started) {
                 plugin.getLogger().info("Auto-started raid for " + player.getName() + " (entered " + to + ")");
             }
+        } else if (to.equalsIgnoreCase(raidWorld) && manager.isInRaid(player.getUniqueId())) {
+            // Already in raid (party pull) — ensure other party members are also pulled
+            Party party = manager.getPartyManager().getParty(player.getUniqueId());
+            if (party != null) {
+                for (java.util.UUID mid : party.getMembers()) {
+                    if (mid.equals(player.getUniqueId())) continue;
+                    Player other = Bukkit.getPlayer(mid);
+                    if (other != null && other.isOnline() && !other.getWorld().getName().equalsIgnoreCase(raidWorld)) {
+                        // Don't pull if other is recently dead (avoid death loop)
+                        if (manager.isRecentlyDead(mid, 5000L)) continue;
+                        try {
+                            other.teleport(player.getLocation());
+                            other.sendMessage(MM.deserialize("<gray>Party pulled you to <white>" + raidWorld + "</white> with <white>" + player.getName() + "</white>.</gray>"));
+                            plugin.getLogger().info("Party pull: " + other.getName() + " -> " + player.getName() + " in " + raidWorld);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
         }
 
         // Leaving raid world to hub -> treat as extraction if in raid (and not a recent death respawn)
@@ -67,7 +87,6 @@ public final class RaidListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        // Delay one second so world is fully loaded
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!player.isOnline()) return;
             String world = player.getWorld().getName();
@@ -75,6 +94,25 @@ public final class RaidListener implements Listener {
                 boolean started = manager.startRaid(player, true);
                 if (started) {
                     plugin.getLogger().info("Auto-started raid for " + player.getName() + " (join in " + world + ")");
+                }
+            } else if (manager.isInRaid(player.getUniqueId()) && !world.equalsIgnoreCase(manager.getAutoStartWorld())) {
+                // Player is in an active raid but spawned in hub (e.g., party was pulled, they were offline) — pull to raid
+                RaidSession s = manager.getSession(player.getUniqueId());
+                if (s != null) {
+                    for (UUID mid : s.getMembers()) {
+                        if (mid.equals(player.getUniqueId())) continue;
+                        Player other = Bukkit.getPlayer(mid);
+                        if (other != null && other.isOnline() && other.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
+                            try {
+                                player.teleport(other.getLocation());
+                                player.sendMessage(MM.deserialize("<gray>Rejoined raid — pulled to party in <white>" + manager.getAutoStartWorld() + "</white>.</gray>"));
+                                // Ensure bossbar shown
+                                net.kyori.adventure.bossbar.BossBar bar = manager.getBossBarForSession(s);
+                                if (bar != null) player.showBossBar(bar);
+                            } catch (Exception ignored) {}
+                            break;
+                        }
+                    }
                 }
             }
         }, 20L);
@@ -136,7 +174,7 @@ public final class RaidListener implements Listener {
             manager.incrementDeaths(player.getUniqueId());
         }
         RaidSession session = manager.getSession(player.getUniqueId());
-        int deaths = session != null ? session.getDeaths() : 1;
+        int deaths = session != null ? session.getDeaths(player.getUniqueId()) : 1;
 
         String recapRaw = plugin.getConfig().getString("messages.death-recap",
                 "<red>Death recap: <white>You died! <gray>(Death #<deaths> this raid)</gray></white></red>");

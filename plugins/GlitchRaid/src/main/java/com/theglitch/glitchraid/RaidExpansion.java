@@ -81,12 +81,20 @@ public final class RaidExpansion {
             case "loot": {
                 RaidSession session = manager.getSession(player.getUniqueId());
                 if (session == null) return "0";
-                return String.valueOf(session.getLootValue());
+                return String.valueOf(session.getLootValue(player.getUniqueId()));
             }
             case "deaths": {
                 RaidSession session = manager.getSession(player.getUniqueId());
                 if (session == null) return "0";
-                return String.valueOf(session.getDeaths());
+                return String.valueOf(session.getDeaths(player.getUniqueId()));
+            }
+            case "party_size": {
+                RaidSession session = manager.getSession(player.getUniqueId());
+                if (session == null) {
+                    Party party = manager.getPartyManager().getParty(player.getUniqueId());
+                    return party != null ? String.valueOf(party.getSize()) : "0";
+                }
+                return String.valueOf(session.getMembers().size());
             }
             default:
                 return null;
