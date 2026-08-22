@@ -50,6 +50,10 @@
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
+            <id>placeholderapi</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
+        <repository>
             <id>jitpack</id>
             <url>https://jitpack.io</url>
         </repository>
