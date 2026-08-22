@@ -167,7 +167,7 @@ with `/glitchcontainers set <type>`.
 
 **Risk (implemented in source, live verification pending):** glitch_red is
 full-loot with the mercy rule — on death you keep **leggings + boots**
-(GlitchDeathRules), plus 30s entry invulnerability at Red Zone entry points.
+(GlitchDeathRules), shards are **account-bound** (`server/plugins/Coins/config.yml:85` `player-drop:false` etc — no shard loss on death, live reloaded 2026-08-23), plus 30s entry invulnerability at Red Zone entry points.
 glitch_pve stays keep-inventory as the training floor. Standard extract is
 configured for 30s; Fast (15s, Fast Extract Key) and Silent (10s, Rift Key)
 extraction variants are implemented in GlitchStash — VelKoth arenas must be
@@ -273,7 +273,7 @@ sudo ./plugins/GlitchHealthBar/build.sh
 sudo systemctl restart theglitch
 ```
 
-Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25) — bump there for all 13 modules. CI validate: `./scripts/build-all.sh --no-deploy`.
+Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all 13 modules. CI validate: `./scripts/build-all.sh --no-deploy`.
 
 GlitchInsurance additionally needs `lib/VaultUnlocked.jar` for its compile-time Vault API (`systemPath`) — `build-all.sh` auto-seeds it from `/opt/theglitch/server/plugins/` or `server/plugins/`.
 

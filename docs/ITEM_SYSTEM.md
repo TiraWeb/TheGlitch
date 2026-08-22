@@ -12,8 +12,9 @@
 > Oraxen item definitions/assets, GlitchItems V1 source, containers, and parts
 > of GlitchShops exist. Rift drops are wired (T2-T4 tables), Residual Glitch
 > consumers (identify/containers/elite hunt) are in source, and death rules
-> are implemented (GlitchDeathRules). Identifier NPC behavior and crafting
+> are implemented (GlitchDeathRules + Coins account-bound `player-drop:false` 2026-08-23). Identifier NPC behavior and crafting
 > (GlitchHideout workbench covers §7 recipes) still need live verification.
+> Root `pom.xml:53` now resolves PlaceholderAPI via `https://repo.extendedclip.com/content/repositories/placeholderapi/`.
 > See [`docs/STATUS.md`](STATUS.md).
 
 ---
@@ -268,7 +269,7 @@ Rough order:
 7. World population (spawners, chests, regen) — DONE in repo (2026-08-10): glitch_red SpawnAreas seeded + GlitchItems container system (Debris/Cache/Vault/Rift Vault, key consumption, regen, loot luck). In-world marking/placement is operator work.
 8. Crafting recipes via Workbench — DONE in source (2026-08-10): GlitchHideout workbench implements the §7 recipes (healing potion, base + 5 targeted-resonance blades, reveal pack, vault/rift keys, void infusion); live build/test pending.
 9. Rename pass across runtime configs and menus — not complete.
-10. Death rules (§12: keep leggings+boots in glitch_red) — DONE in repo (2026-08-06): GlitchDeathRules plugin (mercy keep + entry invulnerability). Live build/test pending.
+10. Death rules (§12: keep leggings+boots in glitch_red) — DONE in repo (2026-08-06): GlitchDeathRules plugin (mercy keep + entry invulnerability). Coins account-bound `player-drop:false` `lose-on-death:false` `drop-on-death:false` (2026-08-23 repo + live `coins reload`). Live playtest pending.
 
 ---
 

@@ -1,6 +1,6 @@
 # The Glitch - Current Status
 
-> Authoritative implementation status. Updated 2026-08-22.
+> Authoritative implementation status. Updated 2026-08-23.
 >
 > This file distinguishes repository evidence from live-server verification.
 > A source implementation or configuration is not considered launch-ready until
@@ -25,7 +25,7 @@ containers, Red Zone population, death rules, hideout progression, raid
 lifecycle, insurance, world events, and smart loot. All 11 deployable custom
 plugins plus the shared GlitchCommon library build through the root Maven
 reactor (`scripts/build-all.sh`) and are deployed on the live server with
-clean startup logs (2026-08-21/22). The main remaining gaps are in-game
+clean startup logs (2026-08-21/22, re-verified 2026-08-23 after Folia wrapper + real `PlaceholderExpansion` + shop atomicity + `PlaceholderAPI` repo fix `d488a7d` and Coins account-bound reload). The main remaining gaps are in-game
 functional playtests of the newer plugins, the Identifier NPC flow, physical
 world content, GlitchDungeons (deferred), and launch operations.
 
@@ -46,12 +46,12 @@ world content, GlitchDungeons (deferred), and launch operations.
 | Oraxen items | Configured | 18 item definitions, textures, and lore are present; Oraxen must be built/deployed on the server. |
 | GlitchItems | Implemented | Deployed and live-tested (gear rolls, `/identify`). Residual Glitch consumers added in source: loot luck applies at identify (star-luck + rarity surge), elite hunt spawns MythicMobs elites at 5+ stacks (2026-08-06); container loot-luck consumer added 2026-08-10. |
 | Loot containers | Built (playtest pending) | GlitchItems container system (2026-08-10): Debris Pile / Loot Cache / Vault / Rift Vault, per-type rarity tables, key consumption, per-block regen cooldown, loot-luck consumer, `/glitchcontainers` admin tools. Built + deployed; in-game marking and playtest remain. |
-| GlitchShops | Implemented | Deployed and live-tested (`/shop` buy/sell). Grand Bazaar NPC placement and balance tuning remain. |
+| GlitchShops | Implemented | Deployed and live-tested (`/shop` buy/sell, atomic Vault transactions 2026-08-23 — deposit-first sell + withdraw `transactionSuccess` + refund on failure). Grand Bazaar NPC placement and balance tuning remain. |
 | GlitchHealthBar | Implemented | Deployed and live-tested: floating HP bars above all hostiles (smooth follow, hit updates), `/ghb` debug tools, ShowHealth name baseline on all mobs. |
 | GlitchDungeons | Deferred (operator decision, 2026-08-03) | Party, slots, waves, timers, rewards, and GUI source exist, but configuration parsing, extraction startup, stash integration, and cleanup still need fixes. Working on the dungeon PvE world is deferred for now. (The jar happens to be deployed on the live server from an earlier build, but it is excluded from `build-all.sh` defaults.) |
 | Physical world content | Deferred | Hub facilities, dungeon shells, Red Zone POIs, and extraction structures are not reproducibly stored in Git. Container mechanic exists (2026-08-10); in-world placement of containers/spawn areas is operator work. |
-| Death rules | Built (playtest pending) | GlitchDeathRules (2026-08-06): leggings+boots mercy keep on death in glitch_red + Red Zone entry invulnerability (30s, entry-point zones, cancel-on-action, glow). Built + deployed; loads clean on live (2026-08-21). Shards-on-death verification (5.13.2) and tuning pass (5.13.3) remain. |
-| GlitchRaid | Built (playtest pending) | GlitchRaid plugin (2026-08-21): `/raid start|end|status` + `/raidadmin`, BossBar raid timer (1800s), party leader/members (max 4), loot/death recap with end summary, auto-timeout, `%glitchraid_*%` PAPI expansion. Deployed; loads clean on live (2026-08-21). |
+| Death rules | Built (playtest pending) | GlitchDeathRules (2026-08-06): leggings+boots mercy keep on death in glitch_red + Red Zone entry invulnerability (30s, entry-point zones, cancel-on-action, glow). Coins is account-bound (`server/plugins/Coins/config.yml:85` `player-drop:false` `lose-on-death:false` `drop-on-death:false` — repo + live `coins reload` 2026-08-22). Built + deployed; loads clean on live (2026-08-21, re-verified 2026-08-23). Tuning pass (5.13.3) remains. |
+| GlitchRaid | Built (playtest pending) | GlitchRaid plugin (2026-08-21, Folia-safe 2026-08-23 `FoliaScheduler.java:1`): `/raid start|end|status` + `/raidadmin`, party-of-4 with `FoliaScheduler.teleportEntity`, BossBar raid timer (1800s), loot/death per-player recap with end summary, auto-timeout, **real** `PlaceholderExpansion` `%glitchraid_*%` (`pom.xml:53` `https://repo.extendedclip.com/content/repositories/placeholderapi/` `d488a7d`). Deployed; loads clean on live (2026-08-21, re-verified 2026-08-23). |
 | GlitchInsurance | Built (playtest pending) | GlitchInsurance plugin (2026-08-21): premium 100 shards/item (max 3), 300s claim window, 60s cooldown, Vault withdraw, per-player Base64 YAML with async atomic saves; `/insurance buy|list|claim` + `/insuranceadmin`. Needs `lib/VaultUnlocked.jar` at compile (auto-seeded by build-all.sh). Deployed; loads clean on live (2026-08-21). |
 | GlitchEvents | Built (playtest pending) | GlitchEvents plugin (2026-08-22): auto-scheduler (random 20–45 min), supply drops (BARREL + loot near a random player, coordinate broadcast, timed removal), roaming bosses via MythicMobs console spawn, `/glitchevents start supply_drop|start roaming_boss|stop|reload|status`. Extraction windows stubbed/disabled by default. Deployed; loads clean on live (2026-08-22). |
 | GlitchLoot | Built (playtest pending) | GlitchLoot plugin (2026-08-22): adaptive dry-streak bonus (+2%/roll max 25% w/ decay), hourly power budget (400/h; rare 20/epic 60/legendary 150), anti-funnel cooldown (120s), EntityDeathEvent bonus drops fully guarded; `/glitchloot status|reload`. Deployed; loads clean on live (2026-08-22). |
@@ -75,18 +75,19 @@ world content, GlitchDungeons (deferred), and launch operations.
 - Cross-plugin bug audit (2026-08-10): compile-blocking Hideout type mismatch, stash merge data loss, shop sell-without-pay, hotbar overwrite, crash risks, upgrade-cost balance — all fixed in source.
 - Efficiency roadmap (2026-08-21): root parent POM + `scripts/build-all.sh` reactor builds; hot-path config caching across all plugins; async atomic saves + ticker tuning; `plugins/GlitchCommon` shared library, `scripts/lib/{preflight,gamerules}.sh` shell dedupe, GitHub Actions CI (`.github/workflows/ci.yml`), `.editorconfig`, `config-version: 1` on all plugin configs.
 - Phase 5.9 completed (2026-08-21/22): GlitchRaid + GlitchInsurance (`9f78d3a`) and GlitchEvents + GlitchLoot (`db0f69d`, lambda fix `425eb9f`). All built via the Maven reactor on the live host, deployed to `/opt/theglitch/server/plugins/`, and confirmed loading clean in `logs/latest.log` after restart.
+- Follow-up polish 2026-08-23 (`aa4c0b3` Folia `FoliaScheduler.java:1` wrapper + real `RaidExpansion extends PlaceholderExpansion` + `ShopGUI.java:375` atomic economy, `d488a7d` add `pom.xml:53` PlaceholderAPI repo `https://repo.extendedclip.com/content/repositories/placeholderapi/`): reactor 14/14 `BUILD SUCCESS`, `PlaceholderAPI-2.12.3.jar` resolved, live restart 17:28 `Vault Enabled 2.20.2` `PlaceholderAPI 2.12.3` clean; Coins switched to account-bound `player-drop:false` `lose-on-death:false` `drop-on-death:false` and reloaded live (`coins reload` 10ms).
 
 ## Highest-Priority Remaining Work
 
 1. In-game playtests on the box per docs/TESTING.md for the newer plugins:
-   GlitchRaid (`/raid`), GlitchInsurance (`/insurance`), GlitchEvents
+   GlitchRaid (`/raid` party + Folia teleport + `%glitchraid_*%` parse), GlitchInsurance (`/insurance`), GlitchEvents
    (`/glitchevents`), GlitchLoot (`/glitchloot`) — plus abilities/ultimates,
    GlitchHideout, containers, Red Zone spawn areas.
 2. Create Fast/Silent VelKoth arenas live (15s/10s) and mirror bounds into
    `extraction-variants.zones`; verify with `/extractadmin zones`.
 3. Finish the item loop: Identifier NPC flow.
-4. Anti-grief remainder: friendly-fire off everywhere, 2-min AFK kick,
-   shards account-bound vs drop-on-death resolution.
+4. Anti-grief remainder: friendly-fire off everywhere, 2-min AFK kick
+   (shards account-bound is now DONE — `server/plugins/Coins/config.yml:85` + live reload; playtest confirm no loss on death).
 5. Repair GlitchDungeons (deferred by operator; planned after the item loop).
 6. Build or provision the physical maps and dungeon/POI content.
 7. Run Bedrock, extraction, class, economy, and performance tests.

@@ -6,12 +6,13 @@
 > Item names/rarities per docs/ITEM_SYSTEM.md; merchant economy per ITEM_SYSTEM.md §11.
 
 > **Implementation status:** This is a design specification, not an as-built
-> feature list. The tables below describe intended gameplay. As of 2026-08-10:
+> feature list. The tables below describe intended gameplay. As of 2026-08-23:
 > the full ten-mob roster, class plugin (abilities + ultimates + starter kit),
 > GlitchStash (incl. Fast/Silent variants), GlitchItems (identify, Residual
 > consumers, loot containers), GlitchShops, GlitchHealthBar, GlitchDeathRules,
-> and GlitchHideout exist in source; most world content, the Identifier NPC,
-> dungeon content, and anti-grief remainder are still incomplete. See
+> GlitchRaid/Insurance/Events/Loot and GlitchHideout exist in source and are
+> deployed 2026-08-22/23 (Folia-safe, real PAPI, Coins account-bound); most world content, the Identifier NPC,
+> dungeon content, and anti-grief remainder (friendly-fire/AFK) are still incomplete. See
 > [`docs/STATUS.md`](STATUS.md).
 
 ---
@@ -382,12 +383,9 @@ mirrored into the GlitchStash config.
 |---|---|
 | **hub** | Nothing lost (safe zone). |
 | **glitch_pve** | Keep-inventory: run is lost, your items are kept. Training floor. |
-| **glitch_red** | Full loot — **with one mercy rule: you keep your leggings and boots**. Helmet, chestplate, weapons, inventory, and shards all drop. The point is danger: a corpse can always be re-geared from the legs up. |
+| **glitch_red** | Full loot — **with one mercy rule: you keep your leggings and boots**. Helmet, chestplate, weapons, inventory drop. **Shards are account-bound** (`server/plugins/Coins/config.yml:85,114` `player-drop:false` `lose-on-death:false` `drop-on-death:false` — repo + live `coins reload` 2026-08-23) and do NOT drop. The point is danger: a corpse can always be re-geared from the legs up. |
 
-The current Coins configuration drops currency as items in game worlds. The
-design decision that shards are account-bound is unresolved and must be aligned
-with the death/economy implementation before launch. Merchant sell prices are
-intended as the safety net for extracted loot.
+Coins is now account-bound; shards never drop as items on death. Merchant sell prices remain the safety net for extracted loot. Death message `death-message` is cosmetic only (amount 0).
 
 ---
 
@@ -435,11 +433,11 @@ Full merchant price table (sell < buy): docs/ITEM_SYSTEM.md §11.
 
 | Rule | Intended implementation | Current status |
 |---|---|---|
-| No spawn camping | 30-second invulnerability on entry points | Planned |
+| No spawn camping | 30-second invulnerability on entry points | Implemented in `GlitchDeathRules` — needs playtest |
 | No team killing | Friendly fire disabled in all zones | Partially configured; live verification pending |
 | No item duplication | Per-player stash, item-safe GUI handling | Core stash fixes implemented; testing pending |
 | No AFK farming | Dungeons kick after 2 minutes of inactivity | Not implemented |
-| No RMT | Shards are bound to account, not tradeable between players | Conflicts with current item-drop currency configuration |
+| No RMT | Shards are bound to account, not tradeable between players | **Implemented** `server/plugins/Coins/config.yml:85` `player-drop:false` `lose-on-death:false` `drop-on-death:false` (repo + live reload 2026-08-23) — verify no shard loss on death |
 | No exploit abuse | Weekly audit logs, automatic detection | Planned |
 
 ---
