@@ -9,6 +9,9 @@ softdepend:
   - PlaceholderAPI
   - GlitchShops
   - GlitchItems
+  - GlitchStash
+  - VelKoth
+  - Coins
 commands:
   raid:
     description: Raid lifecycle commands — start, end, status, help

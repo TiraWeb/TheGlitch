@@ -5,9 +5,12 @@ api-version: '1.21'
 description: Hideout progression for The Glitch — stations, upgrades, workbench crafting, storage
 softdepend:
   - Vault
+  - VaultUnlocked
+  - Coins
   - GlitchClasses
   - GlitchItems
   - Oraxen
+  - PlaceholderAPI
 
 commands:
   hideout:

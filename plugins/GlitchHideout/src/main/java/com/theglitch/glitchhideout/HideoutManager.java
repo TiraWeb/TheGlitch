@@ -238,12 +238,16 @@ public final class HideoutManager {
 
         int cost = station.costs()[current];
         Economy economy = economy();
-        if (economy != null) {
-            if (!economy.has(player, cost)) return UpgradeResult.SHARDS;
-            economy.withdrawPlayer(player, cost);
-        } else {
-            plugin.getLogger().warning("Vault economy unavailable — hideout upgrade for "
-                    + player.getName() + " was free.");
+        if (economy == null) {
+            plugin.getLogger().warning("Vault economy unavailable — blocking hideout upgrade for " + player.getName());
+            player.sendMessage(Component.text("Economy unavailable — try again later.", net.kyori.adventure.text.format.NamedTextColor.RED));
+            return UpgradeResult.SHARDS;
+        }
+        if (!economy.has(player, cost)) return UpgradeResult.SHARDS;
+        net.milkbowl.vault.economy.EconomyResponse resp = economy.withdrawPlayer(player, cost);
+        if (!resp.transactionSuccess()) {
+            plugin.getLogger().warning("Hideout withdraw failed for " + player.getName() + ": " + resp.errorMessage);
+            return UpgradeResult.SHARDS;
         }
 
         setLevel(uuid, station.id(), next);

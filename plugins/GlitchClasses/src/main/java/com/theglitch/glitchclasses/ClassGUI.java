@@ -442,17 +442,26 @@ public class ClassGUI implements Listener {
 
     private void handleClassReset(Player player) {
         int cost = classManager.getResetCost();
+        var economy = getEconomy();
+        if (economy == null) {
+            plugin.getLogger().warning("Vault economy unavailable — blocking class reset for " + player.getName());
+            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+            return;
+        }
         try {
-            var economy = getEconomy();
-            if (economy != null) {
-                if (!economy.has(player, cost)) {
-                    player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
-                    return;
-                }
-                economy.withdrawPlayer(player, cost);
+            if (!economy.has(player, cost)) {
+                player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
+                return;
+            }
+            var resp = economy.withdrawPlayer(player, cost);
+            if (!resp.transactionSuccess()) {
+                player.sendMessage(Component.text("Economy error: " + resp.errorMessage, NamedTextColor.RED));
+                return;
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("Vault economy not available for reset check: " + e.getMessage());
+            plugin.getLogger().warning("Vault economy error for reset check: " + e.getMessage());
+            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+            return;
         }
         classManager.resetClass(player.getUniqueId());
         classManager.applyMaxHealth(player, 0);
@@ -465,17 +474,26 @@ public class ClassGUI implements Listener {
 
     private void handleUpgrade(Player player, ClassData data) {
         int cost = classManager.getUpgradeCost(data.level());
+        var economy = getEconomy();
+        if (economy == null) {
+            plugin.getLogger().warning("Vault economy unavailable — blocking upgrade for " + player.getName());
+            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+            return;
+        }
         try {
-            var economy = getEconomy();
-            if (economy != null) {
-                if (!economy.has(player, cost)) {
-                    player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
-                    return;
-                }
-                economy.withdrawPlayer(player, cost);
+            if (!economy.has(player, cost)) {
+                player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
+                return;
+            }
+            var resp = economy.withdrawPlayer(player, cost);
+            if (!resp.transactionSuccess()) {
+                player.sendMessage(Component.text("Economy error: " + resp.errorMessage, NamedTextColor.RED));
+                return;
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("Vault economy not available for upgrade check: " + e.getMessage());
+            plugin.getLogger().warning("Vault economy error for upgrade check: " + e.getMessage());
+            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+            return;
         }
         boolean leveledUp = classManager.addXp(player.getUniqueId(), classManager.getXpForLevel(data.level() + 1));
         if (!leveledUp) return;

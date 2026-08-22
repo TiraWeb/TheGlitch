@@ -4,11 +4,14 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
+import net.milkbowl.vault.economy.Economy;
+import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Duration;
@@ -321,15 +324,93 @@ public final class RaidManager {
     }
 
     /**
+     * Called from VelKoth KothWinEvent bridge — winner's inventory and all
+     * party members' inventories are stashed before ending raid.
+     */
+    public void handleKothWin(Player winner, String kothName) {
+        if (!isInRaid(winner.getUniqueId())) return;
+        RaidSession session = activeRaids.get(winner.getUniqueId());
+        if (session != null) {
+            // Stash every party/raid member's inventory (GlitchStash handles merge)
+            for (UUID mid : new HashSet<>(session.getMembers())) {
+                Player p = Bukkit.getPlayer(mid);
+                if (p != null && p.isOnline() && p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                    try {
+                        com.theglitch.glitchstash.GlitchStash stashPlugin = com.theglitch.glitchstash.GlitchStash.getInstance();
+                        if (stashPlugin != null) {
+                            stashPlugin.getStashManager().saveStash(p.getUniqueId(), p.getName(),
+                                    p.getInventory().getContents(), p.getInventory().getArmorContents(), p.getInventory().getItemInOffHand());
+                            // Clear non-winner inventories here (winner will be cleared by GlitchStash listener)
+                            if (!mid.equals(winner.getUniqueId())) {
+                                p.getInventory().clear();
+                                p.getInventory().setArmorContents(new ItemStack[4]);
+                                p.getInventory().setItemInOffHand(null);
+                            }
+                        }
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("Failed to stash party member " + mid + " on Koth win: " + e.getMessage());
+                    }
+                }
+            }
+        }
+        plugin.getLogger().info("Handling KothWin extraction for " + winner.getName() + " (" + kothName + ") — party stashed");
+        handleExtraction(winner);
+    }
+
+    /**
      * Called when a player successfully extracts (Koth win / hub teleport).
      * Ends their raid as EXTRACTED — loot is preserved (already stashed).
      * If party, the entire raid ends together and other members are pulled to hub.
+     * Also pays per-player payout via Vault.
      */
     public void handleExtraction(Player player) {
         if (!isInRaid(player.getUniqueId())) return;
         RaidSession session = activeRaids.get(player.getUniqueId());
         Set<UUID> membersSnapshot = session != null ? new HashSet<>(session.getMembers()) : Set.of(player.getUniqueId());
         membersSnapshot.add(player.getUniqueId());
+
+        // Payout per-player before ending (so loot still available)
+        if (session != null) {
+            for (UUID mid : membersSnapshot) {
+                int myLoot = session.getLootValue(mid);
+                if (myLoot <= 0) continue;
+                int payout = (int) Math.round(myLoot * payoutMultiplier);
+                if (payout <= 0) continue;
+                Player p = Bukkit.getPlayer(mid);
+                if (p != null && p.isOnline()) {
+                    try {
+                        RegisteredServiceProvider<Economy> rsp = Bukkit.getServicesManager().getRegistration(Economy.class);
+                        if (rsp != null) {
+                            Economy econ = rsp.getProvider();
+                            if (econ != null) {
+                                EconomyResponse resp = econ.depositPlayer(p, payout);
+                                if (resp.transactionSuccess()) {
+                                    p.sendMessage(MM.deserialize("<green>+" + payout + " Shards payout for extraction! <gray>(loot " + myLoot + " ×" + payoutMultiplier + ")</gray></green>"));
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("Failed payout for " + mid + ": " + e.getMessage());
+                    }
+                } else {
+                    // Offline payout — deposit via OfflinePlayer
+                    try {
+                        RegisteredServiceProvider<Economy> rsp = Bukkit.getServicesManager().getRegistration(Economy.class);
+                        if (rsp != null && rsp.getProvider() != null) {
+                            Economy econ = rsp.getProvider();
+                            org.bukkit.OfflinePlayer offline = Bukkit.getOfflinePlayer(mid);
+                            EconomyResponse resp = econ.depositPlayer(offline, payout);
+                            if (!resp.transactionSuccess()) {
+                                plugin.getLogger().warning("Offline payout failed for " + mid + ": " + resp.errorMessage);
+                            }
+                        }
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("Offline payout error for " + mid + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
+
         endRaid(player.getUniqueId(), RaidEndReason.EXTRACTED);
         // Pull remaining party/raid members who are still in glitch_red to hub (shared extraction)
         for (UUID mid : membersSnapshot) {

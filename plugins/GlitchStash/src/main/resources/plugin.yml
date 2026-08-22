@@ -8,6 +8,10 @@ softdepend:
   - Essentials
   - GlitchItems
   - GlitchShops
+  - Vault
+  - VaultUnlocked
+  - Coins
+  - PlaceholderAPI
 
 commands:
   stash:

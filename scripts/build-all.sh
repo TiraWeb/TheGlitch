@@ -203,6 +203,25 @@ for plugin in "${SELECTED[@]}"; do
         fi
       fi
       ;;
+    GlitchRaid)
+      if [[ ! -f "${REPO_DIR}/plugins/GlitchRaid/lib/VelKoth.jar" ]]; then
+        seed_velkoth GlitchRaid || warn "Missing VelKoth.jar for GlitchRaid"
+      fi
+      for jar in GlitchStash VaultUnlocked; do
+        if [[ ! -f "${REPO_DIR}/plugins/GlitchRaid/lib/${jar}.jar" ]]; then
+          if ! seed_lib GlitchRaid "$jar"; then
+            local src2="${REPO_DIR}/plugins/${jar}/target/${jar}-1.0.0.jar"
+            if [[ -f "$src2" ]]; then
+              mkdir -p "${REPO_DIR}/plugins/GlitchRaid/lib"
+              cp -f "$src2" "${REPO_DIR}/plugins/GlitchRaid/lib/${jar}.jar"
+              log "Seeded GlitchRaid/lib/${jar}.jar from ${src2}"
+            else
+              warn "Missing ${jar}.jar for GlitchRaid"
+            fi
+          fi
+        fi
+      done
+      ;;
     GlitchInsurance)
       # systemPath dependency — must exist before compile (seeded from live server or repo)
       if [[ ! -f "${REPO_DIR}/plugins/GlitchInsurance/lib/VaultUnlocked.jar" ]]; then
@@ -230,7 +249,7 @@ done
 
 # If any inter-plugin lib is still missing, reactor parallel will race — force sequential
 needs_sequential=false
-for jar in "${REPO_DIR}/plugins/GlitchShops/lib/GlitchItems.jar" "${REPO_DIR}/plugins/GlitchStash/lib/GlitchItems.jar" "${REPO_DIR}/plugins/GlitchStash/lib/GlitchShops.jar"; do
+for jar in "${REPO_DIR}/plugins/GlitchShops/lib/GlitchItems.jar" "${REPO_DIR}/plugins/GlitchStash/lib/GlitchItems.jar" "${REPO_DIR}/plugins/GlitchStash/lib/GlitchShops.jar" "${REPO_DIR}/plugins/GlitchRaid/lib/GlitchStash.jar" "${REPO_DIR}/plugins/GlitchRaid/lib/VelKoth.jar"; do
   if [[ ! -f "$jar" ]]; then
     # Check if respective plugin is in SELECTED and would provide it
     needs_sequential=true

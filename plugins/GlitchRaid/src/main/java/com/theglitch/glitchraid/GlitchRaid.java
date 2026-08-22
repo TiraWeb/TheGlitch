@@ -24,6 +24,21 @@ public final class GlitchRaid extends JavaPlugin {
 
         // Register listeners
         Bukkit.getPluginManager().registerEvents(new RaidListener(this, raidManager), this);
+        // VelKoth bridge — only if VelKoth present, to avoid NoClassDefFoundError when hard import missing
+        if (Bukkit.getPluginManager().getPlugin("VelKoth") != null) {
+            try {
+                Class<?> listenerClass = Class.forName("com.theglitch.glitchraid.RaidExtractionListener");
+                Object listener = listenerClass.getDeclaredConstructor(GlitchRaid.class, RaidManager.class).newInstance(this, raidManager);
+                Bukkit.getPluginManager().registerEvents((org.bukkit.event.Listener) listener, this);
+                getLogger().info("VelKoth bridge registered — KothWinEvent will trigger raid extraction.");
+            } catch (ClassNotFoundException e) {
+                getLogger().warning("VelKoth found but RaidExtractionListener class not found: " + e.getMessage());
+            } catch (Exception e) {
+                getLogger().warning("Failed to register VelKoth bridge: " + e.getMessage());
+            }
+        } else {
+            getLogger().info("VelKoth not found — raid extraction will use world-change fallback only.");
+        }
 
         // Register commands
         if (getCommand("raid") != null) {

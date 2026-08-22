@@ -82,7 +82,7 @@ mob-multiplier:
   'minecraft:warden': 20
 
 prevent-splits: true
-player-drop: true
+player-drop: false
 prevent-alts: true
 
 # No mining drops — this is an extraction game, not a mining game
@@ -111,13 +111,13 @@ disable-mythic-mob-handling: true
 #  |   Player Death      |
 #  +---------------------+
 
-# Shards drop on death in glitch_pve and glitch_red (hub is disabled entirely)
-lose-on-death: true
+# Shards are account-bound (GAME_DESIGN §9) — do not drop on death
+lose-on-death: false
 money-taken:
   from: 0
   to: 0
 take-percentage: false
-drop-on-death: true
+drop-on-death: false
 
 death-message: '<down> <+red>↓ +white{amount} <shard>Shard</shard> lost'
 death-message-position: 'subtitle'

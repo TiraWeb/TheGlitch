@@ -24,6 +24,27 @@
             <artifactId>paper-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.velmaxstudios</groupId>
+            <artifactId>VelKoth</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/VelKoth.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.theglitch</groupId>
+            <artifactId>GlitchStash</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/GlitchStash.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>net.milkbowl.vault</groupId>
+            <artifactId>VaultAPI</artifactId>
+            <version>${vault.version}</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/VaultUnlocked.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>
