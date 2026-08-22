@@ -1,30 +1,23 @@
 package com.theglitch.glitchraid;
 
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 /**
- * Optional PlaceholderAPI expansion for GlitchRaid.
+ * PlaceholderAPI expansion for GlitchRaid.
  * <p>
  * Provides placeholders:
  * <ul>
  *   <li>%glitchraid_in_raid% — true/false</li>
  *   <li>%glitchraid_time_left% — seconds remaining (or 0 if not in raid)</li>
+ *   <li>%glitchraid_time_left_formatted% — mm:ss (or 00:00 if not in raid)</li>
  *   <li>%glitchraid_loot% — current loot value (or 0 if not in raid)</li>
+ *   <li>%glitchraid_deaths% — death count this raid (or 0)</li>
+ *   <li>%glitchraid_party_size% — party/raid size (or 0)</li>
  * </ul>
- * <p>
- * This class intentionally does NOT hard-depend on PlaceholderAPI at compile time
- * to keep the MVP free of system dependencies (no lib/ PlaceholderAPI.jar required).
- * If PlaceholderAPI is present at runtime, GlitchRaid will attempt to register
- * this expansion via reflection; otherwise placeholders are available via direct calls.
- * <p>
- * To enable full PlaceholderAPI integration with compile-time safety, replace this
- * class with one extending {@code me.clip.placeholderapi.expansion.PlaceholderExpansion}
- * and add PlaceholderAPI to the pom as a provided/system dependency:
- * <pre>
- * public final class RaidExpansion extends PlaceholderExpansion { ... }
- * </pre>
  */
-public final class RaidExpansion {
+public final class RaidExpansion extends PlaceholderExpansion {
 
     private final GlitchRaid plugin;
     private final RaidManager manager;
@@ -34,35 +27,62 @@ public final class RaidExpansion {
         this.manager = manager;
     }
 
+    @Override
     public String getIdentifier() {
         return "glitchraid";
     }
 
+    @Override
     public String getAuthor() {
         return "TheGlitch";
     }
 
+    @Override
     public String getVersion() {
         return plugin.getDescription().getVersion();
     }
 
+    @Override
     public boolean persist() {
         return true;
     }
 
-    /**
-     * Handles placeholder requests. Matches PlaceholderAPI's
-     * {@code onPlaceholderRequest(Player, String)} signature.
-     *
-     * @param player     the player, may be null
-     * @param identifier the placeholder identifier without prefix (e.g. "in_raid")
-     * @return placeholder value or null if unknown
-     */
+    @Override
+    public boolean canRegister() {
+        return true;
+    }
+
+    @Override
+    public String onRequest(OfflinePlayer offlinePlayer, String identifier) {
+        if (offlinePlayer == null) {
+            return "";
+        }
+        if (offlinePlayer instanceof Player player) {
+            return onPlaceholderRequest(player, identifier);
+        }
+        // Offline player: limited placeholders (in_raid false, others 0)
+        String id = identifier.toLowerCase(java.util.Locale.ROOT);
+        switch (id) {
+            case "in_raid":
+                return String.valueOf(manager.isInRaid(offlinePlayer.getUniqueId()));
+            case "time_left":
+            case "loot":
+            case "deaths":
+            case "party_size":
+                return "0";
+            case "time_left_formatted":
+                return "00:00";
+            default:
+                return null;
+        }
+    }
+
+    @Override
     public String onPlaceholderRequest(Player player, String identifier) {
         if (player == null) {
             return "";
         }
-        String id = identifier.toLowerCase();
+        String id = identifier.toLowerCase(java.util.Locale.ROOT);
         switch (id) {
             case "in_raid":
                 return String.valueOf(manager.isInRaid(player.getUniqueId()));
@@ -98,44 +118,6 @@ public final class RaidExpansion {
             }
             default:
                 return null;
-        }
-    }
-
-    /**
-     * Attempts to register this expansion with PlaceholderAPI via reflection.
-     * Avoids hard compile dependency on PlaceholderAPI.
-     *
-     * @return true if registration succeeded via reflection, false otherwise
-     */
-    public boolean register() {
-        try {
-            Class<?> expansionClass = Class.forName("me.clip.placeholderapi.expansion.PlaceholderExpansion");
-            // If PlaceholderAPI is present, we cannot directly cast this class to PlaceholderExpansion
-            // without compile-time inheritance. For MVP we log availability and return false;
-            // a real integration would require this class to extend PlaceholderExpansion.
-            // We attempt to check if PlaceholderAPI's registration method exists.
-            Class<?> placeholderAPIClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
-            // Try to find register method — presence indicates API is available
-            boolean hasRegister = false;
-            for (java.lang.reflect.Method m : placeholderAPIClass.getMethods()) {
-                if (m.getName().equalsIgnoreCase("registerPlaceholderHook") || m.getName().equalsIgnoreCase("registerExpansion")) {
-                    hasRegister = true;
-                    break;
-                }
-            }
-            if (hasRegister) {
-                plugin.getLogger().info("PlaceholderAPI detected — RaidExpansion ready (placeholders: %glitchraid_in_raid%, %glitchraid_time_left%, %glitchraid_loot%).");
-                plugin.getLogger().info("Note: MVP RaidExpansion is reflection-based; for full PAPI integration, make RaidExpansion extend PlaceholderExpansion and add compile dependency.");
-                // Return false to indicate reflection-based MVP (no actual registration), but log as available
-                return false;
-            }
-            return false;
-        } catch (ClassNotFoundException e) {
-            plugin.getLogger().info("PlaceholderAPI not found — GlitchRaid placeholders disabled.");
-            return false;
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to check PlaceholderAPI expansion registration: " + e.getMessage());
-            return false;
         }
     }
 

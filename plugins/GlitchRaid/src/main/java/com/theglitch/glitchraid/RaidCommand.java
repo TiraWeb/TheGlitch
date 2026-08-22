@@ -163,7 +163,7 @@ public final class RaidCommand implements CommandExecutor {
                                 Player otherP = Bukkit.getPlayer(other);
                                 if (otherP != null && otherP.isOnline() && otherP.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
                                     try {
-                                        player.teleport(otherP.getLocation());
+                                        FoliaScheduler.teleportEntity(player, plugin, otherP.getLocation());
                                         player.showBossBar(manager.getBossBarForSession(session));
                                     } catch (Exception ignored) {}
                                     break;

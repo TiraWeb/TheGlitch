@@ -124,10 +124,21 @@ public final class HideoutManager {
                     try {
                         int lvl = Integer.parseInt(level);
                         String val = req.getString(level, "");
-                        requires.put(lvl, val);
-                        if (val != null && !val.isEmpty() && !val.contains(":")) {
-                            plugin.getLogger().warning("Station '" + id + "' prerequisite '" + val + "' at level " + lvl + " missing ':' — format should be station:level");
+                        if (val != null) val = val.trim();
+                        if (val != null && !val.isEmpty()) {
+                            String[] checkParts = val.split(":", -1);
+                            boolean malformed = checkParts.length != 2 || checkParts[0].isBlank() || checkParts[1].isBlank();
+                            if (malformed) {
+                                plugin.getLogger().warning("Station '" + id + "' prerequisite '" + val + "' at level " + lvl + " is malformed — expected 'station:level'; upgrade to level " + lvl + " will be blocked until config is fixed.");
+                            } else {
+                                try {
+                                    Integer.parseInt(checkParts[1].trim());
+                                } catch (NumberFormatException nfe) {
+                                    plugin.getLogger().warning("Station '" + id + "' prerequisite '" + val + "' at level " + lvl + " has non-numeric level '" + checkParts[1] + "' — upgrade to level " + lvl + " will be blocked.");
+                                }
+                            }
                         }
+                        requires.put(lvl, val == null ? "" : val);
                     } catch (NumberFormatException e) {
                         plugin.getLogger().warning("Station '" + id + "' invalid prerequisite level key '" + level + "' — ignored.");
                     }
@@ -223,16 +234,25 @@ public final class HideoutManager {
         int next = current + 1;
         String req = station.requires().get(next);
         if (req != null && !req.isEmpty()) {
-            String[] parts = req.split(":");
-            if (parts.length == 2) {
-                try {
-                    if (getLevel(uuid, parts[0]) < Integer.parseInt(parts[1])) {
-                        return UpgradeResult.PREREQ;
-                    }
-                } catch (NumberFormatException e) {
-                    plugin.getLogger().warning("Bad prerequisite '" + req + "' for station " + station.id());
+            req = req.trim();
+            String[] parts = req.split(":", 2);
+            if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+                plugin.getLogger().warning("Bad prerequisite '" + req + "' for station " + station.id() + " at level " + next + " — expected 'station:level'; blocking upgrade.");
+                return UpgradeResult.PREREQ;
+            }
+            try {
+                String depStation = parts[0].trim();
+                int needed = Integer.parseInt(parts[1].trim());
+                if (needed < 0) {
+                    plugin.getLogger().warning("Bad prerequisite '" + req + "' for station " + station.id() + " — negative level " + needed + "; blocking upgrade.");
                     return UpgradeResult.PREREQ;
                 }
+                if (getLevel(uuid, depStation) < needed) {
+                    return UpgradeResult.PREREQ;
+                }
+            } catch (NumberFormatException e) {
+                plugin.getLogger().warning("Bad prerequisite '" + req + "' for station " + station.id() + ": " + e.getMessage() + "; blocking upgrade.");
+                return UpgradeResult.PREREQ;
             }
         }
 

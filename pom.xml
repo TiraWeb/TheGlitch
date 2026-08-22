@@ -18,7 +18,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>
         <vault.version>1.7</vault.version>
-        <papi.version>2.11.10</papi.version>
+        <papi.version>2.12.3</papi.version>
         <oraxen.version>1.218.0</oraxen.version>
         <fancynpcs.version>2.0.0</fancynpcs.version>
         <mythicmobs.version>5.13.0</mythicmobs.version>

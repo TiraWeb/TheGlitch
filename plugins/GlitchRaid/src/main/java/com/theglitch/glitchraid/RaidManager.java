@@ -12,7 +12,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -36,7 +35,7 @@ public final class RaidManager {
 
     private final Map<UUID, RaidSession> activeRaids = new ConcurrentHashMap<>();
     private final Map<UUID, BossBar> bossBars = new ConcurrentHashMap<>();
-    private final Map<UUID, BukkitTask> timers = new ConcurrentHashMap<>();
+    private final Map<UUID, FoliaScheduler.Cancellable> timers = new ConcurrentHashMap<>();
     private final Set<UUID> timeoutVictims = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Long> lastDeathMillis = new ConcurrentHashMap<>();
 
@@ -223,17 +222,18 @@ public final class RaidManager {
             }
         }
 
-        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> tick(uuid), 20L, 20L);
+        FoliaScheduler.Cancellable task = FoliaScheduler.runAtFixedRateGlobal(plugin, () -> tick(uuid), 20L, 20L);
         timers.put(uuid, task);
 
-        // Teleport party members not yet in the raid world to the leader
+        // Teleport party members not yet in the raid world to the leader (Folia-safe)
         if (party != null) {
             for (UUID mid : members) {
                 if (mid.equals(uuid)) continue;
                 Player p = Bukkit.getPlayer(mid);
                 if (p != null && p.isOnline() && !p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                     try {
-                        p.teleport(leader.getLocation());
+                        org.bukkit.Location dest = leader.getLocation();
+                        FoliaScheduler.teleportEntity(p, plugin, dest);
                         p.sendMessage(MM.deserialize("<gray>Teleported to raid leader <white>" + leader.getName() + "</white> in <white>" + autoStartWorld + "</white>.</gray>"));
                         plugin.getLogger().info("Auto-teleported party member " + p.getName() + " to raid leader " + leader.getName() + " in " + autoStartWorld);
                     } catch (Exception e) {
@@ -268,7 +268,7 @@ public final class RaidManager {
                     p.hideBossBar(bar);
                 }
             }
-            BukkitTask task = timers.remove(memberId);
+            FoliaScheduler.Cancellable task = timers.remove(memberId);
             if (task != null) {
                 task.cancel();
             }
@@ -286,7 +286,7 @@ public final class RaidManager {
                 leaderPlayer.hideBossBar(leaderBar);
             }
         }
-        BukkitTask leaderTask = timers.remove(leaderId);
+        FoliaScheduler.Cancellable leaderTask = timers.remove(leaderId);
         if (leaderTask != null) {
             leaderTask.cancel();
         }
@@ -316,7 +316,7 @@ public final class RaidManager {
 
         final RaidSession summarySession = session;
         final RaidEndReason summaryReason = reason;
-        Bukkit.getScheduler().runTaskLater(plugin, () -> sendSummary(summarySession, summaryReason), summaryDelayTicks);
+        FoliaScheduler.runLaterGlobal(plugin, () -> sendSummary(summarySession, summaryReason), summaryDelayTicks);
 
         String leaderName = Bukkit.getOfflinePlayer(leaderId).getName();
         if (leaderName == null) leaderName = leaderId.toString();
@@ -417,7 +417,7 @@ public final class RaidManager {
             if (mid.equals(player.getUniqueId())) continue; // winner already teleported by GlitchStash
             Player other = Bukkit.getPlayer(mid);
             if (other != null && other.isOnline() && other.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                FoliaScheduler.runLaterGlobal(plugin, () -> {
                     Player p2 = Bukkit.getPlayer(mid);
                     if (p2 != null && p2.isOnline() && p2.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                         teleportToHub(p2);
@@ -463,7 +463,7 @@ public final class RaidManager {
                 p.hideBossBar(bar);
             }
         }
-        BukkitTask task = timers.remove(uuid);
+        FoliaScheduler.Cancellable task = timers.remove(uuid);
         if (task != null) {
             task.cancel();
         }
@@ -475,7 +475,7 @@ public final class RaidManager {
                 Player lp = Bukkit.getPlayer(leaderId);
                 if (lp != null) lp.hideBossBar(leaderBar);
             }
-            BukkitTask leaderTask = timers.remove(leaderId);
+            FoliaScheduler.Cancellable leaderTask = timers.remove(leaderId);
             if (leaderTask != null) leaderTask.cancel();
         }
         plugin.getLogger().info("Player " + uuid + " removed from raid (quit). Remaining members: " + session.getMembers().size());
@@ -555,7 +555,7 @@ public final class RaidManager {
                 Player p = Bukkit.getPlayer(leaderId);
                 if (p != null) p.hideBossBar(bar);
             }
-            BukkitTask task = timers.remove(leaderId);
+            FoliaScheduler.Cancellable task = timers.remove(leaderId);
             if (task != null) task.cancel();
             return;
         }
@@ -660,7 +660,7 @@ public final class RaidManager {
             }
             final UUID victimId = memberId;
             timeoutVictims.add(victimId);
-            Bukkit.getScheduler().runTaskLater(plugin, () -> timeoutVictims.remove(victimId), 600L);
+            FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
             String killedRaw = plugin.getConfig().getString("messages.raid-timeout-killed",
                     "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
             try { p.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
@@ -676,7 +676,7 @@ public final class RaidManager {
             } catch (Exception e) {
                 try { p.damage(1000.0); } catch (Exception ignored) {}
             }
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            FoliaScheduler.runLaterGlobal(plugin, () -> {
                 Player pp = Bukkit.getPlayer(victimId);
                 if (pp != null && pp.isOnline() && pp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                     teleportToHub(pp);
@@ -777,7 +777,7 @@ public final class RaidManager {
     }
 
     public void shutdown() {
-        for (Map.Entry<UUID, BukkitTask> entry : timers.entrySet()) {
+        for (Map.Entry<UUID, FoliaScheduler.Cancellable> entry : timers.entrySet()) {
             try {
                 entry.getValue().cancel();
             } catch (Exception ignored) {

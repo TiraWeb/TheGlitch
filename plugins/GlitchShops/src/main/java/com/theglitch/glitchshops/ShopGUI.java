@@ -388,7 +388,27 @@ public final class ShopGUI implements Listener {
             return;
         }
         int amount = click.isShiftClick() ? item.getAmount() : 1;
+        if (amount <= 0) return;
         int total = price * amount;
+        ItemStack snapshot = item.clone();
+        snapshot.setAmount(amount);
+
+        net.milkbowl.vault.economy.EconomyResponse depResp;
+        try {
+            depResp = economy.depositPlayer(player, total);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Shop sell deposit failed for " + player.getName() + ": " + e.getMessage());
+            message(player, "denied");
+            sound(player, false);
+            return;
+        }
+        if (depResp == null || !depResp.transactionSuccess()) {
+            String err = depResp != null ? depResp.errorMessage : "null response";
+            plugin.getLogger().warning("Shop sell deposit failed for " + player.getName() + ": " + err + " amount=" + total);
+            message(player, "denied");
+            sound(player, false);
+            return;
+        }
 
         int remaining = item.getAmount() - amount;
         if (remaining <= 0) {
@@ -399,10 +419,8 @@ public final class ShopGUI implements Listener {
             player.getInventory().setItem(slot, copy);
         }
 
-        economy.depositPlayer(player, total);
-
         message(player, "sold", "{amount}", String.valueOf(amount),
-                "{item}", plainName(item), "{price}", String.valueOf(total));
+                "{item}", plainName(snapshot), "{price}", String.valueOf(total));
         sound(player, true);
         refreshBalance(player);
     }
@@ -412,50 +430,133 @@ public final class ShopGUI implements Listener {
         if (cachedEconomy == null) cachedEconomy = economy;
         if (economy == null) {
             message(player, "denied");
+            sound(player, false);
             return;
         }
         int total = price * amount;
-        if (!economy.has(player, total)) {
+        try {
+            if (!economy.has(player, total)) {
+                message(player, "not-enough-shards", "{price}", String.valueOf(total));
+                sound(player, false);
+                return;
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Shop buy has() check failed for " + player.getName() + ": " + e.getMessage());
+            message(player, "denied");
+            sound(player, false);
+            return;
+        }
+        net.milkbowl.vault.economy.EconomyResponse withdrawResp;
+        try {
+            withdrawResp = economy.withdrawPlayer(player, total);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Shop buy withdraw failed for " + player.getName() + ": " + e.getMessage());
+            message(player, "denied");
+            sound(player, false);
+            return;
+        }
+        if (withdrawResp == null || !withdrawResp.transactionSuccess()) {
+            String err = withdrawResp != null ? withdrawResp.errorMessage : "null response";
+            plugin.getLogger().warning("Shop buy withdraw failed for " + player.getName() + ": " + err + " cost=" + total);
             message(player, "not-enough-shards", "{price}", String.valueOf(total));
             sound(player, false);
             return;
         }
-        economy.withdrawPlayer(player, total);
 
         ItemStack bought;
         if (gearSlot >= 0) {
+            if (gearSlot < 0 || gearSlot >= shopManager.getGearStock().size()) {
+                plugin.getLogger().warning("Shop buy failed: gear slot " + gearSlot + " out of range for " + player.getName() + " — refunding " + total);
+                refundDeposit(economy, player, total);
+                message(player, "denied");
+                sound(player, false);
+                return;
+            }
             ShopManager.GearStockEntry entry = shopManager.getGearStock().get(gearSlot);
-            bought = entry == null ? null : entry.item().clone();
+            if (entry == null || entry.item() == null) {
+                plugin.getLogger().warning("Shop buy failed: gear slot " + gearSlot + " empty for " + player.getName() + " — refunding " + total);
+                refundDeposit(economy, player, total);
+                message(player, "denied");
+                sound(player, false);
+                return;
+            }
+            bought = entry.item().clone();
         } else {
+            if (itemId == null) {
+                plugin.getLogger().warning("Shop buy failed: null itemId for " + player.getName() + " — refunding " + total);
+                refundDeposit(economy, player, total);
+                message(player, "denied");
+                sound(player, false);
+                return;
+            }
             try {
                 ItemBuilder builder = OraxenItems.getItemById(itemId);
                 if (builder == null) {
-                    economy.depositPlayer(player, total);
+                    plugin.getLogger().warning("Shop buy failed: unknown Oraxen item " + itemId + " for " + player.getName() + " — refunding " + total);
+                    refundDeposit(economy, player, total);
+                    message(player, "denied");
+                    sound(player, false);
                     return;
                 }
                 bought = builder.build().clone();
                 bought.setAmount(amount);
             } catch (Exception e) {
-                economy.depositPlayer(player, total);
                 plugin.getLogger().warning("Failed to build Oraxen item " + itemId + ": " + e.getMessage());
+                refundDeposit(economy, player, total);
+                message(player, "denied");
+                sound(player, false);
                 return;
             }
         }
         if (bought == null) {
-            economy.depositPlayer(player, total);
+            plugin.getLogger().warning("Shop buy failed: bought is null for " + player.getName() + " — refunding " + total);
+            refundDeposit(economy, player, total);
+            message(player, "denied");
+            sound(player, false);
             return;
         }
 
-        if (player.getInventory().firstEmpty() == -1) {
-            player.getWorld().dropItem(player.getLocation(), bought);
-            message(player, "full-inventory");
-        } else {
-            player.getInventory().addItem(bought);
-            message(player, "bought", "{amount}", String.valueOf(amount),
-                    "{item}", plainName(bought), "{price}", String.valueOf(total));
+        try {
+            if (player.getInventory().firstEmpty() == -1) {
+                player.getWorld().dropItem(player.getLocation(), bought);
+                message(player, "full-inventory");
+            } else {
+                java.util.Map<Integer, ItemStack> leftover = player.getInventory().addItem(bought);
+                if (!leftover.isEmpty()) {
+                    for (ItemStack left : leftover.values()) {
+                        player.getWorld().dropItem(player.getLocation(), left);
+                    }
+                    message(player, "full-inventory");
+                } else {
+                    message(player, "bought", "{amount}", String.valueOf(amount),
+                            "{item}", plainName(bought), "{price}", String.valueOf(total));
+                }
+            }
+            sound(player, true);
+            refreshBalance(player);
+        } catch (Exception e) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING, "Failed to give bought item to " + player.getName() + " — refunding " + total, e);
+            refundDeposit(economy, player, total);
+            try {
+                player.getWorld().dropItem(player.getLocation(), bought);
+                message(player, "full-inventory");
+            } catch (Exception ex) {
+                plugin.getLogger().warning("Failed to drop fallback item for " + player.getName() + ": " + ex.getMessage());
+            }
+            refreshBalance(player);
         }
-        sound(player, true);
-        refreshBalance(player);
+    }
+
+    private void refundDeposit(Economy economy, Player player, int amount) {
+        try {
+            net.milkbowl.vault.economy.EconomyResponse resp = economy.depositPlayer(player, amount);
+            if (resp == null || !resp.transactionSuccess()) {
+                String err = resp != null ? resp.errorMessage : "null response";
+                plugin.getLogger().warning("CRITICAL: refund deposit failed for " + player.getName() + ": " + err + " amount=" + amount + " — shards may be lost, needs manual correction.");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("CRITICAL: refund deposit exception for " + player.getName() + ": " + e.getMessage() + " amount=" + amount);
+        }
     }
 
     private void refreshBalance(Player player) {

@@ -52,16 +52,14 @@ public final class GlitchRaid extends JavaPlugin {
             getLogger().warning("Command 'raidadmin' not found in plugin.yml — check registration.");
         }
 
-        // PlaceholderAPI expansion (optional, reflection-based to avoid hard compile dep)
+        // PlaceholderAPI expansion
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             try {
                 RaidExpansion expansion = new RaidExpansion(this, raidManager);
-                boolean registered = expansion.register();
-                if (registered) {
+                if (expansion.register()) {
                     getLogger().info("PlaceholderAPI expansion registered (%glitchraid_*)");
                 } else {
-                    // MVP: reflection-based check already logged availability
-                    getLogger().info("PlaceholderAPI found — placeholders %glitchraid_in_raid%, %glitchraid_time_left%, %glitchraid_loot% available via RaidExpansion.");
+                    getLogger().warning("PlaceholderAPI expansion failed to register.");
                 }
             } catch (Exception e) {
                 getLogger().warning("Failed to register PlaceholderAPI expansion: " + e.getMessage());

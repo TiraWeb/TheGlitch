@@ -59,7 +59,7 @@ public final class RaidListener implements Listener {
                         // Don't pull if other is recently dead (avoid death loop)
                         if (manager.isRecentlyDead(mid, 5000L)) continue;
                         try {
-                            other.teleport(player.getLocation());
+                            FoliaScheduler.teleportEntity(other, plugin, player.getLocation());
                             other.sendMessage(MM.deserialize("<gray>Party pulled you to <white>" + raidWorld + "</white> with <white>" + player.getName() + "</white>.</gray>"));
                             plugin.getLogger().info("Party pull: " + other.getName() + " -> " + player.getName() + " in " + raidWorld);
                         } catch (Exception ignored) {}
@@ -75,7 +75,7 @@ public final class RaidListener implements Listener {
                 return;
             }
             // Give GlitchStash a moment to have saved the stash on KothWinEvent; delay raid end slightly
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            FoliaScheduler.runLaterGlobal(plugin, () -> {
                 if (manager.isInRaid(player.getUniqueId())) {
                     manager.handleExtraction(player);
                     plugin.getLogger().info("Raid extraction detected for " + player.getName() + " (" + from + " -> " + to + ")");
@@ -87,7 +87,7 @@ public final class RaidListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        FoliaScheduler.runLaterGlobal(plugin, () -> {
             if (!player.isOnline()) return;
             String world = player.getWorld().getName();
             if (world.equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
@@ -104,7 +104,7 @@ public final class RaidListener implements Listener {
                         Player other = Bukkit.getPlayer(mid);
                         if (other != null && other.isOnline() && other.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
                             try {
-                                player.teleport(other.getLocation());
+                                FoliaScheduler.teleportEntity(player, plugin, other.getLocation());
                                 player.sendMessage(MM.deserialize("<gray>Rejoined raid — pulled to party in <white>" + manager.getAutoStartWorld() + "</white>.</gray>"));
                                 // Ensure bossbar shown
                                 net.kyori.adventure.bossbar.BossBar bar = manager.getBossBarForSession(s);
@@ -132,9 +132,9 @@ public final class RaidListener implements Listener {
             } catch (Exception ignored) {
             }
             // Clear flag after a tick
-            Bukkit.getScheduler().runTaskLater(plugin, () -> manager.clearTimeoutVictim(player.getUniqueId()), 20L);
+            FoliaScheduler.runLaterGlobal(plugin, () -> manager.clearTimeoutVictim(player.getUniqueId()), 20L);
             // Ensure bossbar hidden and message
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            FoliaScheduler.runLaterGlobal(plugin, () -> {
                 if (player.isOnline()) {
                     String killedRaw = plugin.getConfig().getString("messages.raid-timeout-killed",
                             "<dark_red><bold>The Glitch consumed you.</bold></dark_red>");
@@ -147,7 +147,7 @@ public final class RaidListener implements Listener {
             if (respawn != null && respawn.getWorld() != null) {
                 String respawnWorld = respawn.getWorld().getName();
                 if (respawnWorld.equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    FoliaScheduler.runLaterGlobal(plugin, () -> {
                         if (!player.isOnline()) return;
                         if (player.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
                             boolean started = manager.startRaid(player, true);

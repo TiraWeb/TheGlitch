@@ -306,11 +306,23 @@ public final class HideoutGUI implements Listener {
             case MAXED -> player.sendMessage(plugin.getComponent("station-maxed", "<station>", station.id()));
             case PREREQ -> {
                 String req = station.requires().get(next);
-                if (req == null || req.isEmpty()) return;
-                String[] parts = req.split(":");
+                if (req == null || req.isEmpty()) {
+                    player.sendMessage(plugin.getComponent("prereq-missing",
+                            "<station>", "unknown",
+                            "<level>", "?"));
+                    return;
+                }
+                String[] parts = req.split(":", 2);
+                if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+                    plugin.getLogger().warning("Displaying malformed prerequisite '" + req + "' for station " + station.id() + " at level " + next);
+                    player.sendMessage(plugin.getComponent("prereq-missing",
+                            "<station>", parts.length > 0 && !parts[0].isBlank() ? parts[0].trim() : "unknown",
+                            "<level>", parts.length == 2 && !parts[1].isBlank() ? parts[1].trim() : "?"));
+                    return;
+                }
                 player.sendMessage(plugin.getComponent("prereq-missing",
-                        "<station>", parts[0],
-                        "<level>", parts[1]));
+                        "<station>", parts[0].trim(),
+                        "<level>", parts[1].trim()));
             }
             case SHARDS -> player.sendMessage(plugin.getComponent("not-enough-shards",
                     "<cost>", String.valueOf(station.costs()[current])));
