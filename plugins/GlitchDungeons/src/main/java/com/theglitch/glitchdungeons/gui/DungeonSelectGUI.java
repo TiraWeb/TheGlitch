@@ -16,53 +16,56 @@ import java.util.List;
 
 public class DungeonSelectGUI implements Listener {
     private final GlitchDungeons plugin;
-    private static final String TITLE = "Select Dungeon";
+    private static final String TITLE = "<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>SELECT DUNGEON</bold></gradient> </font><font:minecraft:default>\uE049</font>";
+    private static final net.kyori.adventure.text.minimessage.MiniMessage MM = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage();
 
     public DungeonSelectGUI(GlitchDungeons plugin) {
         this.plugin = plugin;
     }
 
     public void open(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 27, TITLE);
+        Inventory gui = Bukkit.createInventory(null, 45, MM.deserialize(TITLE));
 
-        // Tier 1
-        gui.setItem(10, createItem(Material.STONE, "§aTier 1 - Corrupted Ruins",
-            "§7Waves: 3 | Time: 10min",
-            "§7Rewards: §e50+ Shards",
+        // Tier 1 — centered row
+        gui.setItem(19, createItem(Material.STONE, "<green><bold>Tier 1 — Corrupted Ruins</bold></green>",
+            "<gray>Waves: 3  •  Time: 10 min</gray>",
+            "<gray>Rewards: <gold>50+ Shards</gold></gray>",
             "",
-            "§aClick to join"));
+            "<yellow>Click to join</yellow>"));
 
         // Tier 2
-        gui.setItem(12, createItem(Material.IRON_BLOCK, "§bTier 2 - Fractured Labs",
-            "§7Waves: 4 | Time: 15min",
-            "§7Rewards: §e100+ Shards",
+        gui.setItem(21, createItem(Material.IRON_BLOCK, "<aqua><bold>Tier 2 — Fractured Labs</bold></aqua>",
+            "<gray>Waves: 4  •  Time: 15 min</gray>",
+            "<gray>Rewards: <gold>100+ Shards</gold></gray>",
             "",
-            "§bClick to join"));
+            "<yellow>Click to join</yellow>"));
 
         // Tier 3
-        gui.setItem(14, createItem(Material.DIAMOND_BLOCK, "§dTier 3 - Glitch Core",
-            "§7Waves: 5 | Time: 20min",
-            "§7Rewards: §e200+ Shards",
+        gui.setItem(23, createItem(Material.DIAMOND_BLOCK, "<light_purple><bold>Tier 3 — Glitch Core</bold></light_purple>",
+            "<gray>Waves: 5  •  Time: 20 min</gray>",
+            "<gray>Rewards: <gold>200+ Shards</gold></gray>",
             "",
-            "§dClick to join"));
+            "<yellow>Click to join</yellow>"));
 
         // Tier 4
-        gui.setItem(16, createItem(Material.NETHERITE_BLOCK, "§4Tier 4 - The Abyss",
-            "§7Waves: 5 | Time: 20min",
-            "§7Rewards: §e400+ Shards",
+        gui.setItem(25, createItem(Material.NETHERITE_BLOCK, "<red><bold>Tier 4 — The Abyss</bold></red>",
+            "<gray>Waves: 5  •  Time: 20 min</gray>",
+            "<gray>Rewards: <gold>400+ Shards</gold></gray>",
             "",
-            "§4Click to join"));
+            "<yellow>Click to join</yellow>"));
 
-        // Info item
-        gui.setItem(4, createItem(Material.BOOK, "§6Dungeon Info",
-            "§7Form a party with §e/p invite <player>",
-            "§7Each tier has unique waves and rewards",
-            "§7Complete all waves and extract for loot!"));
+        // Info item top center
+        gui.setItem(4, createItem(Material.BOOK, "<gold><bold>Dungeon Info</bold></gold>",
+            "<gray>Form a party with <yellow>/p invite &lt;player&gt;</yellow></gray>",
+            "<gray>Each tier has unique waves and rewards.</gray>",
+            "<gray>Complete all waves and extract for loot!</gray>"));
+        gui.setItem(40, createItem(Material.BARRIER, "<red><bold>Close</bold></red>",
+            "<gray>Close this menu.</gray>"));
 
-        // Filler glass
-        for (int i = 0; i < 27; i++) {
+        // Filler glass — themed gray, not black
+        for (int i = 0; i < 45; i++) {
             if (gui.getItem(i) == null) {
-                gui.setItem(i, createItem(Material.BLACK_STAINED_GLASS_PANE, " "));
+                gui.setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
             }
         }
 
@@ -72,15 +75,20 @@ public class DungeonSelectGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (!event.getView().getTitle().equals(TITLE)) return;
+        String title = event.getView().getTitle();
+        if (!title.contains("SELECT DUNGEON") && !title.contains("Select Dungeon")) return;
         event.setCancelled(true);
 
+        if (event.getRawSlot() == 40) {
+            player.closeInventory();
+            return;
+        }
         int slot = event.getRawSlot();
         int tier = switch (slot) {
-            case 10 -> 1;
-            case 12 -> 2;
-            case 14 -> 3;
-            case 16 -> 4;
+            case 19 -> 1;
+            case 21 -> 2;
+            case 23 -> 3;
+            case 25 -> 4;
             default -> -1;
         };
 
@@ -95,12 +103,16 @@ public class DungeonSelectGUI implements Listener {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(name);
-            List<String> loreList = new ArrayList<>();
+            meta.customName(MM.deserialize(name));
+            List<net.kyori.adventure.text.Component> loreList = new ArrayList<>();
             for (String line : lore) {
-                loreList.add(line);
+                if (line == null || line.equals(" ")) {
+                    loreList.add(net.kyori.adventure.text.Component.empty());
+                } else {
+                    loreList.add(MM.deserialize(line));
+                }
             }
-            meta.setLore(loreList);
+            meta.lore(loreList);
             item.setItemMeta(meta);
         }
         return item;

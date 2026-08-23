@@ -335,7 +335,7 @@ public class ClassGUI implements Listener {
         boolean isNext = selected && data.level() == level - 1;
 
         ItemStack item = new ItemStack(unlocked
-                ? Material.LIME_STAINED_GLASS_PANE
+                ? Material.PURPLE_STAINED_GLASS_PANE
                 : (isNext ? Material.EXPERIENCE_BOTTLE : Material.GRAY_STAINED_GLASS_PANE));
         ItemMeta meta = item.getItemMeta();
         meta.customName(Component.text("LEVEL " + level,

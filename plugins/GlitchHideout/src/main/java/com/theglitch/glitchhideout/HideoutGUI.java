@@ -27,10 +27,11 @@ public final class HideoutGUI implements Listener {
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final ItemStack CACHED_BORDER;
     static {
-        ItemStack b = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemStack b = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta m = b.getItemMeta();
         if (m != null) {
             m.customName(Component.empty());
+            m.lore(List.of(MM.deserialize("<dark_gray>—</dark_gray>")));
             b.setItemMeta(m);
         }
         CACHED_BORDER = b;
