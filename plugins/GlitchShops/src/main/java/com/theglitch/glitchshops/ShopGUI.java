@@ -113,18 +113,19 @@ public final class ShopGUI implements Listener {
         inv.setItem(3, tabButton("tab_buy", "gui_buy", Material.EMERALD, "BUY",
                 "<green><bold>BUY</bold></green>",
                 "<gray>Left-click = 1 · Shift-click = stack.</gray>", !sellMode));
-        inv.setItem(4, tabButton("tab_sell", "gui_sell", Material.GOLD_INGOT, "SELL",
+        inv.setItem(5, tabButton("tab_sell", "gui_sell", Material.GOLD_INGOT, "SELL",
                 "<gold><bold>SELL</bold></gold>",
                 "<gray>Click items in your inventory below.</gray>", sellMode));
         inv.setItem(8, closeButton());
 
+        // Centered category tabs (row 1, slots 11-15)
         for (int i = 0; i < cachedTabOrder.size(); i++) {
             String tab = cachedTabOrder.get(i);
-            inv.setItem(9 + i, categoryTab(tab, tab.equals(category)));
+            inv.setItem(11 + i, categoryTab(tab, tab.equals(category)));
         }
 
         if (sellMode) {
-            inv.setItem(22, guiIcon("gui_coin", Material.GOLD_BLOCK,
+            inv.setItem(31, guiIcon("gui_coin", Material.GOLD_BLOCK,
                     "<gold><bold>SELLING</bold></gold>",
                     "<gray>Click items in your inventory below.</gray>",
                     "<yellow>Left-click = 1 · Shift-click = stack</yellow>"));
@@ -139,9 +140,15 @@ public final class ShopGUI implements Listener {
     }
 
     private void fillStock(Inventory inv, Player player, String category) {
-        int slot = 18;
+        // Centered 7-per-row layout (Wynncraft-style, breathable)
+        final int[] STOCK_SLOTS = {
+                19, 20, 21, 22, 23, 24, 25,
+                28, 29, 30, 31, 32, 33, 34,
+                37, 38, 39, 40, 41, 42, 43
+        };
+        int idx = 0;
         if (category.equals("gear")) {
-            for (int i = 0; i < shopManager.getGearStock().size() && slot < 45; i++) {
+            for (int i = 0; i < shopManager.getGearStock().size() && idx < STOCK_SLOTS.length; i++) {
                 ShopManager.GearStockEntry entry = shopManager.getGearStock().get(i);
                 if (entry.item() == null) continue;
                 ItemStack display = entry.item().clone();
@@ -158,10 +165,9 @@ public final class ShopGUI implements Listener {
                     m.getPersistentDataContainer().set(GEAR_SLOT_KEY, PersistentDataType.INTEGER, gearIndex);
                     m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "buygear");
                 });
-                inv.setItem(slot, display);
-                slot++;
+                inv.setItem(STOCK_SLOTS[idx++], display);
             }
-            if (slot == 18) {
+            if (idx == 0) {
                 inv.setItem(31, guiIcon("gui_close", Material.BARRIER,
                         "<red>Out of stock</red>",
                         "<gray>The vendor will restock soon.</gray>"));
@@ -172,7 +178,7 @@ public final class ShopGUI implements Listener {
         ShopManager.Shop shop = shopManager.getShop(category);
         if (shop == null) return;
         for (Map.Entry<String, ShopManager.StockEntry> entry : shop.stock().entrySet()) {
-            if (slot >= 45) break;
+            if (idx >= STOCK_SLOTS.length) break;
             ItemStack item;
             try {
                 ItemBuilder builder = OraxenItems.getItemById(entry.getKey());
@@ -195,8 +201,7 @@ public final class ShopGUI implements Listener {
                 m.getPersistentDataContainer().set(ITEM_KEY, PersistentDataType.STRING, entry.getKey());
                 m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "buy");
             });
-            inv.setItem(slot, item);
-            slot++;
+            inv.setItem(STOCK_SLOTS[idx++], item);
         }
     }
 
@@ -298,12 +303,29 @@ public final class ShopGUI implements Listener {
     }
 
     private void fillBorder(Inventory inv) {
-        // Reuse static pane — clone per slot to prevent inventory mutation side effects
+        // Pollished layout — leave stock area (18-44) open to show window background,
+        // only fill header (0-8), category row gaps (9-17 except tabs), and footer (45-53)
         for (int i = 0; i < SIZE; i++) {
-            if (i < 18 || i >= 27) {
+            if (i < 9) {
+                // header row — will be overwritten by balance/tabs/close, keep filler elsewhere
+                if (i != 0 && i != 3 && i != 5 && i != 8) {
+                    inv.setItem(i, CACHED_BORDER_PANE.clone());
+                }
+            } else if (i >= 9 && i < 18) {
+                // category row — tabs at 11-15, rest filler
+                if (i < 11 || i > 15) {
+                    inv.setItem(i, CACHED_BORDER_PANE.clone());
+                }
+            } else if (i >= 45) {
+                // footer row
                 inv.setItem(i, CACHED_BORDER_PANE.clone());
             }
         }
+        // decorative divider between categories and stock
+        inv.setItem(17, CACHED_BORDER_PANE.clone());
+        inv.setItem(26, CACHED_BORDER_PANE.clone());
+        inv.setItem(35, CACHED_BORDER_PANE.clone());
+        inv.setItem(44, CACHED_BORDER_PANE.clone());
     }
 
     @EventHandler
