@@ -12,7 +12,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -46,13 +48,21 @@ public class ClassGUI implements Listener {
     private static final Map<String, Integer> KEY_TO_INDEX = Map.of(
             "prime", 0, "tactical", 1, "trait1", 2, "trait2", 3, "ultimate", 4);
     private static final ItemStack CACHED_BORDER;
+    private static final ItemStack CACHED_RUNE;
 
     static {
-        ItemStack b = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemStack b = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta m = b.getItemMeta();
         m.customName(Component.empty());
         b.setItemMeta(m);
         CACHED_BORDER = b;
+
+        ItemStack r = new ItemStack(Material.AMETHYST_SHARD);
+        ItemMeta rm = r.getItemMeta();
+        rm.customName(MM.deserialize("\uE049 <gradient:#C084FC:#E879F9><bold>Rift Attuned</bold></gradient>"));
+        rm.lore(List.of(MM.deserialize("<gray>The anomaly hums around this place.</gray>")));
+        r.setItemMeta(rm);
+        CACHED_RUNE = r;
     }
 
     private static final Map<String, NamedTextColor> COLOR_FALLBACKS = Map.of(
@@ -90,29 +100,60 @@ public class ClassGUI implements Listener {
         return cachedEconomy;
     }
 
-    // ==================== MAIN MENU (27 slots) ====================
+    // ==================== MAIN MENU (45 slots - centered, Wynncraft-style) ====================
 
     public void openMainMenu(Player player) {
         String title = plugin.getConfig().getString("gui.title",
-                "<dark_purple><bold>CHOOSE YOUR CLASS</bold></dark_purple>");
-        Inventory inv = Bukkit.createInventory(null, 27, MM.deserialize(title));
-        fillBorder(inv, 27);
+                "<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>CHOOSE YOUR CLASS</bold></gradient> </font><font:minecraft:default>\uE049</font>");
+        Inventory inv = Bukkit.createInventory(null, 45, MM.deserialize(title));
+        fillBorder(inv, 45);
 
         ClassData data = classManager.getClassData(player.getUniqueId());
 
-        int[] cardSlots = {11, 12, 13, 14};
+        // Four class cards centered in row 2 (slots 11,13,15,17 with gaps) — breathing room
+        int[] cardSlots = {11, 13, 15, 17};
         for (int i = 0; i < CLASS_ORDER.length; i++) {
             inv.setItem(cardSlots[i], classCard(CLASS_ORDER[i], data));
         }
 
-        inv.setItem(22, infoItem(data));
+        // Header info at top center
+        inv.setItem(4, infoItem(data));
+        // Subtle rune accents in corners
+        inv.setItem(0, CACHED_RUNE.clone());
+        inv.setItem(8, CACHED_RUNE.clone());
+
+        // Hint / divider in middle
+        inv.setItem(31, hintItem());
 
         if (!data.className().equals("none")) {
-            inv.setItem(26, resetItem());
+            inv.setItem(40, resetItem());
+            inv.setItem(44, closeItem());
+        } else {
+            inv.setItem(40, closeItem());
         }
 
         openSessions.put(player.getUniqueId(), "main");
         player.openInventory(inv);
+    }
+
+    private ItemStack hintItem() {
+        ItemStack item = new ItemStack(Material.KNOWLEDGE_BOOK);
+        ItemMeta meta = item.getItemMeta();
+        meta.customName(MM.deserialize("<gray><italic>Choose wisely — you can reset for shards later.</italic></gray>"));
+        meta.lore(List.of(
+                MM.deserialize("<gray>Click a class above to view its abilities.</gray>"),
+                MM.deserialize("<dark_gray>First pick grants the starter kit.</dark_gray>")));
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private ItemStack closeItem() {
+        ItemStack item = new ItemStack(Material.BARRIER);
+        ItemMeta meta = item.getItemMeta();
+        meta.customName(MM.deserialize("<red><bold>Close</bold></red>"));
+        meta.lore(List.of(MM.deserialize("<gray>Close this menu.</gray>")));
+        item.setItemMeta(meta);
+        return item;
     }
 
     private ItemStack classCard(String className, ClassData data) {
@@ -130,23 +171,36 @@ public class ClassGUI implements Listener {
         } else {
             meta.customName(Component.text(className.toUpperCase(), color, TextDecoration.BOLD));
         }
+        if (selected) {
+            meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
 
         List<Component> lore = new ArrayList<>();
         String role = cls != null ? cls.getString("role", "") : "";
         String description = cls != null ? cls.getString("description", "") : "";
+        // glyph + role line — use shard glyph for flavor
         if (!role.isEmpty()) {
-            lore.add(Component.text(role, NamedTextColor.GRAY, TextDecoration.ITALIC));
+            lore.add(MM.deserialize("\uE049 <gray><italic>" + role + "</italic></gray>"));
         }
         if (!description.isEmpty()) {
-            lore.add(MM.deserialize(description));
+            lore.add(MM.deserialize("<gray>" + description + "</gray>"));
+        }
+        // ability preview line
+        ConfigurationSection ab = plugin.getConfig().getConfigurationSection("abilities." + className);
+        if (ab != null) {
+            String prime = ab.getConfigurationSection("prime") != null ? ab.getConfigurationSection("prime").getString("name", "Prime") : "Prime";
+            lore.add(Component.empty());
+            lore.add(MM.deserialize("<dark_gray>Prime:</dark_gray> <white>" + prime + "</white>"));
         }
         lore.add(Component.empty());
         if (selected) {
-            lore.add(Component.text("YOUR CLASS", NamedTextColor.GREEN, TextDecoration.BOLD));
-            lore.add(Component.text("Level: " + data.level() + "/" + classManager.getMaxLevel(),
-                    NamedTextColor.GOLD));
+            lore.add(MM.deserialize("<green><bold>✦ YOUR CLASS</bold></green>"));
+            lore.add(MM.deserialize("<gray>Level:</gray> <gold>" + data.level() + "</gold><gray>/</gray><gold>" + classManager.getMaxLevel() + "</gold>"));
+            lore.add(MM.deserialize("<yellow>Click to manage →</yellow>"));
         } else {
-            lore.add(Component.text("Click to view", NamedTextColor.YELLOW));
+            lore.add(MM.deserialize("<yellow><bold>Click to view</bold></yellow>"));
+            lore.add(MM.deserialize("<gray>View abilities & upgrade path.</gray>"));
         }
         meta.lore(lore);
         item.setItemMeta(meta);
@@ -389,11 +443,16 @@ public class ClassGUI implements Listener {
         ClassData data = classManager.getClassData(player.getUniqueId());
 
         if (session.equals("main")) {
-            if (slot == 26 && !data.className().equals("none")) {
+            // Close buttons
+            if (slot == 44 || (slot == 40 && data.className().equals("none"))) {
+                player.closeInventory();
+                return;
+            }
+            if (slot == 40 && !data.className().equals("none")) {
                 handleClassReset(player);
                 return;
             }
-            int[] cardSlots = {11, 12, 13, 14};
+            int[] cardSlots = {11, 13, 15, 17};
             for (int i = 0; i < cardSlots.length; i++) {
                 if (slot == cardSlots[i]) {
                     switchingGui.add(player.getUniqueId());

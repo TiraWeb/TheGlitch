@@ -65,6 +65,14 @@ cp -R "${TEX_SRC}/." "${ORAXEN_DIR}/pack/textures/"
 find "${ORAXEN_DIR}/pack/textures" -type d -exec chown minecraft:minecraft {} +
 find "${ORAXEN_DIR}/pack/textures" -type f -exec chown minecraft:minecraft {} + -exec chmod 644 {} +
 
+log "Syncing custom UI font (theglitch:ui — Inter TTF for readable titles)"
+if [[ -d "${REPO_DIR}/server/plugins/Oraxen/pack/assets" ]]; then
+  mkdir -p "${ORAXEN_DIR}/pack/assets"
+  cp -R "${REPO_DIR}/server/plugins/Oraxen/pack/assets/." "${ORAXEN_DIR}/pack/assets/"
+  find "${ORAXEN_DIR}/pack/assets" -type d -exec chown minecraft:minecraft {} +
+  find "${ORAXEN_DIR}/pack/assets" -type f -exec chown minecraft:minecraft {} + -exec chmod 644 {} +
+fi
+
 log "Syncing custom font glyphs (Arcane Ruins UI kit)"
 mkdir -p "${ORAXEN_DIR}/glyphs"
 install -o minecraft -g minecraft -m 644 "${GLYPH_SRC}"/*.yml "${ORAXEN_DIR}/glyphs/"

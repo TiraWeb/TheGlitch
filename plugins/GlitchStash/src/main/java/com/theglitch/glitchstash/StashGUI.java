@@ -29,13 +29,14 @@ public class StashGUI implements Listener {
     private static final int SIZE = ROWS * 9;
     private static final Map<UUID, openSession> openSessions = new HashMap<>();
 
-    // Cached border — single allocation, cloned per slot
+    // Cached border — themed to match void-purple window (subtle, readable)
     private static final ItemStack CACHED_BORDER;
     static {
-        ItemStack b = new ItemStack(Material.PURPLE_STAINED_GLASS_PANE);
+        ItemStack b = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta m = b.getItemMeta();
         if (m != null) {
             m.customName(Component.empty());
+            m.lore(List.of(MM.deserialize("<dark_gray>Stashed loot — click to retrieve</dark_gray>")));
             b.setItemMeta(m);
         }
         CACHED_BORDER = b;
@@ -66,10 +67,12 @@ public class StashGUI implements Listener {
         String titleRaw = plugin.getCachedDisplayName();
         Inventory inv = Bukkit.createInventory(null, SIZE, MM.deserialize(titleRaw));
 
-        // Decorative border (top row only) — reuse cached pane
+        // Header row — subtle border but with info/close controls
         for (int i = 0; i < 9; i++) {
             inv.setItem(i, CACHED_BORDER.clone());
         }
+        inv.setItem(4, stashInfoItem(stashItems.size()));
+        inv.setItem(8, stashCloseItem());
 
         int slot = 9;
         int displayed = 0;
@@ -86,6 +89,26 @@ public class StashGUI implements Listener {
         player.sendMessage(plugin.getComponent("stash-opened"));
     }
 
+    private static ItemStack stashInfoItem(int count) {
+        ItemStack item = new ItemStack(Material.CHEST);
+        ItemMeta meta = item.getItemMeta();
+        meta.customName(MM.deserialize("<aqua><bold>" + count + " items stashed</bold></aqua>"));
+        meta.lore(List.of(
+                MM.deserialize("<gray>Click items below to retrieve.</gray>"),
+                MM.deserialize("<dark_gray>Closes automatically on exit.</dark_gray>")));
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private static ItemStack stashCloseItem() {
+        ItemStack item = new ItemStack(Material.BARRIER);
+        ItemMeta meta = item.getItemMeta();
+        meta.customName(MM.deserialize("<red><bold>Close</bold></red>"));
+        meta.lore(List.of(MM.deserialize("<gray>Close this stash.</gray>")));
+        item.setItemMeta(meta);
+        return item;
+    }
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
@@ -99,7 +122,10 @@ public class StashGUI implements Listener {
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= SIZE) return;
 
-        if (slot < 9) return;
+        if (slot < 9) {
+            if (slot == 8) player.closeInventory();
+            return;
+        }
 
         ItemStack clicked = event.getClickedInventory().getItem(slot);
         if (clicked == null || clicked.getType() == Material.AIR) return;

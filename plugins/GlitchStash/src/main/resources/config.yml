@@ -42,7 +42,7 @@ extraction-variants:
   zones: {}
 
 # Display settings
-display-name: " <gradient:#C084FC:#F0ABFC><bold>YOUR STASH</bold></gradient>"
+display-name: "<font:minecraft:default>\ue049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>YOUR STASH</bold></gradient> </font><font:minecraft:default>\ue049</font>"
 lore:
   - "<gray>Items saved from your last extraction"
   - "<gray>Click to retrieve"

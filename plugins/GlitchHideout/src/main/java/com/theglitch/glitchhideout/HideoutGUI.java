@@ -58,9 +58,9 @@ public final class HideoutGUI implements Listener {
     }
 
     public void openMain(Player player) {
-        // \uE049 = glitch-diamond glyph (Oraxen glyphs/theglitch.yml)
+        // \uE049 glyph in default font + Inter UI font for readable title
         Inventory inv = Bukkit.createInventory(null, SIZE,
-                MM.deserialize("\uE049 <gradient:#C084FC:#F0ABFC><bold>THE HIDEOUT</bold></gradient> \uE049"));
+                MM.deserialize("<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>THE HIDEOUT</bold></gradient> </font><font:minecraft:default>\uE049</font>"));
 
         for (int i = 0; i < 9; i++) {
             inv.setItem(i, border());

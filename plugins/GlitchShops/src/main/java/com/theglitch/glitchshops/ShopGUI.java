@@ -33,9 +33,9 @@ import java.util.UUID;
 public final class ShopGUI implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
-    // \uE049 = glitch-diamond glyph (Oraxen glyphs/theglitch.yml)
+    // \uE049 = glitch-diamond glyph (default font) + Inter UI font for readable title
     private static final Component BAZAAR_TITLE = MM.deserialize(
-            "\uE049 <gradient:#C084FC:#F0ABFC><bold>GRAND BAZAAR</bold></gradient> \uE049");
+            "<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>GRAND BAZAAR</bold></gradient> </font><font:minecraft:default>\uE049</font>");
 
     // Cached border — single allocation cloned per slot instead of new ItemStack per open * per slot
     private static final ItemStack CACHED_BORDER_PANE;
@@ -141,7 +141,7 @@ public final class ShopGUI implements Listener {
     private void fillStock(Inventory inv, Player player, String category) {
         int slot = 18;
         if (category.equals("gear")) {
-            for (int i = 0; i < shopManager.getGearStock().size() && slot < 27; i++) {
+            for (int i = 0; i < shopManager.getGearStock().size() && slot < 45; i++) {
                 ShopManager.GearStockEntry entry = shopManager.getGearStock().get(i);
                 if (entry.item() == null) continue;
                 ItemStack display = entry.item().clone();
@@ -162,7 +162,7 @@ public final class ShopGUI implements Listener {
                 slot++;
             }
             if (slot == 18) {
-                inv.setItem(22, guiIcon("gui_close", Material.BARRIER,
+                inv.setItem(31, guiIcon("gui_close", Material.BARRIER,
                         "<red>Out of stock</red>",
                         "<gray>The vendor will restock soon.</gray>"));
             }
@@ -172,7 +172,7 @@ public final class ShopGUI implements Listener {
         ShopManager.Shop shop = shopManager.getShop(category);
         if (shop == null) return;
         for (Map.Entry<String, ShopManager.StockEntry> entry : shop.stock().entrySet()) {
-            if (slot >= 27) break;
+            if (slot >= 45) break;
             ItemStack item;
             try {
                 ItemBuilder builder = OraxenItems.getItemById(entry.getKey());

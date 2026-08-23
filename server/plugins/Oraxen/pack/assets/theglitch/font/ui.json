@@ -1,0 +1,12 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "theglitch:font/inter.ttf",
+      "shift": [0, 0],
+      "size": 11.0,
+      "oversample": 8.0,
+      "skip": ""
+    }
+  ]
+}

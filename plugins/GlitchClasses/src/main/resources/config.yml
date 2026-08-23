@@ -206,7 +206,7 @@ upgrades:
 
 # GUI settings
 gui:
-  title: "\ue049 <gradient:#C084FC:#F0ABFC><bold>CHOOSE YOUR CLASS</bold></gradient>"
+  title: "<font:minecraft:default>\ue049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>CHOOSE YOUR CLASS</bold></gradient> </font><font:minecraft:default>\ue049</font>"
   border-material: "BLACK_STAINED_GLASS_PANE"
   class-selected-glow: true
 

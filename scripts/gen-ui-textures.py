@@ -191,17 +191,18 @@ def glyph_title_rune():
 def chest_generic_54():
     """Themed override for container/generic_54.png (256x256).
 
-    Vanilla samples: title band (0,0)-(175,16); six 18px row strips starting
-    y=17 (last ends y=124). We paint that whole window uniformly so the
-    per-strip blits never show seams, then decorate only fixed-safe zones.
+    Supports ALL chest sizes (27/36/45/54) by painting borders at every
+    possible bottom edge (17 + rows*18). Vanilla blits only header + N*18
+    rows, so a single texture with seams at each boundary works for any N.
     """
     img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
     rng = random.Random(0xC0FFEE)
     d = ImageDraw.Draw(img)
 
-    W, H = 176, 125  # window content bounds (exclusive)
-    for y in range(H):
-        t = y / H
+    W = 176
+    MAX_H = 125  # 6 rows: 17 + 6*18
+    for y in range(MAX_H):
+        t = y / MAX_H
         c = tuple(int(a + (b - a) * t) for a, b in zip(VOID_TOP, VOID_BOT))
         d.line([(0, y), (W - 1, y)], fill=c)
         if rng.random() < 0.30:
@@ -210,13 +211,23 @@ def chest_generic_54():
             r, g, b_, _ = img.getpixel((x, y))
             px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
 
-    for x in range(W):
-        px(d, x, 0, AMETHYST)
-        px(d, x, H - 1, AMETHYST)
-    for y in range(H):
+    # outer vertical borders (full height)
+    for y in range(MAX_H):
         px(d, 0, y, AMETHYST)
         px(d, W - 1, y, AMETHYST)
-    d.rectangle((1, 1, W - 2, H - 2), outline=(52, 24, 82, 255))
+    # top border
+    for x in range(W):
+        px(d, x, 0, AMETHYST)
+    # bottom borders at EVERY valid chest height so any size shows a clean edge
+    for rows in (3, 4, 5, 6):
+        by = 17 + rows * 18 - 1
+        for x in range(W):
+            px(d, x, by, AMETHYST)
+        # inner hairline just above each bottom
+        for x in range(1, W - 1):
+            px(d, x, by - 1, (52, 24, 82, 255))
+    # top inner hairline
+    d.rectangle((1, 1, W - 2, MAX_H - 2), outline=(52, 24, 82, 80))
 
     d.line([(2, 15), (W - 3, 15)], fill=(59, 29, 94, 255))
     d.line([(2, 16), (W - 3, 16)], fill=(38, 18, 62, 160))
@@ -230,7 +241,47 @@ def chest_generic_54():
         a = 90 - i * 14
         if a <= 0:
             break
-        d.line([(2 + i, H - 2 - i), (W - 3 - i, H - 2 - i)], fill=(168, 85, 247, a))
+        d.line([(2 + i, MAX_H - 2 - i), (W - 3 - i, MAX_H - 2 - i)], fill=(168, 85, 247, a))
+    return img
+
+
+def inventory_background():
+    """Themed player inventory (E) — 176x166 window used by survival_inventory."""
+    W, H = 176, 166
+    img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    rng = random.Random(0xC0FFEE + 1)
+    d = ImageDraw.Draw(img)
+    for y in range(H):
+        t = y / H
+        c = tuple(int(a + (b - a) * t) for a, b in zip(VOID_TOP, VOID_BOT))
+        d.line([(0, y), (W - 1, y)], fill=c)
+        if rng.random() < 0.20:
+            x = rng.randrange(W)
+            n = rng.randint(-5, 5)
+            r, g, b_, _ = img.getpixel((x, y))
+            px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
+    # outer frame
+    for x in range(W):
+        px(d, x, 0, AMETHYST)
+        px(d, x, H - 1, AMETHYST)
+    for y in range(H):
+        px(d, 0, y, AMETHYST)
+        px(d, W - 1, y, AMETHYST)
+    d.rectangle((1, 1, W - 2, H - 2), outline=(52, 24, 82, 255))
+    # title underline where "Inventory" / crafting labels sit
+    d.line([(2, 15), (W - 3, 15)], fill=(59, 29, 94, 180))
+    # slot area hints: subtle inner lines around crafting grid + armor column
+    # crafting 2x2 at approx (88,28) in vanilla — hint border
+    for x in range(88, 124):
+        px(d, x, 27, (68, 32, 112, 120))
+        px(d, x, 64, (68, 32, 112, 120))
+    for y in range(27, 65):
+        px(d, 88, y, (68, 32, 112, 120))
+        px(d, 123, y, (68, 32, 112, 120))
+    # corner runes like chest
+    for cx, cy in [(4, 4), (W - 5, 4)]:
+        d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], fill=FUCHSIA)
+        px(d, cx, cy, (250, 240, 255, 255))
     return img
 
 
@@ -250,6 +301,9 @@ def main():
     chest = chest_generic_54()
     save(chest, "gui/sprites/container/generic_54.png")
     save(chest.copy(), "gui/container/generic_54.png")  # legacy path fallback
+    inv = inventory_background()
+    save(inv, "gui/sprites/container/inventory.png")
+    save(inv.copy(), "gui/container/inventory.png")
     print("done.")
 
 
