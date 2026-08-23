@@ -58,8 +58,9 @@ public final class HideoutGUI implements Listener {
     }
 
     public void openMain(Player player) {
+        // \uE049 = glitch-diamond glyph (Oraxen glyphs/theglitch.yml)
         Inventory inv = Bukkit.createInventory(null, SIZE,
-                MM.deserialize("<dark_purple><bold>THE HIDEOUT</bold></dark_purple>"));
+                MM.deserialize("\uE049 <gradient:#C084FC:#F0ABFC><bold>THE HIDEOUT</bold></gradient> \uE049"));
 
         for (int i = 0; i < 9; i++) {
             inv.setItem(i, border());

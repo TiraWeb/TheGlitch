@@ -1,0 +1,69 @@
+# The Glitch — custom font glyphs (Arcane Ruins UI kit)
+#
+# Mapped into minecraft:default by Oraxen's vanilla glyph handler; usable as
+# raw unicode chars anywhere text renders (lore, titles, chat). Java side
+# mirrors these codepoints in plugins/GlitchItems/.../GlitchUI.java — keep the
+# two in sync. Textures come from pack/textures/glyphs/ (scripts/gen-ui-textures.py).
+#
+# Bedrock/Geyser clients cannot render PUA glyphs — every in-game usage must
+# pair the glyph with a plain-text label so Bedrock loses decoration only.
+
+res_aegis:
+  texture: glyphs/res_aegis
+  ascent: 8
+  height: 9
+  char: "\uE040"
+
+res_veil:
+  texture: glyphs/res_veil
+  ascent: 8
+  height: 9
+  char: "\uE041"
+
+res_bloom:
+  texture: glyphs/res_bloom
+  ascent: 8
+  height: 9
+  char: "\uE042"
+
+res_ward:
+  texture: glyphs/res_ward
+  ascent: 8
+  height: 9
+  char: "\uE043"
+
+res_hollow:
+  texture: glyphs/res_hollow
+  ascent: 8
+  height: 9
+  char: "\uE044"
+
+shard:
+  texture: glyphs/shard
+  ascent: 8
+  height: 9
+  char: "\uE045"
+
+star_full:
+  texture: glyphs/star_full
+  ascent: 8
+  height: 9
+  char: "\uE046"
+
+star_empty:
+  texture: glyphs/star_empty
+  ascent: 8
+  height: 9
+  char: "\uE047"
+
+divider:
+  texture: glyphs/divider
+  ascent: 7
+  height: 8
+  char: "\uE048"
+
+title_rune:
+  texture: glyphs/title_rune
+  ascent: 8
+  height: 9
+  char: "\uE049"

@@ -9,4 +9,4 @@ cache_key:
   lore:
     - '<gray>Unlocks Loot Caches in mid zones.</gray>'
     - '<dark_gray>Consumed on use.</dark_gray>'
-    - '<gray>Sell price: <aqua>15 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>15 Shards</aqua></gray>"

@@ -9,4 +9,4 @@ void_infusion:
   lore:
     - '<light_purple>Boosts a Resonance on an Epic item.</light_purple>'
     - '<gray>Crafted from Void Essence and Legendary Relics.</gray>'
-    - '<gray>Sell price: <aqua>600 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>600 Shards</aqua></gray>"

@@ -135,6 +135,18 @@
 - [ ] Auto-scheduler: temporarily set `min-interval-minutes: 1`, reload, confirm a random event fires within ~2 min, then restore config
 - [ ] `/glitchevents stop` cancels pending tasks; `/glitchevents reload` applies config changes
 
+## Custom UI theming (Arcane Ruins UI kit)
+
+- [ ] Java client auto-receives the updated Oraxen pack on join (accept prompt)
+- [ ] Every chest GUI (Grand Bazaar, /class, /stash, /hideout, world chests) shows the dark void-purple panel with amethyst frame + corner diamonds (no vanilla gray)
+- [ ] Menu titles render the glitch-diamond rune glyph on both sides (Bazaar/Stash/Class/Hideout)
+- [ ] `/identify` a rift → gear lore is Wynncraft-style: divider rule, colored rarity line ("Rare · Melee Weapon"), » stat lines with gold/gray star pips, resonance icon + bold label, italic dark-gray flavor, shard-glyph sell price last
+- [ ] Star pips show 5 slots total (filled gold sparkle + empty gray outline)
+- [ ] Legendary godroll (all 5-star pips) shows "Perfectly resonant." in gold
+- [ ] Unidentified rifts show tier flavor + "Unidentified — reveal at the hub" block; sell line starts with the aqua shard glyph
+- [ ] `/o give <you> rune_fragment` lore sell line renders the shard glyph (Java client) and still reads as plain text without the pack
+- [ ] Chat/anvils unaffected by glyph codepoints (PUA E040-E049 not typeable)
+
 ## GlitchLoot (smart loot)
 
 - [ ] On enable, log shows adaptive/budget/anti-funnel summary with correct worlds `[glitch_red, glitch_pve]`

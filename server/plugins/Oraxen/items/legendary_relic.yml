@@ -10,4 +10,4 @@ legendary_relic:
     - '<gold>A relic from before the Glitch.</gold>'
     - '<gray>Required for Legendary recipes.</gray>'
     - '<dark_gray>Drops from bosses (rare).</dark_gray>'
-    - '<gray>Sell price: <aqua>800 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>800 Shards</aqua></gray>"

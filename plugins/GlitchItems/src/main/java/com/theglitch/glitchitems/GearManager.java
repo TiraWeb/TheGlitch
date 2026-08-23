@@ -258,44 +258,66 @@ public final class GearManager {
         ItemMeta meta = item.getItemMeta();
 
         String color = rarityColors.getOrDefault(rolls.rarity, "<white>");
-        String name = color + "<bold>[" + rolls.rarity.getDisplayName() + "]</bold> <white>" + rolls.type.getLabel() + "</white>";
-        meta.customName(MM.deserialize(name));
+        meta.customName(MM.deserialize(color + "<bold>" + rolls.type.getLabel() + "</bold>"));
 
+        ThreadLocalRandom flavorRand = ThreadLocalRandom.current();
         List<Component> lore = new ArrayList<>();
 
+        // --- header: rule + rarity identity line (Wynncraft-style detail page)
+        lore.add(MM.deserialize(GlitchUI.DIVIDER));
+        lore.add(MM.deserialize(color + "<bold>" + rolls.rarity.getDisplayName()
+                + "</bold></" + tagSuffix(color) + "> <dark_gray>" + archetypeLabel(rolls.type) + "</dark_gray>"));
+
+        // --- stat block with star pips
         if (rolls.type.isWeapon()) {
-            lore.add(MM.deserialize(
-                    "<gray>Damage: <white>+" + rolls.damage + "%</white> " + stars(rolls.starsPrimary)));
+            lore.add(statLine("Damage", "+" + rolls.damage + "%", rolls.starsPrimary));
         } else {
-            lore.add(MM.deserialize(
-                    "<gray>Armor: <white>+" + rolls.armor + "</white> " + stars(rolls.starsPrimary)));
+            lore.add(statLine("Armor", "+" + rolls.armor, rolls.starsPrimary));
         }
         if (rolls.speed > 0) {
-            lore.add(MM.deserialize(
-                    "<gray>Speed: <white>+" + rolls.speed + "%</white> " + stars(rolls.starsSpeed)));
+            lore.add(statLine("Speed", "+" + rolls.speed + "%", rolls.starsSpeed));
         }
         if (rolls.maxhp > 0) {
-            lore.add(MM.deserialize(
-                    "<gray>Max HP: <white>+" + rolls.maxhp + "</white> " + stars(rolls.starsHp)));
+            lore.add(statLine("Max HP", "+" + rolls.maxhp, rolls.starsHp));
         }
-        lore.add(MM.deserialize(
-                rolls.resonance.getColorTag() + "Resonance: " + rolls.resonance.getLabel() + "</" + tagSuffix(rolls.resonance.getColorTag()) + ">"));
 
+        // --- resonance block
+        String resColor = rolls.resonance.getColorTag();
+        String resClose = tagSuffix(resColor);
+        lore.add(MM.deserialize(GlitchUI.resIcon(rolls.resonance) + " "
+                + resColor + "<bold>" + rolls.resonance.getLabel() + "</bold></" + resClose + ">"
+                + " <gray>Resonance</gray>"));
+        if (rolls.type.isWeapon()) {
+            lore.add(MM.deserialize("<dark_gray>» +" + (weaponResonanceBase + rolls.boost)
+                    + "% dmg vs " + resColor + rolls.resonance.getLabel() + "</" + resClose + "> mobs</dark_gray>"));
+        } else {
+            lore.add(MM.deserialize("<dark_gray>» Resists " + resColor
+                    + rolls.resonance.getLabel() + "</" + resClose + "> damage</dark_gray>"));
+        }
+
+        // --- special attributes
         if (!rolls.attributes.isEmpty()) {
             for (String attr : rolls.attributes.split(";")) {
                 String line = attributeLore(attr);
                 if (line != null) {
-                    lore.add(MM.deserialize("<aqua>" + line + "</aqua>"));
+                    lore.add(MM.deserialize("<dark_gray>» </dark_gray><aqua>" + line + "</aqua>"));
                 }
             }
         }
-        if (rolls.type.isWeapon()) {
-            lore.add(MM.deserialize(
-                    "<dark_gray>+" + (weaponResonanceBase + rolls.boost) + "% dmg vs " + rolls.resonance.getLabel() + " mobs</dark_gray>"));
+
+        boolean godroll = rolls.rarity == Rarity.LEGENDARY
+                && rolls.starsPrimary >= 5 && rolls.starsSpeed >= 5 && rolls.starsHp >= 5;
+        if (godroll) {
+            lore.add(MM.deserialize("<gold><bold>Perfectly resonant.</bold></gold>"));
         }
+
+        // --- flavor footer
         lore.add(Component.empty());
-        lore.add(MM.deserialize(
-                "<gray>Sell price: <aqua>" + sellValue(rolls.rarity) + " Shards</aqua></gray>"));
+        String[] pool = rolls.type.isWeapon() ? WEAPON_FLAVOR : ARMOR_FLAVOR;
+        lore.add(MM.deserialize("<dark_gray><italic>" + pool[flavorRand.nextInt(pool.length)] + "</italic></dark_gray>"));
+        lore.add(Component.empty());
+        lore.add(MM.deserialize(GlitchUI.SHARD
+                + " <gray>Sell price: <aqua>" + sellValue(rolls.rarity) + " Shards</aqua></gray>"));
 
         meta.lore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
@@ -314,6 +336,19 @@ public final class GearManager {
         return item;
     }
 
+    private String archetypeLabel(GearType type) {
+        return switch (type) {
+            case BLADE -> "Melee Weapon";
+            case GREATBLADE -> "Heavy Weapon";
+            case ARCANE_STAFF -> "Arcane Focus";
+            default -> "Armor · " + type.getLabel();
+        };
+    }
+
+    private String statLine(String label, String value, int stars) {
+        return "<gray>» <white>" + value + "</white> " + label + "  " + GlitchUI.pips(stars) + "</gray>";
+    }
+
     private String attributeLore(String attr) {
         if (attr == null || !attr.contains(":")) return null;
         String[] parts = attr.split(":");
@@ -330,13 +365,19 @@ public final class GearManager {
         }
     }
 
-    private String stars(int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append("<gold>★</gold>");
-        }
-        return sb.toString();
-    }
+    private static final String[] WEAPON_FLAVOR = {
+            "Forgotten steel that still remembers the shape of hands.",
+            "It hums faintly when the rift draws near.",
+            "Its edge scatters light into wrong colors.",
+            "Warm to the touch, like something breathing."
+    };
+
+    private static final String[] ARMOR_FLAVOR = {
+            "Woven from threads that survived the anomaly.",
+            "The lining is cold; the outside refuses to burn.",
+            "Someone etched a warning here once. It faded.",
+            "It fits better than it should."
+    };
 
     private String tagSuffix(String tag) {
         String t = tag.replace("<", "").replace(">", "");

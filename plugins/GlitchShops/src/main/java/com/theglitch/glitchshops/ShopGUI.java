@@ -33,7 +33,9 @@ import java.util.UUID;
 public final class ShopGUI implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
-    private static final Component BAZAAR_TITLE = MM.deserialize("<dark_purple><bold>✧ GRAND BAZAAR ✧</bold></dark_purple>");
+    // \uE049 = glitch-diamond glyph (Oraxen glyphs/theglitch.yml)
+    private static final Component BAZAAR_TITLE = MM.deserialize(
+            "\uE049 <gradient:#C084FC:#F0ABFC><bold>GRAND BAZAAR</bold></gradient> \uE049");
 
     // Cached border — single allocation cloned per slot instead of new ItemStack per open * per slot
     private static final ItemStack CACHED_BORDER_PANE;

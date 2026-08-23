@@ -9,4 +9,4 @@ healing_potion:
   lore:
     - '<green>Regeneration II for 5s.</green>'
     - '<gray>Crafted from Rune Fragments and Rift Crystals.</gray>'
-    - '<gray>Sell price: <aqua>12 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>12 Shards</aqua></gray>"

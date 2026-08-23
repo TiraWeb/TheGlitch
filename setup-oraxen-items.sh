@@ -20,6 +20,7 @@ SERVER_DIR="/opt/theglitch/server"
 ORAXEN_DIR="${SERVER_DIR}/plugins/Oraxen"
 ITEMS_SRC="${REPO_DIR}/server/plugins/Oraxen/items"
 TEX_SRC="${REPO_DIR}/server/plugins/Oraxen/pack/textures"
+GLYPH_SRC="${REPO_DIR}/server/plugins/Oraxen/glyphs"
 
 log()  { echo -e "\033[1;32m[oraxen-items]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[oraxen-items]\033[0m $*"; }
@@ -53,14 +54,20 @@ if [[ -d "${ORAXEN_DIR}/textures" ]]; then
   rm -rf "${ORAXEN_DIR}/textures"
 fi
 
-# --- 4. sync repo items + textures -------------------------------------------
+# --- 4. sync repo items + textures + glyphs -----------------------------------
 log "Syncing item configs from repo"
 mkdir -p "${ORAXEN_DIR}/items"
 install -o minecraft -g minecraft -m 644 "${ITEMS_SRC}"/*.yml "${ORAXEN_DIR}/items/"
 
-log "Syncing textures to pack/textures (where Oraxen builds the pack from)"
+log "Syncing textures to pack/textures (recursive: glyphs/ + gui/ container overrides)"
 mkdir -p "${ORAXEN_DIR}/pack/textures"
-install -o minecraft -g minecraft -m 644 "${TEX_SRC}"/*.png "${ORAXEN_DIR}/pack/textures/"
+cp -R "${TEX_SRC}/." "${ORAXEN_DIR}/pack/textures/"
+find "${ORAXEN_DIR}/pack/textures" -type d -exec chown minecraft:minecraft {} +
+find "${ORAXEN_DIR}/pack/textures" -type f -exec chown minecraft:minecraft {} + -exec chmod 644 {} +
+
+log "Syncing custom font glyphs (Arcane Ruins UI kit)"
+mkdir -p "${ORAXEN_DIR}/glyphs"
+install -o minecraft -g minecraft -m 644 "${GLYPH_SRC}"/*.yml "${ORAXEN_DIR}/glyphs/"
 
 log "Syncing clean lang overrides (removes broken ESC-menu glyphs)"
 LANG_SRC="${REPO_DIR}/server/plugins/Oraxen/pack/lang"
@@ -70,7 +77,8 @@ install -o minecraft -g minecraft -m 644 "${LANG_SRC}"/*.json "${ORAXEN_DIR}/pac
 # --- 5. verify what's on disk -------------------------------------------------
 ITEM_COUNT=$(find "${ORAXEN_DIR}/items" -name '*.yml' | wc -l)
 TEX_COUNT=$(find "${ORAXEN_DIR}/pack/textures" -name '*.png' | wc -l)
-log "On-disk verification: ${ITEM_COUNT} item configs, ${TEX_COUNT} textures in pack/textures"
+GLYPH_COUNT=$(find "${ORAXEN_DIR}/glyphs" -name '*.yml' 2>/dev/null | wc -l)
+log "On-disk verification: ${ITEM_COUNT} item configs, ${TEX_COUNT} textures (incl. glyphs/ + gui/), ${GLYPH_COUNT} glyph config file(s)"
 ls -la "${ORAXEN_DIR}/items/" | tail -n +2
 ls -la "${ORAXEN_DIR}/pack/textures/" | tail -n +2
 

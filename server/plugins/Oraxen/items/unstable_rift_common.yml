@@ -7,7 +7,10 @@ unstable_rift_common:
     textures:
       - unstable_rift_common
   lore:
-    - '<gray>An unstable piece of the Glitch.</gray>'
-    - '<gray>Carry it out and identify it at the hub.</gray>'
-    - '<dark_gray>Identify fee: 5 Shards</dark_gray>'
-    - '<gray>Sell price: <aqua>3 Shards</aqua></gray>'
+    - '<dark_gray>A splinter of the anomaly. Barely stable.</dark_gray>'
+    - ''
+    - "<dark_purple>Unidentified</dark_purple> <gray>- reveal at the hub Identifier.</gray>"
+    - "<dark_gray>What emerges is never quite what went in.</dark_gray>"
+    - "<dark_gray>Identify fee: 5 Shards</dark_gray>"
+    - ''
+    - "\uE045 <gray>Sell price: <aqua>3 Shards</aqua></gray>"

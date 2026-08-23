@@ -1,5 +1,5 @@
-config-version: 1
-# GlitchClasses — The Glitch Class System
+﻿config-version: 1
+# GlitchClasses â€” The Glitch Class System
 # 4 classes: Vanguard, Warden, Specter, Operator
 
 # Maximum class level
@@ -11,7 +11,7 @@ ultimate-level: 10
 # Cost in shards to reset class (0 = free)
 reset-cost: 500
 
-# Starter kit — granted on the player's very first class selection (once ever).
+# Starter kit â€” granted on the player's very first class selection (once ever).
 # Entries: vanilla "material" or Oraxen "oraxen" id + amount.
 starter-kit:
   enabled: true
@@ -27,7 +27,7 @@ starter-kit:
 
 # Cooldown reduction per level (percentage)
 cooldown-reduction-per-level: 2
-# Hard floor for any ability cooldown — keeps max-level abilities from
+# Hard floor for any ability cooldown â€” keeps max-level abilities from
 # becoming spammable.
 cooldown-floor: 12
 
@@ -81,7 +81,7 @@ abilities:
       icon: "TOTEM_OF_UNDYING"
     ultimate:
       name: "Fortress"
-      description: "Aegis Wall becomes indestructible — allies gain massive damage resistance for 3s"
+      description: "Aegis Wall becomes indestructible â€” allies gain massive damage resistance for 3s"
       icon: "NETHER_STAR"
       cooldown: 120
   warden:
@@ -105,7 +105,7 @@ abilities:
       icon: "SPECTRAL_ARROW"
     ultimate:
       name: "Guardian Angel"
-      description: "Protect allies — the next fatal blow instead leaves 1 HP with 3s invulnerability (30s)"
+      description: "Protect allies â€” the next fatal blow instead leaves 1 HP with 3s invulnerability (30s)"
       icon: "TOTEM_OF_UNDYING"
       cooldown: 120
   specter:
@@ -129,7 +129,7 @@ abilities:
       icon: "CHEST"
     ultimate:
       name: "Ghost Protocol"
-      description: "10s undetectable — mobs cannot target you, move at 2x speed"
+      description: "10s undetectable â€” mobs cannot target you, move at 2x speed"
       icon: "NETHER_STAR"
       cooldown: 120
   operator:
@@ -169,7 +169,7 @@ upgrades:
     - "+10% damage while Last Stand active"
     - "Shield Wall absorbs +100 damage"
     - "Taunt slows enemies by 30%"
-    - "ULTIMATE: Fortress — Shield Wall becomes indestructible for 3s"
+    - "ULTIMATE: Fortress â€” Shield Wall becomes indestructible for 3s"
   warden:
     - "+5% healing potency"
     - "+10 HP"
@@ -180,7 +180,7 @@ upgrades:
     - "+10% healing potency (total 15%)"
     - "Revive Beacon can revive 2 allies"
     - "Vigilance shows enemy health bars"
-    - "ULTIMATE: Guardian Angel — prevent ally death once per 120s"
+    - "ULTIMATE: Guardian Angel â€” prevent ally death once per 120s"
   specter:
     - "+5% movement speed"
     - "+5 HP"
@@ -191,7 +191,7 @@ upgrades:
     - "Lightweight now +20% movement speed"
     - "Shadow Step can be used twice before cooldown"
     - "Scavenge now +30% loot and +2 inventory slots"
-    - "ULTIMATE: Ghost Protocol — 10s undetectable, 2x speed"
+    - "ULTIMATE: Ghost Protocol â€” 10s undetectable, 2x speed"
   operator:
     - "+5% turret damage"
     - "+10 HP"
@@ -202,10 +202,11 @@ upgrades:
     - "EMP Grenade slows enemies by 40% for 3s"
     - "Turret gains 50 HP shield"
     - "Overclock +50% turret fire rate"
-    - "ULTIMATE: Overload — Turret explodes for 80 damage, spawns new turret"
+    - "ULTIMATE: Overload â€” Turret explodes for 80 damage, spawns new turret"
 
 # GUI settings
 gui:
-  title: "<dark_purple><bold>CHOOSE YOUR CLASS</bold></dark_purple>"
+  title: "\ue049 <gradient:#C084FC:#F0ABFC><bold>CHOOSE YOUR CLASS</bold></gradient>"
   border-material: "BLACK_STAINED_GLASS_PANE"
   class-selected-glow: true
+

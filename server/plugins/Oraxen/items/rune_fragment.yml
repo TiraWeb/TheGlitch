@@ -10,4 +10,4 @@ rune_fragment:
     - '<gray>Common arcane residue.'
     - '<gray>Drops from corrupted mobs.'
     - '<dark_gray>Crafting base material.</dark_gray>'
-    - '<gray>Sell price: <aqua>2 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>2 Shards</aqua></gray>"

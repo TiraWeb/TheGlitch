@@ -10,4 +10,4 @@ aether_shard:
     - '<aqua>Condensed arcane light.</aqua>'
     - '<gray>Used to lock crafting to a Resonance.</gray>'
     - '<dark_gray>Drops from mid-tier mobs.</dark_gray>'
-    - '<gray>Sell price: <aqua>10 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>10 Shards</aqua></gray>"

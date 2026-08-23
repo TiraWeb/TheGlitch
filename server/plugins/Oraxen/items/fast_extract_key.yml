@@ -9,4 +9,4 @@ fast_extract_key:
   lore:
     - '<aqua>Unlocks Fast Extract sites (15s channel).</aqua>'
     - '<gray>Consumed on use.</gray>'
-    - '<gray>Sell price: <aqua>40 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>40 Shards</aqua></gray>"

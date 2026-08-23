@@ -1,5 +1,5 @@
-config-version: 1
-# GlitchStash — The Glitch Extraction Vault
+﻿config-version: 1
+# GlitchStash â€” The Glitch Extraction Vault
 # Items saved automatically on successful extraction
 
 # Maximum number of items a player can store (full inventory = 41 slots)
@@ -24,10 +24,10 @@ extraction-variants:
   # When true, winning a key zone without consuming the key gives no variant
   # bonus and logs a warning (the VelKoth win itself cannot be cancelled).
   enforce-key: true
-  # How long a consumed key stays armed (seconds) — covers the capture duration
+  # How long a consumed key stays armed (seconds) â€” covers the capture duration
   arm-duration-seconds: 180
   # Zones are rectangles (x/z bounds, y ignored) mirroring your in-game VelKoth
-  # arenas. Empty by default — the operator places arenas in-game, then adds the
+  # arenas. Empty by default â€” the operator places arenas in-game, then adds the
   # matching bounds here and runs /extractadmin reload. Example shape:
   #   fast:
   #     world: glitch_red
@@ -42,7 +42,7 @@ extraction-variants:
   zones: {}
 
 # Display settings
-display-name: "<dark_purple><bold>YOUR STASH</bold></dark_purple>"
+display-name: " <gradient:#C084FC:#F0ABFC><bold>YOUR STASH</bold></gradient>"
 lore:
   - "<gray>Items saved from your last extraction"
   - "<gray>Click to retrieve"
@@ -60,3 +60,4 @@ messages:
   teleporting: "<dark_purple>Teleporting to stash..."
   admin-cleared: "<red>Stash cleared for <gold><player></gold>."
   admin-reloaded: "<green>GlitchStash configuration reloaded."
+

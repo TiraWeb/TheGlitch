@@ -10,4 +10,4 @@ rift_crystal:
     - '<light_purple>A fragment of the Rift itself.</light_purple>'
     - '<gray>Fuel for revealing Unstable Rifts.</gray>'
     - '<dark_gray>Drops from mid-tier mobs and caches.</dark_gray>'
-    - '<gray>Sell price: <aqua>20 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>20 Shards</aqua></gray>"

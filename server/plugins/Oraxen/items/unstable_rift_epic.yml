@@ -7,7 +7,10 @@ unstable_rift_epic:
     textures:
       - unstable_rift_epic
   lore:
-    - '<light_purple>An unstable piece of the Glitch.</light_purple>'
-    - '<gray>Carry it out and identify it at the hub.</gray>'
-    - '<dark_gray>Identify fee: 250 Shards</dark_gray>'
-    - '<gray>Sell price: <aqua>150 Shards</aqua></gray>'
+    - '<dark_gray>The shard watches back.</dark_gray>'
+    - ''
+    - "<dark_purple>Unidentified</dark_purple> <gray>- reveal at the hub Identifier.</gray>"
+    - "<dark_gray>What emerges is never quite what went in.</dark_gray>"
+    - "<dark_gray>Identify fee: 250 Shards</dark_gray>"
+    - ''
+    - "\uE045 <gray>Sell price: <aqua>150 Shards</aqua></gray>"

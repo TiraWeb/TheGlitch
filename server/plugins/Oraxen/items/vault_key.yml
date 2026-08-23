@@ -10,4 +10,4 @@ vault_key:
     - '<blue>Unlocks Vaults in hard zones.</blue>'
     - '<gray>Crafted from Rift Crystals and Void Essence.</gray>'
     - '<dark_gray>Consumed on use.</dark_gray>'
-    - '<gray>Sell price: <aqua>60 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>60 Shards</aqua></gray>"

@@ -9,4 +9,4 @@ rift_reveal_pack:
   lore:
     - '<blue>Identifies one Uncommon rift for free.</blue>'
     - '<gray>Crafted from 5 Rift Crystals.</gray>'
-    - '<gray>Sell price: <aqua>75 Shards</aqua></gray>'
+    - "\uE045 <gray>Sell price: <aqua>75 Shards</aqua></gray>"
