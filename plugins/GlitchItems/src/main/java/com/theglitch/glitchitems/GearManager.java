@@ -270,15 +270,15 @@ public final class GearManager {
 
         // --- stat block with star pips
         if (rolls.type.isWeapon()) {
-            lore.add(statLine("Damage", "+" + rolls.damage + "%", rolls.starsPrimary));
+            lore.add(MM.deserialize(statLine("Damage", "+" + rolls.damage + "%", rolls.starsPrimary)));
         } else {
-            lore.add(statLine("Armor", "+" + rolls.armor, rolls.starsPrimary));
+            lore.add(MM.deserialize(statLine("Armor", "+" + rolls.armor, rolls.starsPrimary)));
         }
         if (rolls.speed > 0) {
-            lore.add(statLine("Speed", "+" + rolls.speed + "%", rolls.starsSpeed));
+            lore.add(MM.deserialize(statLine("Speed", "+" + rolls.speed + "%", rolls.starsSpeed)));
         }
         if (rolls.maxhp > 0) {
-            lore.add(statLine("Max HP", "+" + rolls.maxhp, rolls.starsHp));
+            lore.add(MM.deserialize(statLine("Max HP", "+" + rolls.maxhp, rolls.starsHp)));
         }
 
         // --- resonance block
