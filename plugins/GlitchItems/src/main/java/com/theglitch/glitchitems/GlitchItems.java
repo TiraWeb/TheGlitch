@@ -55,7 +55,12 @@ public final class GlitchItems extends JavaPlugin {
             public void onPluginEnable(PluginEnableEvent event) {
                 if ("GlitchStash".equals(event.getPlugin().getName()) && scatterManager != null) {
                     getLogger().info("GlitchStash detected late — re-attempting scatter cycle hook.");
-                    try { scatterManager.registerCycleHook(); } catch (Exception ex) { getLogger().warning("Late hook failed: " + ex.getMessage()); }
+                    try {
+                        scatterManager.registerCycleHook();
+                        // Also re-evaluate scheduler: when Stash appears, disable fixed-rate timer
+                        // so the 31m cycle (30m+5s event) is the single source of truth.
+                        scatterManager.startScheduler();
+                    } catch (Exception ex) { getLogger().warning("Late hook failed: " + ex.getMessage()); }
                 }
             }
         }, this);
