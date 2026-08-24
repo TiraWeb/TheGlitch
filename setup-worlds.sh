@@ -146,9 +146,9 @@ done
 mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null
 mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
 
-# glitch_red (dim glitch_red) — full-loot PvP, MythicMobs-only (no vanilla spawns).
-# spawn_mobs false disables NATURAL vanilla spawns but MythicMobs (plugin) spawns bypass it.
-for rule in "keep_inventory false" "spawn_mobs false" "spawn_phantoms false" "mob_griefing false" \
+# glitch_red (dim glitch_red) — full-loot PvP, MythicMobs-only via RandomSpawns ADD.
+# spawn_mobs MUST be true for Mythic RandomSpawns ADD (GenerateSpawnPoints:true); vanilla suppressed via Mythic DisableVanillaSpawns.
+for rule in "keep_inventory false" "spawn_mobs true" "spawn_phantoms false" "mob_griefing false" \
              "fire_spread_radius_around_player 0" "advance_weather false" \
              "spawn_wandering_traders false"; do
   apply_rule ${rule} glitch_red

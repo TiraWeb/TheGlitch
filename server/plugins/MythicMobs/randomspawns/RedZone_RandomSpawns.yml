@@ -1,0 +1,61 @@
+# The Glitch — MythicMobs Random Spawns for glitch_red (2026-08-24 fix)
+# Replaces the old SpawnAreas/RedZone_SpawnAreas.yml which used Type:WORLD (not loaded by Mythic 5.13).
+# This file uses the correct RandomSpawns ADD system (requires GenerateSpawnPoints:true in config-spawning.yml).
+# Each entry spawns in glitch_red with a Chance per spawn point. Points are generated around survival players
+# within SpawnRadiusPerPlayer (64). Cooldown throttles per-entry.
+# Density target: ~90-110 concurrent (~1/150 chunks) with 4 tiers.
+
+# --- T1 fodder: spawns everywhere, most common ---
+RZ_T1_Wisp_Crawler:
+  Action: ADD
+  Types:
+  - GlitchWisp 60
+  - CorruptedCrawler 40
+  Worlds: glitch_red
+  Chance: 0.25
+  Priority: 1
+  PositionType: LAND
+  Cooldown: 30
+
+# --- T2 mid-tier: cross-ring and general ---
+RZ_T2_Stalker_Brute_Phantom:
+  Action: ADD
+  Types:
+  - GlitchStalker 45
+  - GlitchBrute 30
+  - GlitchPhantom 25
+  Worlds: glitch_red
+  Chance: 0.18
+  Priority: 2
+  PositionType: LAND
+  Cooldown: 45
+
+# --- T3 elites: Core and beacons (rarer, stronger) ---
+RZ_T3_Sentinel_Sniper_Warden:
+  Action: ADD
+  Types:
+  - GlitchSentinel 40
+  - GlitchSniper 35
+  - GlitchWarden 25
+  Worlds: glitch_red
+  Chance: 0.08
+  Priority: 3
+  PositionType: LAND
+  Cooldown: 90
+
+# --- T4 bosses: very rare, only occasionally ---
+RZ_T4_Bosses:
+  Action: ADD
+  Types:
+  - GlitchCore 50
+  - TheGlitchKing 50
+  Worlds: glitch_red
+  Chance: 0.005
+  Priority: 10
+  PositionType: LAND
+  Cooldown: 600
+
+# --- Legacy note: old SpawnAreas/RedZone_SpawnAreas.yml kept for reference but not loaded by Mythic 5.13.
+# If you see "Loaded 0 random spawns" after mm reload, check:
+#   /plugins/MythicMobs/config/config-spawning.yml -> RandomSpawning.GenerateSpawnPoints: true
+#   and gamerule glitch_red spawn_mobs true (or DisableVanillaSpawns:true to block vanilla)

@@ -251,6 +251,12 @@ public final class RaidManager {
             // stale expired session — clean before recreating
             try { endGlobalRaid(world, RaidEndReason.TIMEOUT); } catch (Exception ignored) {}
         }
+        // Buffer check: if we are in the 1m scatter buffer, do NOT start a fresh raid — wait for next t0
+        if (isInBufferPeriod()) {
+            long remainMs = getMillisUntilNextCycle();
+            plugin.getLogger().info("Global raid start suppressed — in 1m buffer, next cycle in " + formatTime((int) Math.max(0, remainMs / 1000)) + " (world=" + world + ")");
+            return null;
+        }
         long now = System.currentTimeMillis();
         long end = now + (durationSeconds * 1000L);
         // Try to anchor to GlitchStash AutoExtract cycle so extraction remaining is authoritative
@@ -268,8 +274,9 @@ public final class RaidManager {
                 } else if (stashStart > now) {
                     // Clock skew — ignore
                 } else if (stashEnd <= now && stashNext > now) {
-                    // In 1m buffer — next cycle not yet started. Anchor to next cycle if very close?
-                    // Keep fresh 30m for buffer joiners — they will be killed at next timeout anyway.
+                    // In 1m buffer — should have been caught above, but double-guard
+                    plugin.getLogger().info("In buffer per stash timing — suppressing fresh global (remaining buffer " + formatTime((int)((stashNext - now)/1000)) + ")");
+                    return null;
                 }
             }
         } catch (Exception e) {
@@ -336,6 +343,31 @@ public final class RaidManager {
         return s == null ? -1 : s.getRemainingSeconds();
     }
 
+    /** Whether we are inside the 1m buffer between raid end and next cycle. */
+    public boolean isInBufferPeriod() {
+        long[] info = getStashCycleInfo();
+        if (info == null) return false;
+        long start = info[0];
+        int raidMins = (int) info[1];
+        int intervalMins = (int) info[2];
+        if (start <= 0 || raidMins <= 0 || intervalMins <= 0) return false;
+        long raidEnd = start + raidMins * 60_000L;
+        long nextStart = start + intervalMins * 60_000L;
+        long now = System.currentTimeMillis();
+        return now >= raidEnd && now < nextStart;
+    }
+
+    public long getMillisUntilNextCycle() {
+        long[] info = getStashCycleInfo();
+        if (info == null) return -1;
+        long start = info[0];
+        int intervalMins = (int) info[2];
+        if (start <= 0 || intervalMins <= 0) return -1;
+        long next = start + intervalMins * 60_000L;
+        long remain = next - System.currentTimeMillis();
+        return Math.max(0, remain);
+    }
+
     /** Public hook for AutoExtractScheduler to force timeout kill (t0+30m). */
     public void handleAutoExtractTimeout() {
         String key = normalizeWorldKey(autoStartWorld);
@@ -369,11 +401,29 @@ public final class RaidManager {
         RaidSession session = findActiveGlobalSession(world);
         if (session == null) {
             if (isGlobalRemainingMode()) {
+                if (isInBufferPeriod()) {
+                    long remainMs = getMillisUntilNextCycle();
+                    String remain = formatTime((int) Math.max(0, remainMs / 1000));
+                    try {
+                        player.sendMessage(MM.deserialize("<yellow>Extraction is between cycles — <gray>next extraction in <white>" + remain + "</white>. Wait for the next 30m window.</gray>"));
+                        player.sendActionBar(MM.deserialize("<gray>Next extraction: <white>" + remain + "</white></gray>"));
+                    } catch (Exception ignored) {}
+                    plugin.getLogger().info("Player " + player.getName() + " entered " + world + " during 1m buffer — not added to raid (next in " + remain + ")");
+                    return false;
+                }
                 // No active global — fallback: start one now in the target world so the joiner
                 // contributes to the shared timer rather than getting a fresh per-player timer.
-                // This is used when scheduler hasn't yet created the 31m cycle, or after buffer.
+                // This is used when scheduler hasn't yet created the 31m cycle.
                 session = startGlobalRaid(world, true);
-                if (session == null) return false;
+                if (session == null) {
+                    // start suppressed due to buffer — already messaged above, but double-guard
+                    if (isInBufferPeriod()) {
+                        long remainMs = getMillisUntilNextCycle();
+                        String remain = formatTime((int) Math.max(0, remainMs / 1000));
+                        try { player.sendMessage(MM.deserialize("<yellow>Buffer — next extraction in <white>" + remain + "</white>.</yellow>")); } catch (Exception ignored) {}
+                    }
+                    return false;
+                }
             } else {
                 // Legacy solo-new mode — create a fresh per-player session
                 return startRaid(player, true);
@@ -526,12 +576,22 @@ public final class RaidManager {
             String playerWorld = leader.getWorld().getName();
             // Only apply global semantics to the extraction world (glitch_red)
             if (playerWorld.equalsIgnoreCase(autoStartWorld)) {
+                if (isInBufferPeriod()) {
+                    long remainMs = getMillisUntilNextCycle();
+                    String remain = formatTime((int) Math.max(0, remainMs / 1000));
+                    try {
+                        leader.sendMessage(MM.deserialize("<yellow>Extraction is between cycles — <gray>next extraction in <white>" + remain + "</white>. Hold tight.</gray>"));
+                        leader.sendActionBar(MM.deserialize("<gray>Next extraction: <white>" + remain + "</white></gray>"));
+                    } catch (Exception ignored) {}
+                    plugin.getLogger().info("startRaid suppressed for " + leader.getName() + " — in 1m buffer (next in " + remain + ")");
+                    return false;
+                }
                 RaidSession global = findActiveGlobalSession(autoStartWorld);
                 if (global != null) {
                     return addToGlobalSession(leader, autoStartWorld);
                 }
                 // No active global in RED — start a new global so ALL future joiners share this timer.
-                // This makes the first entrant after the 1m scatter buffer the anchor for the next 30m window.
+                // This will be suppressed during buffer above, so here we are outside buffer and safe to anchor.
                 RaidSession newGlobal = startGlobalRaid(autoStartWorld, auto);
                 if (newGlobal != null) {
                     newGlobal.getMembers().add(uuid);

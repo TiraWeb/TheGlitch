@@ -212,22 +212,48 @@ public final class EventManager {
         }
         Inventory inv = barrel.getInventory();
         for (String itemName : supplyItems) {
-            Material mat = Material.matchMaterial(itemName);
-            if (mat == null || !mat.isItem()) {
-                continue;
+            ItemStack stack = null;
+            // 1) Try Oraxen (custom items like unstable_rift_common, rune_fragment)
+            try {
+                Class<?> oraxenItems = Class.forName("io.th0rgal.oraxen.api.OraxenItems");
+                java.lang.reflect.Method getById = oraxenItems.getMethod("getItemById", String.class);
+                Object builder = getById.invoke(null, itemName);
+                if (builder != null) {
+                    java.lang.reflect.Method build = builder.getClass().getMethod("build");
+                    Object result = build.invoke(builder);
+                    if (result instanceof ItemStack s) stack = s;
+                }
+            } catch (Exception ignored) {}
+            // 2) Fallback: try GlitchCommon OraxenUtil reflectively
+            if (stack == null) {
+                try {
+                    Class<?> util = Class.forName("com.theglitch.common.OraxenUtil");
+                    java.lang.reflect.Method build = util.getMethod("build", String.class);
+                    Object res = build.invoke(null, itemName);
+                    if (res instanceof ItemStack s) stack = s;
+                } catch (Exception ignored2) {}
+            }
+            // 3) Fallback: vanilla material
+            if (stack == null) {
+                Material mat = Material.matchMaterial(itemName);
+                if (mat == null || !mat.isItem()) {
+                    plugin.getLogger().warning("Supply drop: unknown item '" + itemName + "' — skipping (not Oraxen nor vanilla).");
+                    continue;
+                }
+                stack = new ItemStack(mat);
             }
             int slot = inv.firstEmpty();
-            if (slot < 0) {
-                break;
-            }
-            inv.setItem(slot, new ItemStack(mat));
+            if (slot < 0) break;
+            inv.setItem(slot, stack);
         }
         int shards = shardsMin + random.nextInt(shardsMax - shardsMin + 1);
         int slot = inv.firstEmpty();
         if (slot >= 0) {
             inv.setItem(slot, new ItemStack(Material.AMETHYST_SHARD, Math.min(shards, 64)));
         }
-        barrel.update();
+        // Ensure barrel state is saved — use forced update for Folia/Paper
+        try { barrel.update(true, false); } catch (Exception e) { try { barrel.update(); } catch (Exception ignored) {} }
+        plugin.getLogger().info("Supply drop filled barrel at " + barrelBlock.getX() + "," + barrelBlock.getY() + "," + barrelBlock.getZ() + " with " + inv.getContents().length + " slots (" + supplyItems + " + " + shards + " shards).");
     }
 
     public boolean startRoamingBoss(Player near) {
