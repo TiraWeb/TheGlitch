@@ -510,9 +510,9 @@ public final class AutoExtractScheduler {
         return List.of();
     }
 
-    private List<String> getConfiguredArenas() {
+    public List<String> getConfiguredArenas() {
         List<String> cfg = this.configuredArenas;
-        return cfg == null ? List.of() : cfg;
+        return cfg == null ? List.of() : List.copyOf(cfg);
     }
 
     /**
@@ -907,7 +907,6 @@ public final class AutoExtractScheduler {
     public int getIntervalMinutes() { return intervalMinutes; }
     public int getRaidDurationMinutes() { return raidDurationMinutes; }
     public int getBufferMinutes() { return bufferMinutes; }
-    public List<String> getConfiguredArenas() { return List.copyOf(configuredArenas); }
     public int getCycleCount() { return cycleCounter.get(); }
     public long getLastCycleStartMillis() { return lastCycleStartMillis; }
 
