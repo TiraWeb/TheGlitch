@@ -233,6 +233,12 @@ public final class RaidManager {
     /**
      * Starts a global raid in world with auto flag. Synchronized to prevent double-create.
      * Folia-safe: BossBar + timer are GlobalRegionScheduler based.
+     * <p>
+     * Syncs to GlitchStash's AutoExtract cycle if available: if the 31m scheduler has a
+     * recent cycle start (within last interval), the global's end is anchored to
+     * {@code cycleStart + raidDuration} so late joiners see the correct remaining
+     * time (e.g. join at 14m remaining → 14m, not fresh 30m).
+     * </p>
      */
     public synchronized RaidSession startGlobalRaid(String world, boolean auto) {
         if (world == null || world.isBlank()) world = autoStartWorld;
@@ -247,13 +253,37 @@ public final class RaidManager {
         }
         long now = System.currentTimeMillis();
         long end = now + (durationSeconds * 1000L);
+        // Try to anchor to GlitchStash AutoExtract cycle so extraction remaining is authoritative
+        try {
+            long[] stashInfo = getStashCycleInfo(); // [cycleStartMillis, raidDurationMinutes]
+            if (stashInfo != null && stashInfo[0] > 0 && stashInfo[1] > 0) {
+                long stashStart = stashInfo[0];
+                long stashRaidMs = stashInfo[1] * 60_000L;
+                long stashEnd = stashStart + stashRaidMs;
+                long stashNext = stashStart + (stashInfo.length > 2 ? stashInfo[2] * 60_000L : stashRaidMs + 60_000L);
+                // If we are inside the active raid window (t0 .. t0+30m) use stashEnd
+                if (stashEnd > now && stashStart <= now && stashEnd < end) {
+                    end = stashEnd;
+                    plugin.getLogger().info("Global raid anchored to Stash cycle: stashStart=" + stashStart + " stashEnd=" + stashEnd + " remaining=" + formatTime((int)((stashEnd - now)/1000)));
+                } else if (stashStart > now) {
+                    // Clock skew — ignore
+                } else if (stashEnd <= now && stashNext > now) {
+                    // In 1m buffer — next cycle not yet started. Anchor to next cycle if very close?
+                    // Keep fresh 30m for buffer joiners — they will be killed at next timeout anyway.
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().fine("Could not anchor global to Stash cycle: " + e.getMessage());
+        }
+        int initialSeconds = (int) Math.max(0, (end - now) / 1000);
+        if (initialSeconds <= 0) initialSeconds = durationSeconds;
         Set<UUID> members = ConcurrentHashMap.newKeySet();
         UUID leaderId = globalLeaderId(key);
         RaidSession session = new RaidSession(leaderId, members, now, end);
         globalSessions.put(key, session);
 
         String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
-        String formatted = formatTime(durationSeconds);
+        String formatted = formatTime(initialSeconds);
         Component initialName = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
         BossBar bar = BossBar.bossBar(initialName, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
         globalBossBars.put(key, bar);
@@ -261,8 +291,59 @@ public final class RaidManager {
         FoliaScheduler.Cancellable task = FoliaScheduler.runAtFixedRateGlobal(plugin, () -> tickGlobal(key), 20L, 20L);
         globalTimers.put(key, task);
 
-        plugin.getLogger().info("Global raid started for world " + world + " (key=" + key + ", duration=" + durationSeconds + "s, auto=" + auto + ", leader=" + leaderId + ")");
+        plugin.getLogger().info("Global raid started for world " + world + " (key=" + key + ", duration=" + initialSeconds + "s (requested " + durationSeconds + "s), auto=" + auto + ", leader=" + leaderId + ")");
         return session;
+    }
+
+    /**
+     * Tries to get Stash cycle info via reflection: [lastCycleStartMillis, raidDurationMinutes, intervalMinutes].
+     * Returns null if Stash not present or reflection fails.
+     */
+    private long[] getStashCycleInfo() {
+        try {
+            Plugin stashPlugin = Bukkit.getPluginManager().getPlugin("GlitchStash");
+            if (stashPlugin == null || !stashPlugin.isEnabled()) return null;
+            Object stashInstance = stashPlugin;
+            try {
+                java.lang.reflect.Method getInstance = stashPlugin.getClass().getMethod("getInstance");
+                Object maybe = getInstance.invoke(null);
+                if (maybe != null) stashInstance = maybe;
+            } catch (Exception ignored) {}
+            Object scheduler = null;
+            for (String m : new String[]{"getAutoExtractScheduler", "getScheduler", "getExtractScheduler"}) {
+                try {
+                    java.lang.reflect.Method method = stashInstance.getClass().getMethod(m);
+                    scheduler = method.invoke(stashInstance);
+                    if (scheduler != null) break;
+                } catch (NoSuchMethodException ignored) {}
+            }
+            if (scheduler == null) return null;
+            java.lang.reflect.Method getLast = scheduler.getClass().getMethod("getLastCycleStartMillis");
+            java.lang.reflect.Method getRaidDur = scheduler.getClass().getMethod("getRaidDurationMinutes");
+            java.lang.reflect.Method getInterval = scheduler.getClass().getMethod("getIntervalMinutes");
+            long last = (long) getLast.invoke(scheduler);
+            int raidDur = (int) getRaidDur.invoke(scheduler);
+            int interval = (int) getInterval.invoke(scheduler);
+            return new long[]{last, raidDur, interval};
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Public accessor for remaining seconds of global in world, or -1 if none. */
+    public int getGlobalRemainingSeconds(String world) {
+        RaidSession s = findActiveGlobalSession(world);
+        return s == null ? -1 : s.getRemainingSeconds();
+    }
+
+    /** Public hook for AutoExtractScheduler to force timeout kill (t0+30m). */
+    public void handleAutoExtractTimeout() {
+        String key = normalizeWorldKey(autoStartWorld);
+        handleGlobalTimeout(key);
+    }
+
+    public void handleAutoExtractTimeout(int cycle) {
+        handleAutoExtractTimeout();
     }
 
     /**
@@ -1343,9 +1424,9 @@ public final class RaidManager {
      * Global timeout: at the end of the 30m extraction, EVERYONE in RED WORLD is killed
      * (not hub/pve), then loot scatters during the 1m buffer before next 31m cycle.
      * This is the authoritative timeout for the shared extraction window.
-     * Folia-safe, null-safe, world-filtered.
+     * Folia-safe, null-safe, world-filtered. Public for AutoExtractScheduler reflection.
      */
-    private void handleGlobalTimeout(String worldKey) {
+    public void handleGlobalTimeout(String worldKey) {
         RaidSession session = globalSessions.get(worldKey);
         if (session == null) return;
         // Prevent duplicate handling if already ending

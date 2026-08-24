@@ -13,6 +13,7 @@ GlitchPhantom:
     Despawn: false
     FollowRange: 30
     KnockbackResistance: 0
+    PreventBlockDestruction: true
     ScoreboardTags: [res_veil]
     ShowHealth: true
   AIGoalSelectors:

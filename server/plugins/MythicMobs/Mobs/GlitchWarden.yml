@@ -16,6 +16,7 @@ GlitchWarden:
     Despawn: false
     FollowRange: 24
     KnockbackResistance: 1
+    PreventBlockDestruction: true
     ScoreboardTags: [res_aegis]
     ShowHealth: true
   AITargetSelectors:

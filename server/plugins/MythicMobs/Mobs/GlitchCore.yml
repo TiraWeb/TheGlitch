@@ -15,6 +15,7 @@ GlitchCore:
     FollowRange: 40
     KnockbackResistance: 0.8
     CombatReady: true
+    PreventBlockDestruction: true
     ScoreboardTags: [res_hollow]
     ShowHealth: true
   AIGoalSelectors:

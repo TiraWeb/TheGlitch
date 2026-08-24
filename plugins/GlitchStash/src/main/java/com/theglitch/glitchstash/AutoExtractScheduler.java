@@ -238,6 +238,16 @@ public final class AutoExtractScheduler {
             }
         }
 
+        // Drive GlitchRaid global extraction window so late joiners see correct remaining time
+        try {
+            boolean raidStarted = tryNotifyRaidStart();
+            if (raidStarted) {
+                plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — GlitchRaid global extraction started/anchored to this cycle.");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().fine("[AutoExtract] GlitchRaid start probe failed: " + e.getMessage());
+        }
+
         // Schedule intra-cycle buffer tasks: t0+30m kill, t0+30m+5s scatter
         scheduleBufferTasks(cycle, lastCycleStartMillis);
         plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " t0 complete — next cycle in " + intervalMinutes + "m (kill in " + raidDurationMinutes + "m, scatter +5s).");
@@ -345,6 +355,52 @@ public final class AutoExtractScheduler {
     // ------------------------------------------------------------------------
 
     /**
+     * Tries to notify GlitchRaid's RaidManager to start/anchor global extraction at t0.
+     * Returns true if we successfully invoked startGlobalRaid reflectively.
+     */
+    private boolean tryNotifyRaidStart() {
+        Plugin raidPlugin = Bukkit.getPluginManager().getPlugin("GlitchRaid");
+        if (raidPlugin == null) return false;
+        try {
+            Object raidInstance = raidPlugin;
+            try {
+                Method getInstance = raidPlugin.getClass().getMethod("getInstance");
+                Object maybe = getInstance.invoke(null);
+                if (maybe != null) raidInstance = maybe;
+            } catch (Exception ignored) {}
+            Object manager = null;
+            for (String m : new String[]{"getRaidManager", "getManager", "getRaidController"}) {
+                try {
+                    Method method = raidInstance.getClass().getMethod(m);
+                    manager = method.invoke(raidInstance);
+                    if (manager != null) break;
+                } catch (NoSuchMethodException ignored) {}
+            }
+            if (manager == null) return false;
+            // Preferred: startGlobalRaid(String world, boolean auto) with redWorld
+            try {
+                Method m = manager.getClass().getMethod("startGlobalRaid", String.class, boolean.class);
+                Object result = m.invoke(manager, redWorld, true);
+                return result != null;
+            } catch (NoSuchMethodException ignored) {}
+            try {
+                Method m2 = manager.getClass().getMethod("startGlobalRaid", String.class);
+                Object result = m2.invoke(manager, redWorld);
+                return result != null;
+            } catch (NoSuchMethodException ignored2) {}
+            // Fallback: startGlobalRaid() no args
+            try {
+                Method m3 = manager.getClass().getMethod("startGlobalRaid");
+                Object result = m3.invoke(manager);
+                return result != null;
+            } catch (NoSuchMethodException ignored3) {}
+        } catch (Exception e) {
+            plugin.getLogger().fine("[AutoExtract] GlitchRaid start probe failed: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
      * Tries to notify GlitchRaid's RaidManager of the global timeout. Returns
      * true if we successfully invoked a handler reflectively.
      */
@@ -352,8 +408,6 @@ public final class AutoExtractScheduler {
         Plugin raidPlugin = Bukkit.getPluginManager().getPlugin("GlitchRaid");
         if (raidPlugin == null) return false;
         try {
-            // Attempt: GlitchRaid.getInstance().getRaidManager().handleGlobalTimeout() or similar
-            // We probe for any method containing "timeout" or "global" to stay forward-compatible
             Object raidInstance = raidPlugin;
             try {
                 Method getInstance = raidPlugin.getClass().getMethod("getInstance");
@@ -371,8 +425,20 @@ public final class AutoExtractScheduler {
             }
             if (manager == null) return false;
 
-            // Try known future API: handleGlobalTimeout / handleAutoExtractTimeout / onCycleTimeout
-            for (String handler : new String[]{"handleGlobalTimeout", "handleAutoExtractTimeout", "onAutoExtractTimeout", "handleCycleTimeout", "globalTimeout"}) {
+            // Try handleGlobalTimeout with worldKey (now public) — most specific
+            String targetWorld = redWorld != null && !redWorld.isBlank() ? redWorld : "glitch_red";
+            try {
+                Method method = manager.getClass().getMethod("handleGlobalTimeout", String.class);
+                method.invoke(manager, targetWorld);
+                return true;
+            } catch (NoSuchMethodException ignored) {}
+            try {
+                Method method2 = manager.getClass().getMethod("handleGlobalTimeout");
+                method2.invoke(manager);
+                return true;
+            } catch (NoSuchMethodException ignored2) {}
+            // Fallback to auto-extract specific handlers
+            for (String handler : new String[]{"handleAutoExtractTimeout", "onAutoExtractTimeout", "handleCycleTimeout", "globalTimeout"}) {
                 try {
                     Method method = manager.getClass().getMethod(handler);
                     method.invoke(manager);
@@ -383,6 +449,11 @@ public final class AutoExtractScheduler {
                     method2.invoke(manager, cycle);
                     return true;
                 } catch (NoSuchMethodException ignored2) {}
+                try {
+                    Method method3 = manager.getClass().getMethod(handler, String.class);
+                    method3.invoke(manager, targetWorld);
+                    return true;
+                } catch (NoSuchMethodException ignored3) {}
             }
         } catch (Exception e) {
             plugin.getLogger().fine("[AutoExtract] GlitchRaid notify probe failed: " + e.getMessage());

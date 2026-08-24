@@ -14,6 +14,7 @@ CorruptedCrawler:
     Despawn: false
     FollowRange: 20
     KnockbackResistance: 0
+    PreventBlockDestruction: true
     ScoreboardTags: [res_hollow]
     ShowHealth: true
   Skills:

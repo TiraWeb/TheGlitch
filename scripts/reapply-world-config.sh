@@ -59,13 +59,8 @@ mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
 mc "execute in minecraft:glitch_red run weather clear" >/dev/null
 
 # ---- world borders ----
-log "Setting world borders..."
-mc "execute in minecraft:glitch_pve run worldborder center 0 0" >/dev/null
-mc "execute in minecraft:glitch_pve run worldborder set 4096" >/dev/null
-mc "execute in minecraft:glitch_red run worldborder center 0 0" >/dev/null
-mc "execute in minecraft:glitch_red run worldborder set 2000" >/dev/null
-mc "execute in minecraft:overworld run worldborder center 0 -60 0" >/dev/null
-mc "execute in minecraft:overworld run worldborder set 512" >/dev/null
+# Removed per user request (2026-08-24): no world borders are set. Worlds use vanilla default (6M).
+log "World borders skipped (removed per operator request — using vanilla defaults)."
 
 # ---- clear mobs ----
 log "Clearing leftover mobs..."
@@ -121,6 +116,7 @@ flag glitch_pve enderpearl deny
 # glitch_red — indestructible adventure-like, full-loot PvP (RED WORLD only)
 # Block/world modification denied; use/chest-access allowed so players can loot;
 # damage-animals allow + mob-damage NOT denied so custom MythicMobs remain hittable.
+# Explosion/dragon flags ensure MythicMobs with PreventBlockDestruction still cannot grief via vanilla.
 flag glitch_red passthrough deny
 flag glitch_red pvp allow
 flag glitch_red use allow
@@ -136,6 +132,11 @@ flag glitch_red snow-melt deny
 flag glitch_red grass-spread deny
 flag glitch_red mycelium-spread deny
 flag glitch_red vine-growth deny
+flag glitch_red creeper-explosion deny
+flag glitch_red other-explosion deny
+flag glitch_red tnt deny
+flag glitch_red enderdragon-block-damage deny
+flag glitch_red wither-damage deny
 flag glitch_red item-drop allow
 flag glitch_red item-pickup allow
 

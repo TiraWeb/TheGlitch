@@ -22,6 +22,8 @@ TheGlitchKing:
     PreventsOtherDrops: true
     PreventRandomEquipment: true
     PreventInfection: true
+    # Critical: Ender Dragon natively destroys blocks when flying — must be disabled
+    PreventBlockDestruction: true
     ScoreboardTags: [res_hollow]
     ShowHealth: true
   Skills:

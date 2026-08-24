@@ -9,16 +9,13 @@
 # height; MythicMobs picks surface positions inside each cuboid.
 # Weights are relative; lv=1 until class/gear scaling lands.
 #
-# Density tuning (RED WORLD only) — sparse, performant adventure:
-#   World 2000x2000 @ border 2000 => ~15625 chunks (125*125).
-#   At 1 mob per 5-10 chunks naive calc = 1562-3125 concurrent mobs (too many for TPS).
-#   Tuned target ~1 per ~200-250 chunks (~60-80 concurrent across all 13 areas) for
-#   sparse exploration: T1 quadrants 6/90, T2 cross-ring 5/60, Core mixed 8/60,
-#   Core elite 3/300, Beacons 2/300. MythicMobs SpawnLimit is concurrent cap per
-#   cuboid; Cooldown seconds throttles respawn rate. Previous 25/5 was far too dense
-#   (100 T1 + 40 T2 = lag spike on entry). 4-6 per large cuboid + 60-120s cooldown
-#   gives breathing room while keeping threat.
-#   Vanilla spawns disabled via spawn_mobs false (gamerule) so only these MythicMobs spawn.
+# Density tuning 2026-08-24 (RED WORLD only) — sparse but visible:
+#   World 2000x2000 => ~15625 chunks. Naive 1 per 5-10 = 1562-3125 concurrent (TPS death).
+#   Previous 2026-08-23: 61 concurrent (~1/256 chunks) was too sparse — players reported
+#   "no mobs at all" due to high Cooldown 90-300s + low Limits. New target ~90-110 concurrent
+#   (~1/140-170 chunks) with faster 45-90s cooldowns so roaming feels populated without
+#   TPS spike. Vanilla spawns disabled via spawn_mobs false (blocks NATURAL only; MythicMobs TYPE:WORLD bypasses it).
+#   If mobs still absent, check: /gamerule spawn_mobs (should be false), /rg flag -w glitch_red __global__ mob-spawning (should be unset/allow), and MythicMobs config Spawning.PluginsRespectGamerule=false.
 
 # --- T1: fodder everywhere (4 quadrants, core + ring excluded) --------------
 
@@ -28,8 +25,8 @@ RZ_T1_NorthWest:
   Area: CUBOID
   Min: '-1000,-64,-1000'
   Max: '-301,320,-301'
-  SpawnLimit: 6
-  SpawnCooldown: 90
+  SpawnLimit: 8
+  SpawnCooldown: 45
   Mobs:
   - GlitchWisp{lv=1} @0.6
   - CorruptedCrawler{lv=1} @0.4
@@ -40,8 +37,8 @@ RZ_T1_NorthEast:
   Area: CUBOID
   Min: '301,-64,-1000'
   Max: '1000,320,-301'
-  SpawnLimit: 6
-  SpawnCooldown: 90
+  SpawnLimit: 8
+  SpawnCooldown: 45
   Mobs:
   - GlitchWisp{lv=1} @0.6
   - CorruptedCrawler{lv=1} @0.4
@@ -52,8 +49,8 @@ RZ_T1_SouthWest:
   Area: CUBOID
   Min: '-1000,-64,301'
   Max: '-301,320,1000'
-  SpawnLimit: 6
-  SpawnCooldown: 90
+  SpawnLimit: 8
+  SpawnCooldown: 45
   Mobs:
   - GlitchWisp{lv=1} @0.6
   - CorruptedCrawler{lv=1} @0.4
@@ -64,8 +61,8 @@ RZ_T1_SouthEast:
   Area: CUBOID
   Min: '301,-64,301'
   Max: '1000,320,1000'
-  SpawnLimit: 6
-  SpawnCooldown: 90
+  SpawnLimit: 8
+  SpawnCooldown: 45
   Mobs:
   - GlitchWisp{lv=1} @0.6
   - CorruptedCrawler{lv=1} @0.4
@@ -78,8 +75,8 @@ RZ_T2_North:
   Area: CUBOID
   Min: '-300,-64,-1000'
   Max: '300,320,-301'
-  SpawnLimit: 5
-  SpawnCooldown: 60
+  SpawnLimit: 7
+  SpawnCooldown: 45
   Mobs:
   - GlitchStalker{lv=1} @0.45
   - GlitchBrute{lv=1} @0.3
@@ -91,8 +88,8 @@ RZ_T2_South:
   Area: CUBOID
   Min: '-300,-64,301'
   Max: '300,320,1000'
-  SpawnLimit: 5
-  SpawnCooldown: 60
+  SpawnLimit: 7
+  SpawnCooldown: 45
   Mobs:
   - GlitchStalker{lv=1} @0.45
   - GlitchBrute{lv=1} @0.3
@@ -104,8 +101,8 @@ RZ_T2_West:
   Area: CUBOID
   Min: '-1000,-64,-300'
   Max: '-301,320,300'
-  SpawnLimit: 5
-  SpawnCooldown: 60
+  SpawnLimit: 7
+  SpawnCooldown: 45
   Mobs:
   - GlitchStalker{lv=1} @0.45
   - GlitchBrute{lv=1} @0.3
@@ -117,8 +114,8 @@ RZ_T2_East:
   Area: CUBOID
   Min: '301,-64,-300'
   Max: '1000,320,300'
-  SpawnLimit: 5
-  SpawnCooldown: 60
+  SpawnLimit: 7
+  SpawnCooldown: 45
   Mobs:
   - GlitchStalker{lv=1} @0.45
   - GlitchBrute{lv=1} @0.3
@@ -132,8 +129,8 @@ RZ_Core_Mixed:
   Area: CUBOID
   Min: '-300,-64,-300'
   Max: '300,320,300'
-  SpawnLimit: 8
-  SpawnCooldown: 60
+  SpawnLimit: 10
+  SpawnCooldown: 45
   Mobs:
   - GlitchStalker{lv=1} @0.4
   - GlitchBrute{lv=1} @0.3
@@ -147,8 +144,8 @@ RZ_Core_Elite:
   Area: CUBOID
   Min: '-200,-64,-200'
   Max: '200,320,200'
-  SpawnLimit: 3
-  SpawnCooldown: 300
+  SpawnLimit: 5
+  SpawnCooldown: 120
   Mobs:
   - GlitchSentinel{lv=1} @0.4
   - GlitchSniper{lv=1} @0.35
@@ -162,8 +159,8 @@ RZ_Beacon_X1:
   Area: CUBOID
   Min: '350,-64,-350'
   Max: '550,320,-150'
-  SpawnLimit: 2
-  SpawnCooldown: 300
+  SpawnLimit: 4
+  SpawnCooldown: 120
   Mobs:
   - GlitchSentinel{lv=1} @0.4
   - GlitchSniper{lv=1} @0.4
@@ -175,8 +172,8 @@ RZ_Beacon_X2:
   Area: CUBOID
   Min: '-620,-64,80'
   Max: '-420,320,280'
-  SpawnLimit: 2
-  SpawnCooldown: 300
+  SpawnLimit: 4
+  SpawnCooldown: 120
   Mobs:
   - GlitchSentinel{lv=1} @0.4
   - GlitchSniper{lv=1} @0.4
@@ -188,8 +185,8 @@ RZ_Beacon_X3:
   Area: CUBOID
   Min: '-40,-64,440'
   Max: '160,320,640'
-  SpawnLimit: 2
-  SpawnCooldown: 300
+  SpawnLimit: 4
+  SpawnCooldown: 120
   Mobs:
   - GlitchSentinel{lv=1} @0.4
   - GlitchSniper{lv=1} @0.4

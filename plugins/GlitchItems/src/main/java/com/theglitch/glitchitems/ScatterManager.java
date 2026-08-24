@@ -108,20 +108,22 @@ public final class ScatterManager {
     // Config defaults
     // ------------------------------------------------------------------------
 
-    private static final int DEFAULT_INTERVAL_MINUTES = 30;
+    private static final int DEFAULT_INTERVAL_MINUTES = 31;
     private static final int DEFAULT_BORDER_RADIUS = 1000; // 2000x2000 border → 1000 radius from 0,0
     private static final int DEFAULT_CHUNKS_PER_CONTAINER = 8;
-    private static final int DEFAULT_MAX_ATTEMPTS = 30;
+    private static final int DEFAULT_MAX_ATTEMPTS = 50;
     private static final boolean DEFAULT_CLEAR_PREVIOUS = true;
     private static final boolean DEFAULT_ON_TOP_ONLY = true;
     private static final Map<String, Integer> DEFAULT_COUNTS;
     static {
         Map<String, Integer> m = new LinkedHashMap<>();
-        // Sparse but reasonable — mirrors final plan: 36 total
-        m.put("debris", 18);
-        m.put("cache", 10);
-        m.put("vault", 6);
-        m.put("rift_vault", 2);
+        // 2026-08-24: increased density per operator request "2/3 per 5-10 chunks" —
+        // previous 36 total (~1/430 chunks) was too sparse. New 145 total (~1/107 chunks)
+        // is ~4x denser, playable without TPS collapse (2 per 5 chunks naive would be 6250).
+        m.put("debris", 70);
+        m.put("cache", 40);
+        m.put("vault", 25);
+        m.put("rift_vault", 10);
         DEFAULT_COUNTS = Collections.unmodifiableMap(m);
     }
 
@@ -388,13 +390,18 @@ public final class ScatterManager {
             plugin.getLogger().info("[Scatter] Scheduler disabled via config — not scheduling.");
             return;
         }
+        // Single source of truth: when GlitchStash AutoExtract is present, its 31m cycle
+        // (30m raid +1m buffer) owns timing at t0+30m+5s via AutoExtractCycleEndEvent.
+        // Running our own 30m timer in parallel would drift by 1m per cycle, so we disable
+        // the fixed-rate timer and rely solely on the event hook.
+        Plugin stash = Bukkit.getPluginManager().getPlugin("GlitchStash");
+        if (stash != null && stash.isEnabled()) {
+            plugin.getLogger().info("[Scatter] GlitchStash detected — fixed-rate timer disabled (event-driven via AutoExtractCycleEndEvent at t0+30m+5s). Interval " + intervalMinutes + "m is fallback only.");
+            return;
+        }
         long periodTicks = intervalMinutes * 60L * 20L;
         long delayTicks = periodTicks; // first scatter after one interval; immediate scatter is via AutoExtractCycleEndEvent
-        // Optionally also delay a bit on startup to let worlds load
-        if (delayTicks > 20L * 60L) {
-            // Keep first scatter at period but log
-        }
-        plugin.getLogger().info("[Scatter] Scheduling automatic loot scatter every " + intervalMinutes + "m (periodTicks=" + periodTicks + ") — first in " + intervalMinutes + "m (also on AutoExtractCycleEndEvent).");
+        plugin.getLogger().info("[Scatter] Scheduling automatic loot scatter every " + intervalMinutes + "m (periodTicks=" + periodTicks + ") — first in " + intervalMinutes + "m (also on AutoExtractCycleEndEvent if Stash later appears).");
         try {
             scheduledTask = FoliaScheduler.runAtFixedRateGlobal(plugin, this::runScheduledScatter, delayTicks, periodTicks);
             if (scheduledTask == null) {

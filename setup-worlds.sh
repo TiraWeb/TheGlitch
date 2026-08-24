@@ -72,12 +72,14 @@ ensure_world glitch_red normal --seed "${RED_SEED}"
 # glitch_pve's dungeon-trash fast-despawn tuning, placed at the actual world
 # path. Takes effect on the next server restart (Paper reads paper-world.yml
 # at world load).
-PW_SRC="${REPO_DIR}/server/world-overrides/glitch_pve/paper-world.yml"
-if [[ -f "${PW_SRC}" && -d "${DIM_DIR}/glitch_pve" ]]; then
-  install -o "${MC_USER}" -g "${MC_USER}" -m 644 \
-    "${PW_SRC}" "${DIM_DIR}/glitch_pve/paper-world.yml"
-  log "Placed glitch_pve/paper-world.yml (applies on next restart)"
-fi
+for PW_NAME in glitch_pve glitch_red; do
+  PW_SRC="${REPO_DIR}/server/world-overrides/${PW_NAME}/paper-world.yml"
+  if [[ -f "${PW_SRC}" && -d "${DIM_DIR}/${PW_NAME}" ]]; then
+    install -o "${MC_USER}" -g "${MC_USER}" -m 644 \
+      "${PW_SRC}" "${DIM_DIR}/${PW_NAME}/paper-world.yml"
+    log "Placed ${PW_NAME}/paper-world.yml (applies on next restart)"
+  fi
+done
 
 # --- gamerules (per world; re-applied every run) ----------------------------
 # Applied via vanilla 'execute in <dimension> run gamerule' — the SAME
@@ -165,20 +167,13 @@ for dim in overworld glitch_pve; do
   done
 done
 
-# --- spawns & borders --------------------------------------------------------
-log "Setting spawns and world borders"
+# --- spawns --------------------------------------------------------
+log "Setting spawns"
 mc "execute in minecraft:overworld run setworldspawn 0 -60 0" >/dev/null
 # Multiverse tracks its own per-world spawn for respawns, independently of
 # the vanilla level spawn above — set both so they can't silently diverge.
 mc "mv setspawn hub:0,-60,0" >/dev/null
 mc "mv setspawn glitch_pve:0,-60,0" >/dev/null
-
-mc "execute in minecraft:overworld run worldborder center 0 0" >/dev/null
-mc "execute in minecraft:overworld run worldborder set 512" >/dev/null
-mc "execute in minecraft:glitch_pve run worldborder center 0 0" >/dev/null
-mc "execute in minecraft:glitch_pve run worldborder set 4096" >/dev/null
-mc "execute in minecraft:glitch_red run worldborder center 0 0" >/dev/null
-mc "execute in minecraft:glitch_red run worldborder set 2000" >/dev/null
 
 # --- WorldGuard zone protection ---------------------------------------------
 # 'passthrough deny' on __global__ is the docs-recommended way to make a world
@@ -249,6 +244,11 @@ flag glitch_red snow-melt deny
 flag glitch_red grass-spread deny
 flag glitch_red mycelium-spread deny
 flag glitch_red vine-growth deny
+flag glitch_red creeper-explosion deny
+flag glitch_red other-explosion deny
+flag glitch_red tnt deny
+flag glitch_red enderdragon-block-damage deny
+flag glitch_red wither-damage deny
 flag glitch_red item-drop allow
 flag glitch_red item-pickup allow
 

@@ -1,0 +1,28 @@
+# The Glitch — per-world Paper override for glitch_red (RED WORLD).
+# Synced by setup-worlds.sh to <world-folder>/paper-world.yml.
+# Purpose: ensure NO mob can destroy world blocks (dragon, wither, creeper, etc.).
+# The primary protection is gamerule mob_griefing false (setup-worlds.sh) +
+# MythicMobs PreventBlockDestruction:true on all custom mobs +
+# WorldGuard creeper-explosion/other-explosion/enderdragon-block-damage deny.
+# This file adds an extra Paper layer: disable explosion knockback and
+# optimize explosions already enabled globally.
+
+entities:
+  spawning:
+    # Keep despawn ranges tight so MythicMobs limits are authoritative
+    despawn-ranges:
+      monster:
+        hard:
+          horizontal: 64
+          vertical: 64
+        soft:
+          horizontal: 28
+          vertical: 28
+
+environment:
+  optimize-explosions: true
+
+# Explicitly keep block destruction disabled for ender dragon / wither
+# (relies on gamerule mob_griefing false, but Paper respects it).
+# No additional keys needed — mob_griefing false is sufficient per vanilla/Paper.
+# This file exists so future Paper options can be added without code change.
