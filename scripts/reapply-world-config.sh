@@ -99,17 +99,45 @@ flag overworld enderpearl deny
 flag overworld feed-delay deny
 flag overworld heal-delay deny
 
-# glitch_pve
+# glitch_pve — indestructible adventure-like (same protection as hub, but pvp deny)
+# damage-animals allow keeps MythicMobs hittable; mob-damage NOT denied.
 flag glitch_pve passthrough deny
 flag glitch_pve pvp deny
 flag glitch_pve use allow
 flag glitch_pve chest-access allow
+flag glitch_pve damage-animals allow
+flag glitch_pve block-break deny
+flag glitch_pve block-place deny
+flag glitch_pve leaf-decay deny
+flag glitch_pve ice-form deny
+flag glitch_pve ice-melt deny
+flag glitch_pve snow-fall deny
+flag glitch_pve snow-melt deny
+flag glitch_pve grass-spread deny
+flag glitch_pve mycelium-spread deny
+flag glitch_pve vine-growth deny
 flag glitch_pve enderpearl deny
 
-# glitch_red
+# glitch_red — indestructible adventure-like, full-loot PvP (RED WORLD only)
+# Block/world modification denied; use/chest-access allowed so players can loot;
+# damage-animals allow + mob-damage NOT denied so custom MythicMobs remain hittable.
 flag glitch_red passthrough deny
 flag glitch_red pvp allow
 flag glitch_red use allow
+flag glitch_red chest-access allow
+flag glitch_red damage-animals allow
+flag glitch_red block-break deny
+flag glitch_red block-place deny
+flag glitch_red leaf-decay deny
+flag glitch_red ice-form deny
+flag glitch_red ice-melt deny
+flag glitch_red snow-fall deny
+flag glitch_red snow-melt deny
+flag glitch_red grass-spread deny
+flag glitch_red mycelium-spread deny
+flag glitch_red vine-growth deny
+flag glitch_red item-drop allow
+flag glitch_red item-pickup allow
 
 # ---- exp setting ----
 log "Setting hub spawn..."

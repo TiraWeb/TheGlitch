@@ -202,6 +202,16 @@ public final class ContainerManager {
         state.update(true, false);
     }
 
+    // ---- Scatter bridge (for GlitchStash AutoExtractScheduler reflection) ----
+    // GlitchStash probes GlitchItems#getContainerManager() for scatter entry points.
+    // These aliases delegate to ScatterManager so extracted cycles can trigger
+    // scatter even if the event hook is not yet wired.
+    public void scatter() { try { GlitchItems.getInstance().getScatterManager().scatterNow(); } catch (Exception ignored) {} }
+    public void resetContainers() { scatter(); }
+    public void onCycleEnd() { scatter(); }
+    public void handleCycleEnd() { scatter(); }
+    public void doScatter() { scatter(); }
+
     public boolean open(Player player, Block block) {
         ContainerType type = typeOf(block);
         if (type == null) {

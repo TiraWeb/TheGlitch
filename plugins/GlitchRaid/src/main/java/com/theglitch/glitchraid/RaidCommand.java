@@ -115,7 +115,8 @@ public final class RaidCommand implements CommandExecutor {
                     player.sendMessage(MM.deserialize("<red>You can't invite yourself.</red>"));
                     return true;
                 }
-                if (manager.isInRaid(player.getUniqueId())) {
+                // Global-remaining mode: invites are allowed even mid-extraction (shared 30m window)
+                if (manager.isInRaid(player.getUniqueId()) && !manager.isGlobalRemainingMode()) {
                     player.sendMessage(MM.deserialize("<red>Can't invite while in a raid — finish extraction first.</red>"));
                     return true;
                 }

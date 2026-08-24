@@ -15,6 +15,7 @@ GlitchSniper:
     Despawn: false
     FollowRange: 40
     KnockbackResistance: 0.2
+    PreventSunburn: true
     ScoreboardTags: [res_ward]
     ShowHealth: true
   Equipment:

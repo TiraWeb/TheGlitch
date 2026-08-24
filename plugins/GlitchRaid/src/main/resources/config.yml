@@ -12,6 +12,14 @@ raid:
   # Loot payout multiplier (applied on raid end: final = lootValue * payout)
   payout-multiplier: 1.0
 
+  # Join mode: how new entrants join an already-running extraction
+  # - global-remaining (default): all players in glitch_red share ONE global session
+  #   and see the remaining time of the running 30m extraction. Solo joiners are
+  #   added to the global session (no fresh 30m). Used with the 31m auto-cycle
+  #   (30m extraction + 1m scatter buffer). The scheduler calls startGlobalRaid().
+  # - solo-new: each solo entrant starts a fresh 1800s session (legacy per-player timer)
+  join-mode: "global-remaining"
+
   # World names — change if your hub extraction world is named differently
   hub-world: "hub"
   auto-start-world: "glitch_red"

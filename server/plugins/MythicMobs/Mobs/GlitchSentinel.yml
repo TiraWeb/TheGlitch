@@ -15,6 +15,7 @@ GlitchSentinel:
     Despawn: false
     FollowRange: 24
     KnockbackResistance: 1
+    PreventSunburn: true
     ScoreboardTags: [res_ward]
     ShowHealth: true
   Equipment:

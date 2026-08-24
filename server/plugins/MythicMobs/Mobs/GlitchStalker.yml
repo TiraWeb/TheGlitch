@@ -13,6 +13,7 @@ GlitchStalker:
     Despawn: false
     FollowRange: 24
     KnockbackResistance: 0.1
+    PreventSunburn: true
     ScoreboardTags: [res_bloom]
     ShowHealth: true
   Equipment:

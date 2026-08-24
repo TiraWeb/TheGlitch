@@ -21,6 +21,7 @@ public final class GlitchStash extends JavaPlugin {
     private static GlitchStash instance;
     private StashManager stashManager;
     private ExtractionVariantManager variantManager;
+    private AutoExtractScheduler autoExtractScheduler;
     private FileConfiguration messagesConfig;
     private File messagesFile;
 
@@ -52,11 +53,27 @@ public final class GlitchStash extends JavaPlugin {
         getCommand("stashadmin").setExecutor(new StashAdminCommand(this, stashManager));
         getCommand("extractadmin").setExecutor(new ExtractionVariantCommand(this, variantManager));
 
-        getLogger().info("GlitchStash enabled — " + stashManager.getStashCount() + " stashes loaded.");
+        // Automated extraction — starts ALL VelKoth arenas every 31m (30m raid + 1m scatter buffer)
+        // Folia-safe fixed-rate scheduler; discovers arenas reflectively or via config allow-list.
+        // See AutoExtractScheduler.java:1 and extraction-variants for zone design (ROADMAP 5.11.5)
+        try {
+            autoExtractScheduler = new AutoExtractScheduler(this);
+            autoExtractScheduler.start();
+        } catch (Exception e) {
+            getLogger().warning("Failed to start AutoExtractScheduler: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        getLogger().info("GlitchStash enabled — " + stashManager.getStashCount() + " stashes loaded."
+                + (autoExtractScheduler != null && autoExtractScheduler.isEnabled() ? " AutoExtract every " + autoExtractScheduler.getIntervalMinutes() + "m active." : " AutoExtract disabled."));
     }
 
     @Override
     public void onDisable() {
+        if (autoExtractScheduler != null) {
+            try { autoExtractScheduler.shutdown(); } catch (Exception e) { getLogger().warning("Error shutting down AutoExtractScheduler: " + e.getMessage()); }
+            autoExtractScheduler = null;
+        }
         if (stashManager != null) {
             stashManager.shutdown();
         }
@@ -115,8 +132,18 @@ public final class GlitchStash extends JavaPlugin {
         if (variantManager != null) {
             variantManager.reload();
         }
+        if (autoExtractScheduler != null) {
+            try {
+                autoExtractScheduler.reload();
+                // Restart fixed-rate with new timings if enabled; otherwise it cancels inside start()
+                autoExtractScheduler.start();
+            } catch (Exception e) {
+                getLogger().warning("Failed to reload AutoExtractScheduler: " + e.getMessage());
+            }
+        }
         getLogger().info("GlitchStash reloaded (payout=" + payoutEnabledCache
-                + ", variants=" + variantEnabledCache + ", arm=" + variantArmDurationCache + "s).");
+                + ", variants=" + variantEnabledCache + ", arm=" + variantArmDurationCache + "s"
+                + ", autoExtract=" + (autoExtractScheduler != null ? autoExtractScheduler.isEnabled() + " " + autoExtractScheduler.getIntervalMinutes() + "m" : "n/a") + ").");
     }
 
     public String getMessage(String key) {
@@ -186,5 +213,9 @@ public final class GlitchStash extends JavaPlugin {
 
     public ExtractionVariantManager getExtractionVariantManager() {
         return variantManager;
+    }
+
+    public AutoExtractScheduler getAutoExtractScheduler() {
+        return autoExtractScheduler;
     }
 }

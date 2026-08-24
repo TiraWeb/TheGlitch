@@ -41,6 +41,25 @@ extraction-variants:
   #     payout-bonus: 5
   zones: {}
 
+# Automated extraction — t0 start ALL arenas, t0+30m RED kill, t0+30m+5s scatter, t0+31m restart.
+# Interval is the full wall-clock between t0 starts (raidDuration + buffer).
+# Scheduler discovers arenas via VelKoth API reflectively; empty arenas list = all discovered.
+# Fallback: dispatch "koth start <arena>" for each discovered name. See
+# GlitchStash/src/main/java/com/theglitch/glitchstash/AutoExtractScheduler.java:1
+auto-extract:
+  enabled: true
+  # Full cycle in minutes (30m raid + 1m buffer = 31 minutes)
+  interval-minutes: 31
+  # Raid length before RED-world timeout kill (coordinated with GlitchRaid)
+  raid-duration-minutes: 30
+  # Buffer between scatter loot and next cycle (interval = raidDuration + buffer)
+  buffer-minutes: 1
+  # RED world name — only this world is killed at t0+30m, not hub/pve
+  red-world: "glitch_red"
+  # Allow-list of arenas to auto-start. Empty = all discovered via VelKoth API or arenas.yml.
+  # Example: arenas: ["extraction_alpha", "extraction_bravo"]
+  arenas: []
+
 # Display settings
 display-name: "<font:minecraft:default>\ue049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>YOUR STASH</bold></gradient> </font><font:minecraft:default>\ue049</font>"
 lore:

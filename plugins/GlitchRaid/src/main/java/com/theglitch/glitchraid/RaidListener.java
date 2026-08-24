@@ -43,14 +43,26 @@ public final class RaidListener implements Listener {
         String hubWorld = manager.getHubWorld();
 
         // Entering the raid world -> auto start if not already in raid
+        // Global-remaining mode: late joiners share the remaining time of the running 30m extraction
         if (to.equalsIgnoreCase(raidWorld) && !manager.isInRaid(player.getUniqueId())) {
-            boolean started = manager.startRaid(player, true);
-            if (started) {
-                plugin.getLogger().info("Auto-started raid for " + player.getName() + " (entered " + to + ")");
+            RaidSession global = manager.findActiveGlobalSession(raidWorld);
+            if (global != null) {
+                boolean added = manager.addToGlobalSession(player, raidWorld);
+                if (added) {
+                    plugin.getLogger().info("Auto-joined GLOBAL raid for " + player.getName() + " (entered " + to + " remaining=" + manager.formatTime(global.getRemainingSeconds()) + ")");
+                }
+            } else {
+                // No global running — first entrant after 1m buffer becomes anchor for next 30m
+                // startRaid() in global-remaining mode will create a new global anchor
+                boolean started = manager.startRaid(player, true);
+                if (started) {
+                    plugin.getLogger().info("Auto-started raid for " + player.getName() + " (entered " + to + ")");
+                }
             }
         } else if (to.equalsIgnoreCase(raidWorld) && manager.isInRaid(player.getUniqueId())) {
-            // Already in raid (party pull) — ensure other party members are also pulled
+            // Already in raid (party pull) — ensure other party members are also pulled and see remaining time
             Party party = manager.getPartyManager().getParty(player.getUniqueId());
+            RaidSession mySession = manager.getSession(player.getUniqueId());
             if (party != null) {
                 for (java.util.UUID mid : party.getMembers()) {
                     if (mid.equals(player.getUniqueId())) continue;
@@ -63,8 +75,20 @@ public final class RaidListener implements Listener {
                             other.sendMessage(MM.deserialize("<gray>Party pulled you to <white>" + raidWorld + "</white> with <white>" + player.getName() + "</white>.</gray>"));
                             plugin.getLogger().info("Party pull: " + other.getName() + " -> " + player.getName() + " in " + raidWorld);
                         } catch (Exception ignored) {}
+                        // Ensure pulled member shares the same timer (remaining time) — crucial for global-remaining
+                        if (other != null && other.isOnline() && !manager.isInRaid(mid) && mySession != null) {
+                            try { manager.handlePartyMemberAddedToActiveRaid(other, mySession); } catch (Exception ignored) {}
+                        }
+                    } else if (other != null && other.isOnline() && !manager.isInRaid(mid) && mySession != null) {
+                        // Member online but not yet in raid and not in RED — if global, add to global with remaining time
+                        try { manager.handlePartyMemberAddedToActiveRaid(other, mySession); } catch (Exception ignored) {}
                     }
                 }
+            }
+            // Ensure the entering player still sees the correct remaining-time bossbar (handles relog/global)
+            if (mySession != null) {
+                net.kyori.adventure.bossbar.BossBar bar = manager.getBossBarForSession(mySession);
+                if (bar != null) try { player.showBossBar(bar); } catch (Exception ignored) {}
             }
         }
 
@@ -91,9 +115,17 @@ public final class RaidListener implements Listener {
             if (!player.isOnline()) return;
             String world = player.getWorld().getName();
             if (world.equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
-                boolean started = manager.startRaid(player, true);
-                if (started) {
-                    plugin.getLogger().info("Auto-started raid for " + player.getName() + " (join in " + world + ")");
+                RaidSession global = manager.findActiveGlobalSession(world);
+                if (global != null) {
+                    boolean added = manager.addToGlobalSession(player, world);
+                    if (added) {
+                        plugin.getLogger().info("Auto-joined GLOBAL raid for " + player.getName() + " (join in " + world + " remaining=" + manager.formatTime(global.getRemainingSeconds()) + ")");
+                    }
+                } else {
+                    boolean started = manager.startRaid(player, true);
+                    if (started) {
+                        plugin.getLogger().info("Auto-started raid for " + player.getName() + " (join in " + world + ")");
+                    }
                 }
             } else if (manager.isInRaid(player.getUniqueId()) && !world.equalsIgnoreCase(manager.getAutoStartWorld())) {
                 // Player is in an active raid but spawned in hub (e.g., party was pulled, they were offline) — pull to raid
@@ -150,8 +182,14 @@ public final class RaidListener implements Listener {
                     FoliaScheduler.runLaterGlobal(plugin, () -> {
                         if (!player.isOnline()) return;
                         if (player.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
-                            boolean started = manager.startRaid(player, true);
-                            if (started) plugin.getLogger().info("Auto-started raid on respawn for " + player.getName());
+                            RaidSession global = manager.findActiveGlobalSession(manager.getAutoStartWorld());
+                            if (global != null) {
+                                boolean added = manager.addToGlobalSession(player, manager.getAutoStartWorld());
+                                if (added) plugin.getLogger().info("Auto-joined GLOBAL raid on respawn for " + player.getName() + " remaining=" + manager.formatTime(global.getRemainingSeconds()));
+                            } else {
+                                boolean started = manager.startRaid(player, true);
+                                if (started) plugin.getLogger().info("Auto-started raid on respawn for " + player.getName());
+                            }
                         }
                     }, 20L);
                 }

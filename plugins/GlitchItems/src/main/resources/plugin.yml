@@ -7,6 +7,9 @@ softdepend:
   - Oraxen
   - VaultUnlocked
   - PlaceholderAPI
+  - GlitchStash
+  - WorldGuard
+  - WorldEdit
 
 commands:
   identify:
@@ -19,7 +22,7 @@ commands:
     permission: glitchitems.admin
   glitchcontainers:
     description: Mark and manage in-world loot containers
-    usage: /glitchcontainers <set <type>|clear|info|types|reload>
+    usage: /glitchcontainers <set <type>|clear|info|types|reload|scatter|scatterinfo>
     permission: glitchitems.admin
 
 permissions:

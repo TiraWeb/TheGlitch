@@ -144,11 +144,11 @@ done
 mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null
 mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
 
-# glitch_red (dim glitch_red) — full-loot, natural spawns ON, no phantoms.
-# (spawn_mobs left at default true — this is the survival PvP zone.)
-for rule in "keep_inventory false" "spawn_phantoms false" "mob_griefing false" \
-            "fire_spread_radius_around_player 0" "advance_weather false" \
-            "spawn_wandering_traders false"; do
+# glitch_red (dim glitch_red) — full-loot PvP, MythicMobs-only (no vanilla spawns).
+# spawn_mobs false disables NATURAL vanilla spawns but MythicMobs (plugin) spawns bypass it.
+for rule in "keep_inventory false" "spawn_mobs false" "spawn_phantoms false" "mob_griefing false" \
+             "fire_spread_radius_around_player 0" "advance_weather false" \
+             "spawn_wandering_traders false"; do
   apply_rule ${rule} glitch_red
 done
 mc "execute in minecraft:glitch_red run weather clear" >/dev/null
@@ -210,24 +210,52 @@ flag hub use allow
 
 # glitch_pve — no PvP, no world edits; interactions and loot allowed.
 # NO mob-spawning flag here: it would also block MythicMobs spawns.
+# World is indestructible (adventure-like) — blocks/environment cannot be altered,
+# but players can still interact with doors/buttons (use) and open chests.
+# damage-animals allow ensures MythicMobs stay hittable; mob-damage NOT denied.
 flag glitch_pve passthrough deny
 flag glitch_pve pvp deny
 flag glitch_pve use allow
 flag glitch_pve chest-access allow
+flag glitch_pve damage-animals allow
+flag glitch_pve block-break deny
+flag glitch_pve block-place deny
+flag glitch_pve leaf-decay deny
+flag glitch_pve ice-form deny
+flag glitch_pve ice-melt deny
+flag glitch_pve snow-fall deny
+flag glitch_pve snow-melt deny
+flag glitch_pve grass-spread deny
+flag glitch_pve mycelium-spread deny
+flag glitch_pve vine-growth deny
 flag glitch_pve enderpearl deny
 
-# glitch_red — full-loot PvP on a curated, non-editable map
+# glitch_red — full-loot PvP on a curated, non-editable map (RED WORLD only)
+# Indestructible adventure-like: deny all world modification, allow chest-access
+# and mob damage so players can loot and fight MythicMobs. pvp allow for Red PvP.
+# damage-animals allow + no mob-damage deny keeps custom MythicMobs hittable.
 flag glitch_red passthrough deny
 flag glitch_red pvp allow
 flag glitch_red use allow
 flag glitch_red chest-access allow
+flag glitch_red damage-animals allow
+flag glitch_red block-break deny
+flag glitch_red block-place deny
+flag glitch_red leaf-decay deny
+flag glitch_red ice-form deny
+flag glitch_red ice-melt deny
+flag glitch_red snow-fall deny
+flag glitch_red snow-melt deny
+flag glitch_red grass-spread deny
+flag glitch_red mycelium-spread deny
+flag glitch_red vine-growth deny
 flag glitch_red item-drop allow
 flag glitch_red item-pickup allow
 
 # --- verify the gamerules that actually matter for safety -------------------
 # Read back the two gameplay-critical rules per world via Multiverse's filtered
-# listing (--filter avoids pagination). Expected: spawn_mobs false in
-# hub+glitch_pve / true in glitch_red; keep_inventory true in hub+glitch_pve /
+# listing (--filter avoids pagination). Expected: spawn_mobs false in ALL worlds
+# (hub+glitch_pve+glitch_red MythicMobs-only); keep_inventory true in hub+glitch_pve /
 # false in glitch_red. (Primary safety net is apply_rule's rejection warning
 # above — this is the visible confirmation.)
 log "Verifying critical gamerules (paste this back):"

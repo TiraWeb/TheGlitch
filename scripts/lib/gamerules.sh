@@ -114,10 +114,12 @@ GAMERULES_PVE_SNAKE=(
   "spawn_wandering_traders false"
 )
 
-# glitch_red (dim glitch_red) — full-loot, natural spawns ON, no phantoms.
-# (spawn_mobs left at default true — this is the survival PvP zone.)
+# glitch_red (dim glitch_red) — full-loot PvP, MythicMobs-only spawns.
+# spawn_mobs false blocks NATURAL/vanilla spawns but not MythicMobs, command or egg spawns.
+# spawn_phantoms false separately blocks phantoms (also covered by spawn_mobs false but kept explicit).
 GAMERULES_RED_SNAKE=(
   "keep_inventory false"
+  "spawn_mobs false"
   "spawn_phantoms false"
   "mob_griefing false"
   "fire_spread_radius_around_player 0"

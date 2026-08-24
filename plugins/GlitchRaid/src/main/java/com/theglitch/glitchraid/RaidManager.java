@@ -39,6 +39,15 @@ public final class RaidManager {
     private final Set<UUID> timeoutVictims = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Long> lastDeathMillis = new ConcurrentHashMap<>();
 
+    // --- Global session support: ONE shared 30m extraction per world (not per player) ---
+    // Global auto-cycle is 31m (30m extraction + 1m scatter buffer). All players who
+    // enter glitch_red mid-raid must see the *remaining* time of the running global
+    // extraction, not a fresh 30m. The scheduler (or first entrant fallback) calls
+    // startGlobalRaid(world); late joiners call addToGlobalSession(player).
+    private final Map<String, RaidSession> globalSessions = new ConcurrentHashMap<>();
+    private final Map<String, BossBar> globalBossBars = new ConcurrentHashMap<>();
+    private final Map<String, FoliaScheduler.Cancellable> globalTimers = new ConcurrentHashMap<>();
+
     // Cached config values
     private volatile int durationSeconds = 1800;
     private volatile int summaryDelayTicks = 40;
@@ -46,6 +55,7 @@ public final class RaidManager {
     private volatile double payoutMultiplier = 1.0;
     private volatile String hubWorld = "hub";
     private volatile String autoStartWorld = "glitch_red";
+    private volatile String joinMode = "global-remaining";
 
     public RaidManager(GlitchRaid plugin) {
         this.plugin = plugin;
@@ -87,6 +97,18 @@ public final class RaidManager {
             if (hub != null && !hub.isBlank()) hubWorld = hub;
             String auto = plugin.getConfig().getString("raid.auto-start-world", "glitch_red");
             if (auto != null && !auto.isBlank()) autoStartWorld = auto;
+
+            String jm = plugin.getConfig().getString("raid.join-mode", "global-remaining");
+            if (jm != null && !jm.isBlank()) {
+                jm = jm.trim().toLowerCase(java.util.Locale.ROOT);
+                if (!jm.equals("global-remaining") && !jm.equals("solo-new")) {
+                    plugin.getLogger().warning("Invalid raid.join-mode " + jm + " — clamped to global-remaining.");
+                    jm = "global-remaining";
+                }
+                joinMode = jm;
+            } else {
+                joinMode = "global-remaining";
+            }
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to cache GlitchRaid config: " + e.getMessage());
         }
@@ -95,7 +117,7 @@ public final class RaidManager {
     public void reload() {
         cacheConfig();
         if (partyManager != null) partyManager.reload();
-        plugin.getLogger().info("RaidManager reloaded (duration=" + durationSeconds + "s, payout=" + payoutMultiplier + ", partyMax=" + partyMaxSize + ", hub=" + hubWorld + ", autoWorld=" + autoStartWorld + ").");
+        plugin.getLogger().info("RaidManager reloaded (duration=" + durationSeconds + "s, payout=" + payoutMultiplier + ", partyMax=" + partyMaxSize + ", hub=" + hubWorld + ", autoWorld=" + autoStartWorld + ", joinMode=" + joinMode + ").");
     }
 
     public PartyManager getPartyManager() {
@@ -111,7 +133,9 @@ public final class RaidManager {
     }
 
     public Collection<RaidSession> getAllSessions() {
-        return new HashSet<>(activeRaids.values());
+        Set<RaidSession> all = new HashSet<>(activeRaids.values());
+        all.addAll(globalSessions.values());
+        return all;
     }
 
     public int getActiveCount() {
@@ -140,6 +164,246 @@ public final class RaidManager {
 
     public String getAutoStartWorld() {
         return autoStartWorld;
+    }
+
+    public String getJoinMode() {
+        return joinMode;
+    }
+
+    public boolean isGlobalRemainingMode() {
+        return "global-remaining".equalsIgnoreCase(joinMode);
+    }
+
+    // ---- Global session helpers ------------------------------------------------
+
+    private String normalizeWorldKey(String world) {
+        if (world == null || world.isBlank()) return autoStartWorld.toLowerCase(java.util.Locale.ROOT);
+        return world.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private UUID globalLeaderId(String worldKey) {
+        // Deterministic UUID per world so the global session has a stable "leader" key
+        return UUID.nameUUIDFromBytes(("global:" + worldKey).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    private boolean isGlobalSession(RaidSession session) {
+        if (session == null) return false;
+        String key = normalizeWorldKey(autoStartWorld);
+        RaidSession global = globalSessions.get(key);
+        if (global != null && global == session) return true;
+        // Fallback: check any global session by leader UUID
+        for (Map.Entry<String, RaidSession> e : globalSessions.entrySet()) {
+            if (e.getValue() == session) return true;
+        }
+        // Also check by leaderId equality for synthetic global leader
+        for (String k : globalSessions.keySet()) {
+            if (session.getLeader().equals(globalLeaderId(k))) return true;
+        }
+        return false;
+    }
+
+    /** Returns the active global session for world, or null if none / expired. Folia-safe. */
+    public RaidSession findActiveGlobalSession(String world) {
+        String key = normalizeWorldKey(world);
+        RaidSession session = globalSessions.get(key);
+        if (session == null) return null;
+        // Treat expired (remaining <=0) as inactive for joiners — timeout will handle cleanup
+        if (session.getRemainingSeconds() <= 0) return null;
+        return session;
+    }
+
+    /** Raw getter (may be expired) — use {@link #findActiveGlobalSession(String)} to check liveness. */
+    public RaidSession getGlobalSession(String world) {
+        return globalSessions.get(normalizeWorldKey(world));
+    }
+
+    public boolean isGlobalRaidActive(String world) {
+        return findActiveGlobalSession(world) != null;
+    }
+
+    /**
+     * Starts a new global extraction for world (31m cycle: 30m active + 1m scatter buffer).
+     * If a non-expired global already exists, returns it without creating a duplicate.
+     * Scheduler calls this every 31m; the first solo entrant also falls back to it.
+     */
+    public synchronized RaidSession startGlobalRaid(String world) {
+        return startGlobalRaid(world, true);
+    }
+
+    /**
+     * Starts a global raid in world with auto flag. Synchronized to prevent double-create.
+     * Folia-safe: BossBar + timer are GlobalRegionScheduler based.
+     */
+    public synchronized RaidSession startGlobalRaid(String world, boolean auto) {
+        if (world == null || world.isBlank()) world = autoStartWorld;
+        String key = normalizeWorldKey(world);
+        RaidSession existing = globalSessions.get(key);
+        if (existing != null && existing.getRemainingSeconds() > 0) {
+            return existing; // already running
+        }
+        if (existing != null) {
+            // stale expired session — clean before recreating
+            try { endGlobalRaid(world, RaidEndReason.TIMEOUT); } catch (Exception ignored) {}
+        }
+        long now = System.currentTimeMillis();
+        long end = now + (durationSeconds * 1000L);
+        Set<UUID> members = ConcurrentHashMap.newKeySet();
+        UUID leaderId = globalLeaderId(key);
+        RaidSession session = new RaidSession(leaderId, members, now, end);
+        globalSessions.put(key, session);
+
+        String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
+        String formatted = formatTime(durationSeconds);
+        Component initialName = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
+        BossBar bar = BossBar.bossBar(initialName, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
+        globalBossBars.put(key, bar);
+
+        FoliaScheduler.Cancellable task = FoliaScheduler.runAtFixedRateGlobal(plugin, () -> tickGlobal(key), 20L, 20L);
+        globalTimers.put(key, task);
+
+        plugin.getLogger().info("Global raid started for world " + world + " (key=" + key + ", duration=" + durationSeconds + "s, auto=" + auto + ", leader=" + leaderId + ")");
+        return session;
+    }
+
+    /**
+     * Adds a solo player to the ongoing global extraction with *remaining* time.
+     * If no global is active and joinMode is global-remaining, a new global is started
+     * (fallback so the first entrant after the 1m buffer gets a proper 30m).
+     * If joinMode is solo-new, delegates to {@link #startRaid(Player, boolean)}.
+     *
+     * @return true if added/shown bossbar, false if already in raid or failed
+     */
+    public boolean addToGlobalSession(Player player) {
+        if (player == null) return false;
+        return addToGlobalSession(player, player.getWorld().getName());
+    }
+
+    /**
+     * Adds player to global session in world, showing bossbar with remaining time.
+     * Folia-safe, null-safe.
+     */
+    public boolean addToGlobalSession(Player player, String world) {
+        if (player == null || world == null || world.isBlank()) return false;
+        String key = normalizeWorldKey(world);
+        RaidSession session = findActiveGlobalSession(world);
+        if (session == null) {
+            if (isGlobalRemainingMode()) {
+                // No active global — fallback: start one now in the target world so the joiner
+                // contributes to the shared timer rather than getting a fresh per-player timer.
+                // This is used when scheduler hasn't yet created the 31m cycle, or after buffer.
+                session = startGlobalRaid(world, true);
+                if (session == null) return false;
+            } else {
+                // Legacy solo-new mode — create a fresh per-player session
+                return startRaid(player, true);
+            }
+        }
+        UUID uuid = player.getUniqueId();
+        if (activeRaids.containsKey(uuid)) {
+            RaidSession current = activeRaids.get(uuid);
+            if (current == session) {
+                BossBar existingBar = globalBossBars.get(key);
+                if (existingBar != null) {
+                    try { player.showBossBar(existingBar); } catch (Exception ignored) {}
+                }
+                return true;
+            }
+            return false; // already in a different raid
+        }
+        session.getMembers().add(uuid);
+        activeRaids.put(uuid, session);
+        BossBar bar = globalBossBars.get(key);
+        if (bar != null) {
+            try { player.showBossBar(bar); } catch (Exception ignored) {}
+            // Ensure all existing members keep seeing the bar (fix for bossbar lost on relog)
+            for (UUID mid : session.getMembers()) {
+                if (mid.equals(uuid)) continue;
+                Player member = Bukkit.getPlayer(mid);
+                if (member != null && member.isOnline()) {
+                    try { member.showBossBar(bar); } catch (Exception ignored) {}
+                }
+            }
+        }
+        String timeLeft = formatTime(session.getRemainingSeconds());
+        try {
+            player.sendMessage(MM.deserialize("<green>Joined ongoing raid! <gray>Time left: <white>" + timeLeft + "</white></gray>"));
+            player.sendActionBar(MM.deserialize("<gray>Extract before <white>" + timeLeft + "</white> or lose everything!</gray>"));
+        } catch (Exception ignored) {}
+        plugin.getLogger().info("Player " + player.getName() + " joined global raid in " + world + " (remaining=" + timeLeft + ", members=" + session.getMembers().size() + ")");
+        return true;
+    }
+
+    /**
+     * Ends the global session for world, hiding bossbar from all members and online players.
+     * Used by the 30m timeout handler and at the end of the 31m cycle.
+     */
+    public void endGlobalRaid(String world, RaidEndReason reason) {
+        if (world == null || world.isBlank()) world = autoStartWorld;
+        String key = normalizeWorldKey(world);
+        RaidSession session = globalSessions.remove(key);
+        if (session == null) return;
+        BossBar bar = globalBossBars.remove(key);
+        FoliaScheduler.Cancellable task = globalTimers.remove(key);
+        if (task != null) {
+            try { task.cancel(); } catch (Exception ignored) {}
+        }
+        Set<UUID> membersSnapshot = new HashSet<>(session.getMembers());
+        // Include synthetic leader in cleanup but don't message it
+        for (UUID memberId : membersSnapshot) {
+            activeRaids.remove(memberId);
+            if (bar != null) {
+                Player p = Bukkit.getPlayer(memberId);
+                if (p != null) {
+                    try { p.hideBossBar(bar); } catch (Exception ignored) {}
+                }
+            }
+            // Also clear per-leader bossBars mapping if it was mis-keyed
+            bossBars.remove(memberId);
+            FoliaScheduler.Cancellable t = timers.remove(memberId);
+            if (t != null) try { t.cancel(); } catch (Exception ignored) {}
+        }
+        if (bar != null) {
+            // Hide from anyone else who might have seen it (e.g., auto-joined via tickGlobal fallback)
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                try { p.hideBossBar(bar); } catch (Exception ignored) {}
+            }
+        }
+        // Also clear synthetic leader mapping
+        UUID leaderId = session.getLeader();
+        activeRaids.remove(leaderId);
+        BossBar leaderBar = bossBars.remove(leaderId);
+        if (leaderBar != null) {
+            for (UUID mid : membersSnapshot) {
+                Player p = Bukkit.getPlayer(mid);
+                if (p != null) try { p.hideBossBar(leaderBar); } catch (Exception ignored) {}
+            }
+        }
+        FoliaScheduler.Cancellable leaderTask = timers.remove(leaderId);
+        if (leaderTask != null) try { leaderTask.cancel(); } catch (Exception ignored) {}
+
+        boolean lost = (reason == RaidEndReason.TIMEOUT || reason == RaidEndReason.TIMEOUT_DEATH);
+        Component endedComp;
+        if (reason == RaidEndReason.EXTRACTED) {
+            String raw = plugin.getConfig().getString("messages.raid-extracted", "<green><bold>Extracted!</bold> <gray>Loot secured.</gray></green>");
+            endedComp = MM.deserialize(raw);
+        } else if (lost) {
+            String raw = plugin.getConfig().getString("messages.raid-timeout-killed", "<dark_red><bold>The Glitch consumed you.</bold> <gray>Loot lost.</gray></dark_red>");
+            endedComp = MM.deserialize(raw);
+        } else {
+            String endedRaw = plugin.getConfig().getString("messages.raid-ended", "<red>Raid ended <gray>(<reason>)</gray> — returning to hub...</red>");
+            endedComp = MM.deserialize(endedRaw.replace("<reason>", reason.name().toLowerCase()));
+        }
+        for (UUID memberId : membersSnapshot) {
+            Player p = Bukkit.getPlayer(memberId);
+            if (p != null) {
+                try { p.sendMessage(endedComp); } catch (Exception ignored) {}
+            }
+        }
+        final RaidSession summarySession = session;
+        final RaidEndReason summaryReason = reason;
+        FoliaScheduler.runLaterGlobal(plugin, () -> sendSummary(summarySession, summaryReason), summaryDelayTicks);
+        String worldLog = world;
+        plugin.getLogger().info("Global raid ended for world " + worldLog + " reason=" + reason + " members=" + membersSnapshot.size());
     }
 
     public boolean isTimeoutVictim(UUID uuid) {
@@ -174,6 +438,66 @@ public final class RaidManager {
         UUID uuid = leader.getUniqueId();
         if (isInRaid(uuid)) {
             return false;
+        }
+        // Global-remaining mode: RED world has ONE shared 30m extraction.
+        // If a global is already running, join it with remaining time instead of creating a fresh solo timer.
+        if (isGlobalRemainingMode()) {
+            String playerWorld = leader.getWorld().getName();
+            // Only apply global semantics to the extraction world (glitch_red)
+            if (playerWorld.equalsIgnoreCase(autoStartWorld)) {
+                RaidSession global = findActiveGlobalSession(autoStartWorld);
+                if (global != null) {
+                    return addToGlobalSession(leader, autoStartWorld);
+                }
+                // No active global in RED — start a new global so ALL future joiners share this timer.
+                // This makes the first entrant after the 1m scatter buffer the anchor for the next 30m window.
+                RaidSession newGlobal = startGlobalRaid(autoStartWorld, auto);
+                if (newGlobal != null) {
+                    newGlobal.getMembers().add(uuid);
+                    activeRaids.put(uuid, newGlobal);
+                    // Party pull: include whole party in the new global
+                    Party p = partyManager.getParty(uuid);
+                    if (p != null) {
+                        for (UUID mid : p.getMembers()) {
+                            if (mid.equals(uuid)) continue;
+                            newGlobal.getMembers().add(mid);
+                            activeRaids.put(mid, newGlobal);
+                            Player mp = Bukkit.getPlayer(mid);
+                            if (mp != null && mp.isOnline()) {
+                                BossBar gBar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
+                                if (gBar != null) try { mp.showBossBar(gBar); } catch (Exception ignored) {}
+                            }
+                        }
+                    }
+                    BossBar gBar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
+                    if (gBar != null) {
+                        try { leader.showBossBar(gBar); } catch (Exception ignored) {}
+                        for (UUID mid : newGlobal.getMembers()) {
+                            if (mid.equals(uuid)) continue;
+                            Player mp = Bukkit.getPlayer(mid);
+                            if (mp != null && mp.isOnline()) try { mp.showBossBar(gBar); } catch (Exception ignored) {}
+                        }
+                    }
+                    String key = auto ? "messages.raid-auto-started" : "messages.raid-started";
+                    String fallback = auto ? "<green><bold>Raid started!</bold> <gray>You entered the Glitch — 30:00 to extract!</gray>" : "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>";
+                    String startedRaw = plugin.getConfig().getString(key, fallback);
+                    if (startedRaw == null) startedRaw = fallback;
+                    String formatted = formatTime(durationSeconds);
+                    for (UUID mid : newGlobal.getMembers()) {
+                        Player pl = Bukkit.getPlayer(mid);
+                        if (pl != null && pl.isOnline()) {
+                            try {
+                                pl.sendMessage(MM.deserialize(startedRaw));
+                                pl.sendActionBar(MM.deserialize("<gray>Extract before <white>" + formatted + "</white> or lose everything!</gray>"));
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                    plugin.getLogger().info("Raid start (global anchor) for " + leader.getName() + (auto ? " (auto)" : "") + " members=" + newGlobal.getMembers().size() + " in " + autoStartWorld);
+                    return true;
+                }
+            }
+            // If player not in RED, fall through to normal solo creation (e.g., /raid start in hub should still create solo if desired)
+            // But we treat hub starts as global too if they will teleport to RED via party pull below.
         }
         long now = System.currentTimeMillis();
         long end = now + (durationSeconds * 1000L);
@@ -250,11 +574,100 @@ public final class RaidManager {
     /**
      * Ends the raid for the given player (leader or member).
      * Removes all members of that raid.
+     * Global sessions: extraction is per-player/per-party (don't nuke entire global);
+     * only timeout/manual global end collapses the whole 30m window.
      */
     public void endRaid(UUID playerUuid, RaidEndReason reason) {
         RaidSession session = activeRaids.get(playerUuid);
         if (session == null) {
             return;
+        }
+        // Global extraction/quit handling — don't disband the whole 31m cycle on single player action
+        if (isGlobalSession(session)) {
+            if (reason == RaidEndReason.EXTRACTED) {
+                // Extract only caller (+ party members who share this global). Payout already handled
+                // in handleExtraction (per-party). Here we just detach them from the shared timer.
+                Set<UUID> toRemove = new HashSet<>();
+                Party party = partyManager.getParty(playerUuid);
+                if (party != null) {
+                    for (UUID mid : party.getMembers()) {
+                        if (session.getMembers().contains(mid)) toRemove.add(mid);
+                    }
+                }
+                if (toRemove.isEmpty()) toRemove.add(playerUuid);
+                // Ensure leader's own entry is covered if caller is not party leader but session leader is synthetic
+                toRemove.add(playerUuid);
+                // Filter to only those actually in this global
+                toRemove.retainAll(new HashSet<>(session.getMembers()));
+                if (toRemove.isEmpty()) toRemove.add(playerUuid);
+
+                BossBar gBar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
+                if (gBar == null && !globalBossBars.isEmpty()) gBar = globalBossBars.values().iterator().next();
+                for (UUID mid : new HashSet<>(toRemove)) {
+                    session.getMembers().remove(mid);
+                    activeRaids.remove(mid);
+                    if (gBar != null) {
+                        Player p = Bukkit.getPlayer(mid);
+                        if (p != null) try { p.hideBossBar(gBar); } catch (Exception ignored) {}
+                    }
+                    bossBars.remove(mid);
+                    FoliaScheduler.Cancellable t = timers.remove(mid);
+                    if (t != null) try { t.cancel(); } catch (Exception ignored) {}
+                }
+                // Per-extractor summary (global stays alive)
+                final Set<UUID> extracted = new HashSet<>(toRemove);
+                final RaidSession parent = session;
+                FoliaScheduler.runLaterGlobal(plugin, () -> {
+                    String titleRaw = plugin.getConfig().getString("messages.raid-summary-title", "<gold><bold>Raid Summary</bold></gold>");
+                    Component title = MM.deserialize(titleRaw);
+                    int durationSec = parent.getElapsedSeconds();
+                    String durationStr = formatTime(durationSec);
+                    for (UUID mid : extracted) {
+                        Player p = Bukkit.getPlayer(mid);
+                        if (p == null) continue;
+                        int myLoot = parent.getLootValue(mid);
+                        int myDeaths = parent.getDeaths(mid);
+                        int payout = (int) Math.round(myLoot * payoutMultiplier);
+                        try {
+                            p.sendMessage(Component.empty());
+                            p.sendMessage(title);
+                            p.sendMessage(MM.deserialize("<gray>Duration: <white>" + durationStr + "</white>"));
+                            p.sendMessage(MM.deserialize("<gray>Reason: <white>EXTRACTED</white>"));
+                            p.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>x" + payoutMultiplier + " = <green>" + payout + "</green>"));
+                            p.sendMessage(MM.deserialize("<gray>Your deaths: <red>" + myDeaths + "</red>"));
+                            p.sendMessage(Component.empty());
+                            Title.Times times = Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(2000), Duration.ofMillis(500));
+                            p.showTitle(Title.title(title, MM.deserialize("<green>extracted • Loot " + payout + " • Deaths " + myDeaths + "</green>"), times));
+                        } catch (Exception ignored) {}
+                    }
+                }, summaryDelayTicks);
+                plugin.getLogger().info("Global extraction: " + playerUuid + " detached " + toRemove.size() + " player(s) from global (remaining=" + session.getMembers().size() + ")");
+                return;
+            }
+            if (reason == RaidEndReason.TIMEOUT || reason == RaidEndReason.TIMEOUT_DEATH) {
+                String worldKey = null;
+                for (Map.Entry<String, RaidSession> e : globalSessions.entrySet()) {
+                    if (e.getValue() == session) { worldKey = e.getKey(); break; }
+                }
+                if (worldKey == null) worldKey = normalizeWorldKey(autoStartWorld);
+                endGlobalRaid(worldKey, reason);
+                return;
+            }
+            // Manual/leader_quit/admin in global: just detach single player, don't collapse global
+            if (reason == RaidEndReason.LEADER_QUIT || reason == RaidEndReason.MANUAL || reason == RaidEndReason.ADMIN) {
+                session.getMembers().remove(playerUuid);
+                activeRaids.remove(playerUuid);
+                BossBar gBar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
+                if (gBar != null) {
+                    Player p = Bukkit.getPlayer(playerUuid);
+                    if (p != null) try { p.hideBossBar(gBar); } catch (Exception ignored) {}
+                }
+                bossBars.remove(playerUuid);
+                FoliaScheduler.Cancellable t = timers.remove(playerUuid);
+                if (t != null) try { t.cancel(); } catch (Exception ignored) {}
+                plugin.getLogger().info("Globaldetach: " + playerUuid + " removed from global reason=" + reason + " remaining=" + session.getMembers().size());
+                return;
+            }
         }
         UUID leaderId = session.getLeader();
         Set<UUID> membersSnapshot = new HashSet<>(session.getMembers());
@@ -331,8 +744,23 @@ public final class RaidManager {
         if (!isInRaid(winner.getUniqueId())) return;
         RaidSession session = activeRaids.get(winner.getUniqueId());
         if (session != null) {
-            // Stash every party/raid member's inventory (GlitchStash handles merge)
-            for (UUID mid : new HashSet<>(session.getMembers())) {
+            // Stash winner's party/raid members' inventories (GlitchStash handles merge)
+            // For global mode we stash only the winner's party (not the entire 30m global population)
+            Set<UUID> toStash;
+            if (isGlobalSession(session)) {
+                Party party = partyManager.getParty(winner.getUniqueId());
+                if (party != null) {
+                    toStash = new HashSet<>();
+                    for (UUID mid : party.getMembers()) if (session.getMembers().contains(mid)) toStash.add(mid);
+                    if (toStash.isEmpty()) toStash.add(winner.getUniqueId());
+                } else {
+                    toStash = Set.of(winner.getUniqueId());
+                }
+            } else {
+                toStash = new HashSet<>(session.getMembers());
+                toStash.add(winner.getUniqueId());
+            }
+            for (UUID mid : new HashSet<>(toStash)) {
                 Player p = Bukkit.getPlayer(mid);
                 if (p != null && p.isOnline() && p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                     try {
@@ -366,8 +794,25 @@ public final class RaidManager {
     public void handleExtraction(Player player) {
         if (!isInRaid(player.getUniqueId())) return;
         RaidSession session = activeRaids.get(player.getUniqueId());
-        Set<UUID> membersSnapshot = session != null ? new HashSet<>(session.getMembers()) : Set.of(player.getUniqueId());
-        membersSnapshot.add(player.getUniqueId());
+        Set<UUID> membersSnapshot;
+        // Global mode: extraction is per-player/per-party, NOT the whole 30m window
+        if (session != null && isGlobalSession(session)) {
+            // For global, only the extracting player's party shares the extraction payout/pull
+            Party party = partyManager.getParty(player.getUniqueId());
+            if (party != null) {
+                membersSnapshot = new HashSet<>();
+                for (UUID mid : party.getMembers()) {
+                    if (session.getMembers().contains(mid)) membersSnapshot.add(mid);
+                }
+                if (membersSnapshot.isEmpty()) membersSnapshot.add(player.getUniqueId());
+            } else {
+                membersSnapshot = new HashSet<>(Set.of(player.getUniqueId()));
+            }
+        } else {
+            membersSnapshot = session != null ? new HashSet<>(session.getMembers()) : new HashSet<>(Set.of(player.getUniqueId()));
+            if (session != null) membersSnapshot.add(player.getUniqueId());
+            else membersSnapshot.add(player.getUniqueId());
+        }
 
         // Payout per-player before ending (so loot still available)
         if (session != null) {
@@ -434,7 +879,18 @@ public final class RaidManager {
         if (isInRaid(nid)) return;
         session.getMembers().add(nid);
         activeRaids.put(nid, session);
-        BossBar bar = bossBars.get(session.getLeader());
+        // Prefer global BossBar if this is a global session (single shared timer)
+        BossBar bar = null;
+        if (isGlobalSession(session)) {
+            for (Map.Entry<String, BossBar> e : globalBossBars.entrySet()) {
+                if (session == globalSessions.get(e.getKey())) {
+                    bar = e.getValue();
+                    break;
+                }
+            }
+            if (bar == null) bar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
+        }
+        if (bar == null) bar = bossBars.get(session.getLeader());
         if (bar != null) {
             try { newMember.showBossBar(bar); } catch (Exception ignored) {}
         }
@@ -443,12 +899,27 @@ public final class RaidManager {
 
     public BossBar getBossBarForSession(RaidSession session) {
         if (session == null) return null;
+        if (isGlobalSession(session)) {
+            for (Map.Entry<String, BossBar> e : globalBossBars.entrySet()) {
+                if (e.getValue() != null && session == globalSessions.get(e.getKey())) return e.getValue();
+            }
+            BossBar g = globalBossBars.get(normalizeWorldKey(autoStartWorld));
+            if (g != null) return g;
+        }
         return bossBars.get(session.getLeader());
+    }
+
+    /**
+     * Gets the global BossBar for world (used for joiners to see remaining time instantly).
+     */
+    public BossBar getGlobalBossBar(String world) {
+        return globalBossBars.get(normalizeWorldKey(world));
     }
 
     /**
      * Handles a non-leader quit: remove single player from raid without ending entire raid.
      * If leader quits, this is not used — use endRaid with LEADER_QUIT instead.
+     * Global sessions are never disbanded on quit — the 31m cycle owns the global lifecycle.
      */
     public void removeMember(UUID uuid) {
         RaidSession session = activeRaids.remove(uuid);
@@ -456,27 +927,60 @@ public final class RaidManager {
             return;
         }
         session.getMembers().remove(uuid);
+        // Hide bossbar — check both per-player and global
         BossBar bar = bossBars.remove(uuid);
-        if (bar != null) {
+        boolean wasGlobal = isGlobalSession(session);
+        if (wasGlobal) {
+            // For global, hide the global bar specifically
+            for (Map.Entry<String, RaidSession> e : globalSessions.entrySet()) {
+                if (e.getValue() == session) {
+                    BossBar gBar = globalBossBars.get(e.getKey());
+                    if (gBar != null) {
+                        Player p = Bukkit.getPlayer(uuid);
+                        if (p != null) try { p.hideBossBar(gBar); } catch (Exception ignored) {}
+                    }
+                    break;
+                }
+            }
+            // Also try default auto world bar
+            if (bar == null) {
+                BossBar gBar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
+                if (gBar != null) {
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p != null) try { p.hideBossBar(gBar); } catch (Exception ignored) {}
+                }
+            }
+        } else if (bar != null) {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null) {
-                p.hideBossBar(bar);
+                try { p.hideBossBar(bar); } catch (Exception ignored) {}
+            }
+        } else if (wasGlobal) {
+            // fallback global hide
+            BossBar gBar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
+            if (gBar != null) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null) try { p.hideBossBar(gBar); } catch (Exception ignored) {}
             }
         }
         FoliaScheduler.Cancellable task = timers.remove(uuid);
         if (task != null) {
-            task.cancel();
+            try { task.cancel(); } catch (Exception ignored) {}
         }
-        if (session.getMembers().isEmpty()) {
+        if (!wasGlobal && session.getMembers().isEmpty()) {
             UUID leaderId = session.getLeader();
             activeRaids.remove(leaderId);
             BossBar leaderBar = bossBars.remove(leaderId);
             if (leaderBar != null) {
                 Player lp = Bukkit.getPlayer(leaderId);
-                if (lp != null) lp.hideBossBar(leaderBar);
+                if (lp != null) try { lp.hideBossBar(leaderBar); } catch (Exception ignored) {}
             }
             FoliaScheduler.Cancellable leaderTask = timers.remove(leaderId);
-            if (leaderTask != null) leaderTask.cancel();
+            if (leaderTask != null) try { leaderTask.cancel(); } catch (Exception ignored) {}
+        } else if (wasGlobal) {
+            // Global empty is not disbanded — keep until timeout handles 1m buffer and endGlobalRaid()
+            plugin.getLogger().info("Player " + uuid + " removed from GLOBAL raid. Remaining members: " + session.getMembers().size() + " (global persists until timeout)");
+            return;
         }
         plugin.getLogger().info("Player " + uuid + " removed from raid (quit). Remaining members: " + session.getMembers().size());
     }
@@ -546,6 +1050,9 @@ public final class RaidManager {
     /**
      * Tick handler for a specific raid (identified by leader UUID).
      * Updates bossbar and handles warnings / timeout kill.
+     * Global raids are ticked via tickGlobal(key) — this path handles solo/party raids.
+     * If the session is actually a global session (leader is synthetic global UUID),
+     * we delegate to tickGlobal to keep the single shared timer authoritative.
      */
     public void tick(UUID leaderId) {
         RaidSession session = activeRaids.get(leaderId);
@@ -557,6 +1064,14 @@ public final class RaidManager {
             }
             FoliaScheduler.Cancellable task = timers.remove(leaderId);
             if (task != null) task.cancel();
+            return;
+        }
+        // If this session is the global extraction, use global tick (single timer for all)
+        if (isGlobalSession(session)) {
+            // Ensure global tick drives the bossbar; avoid double ticking per-member
+            // Still need to handle case where global timer was lost — fallback to global tick
+            String key = normalizeWorldKey(autoStartWorld);
+            tickGlobal(key);
             return;
         }
 
@@ -648,12 +1163,25 @@ public final class RaidManager {
     private void handleTimeout(UUID leaderId) {
         RaidSession session = activeRaids.get(leaderId);
         if (session == null) return;
+        // Global timeout is authoritative: kills EVERYONE in RED, not just session members
+        if (isGlobalSession(session)) {
+            String worldKey = null;
+            for (Map.Entry<String, RaidSession> e : globalSessions.entrySet()) {
+                if (e.getValue() == session) { worldKey = e.getKey(); break; }
+            }
+            if (worldKey == null) worldKey = normalizeWorldKey(autoStartWorld);
+            handleGlobalTimeout(worldKey);
+            return;
+        }
         Set<UUID> membersSnapshot = new HashSet<>(session.getMembers());
         membersSnapshot.add(leaderId);
         for (UUID memberId : membersSnapshot) {
             Player p = Bukkit.getPlayer(memberId);
             if (p == null || !p.isOnline()) continue;
-            if (!p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) continue;
+            // STRICT: kill only RED world — never hub/pve (spec: timeout kills RED only)
+            String w = p.getWorld().getName();
+            if (!w.equalsIgnoreCase(autoStartWorld)) continue;
+            if (w.equalsIgnoreCase(hubWorld)) continue; // extra safety: never kill in hub
             if (p.getGameMode() == org.bukkit.GameMode.CREATIVE || p.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
                 teleportToHub(p);
                 continue;
@@ -684,6 +1212,232 @@ public final class RaidManager {
             }, 60L);
         }
         endRaid(leaderId, RaidEndReason.TIMEOUT_DEATH);
+    }
+
+    // ---- Global tick / timeout (single shared 30m extraction + 1m scatter buffer) ----
+
+    /**
+     * Global tick for worldKey (lowercased). Updates shared BossBar with remaining time,
+     * auto-adds late joiners physically in RED, sends warnings, and triggers timeout at 0.
+     * Folia-safe — runs on GlobalRegionScheduler every second.
+     */
+    private void tickGlobal(String worldKey) {
+        RaidSession session = globalSessions.get(worldKey);
+        if (session == null) {
+            BossBar bar = globalBossBars.remove(worldKey);
+            if (bar != null) {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    try { p.hideBossBar(bar); } catch (Exception ignored) {}
+                }
+            }
+            FoliaScheduler.Cancellable task = globalTimers.remove(worldKey);
+            if (task != null) try { task.cancel(); } catch (Exception ignored) {}
+            return;
+        }
+        long now = System.currentTimeMillis();
+        long remainingMs = session.getEndTime() - now;
+        int remainingSeconds = (int) Math.max(0, remainingMs / 1000);
+        float progress = durationSeconds > 0 ? (float) remainingSeconds / (float) durationSeconds : 0f;
+        progress = Math.max(0f, Math.min(1f, progress));
+
+        BossBar bar = globalBossBars.get(worldKey);
+        if (bar != null) {
+            String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
+            String formatted = formatTime(remainingSeconds);
+            Component name = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
+            bar.name(name);
+            bar.progress(progress);
+            if (remainingSeconds <= 60) bar.color(BossBar.Color.RED);
+            else if (remainingSeconds <= 300) bar.color(BossBar.Color.YELLOW);
+            else bar.color(BossBar.Color.GREEN);
+
+            // Ensure every global member sees the bar if they're still in RED
+            for (UUID memberId : session.getMembers()) {
+                Player member = Bukkit.getPlayer(memberId);
+                if (member != null && member.isOnline() && member.getWorld().getName().equalsIgnoreCase(worldKey)) {
+                    try { member.showBossBar(bar); } catch (Exception ignored) {}
+                }
+            }
+            // Auto-add late joiners who are physically in RED but not yet in the global map
+            // (e.g., /mv tp, portal, or race between listener and tick). Keeps remaining time consistent.
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p == null || !p.isOnline()) continue;
+                if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
+                if (isInRaid(p.getUniqueId())) continue;
+                if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
+                // Avoid adding players who just died recently (prevent death loop)
+                if (isRecentlyDead(p.getUniqueId(), 5000L)) continue;
+                session.getMembers().add(p.getUniqueId());
+                activeRaids.put(p.getUniqueId(), session);
+                try { p.showBossBar(bar); } catch (Exception ignored) {}
+                try { p.sendMessage(MM.deserialize("<green>Joined ongoing raid! <gray>Time left: <white>" + formatTime(remainingSeconds) + "</white></gray>")); } catch (Exception ignored) {}
+                try { p.sendActionBar(MM.deserialize("<gray>Extract before <white>" + formatTime(remainingSeconds) + "</white> or lose everything!</gray>")); } catch (Exception ignored) {}
+                plugin.getLogger().info("Auto-added " + p.getName() + " to global raid in " + worldKey + " via tickGlobal (remaining=" + formatTime(remainingSeconds) + ")");
+            }
+        }
+
+        if (remainingSeconds == 60 || remainingSeconds == 30 || remainingSeconds == 10
+                || (remainingSeconds <= 5 && remainingSeconds > 0)) {
+            sendGlobalTimeoutWarning(session, remainingSeconds, worldKey);
+        }
+
+        if (remainingMs <= 0) {
+            handleGlobalTimeout(worldKey);
+        }
+    }
+
+    private void sendGlobalTimeoutWarning(RaidSession session, int remainingSeconds, String worldKey) {
+        String key;
+        String fallback;
+        if (remainingSeconds == 60) {
+            key = "messages.raid-warn-60";
+            fallback = "<red><bold>WARNING:</bold> <gray>60 seconds left — extract now or the Glitch will consume you!</gray></red>";
+        } else if (remainingSeconds == 30) {
+            key = "messages.raid-warn-30";
+            fallback = "<red><bold>30 seconds left — get to an extraction beacon!</bold></red>";
+        } else if (remainingSeconds == 10) {
+            key = "messages.raid-warn-10";
+            fallback = "<red><bold>10 seconds!</bold> <gray>The Glitch closes — extract or die!</gray></red>";
+        } else {
+            key = null;
+            fallback = "<red><bold>" + remainingSeconds + "</bold></red>";
+        }
+        Component msg;
+        if (key != null) {
+            String raw = plugin.getConfig().getString(key, fallback);
+            try { msg = MM.deserialize(raw); } catch (Exception e) { msg = Component.text(remainingSeconds + "s left"); }
+        } else {
+            msg = MM.deserialize(fallback);
+        }
+        Title.Times times = Title.Times.times(Duration.ofMillis(200), Duration.ofMillis(800), Duration.ofMillis(200));
+        Component title = MM.deserialize("<red><bold>" + remainingSeconds + "</bold></red>");
+        // Send to all global members in RED
+        for (UUID memberId : session.getMembers()) {
+            Player p = Bukkit.getPlayer(memberId);
+            if (p == null || !p.isOnline()) continue;
+            if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
+            try {
+                p.sendMessage(msg);
+                if (remainingSeconds <= 10) {
+                    p.showTitle(Title.title(title, msg, times));
+                    p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.6f);
+                } else {
+                    p.sendActionBar(msg);
+                    p.playSound(p.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.4f);
+                }
+            } catch (Exception ignored) {}
+        }
+        // Also warn any other player physically in RED but not yet mapped (should have been auto-added above, but be safe)
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p == null || !p.isOnline()) continue;
+            if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
+            if (session.getMembers().contains(p.getUniqueId())) continue;
+            try {
+                p.sendMessage(msg);
+                if (remainingSeconds <= 10) p.showTitle(Title.title(title, msg, times));
+            } catch (Exception ignored) {}
+        }
+    }
+
+    /**
+     * Global timeout: at the end of the 30m extraction, EVERYONE in RED WORLD is killed
+     * (not hub/pve), then loot scatters during the 1m buffer before next 31m cycle.
+     * This is the authoritative timeout for the shared extraction window.
+     * Folia-safe, null-safe, world-filtered.
+     */
+    private void handleGlobalTimeout(String worldKey) {
+        RaidSession session = globalSessions.get(worldKey);
+        if (session == null) return;
+        // Prevent duplicate handling if already ending
+        // Collect victims: all session members + anyone physically in RED (spec: kill everyone in RED)
+        Set<UUID> victims = new HashSet<>(session.getMembers());
+        // Include synthetic leader? It's not a real player, so ignore health kill, but add for completeness
+        victims.add(session.getLeader());
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p == null || !p.isOnline()) continue;
+            // STRICT world filter: only RED
+            if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
+            if (p.getWorld().getName().equalsIgnoreCase(hubWorld)) continue;
+            victims.add(p.getUniqueId());
+            if (!session.getMembers().contains(p.getUniqueId())) {
+                session.getMembers().add(p.getUniqueId());
+                activeRaids.put(p.getUniqueId(), session);
+            }
+        }
+        plugin.getLogger().info("Global timeout for world " + worldKey + " — killing " + victims.size() + " victims in RED (hub/pve skipped), entering 1m scatter buffer");
+        for (UUID memberId : new HashSet<>(victims)) {
+            // Skip synthetic global leader UUID (not a real online player)
+            if (memberId.equals(session.getLeader()) && Bukkit.getPlayer(memberId) == null) continue;
+            Player p = Bukkit.getPlayer(memberId);
+            if (p == null || !p.isOnline()) continue;
+            // STRICT: only if still in RED at kill moment — skip if they escaped to hub/pve during iteration
+            String w = p.getWorld().getName();
+            if (!w.equalsIgnoreCase(worldKey)) continue;
+            if (w.equalsIgnoreCase(hubWorld)) continue;
+            if (p.getGameMode() == org.bukkit.GameMode.CREATIVE || p.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+                try { teleportToHub(p); } catch (Exception ignored) {}
+                continue;
+            }
+            final UUID victimId = memberId;
+            timeoutVictims.add(victimId);
+            FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
+            String killedRaw = plugin.getConfig().getString("messages.raid-timeout-killed",
+                    "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
+            try { p.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
+            Title.Times times = Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(500));
+            try {
+                p.showTitle(Title.title(MM.deserialize("<dark_red><bold>Time's up</bold></dark_red>"),
+                        MM.deserialize("<red>The Glitch consumed you</red>"), times));
+            } catch (Exception ignored) {}
+            try { p.playSound(p.getLocation(), org.bukkit.Sound.ENTITY_WITHER_DEATH, 1.0f, 0.8f); } catch (Exception ignored) {}
+            session.incrementDeaths(victimId);
+            try {
+                p.setHealth(0.0);
+            } catch (Exception e) {
+                try { p.damage(1000.0); } catch (Exception ignored) {}
+            }
+            FoliaScheduler.runLaterGlobal(plugin, () -> {
+                Player pp = Bukkit.getPlayer(victimId);
+                if (pp != null && pp.isOnline() && pp.getWorld().getName().equalsIgnoreCase(worldKey)) {
+                    teleportToHub(pp);
+                }
+            }, 60L);
+        }
+        // End global session — this clears bossbar and timers, and sends timeout summaries
+        endGlobalRaid(worldKey, RaidEndReason.TIMEOUT_DEATH);
+        // Loot scatter during 1m buffer: scheduler owns the next 31m start, but we log/scatter here
+        scatterLootForBuffer(session, worldKey);
+    }
+
+    /**
+     * Scatter loot during the 1m buffer after global timeout. MVP: logs and optionally
+     * drops placeholder items. The real scatter (if Mythic loot) can be delegated to
+     * the scheduler or GlitchLoot. We keep this Folia-safe and non-destructive.
+     */
+    private void scatterLootForBuffer(RaidSession session, String worldKey) {
+        try {
+            World world = Bukkit.getWorld(worldKey);
+            if (world == null) world = Bukkit.getWorld(autoStartWorld);
+            if (world == null) return;
+            for (UUID memberId : session.getMembers()) {
+                int loot = session.getLootValue(memberId);
+                if (loot <= 0) continue;
+                plugin.getLogger().info("Scatter buffer: player " + memberId + " loot " + loot + " would scatter in " + worldKey + " during 1m buffer (MVP log only)");
+                // Future: spawn item entities at death locations proportional to loot value
+                // For now we avoid spawning to prevent duplicate drops and Folia region issues.
+            }
+            // Broadcast scatter start
+            String scatterRaw = plugin.getConfig().getString("messages.raid-scatter-start",
+                    "<gray>Loot from the consumed scatters across <white><world></white> — 60s to scavenge before next extraction!</gray>");
+            Component msg = MM.deserialize(scatterRaw.replace("<world>", worldKey));
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p.getWorld().getName().equalsIgnoreCase(hubWorld) || p.getWorld().getName().equalsIgnoreCase(worldKey)) {
+                    try { p.sendMessage(msg); } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed scatter buffer for " + worldKey + ": " + e.getMessage());
+        }
     }
 
     public void teleportToHub(Player player) {
@@ -784,6 +1538,10 @@ public final class RaidManager {
             }
         }
         timers.clear();
+        for (Map.Entry<String, FoliaScheduler.Cancellable> entry : globalTimers.entrySet()) {
+            try { entry.getValue().cancel(); } catch (Exception ignored) {}
+        }
+        globalTimers.clear();
         for (Map.Entry<UUID, BossBar> entry : bossBars.entrySet()) {
             BossBar bar = entry.getValue();
             Player p = Bukkit.getPlayer(entry.getKey());
@@ -808,6 +1566,14 @@ public final class RaidManager {
             }
         }
         bossBars.clear();
+        for (Map.Entry<String, BossBar> entry : globalBossBars.entrySet()) {
+            BossBar bar = entry.getValue();
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                try { p.hideBossBar(bar); } catch (Exception ignored) {}
+            }
+        }
+        globalBossBars.clear();
+        globalSessions.clear();
         activeRaids.clear();
         timeoutVictims.clear();
         lastDeathMillis.clear();

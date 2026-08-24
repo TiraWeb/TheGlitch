@@ -168,3 +168,42 @@ containers:
     looted: "<gold>You loot the <container>!"
     surge: "<light_purple>Residual Glitch surges — the container spits out extra loot!</light_purple>"
     shards: "<gold>+<amount> Shards</gold> <gray>cling to the loot.</gray>"
+
+# Automatic loot scatter — RED WORLD only, sparse, on solid ground.
+# Fires every 30m and right after extraction ends (AutoExtractCycleEndEvent at
+# t0+30m+5s from GlitchStash). Clears previous scattered containers and places
+# new ones only on top of solid blocks (not air/water/lava/trees), never
+# replacing existing blocks (target + above must be AIR), and not inside
+# WorldGuard protected regions (except __global__).
+#
+# Density: 1 per 5-10 chunks would be 1562-3125 containers on a 2000x2000 border,
+# far too many. Tuned sparse: 36 total (debris 18, cache 10, vault 6, rift 2)
+# ≈ 1 per ~430 chunks. Matches prior mob tuning (1 per ~250 chunks = 61).
+# Config-driven — edit counts to retune without code change.
+scatter:
+  enabled: true
+  # RED WORLD only per requirements (containers.enabled-worlds may include pve, scatter does not)
+  enabled-worlds: [glitch_red]
+  # Scatter interval — aligns with extraction: every 30m right after extraction ends
+  interval-minutes: 30
+  # Clear previous scattered containers before placing new ones (only those we placed)
+  clear-previous: true
+  # Only place on top of solid ground (spec: not air, not trees, not water/lava, target must be air above solid)
+  on-top-only: true
+  # Square border half-size (radius from 0,0) — placement picks random x/z in [-radius, radius]
+  border-radius: 1000
+  # Fallback density if counts empty: 1 container per N chunks
+  chunks-per-container: 8
+  # Max placement attempts per container to find valid ground
+  max-attempts-per-container: 30
+  # Persist scattered positions to data/scattered.json (relative to plugin data folder)
+  persist-file: "scattered.json"
+  # Per-type counts per scatter cycle — sparse but meaningful
+  counts:
+    debris: 18
+    cache: 10
+    vault: 6
+    rift_vault: 2
+  messages:
+    scatter-broadcast: "<gray>Glitch energy coalesces — <white>{total}</white> caches scattered across the Red World."
+    broadcast-enabled: true
