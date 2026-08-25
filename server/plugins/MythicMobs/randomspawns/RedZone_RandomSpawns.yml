@@ -5,19 +5,19 @@
 # within SpawnRadiusPerPlayer (64). Cooldown throttles per-entry.
 # Density target: ~90-110 concurrent (~1/150 chunks) with 4 tiers.
 
-# --- T1 fodder: spawns everywhere, most common ---
+# --- T1 fodder: spawns everywhere, most common — tuned 2026-08-24: was 0.25/30 too dense (150/min) ---
 RZ_T1_Wisp_Crawler:
   Action: ADD
   Types:
   - GlitchWisp 60
   - CorruptedCrawler 40
   Worlds: glitch_red
-  Chance: 0.25
+  Chance: 0.06
   Priority: 1
   PositionType: LAND
-  Cooldown: 30
+  Cooldown: 60
 
-# --- T2 mid-tier: cross-ring and general ---
+# --- T2 mid-tier: cross-ring and general — was 0.18/45 too dense ---
 RZ_T2_Stalker_Brute_Phantom:
   Action: ADD
   Types:
@@ -25,12 +25,12 @@ RZ_T2_Stalker_Brute_Phantom:
   - GlitchBrute 30
   - GlitchPhantom 25
   Worlds: glitch_red
-  Chance: 0.18
+  Chance: 0.04
   Priority: 2
   PositionType: LAND
-  Cooldown: 45
+  Cooldown: 90
 
-# --- T3 elites: Core and beacons (rarer, stronger) ---
+# --- T3 elites: Core and beacons (rarer, stronger) — was 0.08/90 ---
 RZ_T3_Sentinel_Sniper_Warden:
   Action: ADD
   Types:
@@ -38,10 +38,10 @@ RZ_T3_Sentinel_Sniper_Warden:
   - GlitchSniper 35
   - GlitchWarden 25
   Worlds: glitch_red
-  Chance: 0.08
+  Chance: 0.015
   Priority: 3
   PositionType: LAND
-  Cooldown: 90
+  Cooldown: 180
 
 # --- T4 bosses: very rare, only occasionally ---
 RZ_T4_Bosses:
@@ -50,10 +50,10 @@ RZ_T4_Bosses:
   - GlitchCore 50
   - TheGlitchKing 50
   Worlds: glitch_red
-  Chance: 0.005
+  Chance: 0.001
   Priority: 10
   PositionType: LAND
-  Cooldown: 600
+  Cooldown: 900
 
 # --- Legacy note: old SpawnAreas/RedZone_SpawnAreas.yml kept for reference but not loaded by Mythic 5.13.
 # If you see "Loaded 0 random spawns" after mm reload, check:

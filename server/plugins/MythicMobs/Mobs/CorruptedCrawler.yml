@@ -5,13 +5,13 @@
 CorruptedCrawler:
   Type: SILVERFISH
   Display: '<green>Corrupted Crawler'
-  Health: 30
-  Damage: 4
+  Health: 18
+  Damage: 3
   Options:
     MovementSpeed: 0.35
     AlwaysShowName: true
-    Persistent: true
-    Despawn: false
+    Persistent: false
+    Despawn: true
     FollowRange: 20
     KnockbackResistance: 0
     PreventBlockDestruction: true

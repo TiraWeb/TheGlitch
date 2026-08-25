@@ -7,13 +7,13 @@
 GlitchWarden:
   Type: IRON_GOLEM
   Display: '<dark_aqua>Glitch Warden'
-  Health: 300
-  Damage: 8
+  Health: 180
+  Damage: 5
   Options:
     MovementSpeed: 0.22
     AlwaysShowName: true
-    Persistent: true
-    Despawn: false
+    Persistent: false
+    Despawn: true
     FollowRange: 24
     KnockbackResistance: 1
     PreventBlockDestruction: true
@@ -28,7 +28,7 @@ GlitchWarden:
     - effect:sound{s=entity.iron_golem.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
     - effect:sound{s=entity.iron_golem.death;v=1;p=0.7} @self ~onDeath 1
     - throw{velocity=1.5;velocityY=1.2} @PlayersInRadius{r=6} ~onTimer:400 0.6
-    - damage{amount=6} @PlayersInRadius{r=3} ~onTimer:100 0.7
+    - damage{amount=4} @PlayersInRadius{r=3} ~onTimer:100 0.7
     - effect:sound{s=entity.shulker.bullet.hit;v=0.8;p=0.6} @self ~onTimer:400 0.6
   Drops:
     - GlitchWardenLoot

@@ -5,13 +5,13 @@
 GlitchWisp:
   Type: VEX
   Display: '<aqua>Glitch Wisp'
-  Health: 20
-  Damage: 3
+  Health: 12
+  Damage: 2
   Options:
     MovementSpeed: 0.4
     AlwaysShowName: true
-    Persistent: true
-    Despawn: false
+    Persistent: false
+    Despawn: true
     FollowRange: 24
     KnockbackResistance: 0
     PreventBlockDestruction: true

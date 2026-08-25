@@ -4,13 +4,13 @@
 GlitchBrute:
   Type: ZOMBIE
   Display: '<dark_red>Glitch Brute'
-  Health: 200
-  Damage: 12
+  Health: 110
+  Damage: 7
   Options:
     MovementSpeed: 0.22
     AlwaysShowName: true
-    Persistent: true
-    Despawn: false
+    Persistent: false
+    Despawn: true
     FollowRange: 20
     KnockbackResistance: 0.6
     PreventSunburn: true

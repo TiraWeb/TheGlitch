@@ -4,13 +4,13 @@
 GlitchStalker:
   Type: ZOMBIE
   Display: '<red>Glitch Stalker'
-  Health: 80
-  Damage: 6
+  Health: 45
+  Damage: 4
   Options:
     MovementSpeed: 0.32
     AlwaysShowName: true
-    Persistent: true
-    Despawn: false
+    Persistent: false
+    Despawn: true
     FollowRange: 24
     KnockbackResistance: 0.1
     PreventSunburn: true

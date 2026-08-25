@@ -6,13 +6,13 @@
 GlitchSentinel:
   Type: WITHER_SKELETON
   Display: '<red>Glitch Sentinel'
-  Health: 200
-  Damage: 14
+  Health: 120
+  Damage: 8
   Options:
     MovementSpeed: 0.28
     AlwaysShowName: true
-    Persistent: true
-    Despawn: false
+    Persistent: false
+    Despawn: true
     FollowRange: 24
     KnockbackResistance: 1
     PreventSunburn: true
@@ -26,7 +26,7 @@ GlitchSentinel:
     - effect:sound{s=entity.wither_skeleton.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
     - effect:sound{s=entity.wither_skeleton.death;v=1;p=0.7} @self ~onDeath 1
     - summon{m=GlitchWisp;a=2;r=6} @self ~onTimer:600 1
-    - damage{amount=15} @PlayersInRadius{r=5} ~onTimer:300 0.6
+    - damage{amount=9} @PlayersInRadius{r=5} ~onTimer:300 0.6
     - potion{type=SLOWNESS;duration=60;level=5} @PlayersInRadius{r=5} ~onTimer:300 0.6
     - effect:sound{s=entity.generic.explode;v=0.6;p=0.4} @self ~onTimer:300 0.6
   Drops:

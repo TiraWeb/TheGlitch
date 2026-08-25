@@ -5,13 +5,13 @@
 GlitchCore:
   Type: WARDEN
   Display: '<bold><dark_purple>Glitch Core'
-  Health: 1000
-  Damage: 20
+  Health: 600
+  Damage: 12
   Options:
     MovementSpeed: 0.18
     AlwaysShowName: true
     Persistent: true
-    Despawn: false
+    Despawn: true
     FollowRange: 40
     KnockbackResistance: 0.8
     CombatReady: true
@@ -31,12 +31,12 @@ GlitchCore:
     - effect:sound{s=entity.warden.hurt;v=0.9;p=0.8} @self ~onDamaged 0.3
     - effect:sound{s=entity.warden.death;v=1;p=0.5} @self ~onDeath 1
     # Ground slam — AoE damage around the boss
-    - damage{amount=15} @NearestPlayer{r=5} ~onTimer:100 0.6
+    - damage{amount=9} @NearestPlayer{r=5} ~onTimer:100 0.6
     - effect:sound{s=entity.generic.explode;v=0.6;p=0.4} @self ~onTimer:100 0.6
     # Summon adds at 50% HP
-    - summon{m=GlitchStalker;a=3;r=5} @self ~onHealth:50 1
+    - summon{m=GlitchStalker;a=3;r=5} @self ~onHealth: 600 1
     # Enrage at 20% HP — damage boost
-    - modifier{d=1.5;type=MULTIPLY;duration=999999} @self ~onHealth:20 1
-    - effect:sound{s=entity.warden.sonic_boom;v=1;p=0.6} @self ~onHealth:20 1
+    - modifier{d=1.5;type=MULTIPLY;duration=999999} @self ~onHealth: 600 1
+    - effect:sound{s=entity.warden.sonic_boom;v=1;p=0.6} @self ~onHealth: 600 1
   Drops:
     - GlitchCoreLoot
