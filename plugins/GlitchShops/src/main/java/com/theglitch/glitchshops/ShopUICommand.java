@@ -83,8 +83,6 @@ public final class ShopUICommand implements CommandExecutor {
                 gui.open(player, category, true);
                 return true;
             }
-            default:
-                return true;
         }
     }
 
