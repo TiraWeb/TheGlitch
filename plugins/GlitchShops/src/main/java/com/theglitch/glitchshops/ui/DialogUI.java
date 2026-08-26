@@ -128,6 +128,74 @@ public final class DialogUI {
         }
     }
 
+    public static String itemBody(String materialId, int count, Integer customModelData) {
+        String id = materialId == null || materialId.isBlank() ? "paper" : materialId.toLowerCase();
+        if (!id.startsWith("minecraft:")) {
+            id = "minecraft:" + id;
+        }
+        if (customModelData != null) {
+            return "{type:\"minecraft:item\",item:{id:" + esc(id) + ",count:" + count
+                    + ",components:{\"minecraft:custom_model_data\":{floats:[" + customModelData + "]}}}}";
+        }
+        return "{type:\"minecraft:item\",item:" + esc(id) + ",count:" + count + "}";
+    }
+
+    public static void openBuyConfirm(GlitchShops plugin, ShopGUI gui, Player player,
+                                      String category, String itemId) {
+        String matId;
+        Integer cmd = null;
+        String name;
+        try {
+            var built = io.th0rgal.oraxen.api.OraxenItems.getItemById(itemId).build();
+            matId = built.getType().getKey().getKey();
+            try {
+                if (built.getItemMeta().hasCustomModelData()) {
+                    cmd = built.getItemMeta().getCustomModelData();
+                }
+            } catch (Throwable ignored) {
+            }
+            name = gui.displayNameOf(itemId);
+        } catch (Throwable t) {
+            matId = "paper";
+            name = itemId;
+        }
+        Integer price = gui.buyPriceFor(category, itemId);
+        if (price == null) {
+            String template = plugin.getShopManager().getMessageTemplate("no-value");
+            player.sendMessage(GlitchShops.mm().deserialize(template));
+            return;
+        }
+        int maxAmt = Math.max(1, gui.buyStackSizePublic());
+        String body = itemBody(matId, 1, cmd)
+                + ",{type:\"minecraft:plain_message\",contents:"
+                + txt("Price: " + price + " Shards each", "gray", false)
+                + "},{type:\"minecraft:plain_message\",contents:"
+                + txt("Slide to pick amount, then CONFIRM", "gray", false)
+                + "}";
+        String inputs = "{type:\"minecraft:number_range\",label:{text:\"Amount\"},key:\"amt\",start:1,end:"
+                + maxAmt + ",step:1,initial:1}";
+        String actions = "{label:" + txt("CONFIRM PURCHASE", "green", false)
+                + ",tooltip:" + txt("Total shown before confirm runs", "dark_gray", false)
+                + ",width:250"
+                + ",action:{type:\"minecraft:run_command\",command:"
+                + esc("shopui buyslider " + category + " " + itemId + " $(amt)")
+                + "}}"
+                + ","
+                + button("\u00ab BACK", "yellow", "Back to " + gui.categoryLabel(category), "shopui open " + category);
+        FloatingBanner.show(plugin, player, UiKit.title("BUY"), 60L);
+        String snbt = "{type:\"minecraft:multi_action\",title:"
+                + txt("BUY " + name.toUpperCase(), "aqua", true)
+                + ",body:[" + body + "]"
+                + ",inputs:[" + inputs + "]"
+                + ",columns:2"
+                + ",actions:[" + actions + "]"
+                + ",exit_action:{label:" + txt("Close", "dark_gray", false) + "}}";
+        boolean shown = show(plugin, player, snbt);
+        if (!shown) {
+            gui.open(player, category);
+        }
+    }
+
     private static int balance(GlitchShops plugin, Player player) {
         try {
             Economy economy = plugin.getEconomy();

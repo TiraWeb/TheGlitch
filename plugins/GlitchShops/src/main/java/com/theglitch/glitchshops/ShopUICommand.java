@@ -78,6 +78,28 @@ public final class ShopUICommand implements CommandExecutor {
                 });
                 return true;
             }
+            case "buyslider": {
+                if (args.length < 3) return true;
+                String category = args[1];
+                String itemId = args[2];
+                int parsed = 1;
+                if (args.length > 3) {
+                    try {
+                        parsed = Integer.parseInt(args[3]);
+                    } catch (NumberFormatException e) {
+                        parsed = 1;
+                    }
+                }
+                final int amount = Math.max(1, Math.min(parsed, 64));
+                Integer price = gui.buyPriceFor(category, itemId);
+                if (price == null) {
+                    player.sendMessage(MM.deserialize("<red>This offer just changed — reopen the shop.</red>"));
+                    return true;
+                }
+                plugin.getServer().getScheduler().runTask(plugin, () ->
+                        gui.buyFromDialog(player, category, itemId, amount));
+                return true;
+            }
             case "sellmode": {
                 String category = args.length > 1 ? args[1] : gui.defaultTab();
                 gui.open(player, category, true);

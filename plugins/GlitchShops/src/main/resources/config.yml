@@ -43,3 +43,14 @@ modern-ui:
   enabled: true
   hologram-banner: true
   dialogs: true
+  # Physical shop wall rendered with display entities near the Grand Bazaar NPC
+  world-panel:
+    enabled: true
+    world: hub
+    x: 102.5
+    y: -33.6
+    z: 66.5
+    facing: south
+    spacing: 1.15
+    instant-buy-max: 50
+    refresh-seconds: 600

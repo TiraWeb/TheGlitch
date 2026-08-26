@@ -47,6 +47,8 @@ public final class GlitchShops extends JavaPlugin {
             getCommand("shopui").setExecutor(new ShopUICommand(this, shopGUI));
         }
 
+        com.theglitch.glitchshops.ui.BazaarPanel.init(this, shopGUI);
+
         if (getCommand("shop") != null && getConfig().getBoolean("modern-ui.enabled", true)) {
             getLogger().info(DialogBridge.runtimeSummary());
         }
@@ -60,6 +62,10 @@ public final class GlitchShops extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        try {
+            com.theglitch.glitchshops.ui.BazaarPanel.shutdown();
+        } catch (Throwable ignored) {
+        }
         instance = null;
         getLogger().info("GlitchShops disabled.");
     }

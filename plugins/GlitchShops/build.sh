@@ -8,7 +8,7 @@
 #   VaultUnlocked.jar, Oraxen.jar, FancyNpcs.jar, GlitchItems.jar
 # IMPORTANT: build GlitchItems FIRST (sudo ./plugins/GlitchItems/build.sh)
 # so the GlitchItems.jar copied here contains the latest API (e.g. generateGodroll).
-# Output:   plugins/GlitchShops/target/GlitchShops-1.2.0.jar
+# Output:   plugins/GlitchShops/target/GlitchShops-1.3.0.jar
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PLUGIN_DIR="${REPO_DIR}/plugins/GlitchShops"
 SERVER_DIR="${REPO_DIR}/server"
-OUTPUT_JAR="${PLUGIN_DIR}/target/GlitchShops-1.2.0.jar"
+OUTPUT_JAR="${PLUGIN_DIR}/target/GlitchShops-1.3.0.jar"
 LIVE_PLUGIN_DIR="/opt/theglitch/server/plugins"
 
 log()  { echo -e "\033[1;36m[build]\033[0m $*"; }
