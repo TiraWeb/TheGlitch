@@ -67,7 +67,7 @@ public final class DialogUI {
     public static String button(String label, String color, String tooltip, String template) {
         StringBuilder sb = new StringBuilder("{label:").append(txt(label, color, false));
         if (tooltip != null) sb.append(",tooltip:").append(txt(tooltip, "gray", false));
-        sb.append(",action:{type:\"minecraft:command_template\",template:")
+        sb.append(",action:{type:\"minecraft:run_command\",command:")
                 .append(esc(template)).append("}}");
         return sb.toString();
     }

@@ -55,7 +55,7 @@ public final class DialogUI {
     public static String button(String label, String color, String tooltip, String template) {
         return "{label:" + txt(label, color, false)
                 + (tooltip == null ? "" : ",tooltip:" + txt(tooltip, "dark_gray", false))
-                + ",action:{type:\"minecraft:command_template\",template:" + esc(template) + "}}";
+                + ",action:{type:\"minecraft:run_command\",command:" + esc(template) + "}}";
     }
 
     public static void openRoot(GlitchShops plugin, ShopGUI gui, Player player, Runnable chestFallback) {

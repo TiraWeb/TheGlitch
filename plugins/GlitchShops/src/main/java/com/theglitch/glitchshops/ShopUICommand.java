@@ -25,7 +25,8 @@ public final class ShopUICommand implements CommandExecutor {
         if (!DialogUI.supported()) return true;
         String sub = args.length == 0 ? "" : args[0].toLowerCase();
         switch (sub) {
-            case "root": {
+            case "root":
+            default: {
                 String category = gui.defaultTab();
                 DialogUI.openRoot(plugin, gui, player, () -> gui.open(player, category));
                 return true;
