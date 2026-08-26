@@ -188,14 +188,25 @@ public final class BazaarPanel implements Listener {
 
     private void build() {
         try {
-            if (!isLive()) return;
+            if (!isLive()) {
+                plugin.getLogger().info("BazaarPanel build skipped: not live (world=null or plugin disabled).");
+                return;
+            }
             purgeStale();
             removeAll();
             spawnHeader();
             spawnTabs();
             spawnGrid(activeCategory());
+            plugin.getLogger().info("BazaarPanel built: " + trackedEntities.size() + " entities at "
+                    + world.getName() + " " + wx + "," + wy + "," + wz + " facing " + facing);
         } catch (Throwable t) {
-            plugin.getLogger().fine("panel build failed: " + t.getClass().getSimpleName());
+            plugin.getLogger().info("BazaarPanel build failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+        }
+    }
+
+    public static void rebuild() {
+        if (instance != null) {
+            instance.build();
         }
     }
 

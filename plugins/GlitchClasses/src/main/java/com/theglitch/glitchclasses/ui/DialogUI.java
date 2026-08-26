@@ -58,7 +58,7 @@ public final class DialogUI {
     }
 
     public static String glyph(String ch, String color) {
-        StringBuilder sb = new StringBuilder("{text:").append(esc(ch)).append(",font:\"theglitch:ui\"");
+        StringBuilder sb = new StringBuilder("{text:").append(esc(ch));
         if (color != null && !color.isEmpty()) sb.append(",color:").append(esc(color));
         return sb.append('}').toString();
     }

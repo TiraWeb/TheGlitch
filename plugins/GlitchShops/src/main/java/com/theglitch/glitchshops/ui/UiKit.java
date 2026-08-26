@@ -13,8 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class UiKit {
 
-    public static final String GLYPH_OPEN = "<font:minecraft:default>\uE049</font><font:theglitch:ui>";
-    public static final String GLYPH_CLOSE = "</font><font:minecraft:default>\uE049</font>";
+    public static final String GLYPH_OPEN = "<font:minecraft:default>\uE049</font>";
+    public static final String GLYPH_CLOSE = "<font:minecraft:default>\uE049</font>";
     public static final String DIVIDER_MM = "<dark_gray>\uE048</dark_gray>";
     public static final String SHARD_GLYPH = "\uE045";
     public static final String STAR_FULL = "\uE046";

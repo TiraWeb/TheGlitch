@@ -100,6 +100,10 @@ public final class ShopUICommand implements CommandExecutor {
                         gui.buyFromDialog(player, category, itemId, amount));
                 return true;
             }
+            case "panel": {
+                com.theglitch.glitchshops.ui.BazaarPanel.rebuild();
+                return true;
+            }
             case "sellmode": {
                 String category = args.length > 1 ? args[1] : gui.defaultTab();
                 gui.open(player, category, true);
