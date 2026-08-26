@@ -19,7 +19,9 @@ if [[ -z "$REPO_DIR" && -f "./bootstrap.sh" ]]; then REPO_DIR="$(pwd)"; fi
 STAMP="$(date +%Y%m%d-%H%M%S)"
 GITREV="nogit"
 if [[ -n "$REPO_DIR" ]]; then
-  GITREV="$(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo "nogit")"
+  # systemd runs as root, but repo is owned by ubuntu -> git safe.directory check fails as root
+  # try as ubuntu first, then as root, then via --git-dir
+  GITREV="$(sudo -u ubuntu git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || git --git-dir="$REPO_DIR/.git" rev-parse --short HEAD 2>/dev/null || echo "nogit")"
 fi
 ARCHIVE="${BACKUP_DIR}/theglitch-worlds+data-${STAMP}-${GITREV}.tar.gz"
 TMP_TAR="${BACKUP_DIR}/.tmp-${STAMP}.tar"
