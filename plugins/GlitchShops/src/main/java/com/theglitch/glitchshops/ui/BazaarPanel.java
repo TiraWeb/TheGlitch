@@ -194,6 +194,7 @@ public final class BazaarPanel implements Listener {
             }
             purgeStale();
             removeAll();
+            forceLoadPanelChunks();
             spawnHeader();
             spawnTabs();
             spawnGrid(activeCategory());
@@ -207,6 +208,22 @@ public final class BazaarPanel implements Listener {
     public static void rebuild() {
         if (instance != null) {
             instance.build();
+        }
+    }
+
+    private void forceLoadPanelChunks() {
+        try {
+            int minCX = ((int) Math.floor(wx) - 8) >> 4;
+            int maxCX = ((int) Math.floor(wx) + 8) >> 4;
+            int minCZ = ((int) Math.floor(wz) - 8) >> 4;
+            int maxCZ = ((int) Math.floor(wz) + 8) >> 4;
+            for (int cx = minCX; cx <= maxCX; cx++) {
+                for (int cz = minCZ; cz <= maxCZ; cz++) {
+                    world.setChunkForceLoaded(cx, cz, true);
+                }
+            }
+        } catch (Throwable t) {
+            plugin.getLogger().info("BazaarPanel force-load skipped: " + t.getClass().getSimpleName());
         }
     }
 
@@ -341,7 +358,7 @@ public final class BazaarPanel implements Listener {
         t.setDefaultBackground(false);
         t.setBackgroundColor(Color.fromARGB(0x90000000));
         t.setAlignment(TextDisplay.TextAlignment.CENTER);
-        t.setPersistent(false);
+        t.setPersistent(true);
         t.setTeleportDuration(1);
     }
 
@@ -375,7 +392,7 @@ public final class BazaarPanel implements Listener {
                     h.setInteractionWidth(width);
                     h.setInteractionHeight(height);
                     h.setResponsive(true);
-                    h.setPersistent(false);
+                    h.setPersistent(true);
                 } catch (Throwable err) {
                     plugin.getLogger().fine("hitbox styling incomplete: " + err.getClass().getSimpleName());
                 }
@@ -477,7 +494,7 @@ public final class BazaarPanel implements Listener {
                     disp.setItemStack(stack);
                     disp.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
                     disp.setBillboard(Display.Billboard.FIXED);
-                    disp.setPersistent(false);
+                    disp.setPersistent(true);
                     disp.setRotation(yaw, 0.0F);
                     disp.setTeleportDuration(1);
                     disp.setTransformation(new Transformation(
