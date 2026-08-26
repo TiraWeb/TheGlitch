@@ -1,0 +1,21 @@
+[Unit]
+Description=The Glitch — worlds+data backup (no rebuildable jars, includes Oraxen.jar)
+Documentation=https://github.com/TiraWeb/TheGlitch
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/theglitch
+# REPO_DIR auto-detected from /home/minecraft/TheGlitch or /opt/theglitch/TheGlitch
+ExecStart=/bin/bash /home/minecraft/TheGlitch/scripts/backup-now.sh
+# Fallback if repo is at /opt/theglitch/TheGlitch (clone location varies)
+ExecStart=/bin/bash -c 'test -x /home/minecraft/TheGlitch/scripts/backup-now.sh && /bin/bash /home/minecraft/TheGlitch/scripts/backup-now.sh || /bin/bash /opt/theglitch/TheGlitch/scripts/backup-now.sh || /bin/bash /home/ubuntu/TheGlitch/scripts/backup-now.sh'
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=The Glitch — every-2-days worlds+data backup (PC may be offline, so host retains 7)
+Documentation=https://github.com/TiraWeb/TheGlitch
+
+[Timer]
+# Every 2 days at 02:00 UTC; host keeps 7 backups (14 days). PC pulls when online via pull-backup.ps1.
+# Using OnCalendar for every odd day + Even fallback via Persistent; simpler: OnUnitActiveSec=2d also works.
+# We use OnCalendar with fixed days to be explicit and keep wall-clock 02:00.
+OnCalendar=*-*-01,03,05,07,09,11,13,15,17,19,21,23,25,27,29,31 02:00:00
+Persistent=true
+RandomizedDelaySec=15m
+AccuracySec=1h
+Unit=theglitch-backup.service
+
+[Install]
+WantedBy=timers.target
