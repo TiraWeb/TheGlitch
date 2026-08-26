@@ -85,7 +85,7 @@ public final class FloatingBanner {
 
     private static void scheduleRemoval(JavaPlugin plugin, Player player, TextDisplay display, long ticks) {
         if (REGIONIZED_RUNTIME && runOnEntityScheduler(plugin, player,
-                () -> retire(display, player.getUniqueId()))) {
+                () -> retire(display, player.getUniqueId()), ticks)) {
             return;
         }
         try {
@@ -94,14 +94,18 @@ public final class FloatingBanner {
         }
     }
 
-    /** Reflective EntityScheduler#run(Plugin, Consumer, Runnable, long) — no Folia-only imports. */
-    private static boolean runOnEntityScheduler(JavaPlugin plugin, Player player, Runnable task) {
+    /** Reflective EntityScheduler#runDelayed(Plugin, Consumer, Runnable, long) — no Folia-only imports. */
+    private static boolean runOnEntityScheduler(JavaPlugin plugin, Player player, Runnable task, long delayTicks) {
         try {
             Object scheduler = player.getClass().getMethod("getScheduler").invoke(player);
             Method run = null;
             for (Method m : scheduler.getClass().getMethods()) {
-                if (m.getName().equals("run") && m.getParameterCount() == 4
-                        && Consumer.class.isAssignableFrom(m.getParameterTypes()[1])) {
+                Class<?>[] params = m.getParameterTypes();
+                if (m.getName().equals("runDelayed") && params.length == 4
+                        && JavaPlugin.class.isAssignableFrom(params[0])
+                        && Consumer.class.isAssignableFrom(params[1])
+                        && Runnable.class.equals(params[2])
+                        && params[3] == long.class) {
                     run = m;
                     break;
                 }
@@ -109,7 +113,7 @@ public final class FloatingBanner {
             if (run == null) return false;
             Consumer<Object> unused = t -> {
             };
-            run.invoke(scheduler, plugin, unused, null, ticks);
+            run.invoke(scheduler, plugin, unused, null, delayTicks);
             return true;
         } catch (Throwable t) {
             return false;
