@@ -42,3 +42,9 @@ server/world_nether/
 server/world_the_end/
 
 try2.key
+
+# Backups (worlds+data archives pulled from host)
+backups/*.tar.gz
+backups/*.tar
+backups/*.sha256
+!backups/.gitkeep
