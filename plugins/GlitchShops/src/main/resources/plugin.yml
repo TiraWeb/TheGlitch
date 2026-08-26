@@ -17,6 +17,9 @@ commands:
     description: Open the Grand Bazaar
     usage: /shop [open <tab>|reload|restock]
     permission: glitchshops.use
+  shopui:
+    description: Internal shop dialog actions
+    usage: /shopui <open|root|buy|buygear|sellmode> [args]
 
 permissions:
   glitchshops.use:

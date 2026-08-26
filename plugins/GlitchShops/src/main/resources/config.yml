@@ -42,4 +42,4 @@ messages:
 modern-ui:
   enabled: true
   hologram-banner: true
-  dialogs: false
+  dialogs: true

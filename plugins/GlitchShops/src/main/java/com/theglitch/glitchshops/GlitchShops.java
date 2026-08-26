@@ -43,6 +43,9 @@ public final class GlitchShops extends JavaPlugin {
         }
 
         getCommand("shop").setExecutor(new ShopCommand(this, shopGUI));
+        if (getCommand("shopui") != null) {
+            getCommand("shopui").setExecutor(new ShopUICommand(this, shopGUI));
+        }
 
         if (getCommand("shop") != null && getConfig().getBoolean("modern-ui.enabled", true)) {
             getLogger().info(DialogBridge.runtimeSummary());

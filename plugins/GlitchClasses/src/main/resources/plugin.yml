@@ -19,6 +19,9 @@ commands:
     description: Admin commands for GlitchClasses
     usage: /classadmin <reload|set <player> <class> <level>|reset <player>>
     permission: glitchclasses.admin
+  classui:
+    description: Internal class dialog actions
+    usage: /classui <root|view|select|upgrade|resetask|resetyes> [args]
 
 permissions:
   glitchclasses.use:

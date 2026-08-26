@@ -1,5 +1,7 @@
 package com.theglitch.glitchshops;
 
+import com.theglitch.glitchshops.ui.DialogBridge;
+import com.theglitch.glitchshops.ui.DialogUI;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -22,7 +24,7 @@ public final class ShopCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             if (sender instanceof Player player) {
-                shopGUI.open(player, plugin.getDefaultTab());
+                openDefault(player);
             } else {
                 sender.sendMessage(MM.deserialize("<red>Only players can open the bazaar.</red>"));
             }
@@ -34,7 +36,7 @@ public final class ShopCommand implements CommandExecutor {
                     sender.sendMessage(MM.deserialize("<red>Only players can open the bazaar.</red>"));
                     return true;
                 }
-                shopGUI.open(player, args.length > 1 ? args[1] : plugin.getDefaultTab());
+                openTab(player, args.length > 1 ? args[1] : plugin.getDefaultTab());
                 return true;
             case "reload":
                 if (!sender.hasPermission("glitchshops.admin")) {
@@ -55,6 +57,23 @@ public final class ShopCommand implements CommandExecutor {
             default:
                 sender.sendMessage(MM.deserialize("<gray>Usage: /shop [open <tab>|reload|restock]</gray>"));
                 return true;
+        }
+    }
+
+    private void openDefault(Player player) {
+        String category = plugin.getDefaultTab();
+        if (shopGUI.dialogsEnabled() && DialogBridge.dialogsRuntime()) {
+            DialogUI.openRoot(plugin, shopGUI, player, () -> shopGUI.open(player, category));
+        } else {
+            shopGUI.open(player, category);
+        }
+    }
+
+    private void openTab(Player player, String category) {
+        if (shopGUI.dialogsEnabled() && DialogBridge.dialogsRuntime()) {
+            DialogUI.openCategory(plugin, shopGUI, player, category, () -> shopGUI.open(player, category));
+        } else {
+            shopGUI.open(player, category);
         }
     }
 }

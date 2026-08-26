@@ -79,6 +79,7 @@ public final class ShopGUI implements Listener {
     private volatile Economy cachedEconomy;
     private volatile boolean modernEnabled;
     private volatile boolean holoEnabled;
+    private volatile boolean dialogsEnabled;
 
     public ShopGUI(GlitchShops plugin, ShopManager shopManager) {
         this.plugin = plugin;
@@ -94,6 +95,7 @@ public final class ShopGUI implements Listener {
         this.cachedEconomy = plugin.getEconomy(); // invalidated already in plugin
         this.modernEnabled = plugin.getConfig().getBoolean("modern-ui.enabled", true);
         this.holoEnabled = plugin.getConfig().getBoolean("modern-ui.hologram-banner", true);
+        this.dialogsEnabled = plugin.getConfig().getBoolean("modern-ui.dialogs", true);
         if (this.cachedTabOrder == null || this.cachedTabOrder.isEmpty()) {
             plugin.getLogger().warning("ShopGUI: cached tab order empty — using fallback.");
             this.cachedTabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear");
@@ -309,7 +311,7 @@ public final class ShopGUI implements Listener {
         return item;
     }
 
-    private String categoryLabel(String category) {
+    public String categoryLabel(String category) {
         switch (category) {
             case "materials": return "Materials";
             case "keys": return "Keys";
@@ -653,5 +655,69 @@ public final class ShopGUI implements Listener {
         if (!(event.getPlayer() instanceof Player player)) return;
         if (switchingGui.remove(player.getUniqueId())) return;
         sessions.remove(player.getUniqueId());
+    }
+
+    public boolean dialogsEnabled() {
+        return dialogsEnabled;
+    }
+
+    public List<String> tabOrder() {
+        return cachedTabOrder == null ? List.of() : cachedTabOrder;
+    }
+
+    public String defaultTab() {
+        return cachedDefaultTab;
+    }
+
+    public int buyStackSizePublic() {
+        return buyStackSize();
+    }
+
+    public java.util.List<String> stockIds(String category) {
+        ShopManager.Shop shop = shopManager.getShop(category);
+        if (shop == null) return List.of();
+        return new java.util.ArrayList<>(shop.stock().keySet());
+    }
+
+    public Integer buyPriceFor(String category, String id) {
+        return shopManager.buyPrice(category, id);
+    }
+
+    public String displayNameOf(String itemId) {
+        try {
+            ItemBuilder builder = OraxenItems.getItemById(itemId);
+            if (builder != null) {
+                ItemStack built = builder.build();
+                if (built.hasItemMeta() && built.getItemMeta().hasCustomName()) {
+                    Component custom = built.getItemMeta().customName();
+                    if (custom != null) {
+                        String plain = PlainTextComponentSerializer.plainText().serialize(custom);
+                        if (!plain.isEmpty()) {
+                            return plain;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return itemId;
+        }
+        return itemId;
+    }
+
+    public void buyFromDialog(Player p, String category, String itemId, int amount) {
+        Integer price = shopManager.buyPrice(category, itemId);
+        if (price == null) {
+            message(p, "denied");
+            sound(p, false);
+            return;
+        }
+        buyItem(p, itemId, price, Math.max(1, amount), -1);
+    }
+
+    public void buyGearFromDialog(Player p, int index) {
+        if (index < 0 || index >= shopManager.getGearStock().size()) return;
+        ShopManager.GearStockEntry entry = shopManager.getGearStock().get(index);
+        if (entry == null || entry.item() == null) return;
+        buyItem(p, null, entry.price(), 1, index);
     }
 }

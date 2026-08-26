@@ -51,6 +51,9 @@ public final class GlitchClasses extends JavaPlugin {
 
         getCommand("class").setExecutor(new ClassCommand(this, classManager));
         getCommand("classadmin").setExecutor(new ClassAdminCommand(this, classManager));
+        if (getCommand("classui") != null) {
+            getCommand("classui").setExecutor(new ClassUICommand(this));
+        }
 
         getLogger().info("GlitchClasses enabled — " + classManager.getPlayerCount() + " players loaded.");
     }

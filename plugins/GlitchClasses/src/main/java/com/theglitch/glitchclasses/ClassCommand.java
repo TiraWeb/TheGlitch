@@ -1,5 +1,7 @@
 package com.theglitch.glitchclasses;
 
+import com.theglitch.glitchclasses.ui.DialogBridge;
+import com.theglitch.glitchclasses.ui.DialogUI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.milkbowl.vault.economy.Economy;
@@ -41,7 +43,13 @@ public final class ClassCommand implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            plugin.getClassGUI().openMainMenu(player);
+            ClassGUI gui = plugin.getClassGUI();
+            if (plugin.getConfig().getBoolean("modern-ui.dialogs", true)
+                    && DialogBridge.dialogsRuntime()) {
+                DialogUI.openRoot(plugin, gui, player, () -> gui.openMainMenu(player));
+            } else {
+                gui.openMainMenu(player);
+            }
             return true;
         }
 

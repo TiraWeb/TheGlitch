@@ -1,5 +1,6 @@
 package com.theglitch.glitchclasses;
 
+import com.theglitch.glitchclasses.ui.DialogUI;
 import com.theglitch.glitchclasses.ui.FloatingBanner;
 import com.theglitch.glitchclasses.ui.UiKit;
 import net.kyori.adventure.text.Component;
@@ -81,6 +82,7 @@ public class ClassGUI implements Listener {
     private volatile int cachedUltimateLevel = 10;
     private volatile boolean modernEnabled = true;
     private volatile boolean holoEnabled = true;
+    private volatile boolean dialogsEnabled = true;
     private net.milkbowl.vault.economy.Economy cachedEconomy;
     private long economyCacheTime;
 
@@ -94,6 +96,7 @@ public class ClassGUI implements Listener {
         cachedUltimateLevel = plugin.getConfig().getInt("ultimate-level", 10);
         modernEnabled = plugin.getConfig().getBoolean("modern-ui.enabled", true);
         holoEnabled = plugin.getConfig().getBoolean("modern-ui.hologram-banner", true);
+        dialogsEnabled = plugin.getConfig().getBoolean("modern-ui.dialogs", true);
         cachedEconomy = null;
     }
 
@@ -565,9 +568,29 @@ public class ClassGUI implements Listener {
         }
     }
 
+    public String[] classOrder() {
+        return CLASS_ORDER.clone();
+    }
+
+    public int ultimateLevelPublic() {
+        return cachedUltimateLevel;
+    }
+
+    public boolean dialogsEnabled() {
+        return dialogsEnabled;
+    }
+
     // ==================== ACTIONS ====================
 
     private void handleClassSelect(Player player, String className) {
+        applyClassSelectCore(player, className);
+
+        switchingGui.add(player.getUniqueId());
+        player.closeInventory();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> openClassMenu(player, className), 5L);
+    }
+
+    private void applyClassSelectCore(Player player, String className) {
         boolean firstSelect = !classManager.hasClass(player.getUniqueId());
         classManager.setClass(player.getUniqueId(), className);
         if (firstSelect) {
@@ -577,76 +600,48 @@ public class ClassGUI implements Listener {
                 className.substring(0, 1).toUpperCase() + className.substring(1)));
         classManager.applyMaxHealth(player, classManager.getClassData(player.getUniqueId()).level());
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 1.2f);
-
-        switchingGui.add(player.getUniqueId());
-        player.closeInventory();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> openClassMenu(player, className), 5L);
     }
 
     private void handleClassReset(Player player) {
-        int cost = classManager.getResetCost();
-        var economy = getEconomy();
-        if (economy == null) {
-            plugin.getLogger().warning("Vault economy unavailable — blocking class reset for " + player.getName());
-            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
-            return;
-        }
-        try {
-            if (!economy.has(player, cost)) {
-                player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
-                return;
-            }
-            var resp = economy.withdrawPlayer(player, cost);
-            if (!resp.transactionSuccess()) {
-                player.sendMessage(Component.text("Economy error: " + resp.errorMessage, NamedTextColor.RED));
-                return;
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Vault economy error for reset check: " + e.getMessage());
-            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
-            return;
-        }
-        classManager.resetClass(player.getUniqueId());
-        classManager.applyMaxHealth(player, 0);
-        player.sendMessage(plugin.getComponent("class-reset"));
-        player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 0.8f);
+        if (!applyResetCore(player)) return;
 
         openSessions.remove(player.getUniqueId());
         player.closeInventory();
     }
 
-    private void handleUpgrade(Player player, ClassData data) {
-        int cost = classManager.getUpgradeCost(data.level());
+    private boolean applyResetCore(Player player) {
+        int cost = classManager.getResetCost();
         var economy = getEconomy();
         if (economy == null) {
-            plugin.getLogger().warning("Vault economy unavailable — blocking upgrade for " + player.getName());
+            plugin.getLogger().warning("Vault economy unavailable — blocking class reset for " + player.getName());
             player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
-            return;
+            return false;
         }
         try {
             if (!economy.has(player, cost)) {
                 player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
-                return;
+                return false;
             }
             var resp = economy.withdrawPlayer(player, cost);
             if (!resp.transactionSuccess()) {
                 player.sendMessage(Component.text("Economy error: " + resp.errorMessage, NamedTextColor.RED));
-                return;
+                return false;
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("Vault economy error for upgrade check: " + e.getMessage());
+            plugin.getLogger().warning("Vault economy error for reset check: " + e.getMessage());
             player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
-            return;
+            return false;
         }
-        boolean leveledUp = classManager.addXp(player.getUniqueId(), classManager.getXpForLevel(data.level() + 1));
-        if (!leveledUp) return;
+        classManager.resetClass(player.getUniqueId());
+        classManager.applyMaxHealth(player, 0);
+        player.sendMessage(plugin.getComponent("class-reset"));
+        player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 1.0f, 0.8f);
+        return true;
+    }
 
-        ClassData newData = classManager.getClassData(player.getUniqueId());
-        player.sendMessage(plugin.getComponent("level-up",
-                "<level>", String.valueOf(newData.level()),
-                "<class>", newData.className().substring(0, 1).toUpperCase() + newData.className().substring(1)));
-        classManager.applyMaxHealth(player, newData.level());
-        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+    private void handleUpgrade(Player player, ClassData data) {
+        ClassData newData = applyUpgradeCore(player, data);
+        if (newData == null) return;
 
         // Close + reopen like class select — switchingGui keeps the session
         // alive across the close event, otherwise the reopened GUI has no
@@ -654,6 +649,85 @@ public class ClassGUI implements Listener {
         switchingGui.add(player.getUniqueId());
         player.closeInventory();
         Bukkit.getScheduler().runTaskLater(plugin, () -> openClassMenu(player, newData.className()), 10L);
+    }
+
+    private ClassData applyUpgradeCore(Player player, ClassData data) {
+        int cost = classManager.getUpgradeCost(data.level());
+        var economy = getEconomy();
+        if (economy == null) {
+            plugin.getLogger().warning("Vault economy unavailable — blocking upgrade for " + player.getName());
+            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+            return null;
+        }
+        try {
+            if (!economy.has(player, cost)) {
+                player.sendMessage(Component.text("Not enough shards! Need " + cost + " shards.", NamedTextColor.RED));
+                return null;
+            }
+            var resp = economy.withdrawPlayer(player, cost);
+            if (!resp.transactionSuccess()) {
+                player.sendMessage(Component.text("Economy error: " + resp.errorMessage, NamedTextColor.RED));
+                return null;
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Vault economy error for upgrade check: " + e.getMessage());
+            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+            return null;
+        }
+        boolean leveledUp = classManager.addXp(player.getUniqueId(), classManager.getXpForLevel(data.level() + 1));
+        if (!leveledUp) return null;
+
+        ClassData newData = classManager.getClassData(player.getUniqueId());
+        player.sendMessage(plugin.getComponent("level-up",
+                "<level>", String.valueOf(newData.level()),
+                "<class>", newData.className().substring(0, 1).toUpperCase() + newData.className().substring(1)));
+        classManager.applyMaxHealth(player, newData.level());
+        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+        return newData;
+    }
+
+    // ==================== DIALOG ENTRY POINTS ====================
+
+    public boolean selectFromDialog(Player player, String className) {
+        if (!isConfiguredClass(className)) return false;
+        applyClassSelectCore(player, className);
+        Bukkit.getScheduler().runTaskLater(plugin,
+                () -> DialogUI.openClass(plugin, this, player, className,
+                        () -> openClassMenu(player, className)),
+                5L);
+        return true;
+    }
+
+    public void upgradeFromDialog(Player player) {
+        ClassData data = classManager.getClassData(player.getUniqueId());
+        String current = data.className();
+        if (current.equals("none")) {
+            Bukkit.getScheduler().runTaskLater(plugin,
+                    () -> DialogUI.openRoot(plugin, this, player, () -> openMainMenu(player)), 5L);
+            return;
+        }
+        applyUpgradeCore(player, data);
+        Bukkit.getScheduler().runTaskLater(plugin,
+                () -> DialogUI.openClass(plugin, this, player, current,
+                        () -> openClassMenu(player, current)),
+                5L);
+    }
+
+    public boolean resetFromDialog(Player player) {
+        boolean done = false;
+        if (classManager.hasClass(player.getUniqueId())) {
+            done = applyResetCore(player);
+        }
+        Bukkit.getScheduler().runTaskLater(plugin,
+                () -> DialogUI.openRoot(plugin, this, player, () -> openMainMenu(player)), 5L);
+        return done;
+    }
+
+    private boolean isConfiguredClass(String className) {
+        for (String c : CLASS_ORDER) {
+            if (c.equalsIgnoreCase(className)) return true;
+        }
+        return false;
     }
 
     @EventHandler
