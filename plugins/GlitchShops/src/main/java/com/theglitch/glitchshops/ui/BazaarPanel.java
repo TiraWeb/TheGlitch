@@ -232,8 +232,7 @@ public final class BazaarPanel implements Listener {
     }
 
     private <T extends Entity> void purgeStaleClass(Class<T> type) {
-        List<T> entities = world.getEntitiesByClass(type);
-        for (T entity : entities) {
+        for (T entity : world.getEntitiesByClass(type)) {
             try {
                 if (entity.getPersistentDataContainer().has(PANEL_KEY, PersistentDataType.STRING)) {
                     entity.remove();
