@@ -1,5 +1,7 @@
 package com.theglitch.glitchclasses;
 
+import com.theglitch.glitchclasses.ui.FloatingBanner;
+import com.theglitch.glitchclasses.ui.UiKit;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -77,6 +79,8 @@ public class ClassGUI implements Listener {
     private final GlitchClasses plugin;
     private final ClassManager classManager;
     private volatile int cachedUltimateLevel = 10;
+    private volatile boolean modernEnabled = true;
+    private volatile boolean holoEnabled = true;
     private net.milkbowl.vault.economy.Economy cachedEconomy;
     private long economyCacheTime;
 
@@ -88,6 +92,8 @@ public class ClassGUI implements Listener {
 
     public void reloadConfig() {
         cachedUltimateLevel = plugin.getConfig().getInt("ultimate-level", 10);
+        modernEnabled = plugin.getConfig().getBoolean("modern-ui.enabled", true);
+        holoEnabled = plugin.getConfig().getBoolean("modern-ui.hologram-banner", true);
         cachedEconomy = null;
     }
 
@@ -103,12 +109,54 @@ public class ClassGUI implements Listener {
     // ==================== MAIN MENU (45 slots - centered, Wynncraft-style) ====================
 
     public void openMainMenu(Player player) {
+        ClassData data = classManager.getClassData(player.getUniqueId());
+
+        if (modernEnabled) {
+            String titleMini = UiKit.titleCustom(UiKit.classGradientFrom(data.className()),
+                    UiKit.classGradientTo(data.className()), "CHOOSE YOUR CLASS");
+            if (holoEnabled) {
+                FloatingBanner.show(plugin, player, titleMini, 90L);
+            }
+            Inventory inv = Bukkit.createInventory(null, 54, UiKit.mm().deserialize(titleMini));
+
+            for (int col = 0; col < 9; col++) {
+                inv.setItem(col, UiKit.rampPane(col));
+            }
+            for (int slot = 45; slot < 54; slot++) {
+                inv.setItem(slot, UiKit.blankPane(Material.BLACK_STAINED_GLASS_PANE));
+            }
+            inv.setItem(18, UiKit.blankPane(UiKit.RAMP[4]));
+            inv.setItem(26, UiKit.blankPane(UiKit.RAMP[4]));
+            inv.setItem(27, UiKit.blankPane(UiKit.RAMP[4]));
+            inv.setItem(35, UiKit.blankPane(UiKit.RAMP[4]));
+
+            int[] cardSlots = {19, 21, 23, 25};
+            for (int i = 0; i < CLASS_ORDER.length; i++) {
+                inv.setItem(cardSlots[i], classCard(CLASS_ORDER[i], data));
+            }
+
+            inv.setItem(4, infoItem(data));
+            inv.setItem(9, UiKit.runeCorner());
+            inv.setItem(17, UiKit.runeCorner());
+            inv.setItem(40, hintItem());
+
+            if (!data.className().equals("none")) {
+                inv.setItem(47, resetItem());
+                inv.setItem(49, closeItem());
+            } else {
+                inv.setItem(47, closeItem());
+                inv.setItem(49, closeItem());
+            }
+
+            openSessions.put(player.getUniqueId(), "main54");
+            player.openInventory(inv);
+            return;
+        }
+
         String title = plugin.getConfig().getString("gui.title",
                 "<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>CHOOSE YOUR CLASS</bold></gradient> </font><font:minecraft:default>\uE049</font>");
         Inventory inv = Bukkit.createInventory(null, 45, MM.deserialize(title));
         fillBorder(inv, 45);
-
-        ClassData data = classManager.getClassData(player.getUniqueId());
 
         // Four class cards centered in row 2 (slots 11,13,15,17 with gaps) — breathing room
         int[] cardSlots = {11, 13, 15, 17};
@@ -253,10 +301,26 @@ public class ClassGUI implements Listener {
         ClassData data = classManager.getClassData(player.getUniqueId());
         boolean selected = className.equals(data.className());
 
-        String title = "<" + colorName(className) + "><bold>" + className.toUpperCase()
-                + "</bold></" + colorName(className) + ">";
-        Inventory inv = Bukkit.createInventory(null, 45, MM.deserialize(title));
-        fillBorder(inv, 45);
+        String titleMini;
+        if (modernEnabled) {
+            titleMini = UiKit.titleCustom(UiKit.classGradientFrom(className),
+                    UiKit.classGradientTo(className), className.toUpperCase(java.util.Locale.ROOT));
+            if (holoEnabled) {
+                FloatingBanner.show(plugin, player, titleMini, 90L);
+            }
+        } else {
+            titleMini = "<" + colorName(className) + "><bold>" + className.toUpperCase()
+                    + "</bold></" + colorName(className) + ">";
+        }
+        Inventory inv = Bukkit.createInventory(null, 45, modernEnabled
+                ? UiKit.mm().deserialize(titleMini) : MM.deserialize(titleMini));
+
+        if (modernEnabled) {
+            paintBands45(inv);
+            inv.setItem(4, UiKit.pipsItem(data.level(), classManager.getMaxLevel()));
+        } else {
+            fillBorder(inv, 45);
+        }
 
         // Ability info — row 2, slots 10-14
         ConfigurationSection abilities = plugin.getConfig().getConfigurationSection("abilities." + className);
@@ -463,6 +527,26 @@ public class ClassGUI implements Listener {
             return;
         }
 
+        if (session.equals("main54")) {
+            if (slot == 49 || (slot == 47 && data.className().equals("none"))) {
+                player.closeInventory();
+                return;
+            }
+            if (slot == 47) {
+                handleClassReset(player);
+                return;
+            }
+            int[] cardSlots = {19, 21, 23, 25};
+            for (int i = 0; i < cardSlots.length; i++) {
+                if (slot == cardSlots[i]) {
+                    switchingGui.add(player.getUniqueId());
+                    openClassMenu(player, CLASS_ORDER[i]);
+                    return;
+                }
+            }
+            return;
+        }
+
         if (session.startsWith("class:")) {
             String className = session.substring("class:".length());
             if (slot == 30) {
@@ -584,6 +668,32 @@ public class ClassGUI implements Listener {
     private void fillBorder(Inventory inv, int size) {
         for (int i = 0; i < size; i++) {
             inv.setItem(i, CACHED_BORDER.clone());
+        }
+    }
+
+    /**
+     * Modern framing for the shared 45-slot class menu: gradient header row,
+     * BLUE side rails on the middle rows, BLACK footer row. Occupied
+     * (non-border) cells are skipped so controls always win.
+     */
+    private void paintBands45(Inventory inv) {
+        for (int col = 0; col < 9; col++) {
+            setPaneIfFree(inv, col, UiKit.rampPane(col));
+        }
+        int[] rails = {9, 17, 18, 26};
+        for (int slot : rails) {
+            setPaneIfFree(inv, slot, UiKit.blankPane(UiKit.RAMP[4]));
+        }
+        for (int slot = 36; slot < 45; slot++) {
+            setPaneIfFree(inv, slot, UiKit.blankPane(Material.BLACK_STAINED_GLASS_PANE));
+        }
+    }
+
+    private void setPaneIfFree(Inventory inv, int slot, ItemStack pane) {
+        ItemStack current = inv.getItem(slot);
+        if (current == null || current.getType() == Material.AIR
+                || current.getType() == Material.GRAY_STAINED_GLASS_PANE) {
+            inv.setItem(slot, pane);
         }
     }
 

@@ -38,3 +38,8 @@ messages:
   no-value: "<red>This item has no value here.</red>"
   full-inventory: "<yellow>Inventory full — the item dropped at your feet.</yellow>"
   denied: "<red>That item can't be traded.</red>"
+
+modern-ui:
+  enabled: true
+  hologram-banner: true
+  dialogs: false

@@ -1,5 +1,8 @@
 package com.theglitch.glitchshops;
 
+import com.theglitch.glitchshops.ui.FloatingBanner;
+import com.theglitch.glitchshops.ui.ModernLayout;
+import com.theglitch.glitchshops.ui.UiKit;
 import io.th0rgal.oraxen.api.OraxenItems;
 import io.th0rgal.oraxen.items.ItemBuilder;
 import net.kyori.adventure.text.Component;
@@ -34,8 +37,7 @@ public final class ShopGUI implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
     // \uE049 = glitch-diamond glyph (default font) + Inter UI font for readable title
-    private static final Component BAZAAR_TITLE = MM.deserialize(
-            "<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>GRAND BAZAAR</bold></gradient> </font><font:minecraft:default>\uE049</font>");
+    private static final Component BAZAAR_TITLE = UiKit.deserialized(UiKit.title("GRAND BAZAAR"));
 
     // Cached border — single allocation cloned per slot instead of new ItemStack per open * per slot
     private static final ItemStack CACHED_BORDER_PANE;
@@ -50,6 +52,11 @@ public final class ShopGUI implements Listener {
     }
 
     private static final int SIZE = 54;
+    private static final int[] LEGACY_STOCK_SLOTS = {
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
+    };
 
     private static final NamespacedKey ACTION_KEY = new NamespacedKey("glitchshops", "action");
     private static final NamespacedKey CATEGORY_KEY = new NamespacedKey("glitchshops", "category");
@@ -70,6 +77,8 @@ public final class ShopGUI implements Listener {
     private volatile String cachedDefaultTab;
     private volatile int cachedBuyStackSize;
     private volatile Economy cachedEconomy;
+    private volatile boolean modernEnabled;
+    private volatile boolean holoEnabled;
 
     public ShopGUI(GlitchShops plugin, ShopManager shopManager) {
         this.plugin = plugin;
@@ -83,6 +92,8 @@ public final class ShopGUI implements Listener {
         this.cachedDefaultTab = shopManager.getDefaultTab();
         this.cachedBuyStackSize = shopManager.getBuyStackSize();
         this.cachedEconomy = plugin.getEconomy(); // invalidated already in plugin
+        this.modernEnabled = plugin.getConfig().getBoolean("modern-ui.enabled", true);
+        this.holoEnabled = plugin.getConfig().getBoolean("modern-ui.hologram-banner", true);
         if (this.cachedTabOrder == null || this.cachedTabOrder.isEmpty()) {
             plugin.getLogger().warning("ShopGUI: cached tab order empty — using fallback.");
             this.cachedTabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear");
@@ -105,9 +116,14 @@ public final class ShopGUI implements Listener {
                 category = cachedTabOrder.get(0);
             }
         }
+        boolean modern = modernEnabled;
         Inventory inv = Bukkit.createInventory(null, SIZE, BAZAAR_TITLE);
 
-        fillBorder(inv);
+        if (modern) {
+            ModernLayout.paintBands(inv, SIZE);
+        } else {
+            fillBorder(inv);
+        }
 
         inv.setItem(0, balanceItem(player));
         inv.setItem(3, tabButton("tab_buy", "gui_buy", Material.EMERALD, "BUY",
@@ -125,27 +141,32 @@ public final class ShopGUI implements Listener {
         }
 
         if (sellMode) {
-            inv.setItem(31, guiIcon("gui_coin", Material.GOLD_BLOCK,
+            ItemStack sellingIcon = guiIcon("gui_coin", Material.GOLD_BLOCK,
                     "<gold><bold>SELLING</bold></gold>",
                     "<gray>Click items in your inventory below.</gray>",
-                    "<yellow>Left-click = 1 · Shift-click = stack</yellow>"));
+                    "<yellow>Left-click = 1 · Shift-click = stack</yellow>");
+            if (modern) {
+                ModernLayout.setStateIcon(inv, sellingIcon);
+            } else {
+                inv.setItem(31, sellingIcon);
+            }
         } else {
-            fillStock(inv, player, category);
+            fillStock(inv, player, category, modern);
         }
 
         sessions.put(player.getUniqueId(), new Session(category, sellMode));
         switchingGui.add(player.getUniqueId());
         player.openInventory(inv);
         switchingGui.remove(player.getUniqueId());
+        if (modern && holoEnabled) {
+            FloatingBanner.show(plugin, player,
+                    sellMode ? UiKit.titleCustom("#FFD166", "#FFE9A8", "SELL MODE") : UiKit.title(categoryLabel(category)), 90L);
+        }
     }
 
-    private void fillStock(Inventory inv, Player player, String category) {
+    private void fillStock(Inventory inv, Player player, String category, boolean modern) {
         // Centered 7-per-row layout (Wynncraft-style, breathable)
-        final int[] STOCK_SLOTS = {
-                19, 20, 21, 22, 23, 24, 25,
-                28, 29, 30, 31, 32, 33, 34,
-                37, 38, 39, 40, 41, 42, 43
-        };
+        final int[] STOCK_SLOTS = modern ? ModernLayout.STOCK_SLOTS : LEGACY_STOCK_SLOTS;
         int idx = 0;
         if (category.equals("gear")) {
             for (int i = 0; i < shopManager.getGearStock().size() && idx < STOCK_SLOTS.length; i++) {
@@ -256,27 +277,22 @@ public final class ShopGUI implements Listener {
 
     private ItemStack categoryTab(String category, boolean active) {
         String iconId = "gui_tab_" + category;
-        String label;
+        String label = categoryLabel(category);
         Material fallback;
         switch (category) {
             case "materials":
-                label = "Materials";
                 fallback = Material.REDSTONE;
                 break;
             case "keys":
-                label = "Keys";
                 fallback = Material.TRIPWIRE_HOOK;
                 break;
             case "alchemy":
-                label = "Alchemy";
                 fallback = Material.HONEY_BOTTLE;
                 break;
             case "rifts":
-                label = "Rifts";
                 fallback = Material.AMETHYST_SHARD;
                 break;
             default:
-                label = "Gear";
                 fallback = Material.DIAMOND_SWORD;
                 break;
         }
@@ -291,6 +307,16 @@ public final class ShopGUI implements Listener {
             }
         });
         return item;
+    }
+
+    private String categoryLabel(String category) {
+        switch (category) {
+            case "materials": return "Materials";
+            case "keys": return "Keys";
+            case "alchemy": return "Alchemy";
+            case "rifts": return "Rifts";
+            default: return "Gear";
+        }
     }
 
     private ItemStack closeButton() {
@@ -447,6 +473,7 @@ public final class ShopGUI implements Listener {
                 "{item}", plainName(snapshot), "{price}", String.valueOf(total));
         sound(player, true);
         refreshBalance(player);
+        player.sendActionBar(UiKit.deserialized("<gold>" + UiKit.SHARD_GLYPH + " +" + total + " Shards</gold>"));
     }
 
     private void buyItem(Player player, String itemId, int price, int amount, int gearSlot) {
@@ -558,6 +585,7 @@ public final class ShopGUI implements Listener {
             }
             sound(player, true);
             refreshBalance(player);
+            player.sendActionBar(UiKit.deserialized("<aqua>" + UiKit.SHARD_GLYPH + " <gray>-" + total + " Shards</gray>"));
         } catch (Exception e) {
             plugin.getLogger().log(java.util.logging.Level.WARNING, "Failed to give bought item to " + player.getName() + " — refunding " + total, e);
             refundDeposit(economy, player, total);

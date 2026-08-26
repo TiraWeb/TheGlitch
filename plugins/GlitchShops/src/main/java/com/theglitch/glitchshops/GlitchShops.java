@@ -1,5 +1,6 @@
 package com.theglitch.glitchshops;
 
+import com.theglitch.glitchshops.ui.DialogBridge;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
@@ -42,6 +43,10 @@ public final class GlitchShops extends JavaPlugin {
         }
 
         getCommand("shop").setExecutor(new ShopCommand(this, shopGUI));
+
+        if (getCommand("shop") != null && getConfig().getBoolean("modern-ui.enabled", true)) {
+            getLogger().info(DialogBridge.runtimeSummary());
+        }
 
         if (getEconomy() == null) {
             getLogger().warning("No Vault economy provider yet — transactions will work once one registers.");

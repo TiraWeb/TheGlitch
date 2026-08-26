@@ -210,3 +210,8 @@ gui:
   border-material: "BLACK_STAINED_GLASS_PANE"
   class-selected-glow: true
 
+modern-ui:
+  enabled: true
+  hologram-banner: true
+  dialogs: false
+
