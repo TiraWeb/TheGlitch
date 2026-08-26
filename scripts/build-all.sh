@@ -299,8 +299,8 @@ fi
 
 mkdir -p "$LIVE_PLUGIN_DIR" "$REPO_DEPLOY"
 for plugin in "${SELECTED[@]}"; do
-  # Locate built jar (handle GlitchDungeons 1.0-SNAPSHOT)
-  JAR=$(ls "${REPO_DIR}/plugins/${plugin}/target/${plugin}-"*.jar 2>/dev/null | head -1 || true)
+  # Locate built jar (newest first — stale versioned jars from bumped <version> must lose)
+  JAR=$(ls -t "${REPO_DIR}/plugins/${plugin}/target/${plugin}-"*.jar 2>/dev/null | head -1 || true)
   if [[ -z "$JAR" || ! -f "$JAR" ]]; then
     die "Built JAR not found for $plugin at plugins/${plugin}/target/"
   fi
