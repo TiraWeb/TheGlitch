@@ -65,7 +65,6 @@ public class ClassGUI implements Listener {
     private volatile int cachedUltimateLevel = 10;
     private volatile boolean holoEnabled = true;
     private net.milkbowl.vault.economy.Economy cachedEconomy;
-    private net.milkbowl.vault.economy.Economy cachedEconomy;
     private long economyCacheTime;
 
     public ClassGUI(GlitchClasses plugin, ClassManager classManager) {
