@@ -61,7 +61,7 @@ public final class HideoutGUI implements Listener {
     public void openMain(Player player) {
         // \uE049 glyph in default font + Inter UI font for readable title
         Inventory inv = Bukkit.createInventory(null, SIZE,
-                MM.deserialize("<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>THE HIDEOUT</bold></gradient> </font><font:minecraft:default>\uE049</font>"));
+                MM.deserialize("<font:minecraft:default>\uE049</font> <gradient:#C084FC:#F0ABFC><bold>THE HIDEOUT</bold></gradient> <font:minecraft:default>\uE049</font>"));
 
         for (int i = 0; i < 9; i++) {
             inv.setItem(i, border());
@@ -288,11 +288,23 @@ public final class HideoutGUI implements Listener {
     }
 
     private void upgradeStation(Player player, HideoutManager.Station station) {
+        HideoutManager.UpgradeResult result = upgradeFromUi(player, station.id());
+        if (result == HideoutManager.UpgradeResult.OK) {
+            openMain(player);
+        }
+    }
+
+    public HideoutManager.UpgradeResult upgradeFromUi(Player player, String id) {
+        HideoutManager.Station station = manager.getStation(id == null ? "" : id.toLowerCase(java.util.Locale.ROOT));
+        if (station == null) {
+            player.sendMessage(Component.text("Unknown station.", NamedTextColor.RED));
+            return null;
+        }
         UUID uuid = player.getUniqueId();
         int current = manager.getLevel(uuid, station.id());
         if (current >= station.maxLevel()) {
             player.sendMessage(plugin.getComponent("station-maxed", "<station>", station.id()));
-            return;
+            return HideoutManager.UpgradeResult.MAXED;
         }
         int next = current + 1;
 
@@ -303,7 +315,6 @@ public final class HideoutGUI implements Listener {
                         "<station>", station.display(),
                         "<level>", String.valueOf(next)));
                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-                openMain(player);
             }
             case MAXED -> player.sendMessage(plugin.getComponent("station-maxed", "<station>", station.id()));
             case PREREQ -> {
@@ -312,7 +323,7 @@ public final class HideoutGUI implements Listener {
                     player.sendMessage(plugin.getComponent("prereq-missing",
                             "<station>", "unknown",
                             "<level>", "?"));
-                    return;
+                    return result;
                 }
                 String[] parts = req.split(":", 2);
                 if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
@@ -320,7 +331,7 @@ public final class HideoutGUI implements Listener {
                     player.sendMessage(plugin.getComponent("prereq-missing",
                             "<station>", parts.length > 0 && !parts[0].isBlank() ? parts[0].trim() : "unknown",
                             "<level>", parts.length == 2 && !parts[1].isBlank() ? parts[1].trim() : "?"));
-                    return;
+                    return result;
                 }
                 player.sendMessage(plugin.getComponent("prereq-missing",
                         "<station>", parts[0].trim(),
@@ -329,6 +340,20 @@ public final class HideoutGUI implements Listener {
             case SHARDS -> player.sendMessage(plugin.getComponent("not-enough-shards",
                     "<cost>", String.valueOf(station.costs()[current])));
         }
+        return result;
+    }
+
+    public void craftFromUi(Player player, String recipeId) {
+        if (manager.getLevel(player.getUniqueId(), "workbench") < 1) {
+            player.sendMessage(plugin.getComponent("craft-locked"));
+            return;
+        }
+        HideoutManager.Recipe recipe = manager.getRecipe(recipeId == null ? "" : recipeId.toLowerCase(java.util.Locale.ROOT));
+        if (recipe == null) {
+            player.sendMessage(Component.text("Unknown recipe.", NamedTextColor.RED));
+            return;
+        }
+        plugin.getHideoutManager().craft(player, recipe);
     }
 
     private void handleWorkbenchClick(Player player, int slot) {

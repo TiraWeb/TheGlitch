@@ -58,6 +58,15 @@ public final class GlitchHideout extends JavaPlugin {
 
         getCommand("hideout").setExecutor(this::onHideoutCommand);
         getCommand("hideoutadmin").setExecutor(this::onAdminCommand);
+        if (getCommand("hideoutui") != null) {
+            getCommand("hideoutui").setExecutor(new HideoutUICommand(this));
+        }
+
+        try {
+            com.theglitch.glitchhideout.ui.HideoutPanel.init(this);
+        } catch (Throwable t) {
+            getLogger().warning("HideoutPanel init failed: " + t.getMessage());
+        }
 
         startIntelTicker();
 
@@ -70,6 +79,10 @@ public final class GlitchHideout extends JavaPlugin {
             intelTask.cancel();
             intelTask = null;
         }
+        try {
+            com.theglitch.glitchhideout.ui.HideoutPanel.shutdown();
+        } catch (Throwable ignored) {
+        }
         if (manager != null) {
             manager.saveAll();
         }
@@ -80,6 +93,13 @@ public final class GlitchHideout extends JavaPlugin {
     public boolean onHideoutCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(Component.text("Players only."));
+            return true;
+        }
+        if (args.length == 0
+                && getConfig().getBoolean("modern-ui.dialogs", true)
+                && com.theglitch.glitchhideout.ui.DialogBridge.dialogsRuntime()
+                && com.theglitch.glitchhideout.ui.DialogUI.canRemote(this, player)) {
+            com.theglitch.glitchhideout.ui.DialogUI.openRoot(this, player, () -> gui.openMain(player));
             return true;
         }
         gui.openMain(player);
@@ -295,5 +315,9 @@ public final class GlitchHideout extends JavaPlugin {
 
     public HideoutManager getHideoutManager() {
         return manager;
+    }
+
+    public HideoutGUI getGui() {
+        return gui;
     }
 }

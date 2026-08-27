@@ -23,6 +23,15 @@ public final class DialogUI {
         return SUPPORTED;
     }
 
+    public static boolean canRemote(Player player) {
+        GlitchClasses pl = GlitchClasses.getInstance();
+        String perm = pl != null
+                ? pl.getConfig().getString("modern-ui.remote-perm", "theglitch.remoteui")
+                : null;
+        if (perm == null || perm.isBlank() || "*".equals(perm.trim())) return true;
+        return player.isOp() || player.hasPermission(perm.trim());
+    }
+
     public static boolean show(JavaPlugin plugin, Player player, String snbt) {
         try {
             return Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
@@ -173,6 +182,11 @@ public final class DialogUI {
 
     public static void openClass(GlitchClasses plugin, ClassGUI gui, Player player, String className,
                                  Runnable chestFallback) {
+        openClass(plugin, gui, player, className, chestFallback, "classui root");
+    }
+
+    public static void openClass(GlitchClasses plugin, ClassGUI gui, Player player, String className,
+                                 Runnable chestFallback, String backTemplate) {
         if (!SUPPORTED) {
             if (chestFallback != null) chestFallback.run();
             return;
@@ -224,7 +238,8 @@ public final class DialogUI {
         } else {
             actions.append(wideButton("MAX LEVEL", "gold", null, "classui view " + className, 250));
         }
-        actions.append(',').append(wideButton("\u00ab BACK", "yellow", null, "classui root", 100));
+        actions.append(',').append(wideButton("\u00ab BACK", "yellow", null,
+                backTemplate == null || backTemplate.isBlank() ? "classui root" : backTemplate, 100));
 
         deliver(plugin, player,
                 multiActionRaw(className.toUpperCase(Locale.ROOT), dialogColor(className),
@@ -236,19 +251,26 @@ public final class DialogUI {
 
     public static void openResetConfirm(GlitchClasses plugin, ClassGUI gui, Player player,
                                         Runnable chestFallback) {
+        openResetConfirm(plugin, gui, player, chestFallback, "classui root");
+    }
+
+    public static void openResetConfirm(GlitchClasses plugin, ClassGUI gui, Player player,
+                                        Runnable chestFallback, String backTemplate) {
         if (!SUPPORTED) {
             if (chestFallback != null) chestFallback.run();
             return;
         }
+        String noTemplate = backTemplate == null || backTemplate.isBlank()
+                ? "classui root" : backTemplate;
         int cost = plugin.getClassManager().getResetCost();
         String body = "This wipes your class and level.\nCost: " + cost + " shards.\nAre you sure?";
         String legacyActions = button("YES, RESET", "red", null, "classui resetyes")
-                + "," + button("NO", "green", null, "classui root");
+                + "," + button("NO", "green", null, noTemplate);
         FloatingBanner.show(plugin, player,
                 UiKit.titleCustom("#F87171", "#FCA5A5", "RESET CLASS"), 60L);
         showConfirmation(plugin, player,
                 confirmation("RESET CLASS", "red", body,
-                        "YES", "classui resetyes", "NO", "classui root"),
+                        "YES", "classui resetyes", "NO", noTemplate),
                 () -> deliver(plugin, player,
                         multiAction("RESET CLASS", "red", body, legacyActions, 2, "Cancel"),
                         UiKit.titleCustom("#F87171", "#FCA5A5", "RESET CLASS"),

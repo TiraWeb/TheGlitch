@@ -4,6 +4,19 @@ config-version: 1
 
 med-cooldown-seconds: 30
 
+modern-ui:
+  dialogs: true
+  remote-perm: theglitch.remoteui
+  # Floating wall panel rendered with display entities (build via /hideoutui panel here)
+  world-panel:
+    enabled: true
+    world: hub
+    x: 90.0
+    y: -33.5
+    z: 10.0
+    facing: west
+    spacing: 1.35
+
 stations:
   core:
     display: "<light_purple>Arcane Core"

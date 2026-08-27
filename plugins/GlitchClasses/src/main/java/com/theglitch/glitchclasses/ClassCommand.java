@@ -45,7 +45,8 @@ public final class ClassCommand implements CommandExecutor {
         if (args.length == 0) {
             ClassGUI gui = plugin.getClassGUI();
             if (plugin.getConfig().getBoolean("modern-ui.dialogs", true)
-                    && DialogBridge.dialogsRuntime()) {
+                    && DialogBridge.dialogsRuntime()
+                    && DialogUI.canRemote(player)) {
                 DialogUI.openRoot(plugin, gui, player, () -> gui.openMainMenu(player));
             } else {
                 gui.openMainMenu(player);

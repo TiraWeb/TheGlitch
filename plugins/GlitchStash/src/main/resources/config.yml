@@ -60,8 +60,22 @@ auto-extract:
   # Example: arenas: ["extraction_alpha", "extraction_bravo"]
   arenas: []
 
+# Modern UI layer — shared stash kiosk wall + dialog-based remote stash
+modern-ui:
+  # Permission that unlocks the ENDER_EYE "stash remote" kiosk cell (dialog stash)
+  remote-perm: "theglitch.remoteui"
+  # Kiosk wall rendered with display entities in the hub lobby
+  world-panel:
+    enabled: true
+    world: hub
+    x: 67.5
+    y: -43.5
+    z: -5.5
+    facing: west
+    spacing: 1.35
+
 # Display settings
-display-name: "<font:minecraft:default>\ue049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>YOUR STASH</bold></gradient> </font><font:minecraft:default>\ue049</font>"
+display-name: "<font:minecraft:default>\ue049</font> <gradient:#C084FC:#F0ABFC><bold>YOUR STASH</bold></gradient>"
 lore:
   - "<gray>Items saved from your last extraction"
   - "<gray>Click to retrieve"

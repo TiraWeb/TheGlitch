@@ -1,9 +1,12 @@
 package com.theglitch.glitchinsurance;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -39,6 +42,11 @@ public final class GlitchInsurance extends JavaPlugin {
             getCommand("insuranceadmin").setExecutor(adminCmd);
             getCommand("insuranceadmin").setTabCompleter(adminCmd);
         }
+        if (getCommand("insureui") != null) {
+            getCommand("insureui").setExecutor(new InsuranceUICommand(this));
+        }
+
+        com.theglitch.glitchinsurance.ui.InsurancePanel.init(this);
 
         getLogger().info("GlitchInsurance enabled — premium=" + manager.getPremiumPerItem()
                 + ", max=" + manager.getMaxInsuredItems()
@@ -47,6 +55,7 @@ public final class GlitchInsurance extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        com.theglitch.glitchinsurance.ui.InsurancePanel.shutdown();
         if (manager != null) {
             manager.shutdown();
         }
@@ -61,6 +70,7 @@ public final class GlitchInsurance extends JavaPlugin {
         if (manager != null) {
             manager.reload();
         }
+        com.theglitch.glitchinsurance.ui.InsurancePanel.rebuild();
         getLogger().info("GlitchInsurance reloaded (premium=" + manager.getPremiumPerItem()
                 + ", max=" + manager.getMaxInsuredItems()
                 + ", claimWindow=" + manager.getClaimWindowSeconds() + "s, cooldown=" + manager.getCooldownSeconds() + "s).");
@@ -121,6 +131,94 @@ public final class GlitchInsurance extends JavaPlugin {
 
     public InsuranceManager getManager() {
         return manager;
+    }
+
+    public boolean uiBuy(Player player) {
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (held == null || held.getType().isAir()) {
+            player.sendMessage(getComponent("hold-item"));
+            return false;
+        }
+        InsuranceManager.InsureResult result;
+        try {
+            result = manager.insureItem(player, held);
+        } catch (Throwable t) {
+            getLogger().warning("uiBuy failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+            player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+            return false;
+        }
+        switch (result) {
+            case SUCCESS -> {
+                String itemName = uiDisplayName(held);
+                int count = manager.countInsured(player.getUniqueId());
+                player.sendMessage(getComponent("insured",
+                        "<item>", itemName,
+                        "<premium>", String.valueOf(manager.getPremiumPerItem()),
+                        "<count>", String.valueOf(count),
+                        "<max>", String.valueOf(manager.getMaxInsuredItems())));
+                return true;
+            }
+            case ALREADY_INSURED -> player.sendMessage(getComponent("already-insured"));
+            case MAX_REACHED -> player.sendMessage(getComponent("max-reached",
+                    "<max>", String.valueOf(manager.getMaxInsuredItems())));
+            case NOT_ENOUGH_SHARDS -> player.sendMessage(getComponent("not-enough-shards",
+                    "<premium>", String.valueOf(manager.getPremiumPerItem())));
+            case COOLDOWN -> player.sendMessage(getComponent("cooldown",
+                    "<seconds>", String.valueOf(manager.getCooldownRemaining(player.getUniqueId()))));
+            case AIR -> player.sendMessage(getComponent("hold-item"));
+            case NO_ECONOMY -> player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+        }
+        return false;
+    }
+
+    public boolean uiClaim(Player player, int index) {
+        try {
+            var snapshot = manager.getInsured(player.getUniqueId());
+            if (index < 0 || index >= snapshot.size()) {
+                player.sendMessage(getComponent("no-insurance"));
+                return false;
+            }
+        } catch (Throwable t) {
+            getLogger().warning("uiClaim snapshot failed: " + t.getClass().getSimpleName());
+            player.sendMessage(getComponent("no-insurance"));
+            return false;
+        }
+        ItemStack claimedItem;
+        try {
+            claimedItem = manager.claimOrdinal(player.getUniqueId(), index);
+        } catch (Throwable t) {
+            getLogger().warning("uiClaim failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+            player.sendMessage(getComponent("no-insurance"));
+            return false;
+        }
+        if (claimedItem == null) {
+            player.sendMessage(getComponent("no-insurance"));
+            return false;
+        }
+        var leftover = player.getInventory().addItem(claimedItem);
+        if (!leftover.isEmpty()) {
+            for (ItemStack drop : leftover.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                player.sendMessage(getComponent("inventory-full"));
+            }
+        }
+        player.sendMessage(getComponent("claimed", "<count>", String.valueOf(1)));
+        return true;
+    }
+
+    private static String uiDisplayName(ItemStack stack) {
+        if (stack == null) return "AIR";
+        try {
+            var meta = stack.getItemMeta();
+            if (meta != null && meta.hasDisplayName()) {
+                var comp = meta.displayName();
+                if (comp != null) {
+                    return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(comp);
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return stack.getType().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
     }
 
     public static MiniMessage mm() {

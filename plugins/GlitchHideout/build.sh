@@ -5,7 +5,7 @@
 #   sudo ./plugins/GlitchHideout/build.sh
 #
 # Requires: Maven (mvn), Java 21+
-# Output:   plugins/GlitchHideout/target/GlitchHideout-1.0.0.jar
+# Output:   plugins/GlitchHideout/target/GlitchHideout-1.1.0.jar
 
 set -euo pipefail
 
@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PLUGIN_DIR="${REPO_DIR}/plugins/GlitchHideout"
 SERVER_DIR="${REPO_DIR}/server"
-OUTPUT_JAR="${PLUGIN_DIR}/target/GlitchHideout-1.0.0.jar"
+OUTPUT_JAR="${PLUGIN_DIR}/target/GlitchHideout-1.1.0.jar"
 LIVE_PLUGIN_DIR="/opt/theglitch/server/plugins"
 
 log()  { echo -e "\033[1;36m[build]\033[0m $*"; }

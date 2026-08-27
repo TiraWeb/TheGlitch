@@ -157,7 +157,7 @@ public class ClassGUI implements Listener {
         }
 
         String title = plugin.getConfig().getString("gui.title",
-                "<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>CHOOSE YOUR CLASS</bold></gradient> </font><font:minecraft:default>\uE049</font>");
+                "<font:minecraft:default>\uE049</font> <gradient:#C084FC:#F0ABFC><bold>CHOOSE YOUR CLASS</bold></gradient> <font:minecraft:default>\uE049</font>");
         Inventory inv = Bukkit.createInventory(null, 45, MM.deserialize(title));
         fillBorder(inv, 45);
 

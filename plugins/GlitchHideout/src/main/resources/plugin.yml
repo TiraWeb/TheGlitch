@@ -17,6 +17,9 @@ commands:
     description: Open the hideout
     usage: /hideout
     permission: glitchhideout.use
+  hideoutui:
+    description: Internal hideout dialog actions
+    usage: /hideoutui <noop|root|station <id>|workbench|upgrade <id>|craft <recipeId>|panel <here|undo|show>>
   hideoutadmin:
     description: Admin commands for GlitchHideout
     usage: /hideoutadmin <reload|set <player> <station> <level>|reset <player>>

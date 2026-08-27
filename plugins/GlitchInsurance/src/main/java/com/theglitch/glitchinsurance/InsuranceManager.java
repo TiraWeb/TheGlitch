@@ -282,6 +282,56 @@ public final class InsuranceManager {
     }
 
     /**
+     * Claim a single insured item by index within {@link #getInsured(UUID)} order.
+     * Other policies are preserved and re-persisted. Returns null when the
+     * index is out of range or the entry expired.
+     */
+    public ItemStack claimOne(UUID uuid, int index) {
+        List<InsuredItem> list = insured.get(uuid);
+        if (list == null || list.isEmpty()) return null;
+        if (index < 0 || index >= list.size()) return null;
+        InsuredItem target = list.get(index);
+        if (target == null) return null;
+        long now = System.currentTimeMillis();
+        if (now > target.expiresAt()) {
+            purgeExpired(uuid);
+            return null;
+        }
+        ItemStack out = target.item();
+        list.remove(index);
+        if (list.isEmpty()) {
+            insured.remove(uuid);
+            deleteFile(uuid);
+        } else {
+            saveInsurance(uuid);
+        }
+        return out;
+    }
+
+    public ItemStack claimOrdinal(UUID uuid, int ordinal) {
+        List<InsuredItem> list = insured.get(uuid);
+        if (list == null || list.isEmpty()) return null;
+        long now = System.currentTimeMillis();
+        int seen = 0;
+        for (int i = 0; i < list.size(); i++) {
+            InsuredItem candidate = list.get(i);
+            if (candidate == null || now > candidate.expiresAt()) continue;
+            if (seen++ != ordinal) continue;
+            ItemStack out = candidate.item();
+            list.remove(i);
+            if (list.isEmpty()) {
+                insured.remove(uuid);
+                deleteFile(uuid);
+            } else {
+                saveInsurance(uuid);
+            }
+            return out;
+        }
+        purgeExpired(uuid);
+        return null;
+    }
+
+    /**
      * Consume insured items that match drops — used by death listener to auto-keep.
      * Returns number of items moved to keep.
      */

@@ -231,3 +231,14 @@ messages:
   no-party: "&cYou must be in a party to enter a dungeon."
   not-leader: "&cOnly the party leader can start a dungeon."
   inventory-saved: "&aYour inventory has been saved to your stash."
+
+modern-ui:
+  remote-perm: theglitch.remoteui
+  world-panel:
+    enabled: false
+    world: hub
+    x: -242.0
+    y: 72.5
+    z: 63.0
+    facing: south
+    spacing: 1.35

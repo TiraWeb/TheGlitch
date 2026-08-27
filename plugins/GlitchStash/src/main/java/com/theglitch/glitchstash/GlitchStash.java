@@ -52,6 +52,15 @@ public final class GlitchStash extends JavaPlugin {
         getCommand("stashtp").setExecutor(new StashCommand(this, stashManager));
         getCommand("stashadmin").setExecutor(new StashAdminCommand(this, stashManager));
         getCommand("extractadmin").setExecutor(new ExtractionVariantCommand(this, variantManager));
+        if (getCommand("stashui") != null) {
+            getCommand("stashui").setExecutor(new com.theglitch.glitchstash.StashUICommand(this));
+        }
+
+        try {
+            com.theglitch.glitchstash.ui.StashPanel.init(this);
+        } catch (Throwable t) {
+            getLogger().warning("Failed to init StashPanel: " + t.getMessage());
+        }
 
         // Automated extraction — starts ALL VelKoth arenas every 31m (30m raid + 1m scatter buffer)
         // Folia-safe fixed-rate scheduler; discovers arenas reflectively or via config allow-list.
@@ -70,6 +79,10 @@ public final class GlitchStash extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        try {
+            com.theglitch.glitchstash.ui.StashPanel.shutdown(this);
+        } catch (Throwable ignored) {
+        }
         if (autoExtractScheduler != null) {
             try { autoExtractScheduler.shutdown(); } catch (Exception e) { getLogger().warning("Error shutting down AutoExtractScheduler: " + e.getMessage()); }
             autoExtractScheduler = null;
@@ -110,6 +123,11 @@ public final class GlitchStash extends JavaPlugin {
                 getLogger().warning("Invalid display-name — falling back to default.");
                 display = "<dark_purple>YOUR STASH</dark_purple>";
             }
+            if (display.contains("theglitch:ui")) {
+                display = display.replace("<font:theglitch:ui>", "")
+                        .replace("<font:minecraft:default>", "")
+                        .replace("</font>", "");
+            }
             cachedDisplayName = display;
             variantEnabledCache = getConfig().getBoolean("extraction-variants.enabled", true);
             variantEnforceKeyCache = getConfig().getBoolean("extraction-variants.enforce-key", true);
@@ -140,6 +158,10 @@ public final class GlitchStash extends JavaPlugin {
             } catch (Exception e) {
                 getLogger().warning("Failed to reload AutoExtractScheduler: " + e.getMessage());
             }
+        }
+        try {
+            com.theglitch.glitchstash.ui.StashPanel.reconfigureAndRebuild();
+        } catch (Throwable ignored) {
         }
         getLogger().info("GlitchStash reloaded (payout=" + payoutEnabledCache
                 + ", variants=" + variantEnabledCache + ", arm=" + variantArmDurationCache + "s"

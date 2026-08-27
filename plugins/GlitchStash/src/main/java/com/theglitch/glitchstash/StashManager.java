@@ -1,7 +1,11 @@
 package com.theglitch.glitchstash;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -199,6 +203,73 @@ public final class StashManager {
      */
     public Optional<StashData> peekStash(UUID uuid) {
         return Optional.ofNullable(stashes.get(uuid));
+    }
+
+    public List<ItemStack> listStash(UUID uuid) {
+        StashData data = stashes.get(uuid);
+        return data == null ? new ArrayList<>() : flattenUi(data);
+    }
+
+    public boolean takeFromUi(Player player, int index) {
+        UUID uuid = player.getUniqueId();
+        StashData data = stashes.get(uuid);
+        if (data == null) {
+            player.sendMessage(plugin.getComponent("stash-empty"));
+            return false;
+        }
+        List<ItemStack> flat = flattenUi(data);
+        if (index < 0 || index >= flat.size()) {
+            return false;
+        }
+        ItemStack clicked = flat.get(index);
+        if (clicked == null || clicked.getType().isAir()) {
+            return false;
+        }
+        flat.set(index, null);
+
+        int remaining = 0;
+        for (ItemStack item : flat) {
+            if (item != null && !item.getType().isAir()) remaining++;
+        }
+        ItemStack[] newContents = flat.toArray(new ItemStack[0]);
+        replaceStash(uuid, newContents);
+        if (remaining == 0) {
+            clearStash(uuid);
+            player.sendMessage(plugin.getComponent("all-retrieved"));
+        }
+
+        HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(clicked.clone());
+        if (leftover.isEmpty()) {
+            player.sendMessage(Component.text("+ " + clicked.getAmount() + " " +
+                    clicked.getType().name().toLowerCase().replace("_", " "),
+                    NamedTextColor.GREEN));
+        } else {
+            int dropped = 0;
+            World world = player.getWorld();
+            Location loc = player.getLocation();
+            for (ItemStack left : leftover.values()) {
+                if (left == null) continue;
+                dropped += left.getAmount();
+                world.dropItemNaturally(loc, left);
+            }
+            player.sendMessage(Component.text("Inventory full! Dropped " + dropped + " at your feet.",
+                    NamedTextColor.RED));
+        }
+        return true;
+    }
+
+    private List<ItemStack> flattenUi(StashData data) {
+        List<ItemStack> out = new ArrayList<>();
+        for (ItemStack item : data.contents()) {
+            if (item != null && !item.getType().isAir()) out.add(item.clone());
+        }
+        for (ItemStack item : data.armor()) {
+            if (item != null && !item.getType().isAir()) out.add(item.clone());
+        }
+        if (data.offhand() != null && !data.offhand().getType().isAir()) {
+            out.add(data.offhand().clone());
+        }
+        return out;
     }
 
     /**

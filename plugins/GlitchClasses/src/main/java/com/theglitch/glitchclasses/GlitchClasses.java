@@ -1,5 +1,6 @@
 package com.theglitch.glitchclasses;
 
+import com.theglitch.glitchclasses.ui.ClassPanel;
 import com.theglitch.glitchclasses.ui.DialogBridge;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -55,11 +56,14 @@ public final class GlitchClasses extends JavaPlugin {
             getCommand("classui").setExecutor(new ClassUICommand(this));
         }
 
+        ClassPanel.init(this);
+
         getLogger().info("GlitchClasses enabled — " + classManager.getPlayerCount() + " players loaded.");
     }
 
     @Override
     public void onDisable() {
+        ClassPanel.shutdown();
         if (classManager != null) {
             classManager.shutdown();
         }

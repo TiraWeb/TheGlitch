@@ -4,6 +4,7 @@ import com.theglitch.glitchdungeons.commands.DungeonAdminCommand;
 import com.theglitch.glitchdungeons.commands.DungeonCommand;
 import com.theglitch.glitchdungeons.commands.PartyCommand;
 import com.theglitch.glitchdungeons.config.DungeonConfig;
+import com.theglitch.glitchdungeons.gui.DungeonSelectGUI;
 import com.theglitch.glitchdungeons.listeners.DungeonListener;
 import com.theglitch.glitchdungeons.listeners.ExtractionListener;
 import com.theglitch.glitchdungeons.listeners.InventoryListener;
@@ -16,7 +17,11 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import net.kyori.adventure.text.minimessage.MiniMessage;
+
 public class GlitchDungeons extends JavaPlugin {
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
     private static GlitchDungeons instance;
     private DungeonConfig dungeonConfig;
     private PartyManager partyManager;
@@ -24,6 +29,7 @@ public class GlitchDungeons extends JavaPlugin {
     private WaveManager waveManager;
     private CooldownManager cooldownManager;
     private RewardManager rewardManager;
+    private DungeonSelectGUI selectGui;
 
     @Override
     public void onEnable() {
@@ -41,7 +47,8 @@ public class GlitchDungeons extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new DungeonListener(this), this);
         getServer().getPluginManager().registerEvents(new ExtractionListener(this), this);
         getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
-        getServer().getPluginManager().registerEvents(new com.theglitch.glitchdungeons.gui.DungeonSelectGUI(this), this);
+        selectGui = new DungeonSelectGUI(this);
+        getServer().getPluginManager().registerEvents(selectGui, this);
 
         PluginCommand partyCmd = getCommand("party");
         if (partyCmd != null) partyCmd.setExecutor(new PartyCommand(this));
@@ -51,12 +58,17 @@ public class GlitchDungeons extends JavaPlugin {
         if (dungeonCmd != null) dungeonCmd.setExecutor(new DungeonCommand(this));
         PluginCommand adminCmd = getCommand("dungeonadmin");
         if (adminCmd != null) adminCmd.setExecutor(new DungeonAdminCommand(this));
+        PluginCommand uiCmd = getCommand("dungeonui");
+        if (uiCmd != null) uiCmd.setExecutor(new DungeonUICommand(this));
+
+        com.theglitch.glitchdungeons.ui.DungeonPanel.init(this);
 
         getLogger().info("GlitchDungeons enabled!");
     }
 
     @Override
     public void onDisable() {
+        com.theglitch.glitchdungeons.ui.DungeonPanel.shutdown();
         getLogger().info("GlitchDungeons disabled.");
     }
 
@@ -75,4 +87,9 @@ public class GlitchDungeons extends JavaPlugin {
     public WaveManager getWaveManager() { return waveManager; }
     public CooldownManager getCooldownManager() { return cooldownManager; }
     public RewardManager getRewardManager() { return rewardManager; }
+    public DungeonSelectGUI getSelectGui() { return selectGui; }
+
+    public static MiniMessage mm() {
+        return MM;
+    }
 }

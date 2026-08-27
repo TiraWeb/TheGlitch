@@ -43,6 +43,9 @@ public final class BazaarPanel implements Listener {
 
     private static final NamespacedKey PANEL_KEY = new NamespacedKey("glitchshops", "panel");
     private static final NamespacedKey VALUE_KEY = new NamespacedKey("glitchshops", "value");
+    private static final double[] GRID_ROW_Y = {2.55D, 1.50D, 0.45D};
+    private static final double LABEL_DY = 0.42D;
+    private static final int LABEL_MAX = 14;
 
     private static GlitchShops plugin;
     private static ShopGUI gui;
@@ -64,6 +67,7 @@ public final class BazaarPanel implements Listener {
     private String facing;
     private double spacing;
     private int instantBuyMax;
+    private boolean cfgEnabled;
 
     private BazaarPanel() {
     }
@@ -102,12 +106,48 @@ public final class BazaarPanel implements Listener {
             refreshSeconds = 600L;
         }
         long period = Math.max(200L, refreshSeconds * 20L);
-        buildTask = pl.getServer().getScheduler().runTaskLater(pl, panel::build, 100L);
+        cancelTasks();
+        buildTask = pl.getServer().getScheduler().runTaskLater(pl, panel::build, 20L);
         refreshTask = pl.getServer().getScheduler().runTaskTimer(pl, panel::refreshContents, period, period);
         pl.getLogger().info("Grand Bazaar wall panel armed at " + worldNameSafe(panel) + ".");
     }
 
-    public static void shutdown() {
+    public static void reconfigureAndRebuild() {
+        try {
+            if (plugin == null) return;
+            if (instance != null) {
+                if (instance.loadConfig()) {
+                    instance.build();
+                } else {
+                    cancelTasks();
+                    try {
+                        instance.removeAll();
+                        HandlerList.unregisterAll(instance);
+                    } catch (Throwable ignored) {
+                    }
+                    instance = null;
+                }
+                return;
+            }
+            init(plugin, gui);
+        } catch (Throwable t) {
+            if (plugin != null) {
+                plugin.getLogger().fine("panel reconfigure failed: " + t.getClass().getSimpleName());
+            }
+        }
+    }
+
+    public static void removeWall() {
+        try {
+            if (instance != null) {
+                instance.cfgEnabled = false;
+                instance.removeAll();
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static void cancelTasks() {
         if (buildTask != null) {
             try {
                 buildTask.cancel();
@@ -122,6 +162,10 @@ public final class BazaarPanel implements Listener {
             }
             refreshTask = null;
         }
+    }
+
+    public static void shutdown() {
+        cancelTasks();
         if (instance != null) {
             try {
                 instance.removeAll();
@@ -146,10 +190,14 @@ public final class BazaarPanel implements Listener {
 
     private boolean loadConfig() {
         try {
+            cfgEnabled = plugin.getConfig().getBoolean("modern-ui.world-panel.enabled", true);
             String name = plugin.getConfig().getString("modern-ui.world-panel.world", "hub");
             World w = name == null ? null : Bukkit.getWorld(name);
             if (w == null) {
                 plugin.getLogger().warning("world-panel world '" + name + "' not found — wall panel dormant.");
+                return false;
+            }
+            if (!cfgEnabled) {
                 return false;
             }
             world = w;
@@ -158,7 +206,7 @@ public final class BazaarPanel implements Listener {
             wz = plugin.getConfig().getDouble("modern-ui.world-panel.z", 0.0D);
             String f = plugin.getConfig().getString("modern-ui.world-panel.facing", "south");
             facing = f == null ? "south" : f.toLowerCase();
-            spacing = plugin.getConfig().getDouble("modern-ui.world-panel.spacing", 1.15D);
+            spacing = plugin.getConfig().getDouble("modern-ui.world-panel.spacing", 1.35D);
             if (spacing < 0.5D) {
                 spacing = 0.5D;
             }
@@ -171,7 +219,7 @@ public final class BazaarPanel implements Listener {
     }
 
     private boolean isLive() {
-        return instance == this && plugin != null && plugin.isEnabled() && world != null;
+        return instance == this && cfgEnabled && plugin != null && plugin.isEnabled() && world != null;
     }
 
     private String activeCategory() {
@@ -331,7 +379,7 @@ public final class BazaarPanel implements Listener {
 
     private void spawnHeader() {
         try {
-            Location loc = point(0.0D, 3.4D);
+            Location loc = point(0.0D, 4.3D);
             TextDisplay d = world.spawn(loc, TextDisplay.class, t -> {
                 try {
                     t.text(UiKit.deserialized("\uE049 <gradient:#C084FC:#F0ABFC><bold>GRAND BAZAAR</bold></gradient>"));
@@ -339,7 +387,7 @@ public final class BazaarPanel implements Listener {
                     t.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
                             new Quaternionf(),
-                            new Vector3f(1.2F, 1.2F, 1.2F),
+                            new Vector3f(1.1F, 1.1F, 1.1F),
                             new Quaternionf()));
                 } catch (Throwable err) {
                     plugin.getLogger().fine("header styling incomplete: " + err.getClass().getSimpleName());
@@ -423,11 +471,11 @@ public final class BazaarPanel implements Listener {
             for (int i = 0; i < n; i++) {
                 final String category = tabs.get(i);
                 boolean active = category != null && category.equals(activeCategory());
-                double off = (i - (n - 1) / 2.0D) * 1.3D;
+                double off = (i - (n - 1) / 2.0D) * spacing;
                 String mini = (active ? "<gold><bold>" : "<gray><bold>")
                         + gui.categoryLabel(category) + "</bold>";
-                spawnText(point(off, 2.6D), mini, 0.8F, false);
-                spawnHitbox(point(off, 2.6D), 1.1F, 0.6F, "tab", category, false);
+                spawnText(point(off, 3.3D), mini, 0.75F, false);
+                spawnHitbox(point(off, 3.3D), 1.1F, 0.6F, "tab", category, false);
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("tabs spawn failed: " + t.getClass().getSimpleName());
@@ -456,13 +504,13 @@ public final class BazaarPanel implements Listener {
             int c = idx % 7;
             int r = idx / 7;
             double off = (c - 3) * spacing;
-            double dy = (2 - r) * spacing * 0.9D + 1.2D;
+            double dy = GRID_ROW_Y[Math.min(r, 2)];
             final ItemStack stack = buildStack(id);
-            final String name = gui.displayNameOf(id);
+            final String name = truncateName(gui.displayNameOf(id));
             final String mini = "<white>" + name + "</white>\n<aqua>"
                     + UiKit.SHARD_GLYPH + " " + price + " Shards</aqua>";
             spawnItem(point(off, dy), stack);
-            spawnText(point(off, dy - 0.45D), mini, 0.55F, true);
+            spawnText(point(off, dy - LABEL_DY), mini, 0.5F, true);
             spawnHitbox(point(off, dy), 0.9F, 1.0F, "item", category + "|" + id, true);
         }
     }
@@ -475,15 +523,21 @@ public final class BazaarPanel implements Listener {
             int c = i % 7;
             int r = i / 7;
             double off = (c - 3) * spacing;
-            double dy = (2 - r) * spacing * 0.9D + 1.2D;
+            double dy = GRID_ROW_Y[Math.min(r, 2)];
             final ItemStack stack = entry.item().clone();
             final int idx = i;
-            final String mini = "<white>" + plainName(stack) + "</white>\n<aqua>"
+            final String mini = "<white>" + truncateName(plainName(stack)) + "</white>\n<aqua>"
                     + UiKit.SHARD_GLYPH + " " + entry.price() + " Shards</aqua>";
             spawnItem(point(off, dy), stack);
-            spawnText(point(off, dy - 0.45D), mini, 0.55F, true);
+            spawnText(point(off, dy - LABEL_DY), mini, 0.5F, true);
             spawnHitbox(point(off, dy), 0.9F, 1.0F, "item", "gear|" + idx, true);
         }
+    }
+
+    private String truncateName(String name) {
+        if (name == null || name.isBlank()) return "???";
+        String plain = name.trim();
+        return plain.length() <= LABEL_MAX ? plain : plain.substring(0, LABEL_MAX) + "\u2026";
     }
 
     private void spawnItem(Location loc, ItemStack stack) {
@@ -500,7 +554,7 @@ public final class BazaarPanel implements Listener {
                     disp.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
                             new Quaternionf().rotationY(-(float) Math.toRadians(yaw)),
-                            new Vector3f(0.9F, 0.9F, 0.9F),
+                            new Vector3f(0.85F, 0.85F, 0.85F),
                             new Quaternionf()));
                 } catch (Throwable err) {
                     plugin.getLogger().fine("item styling incomplete: " + err.getClass().getSimpleName());
@@ -612,7 +666,12 @@ public final class BazaarPanel implements Listener {
                 refreshContents();
                 return;
             }
-            enqueueBuy(() -> gui.buyGearFromDialog(player, idx));
+            if (entry.price() <= instantBuyMax) {
+                enqueueBuy(() -> gui.buyGearFromDialog(player, idx));
+            } else {
+                final int gearIdx = idx;
+                enqueueBuy(() -> DialogUI.openGearConfirm(plugin, gui, player, gearIdx));
+            }
             return;
         }
         Integer price = gui.buyPriceFor(category, rest);
@@ -624,7 +683,7 @@ public final class BazaarPanel implements Listener {
         if (price <= instantBuyMax) {
             enqueueBuy(() -> gui.buyFromDialog(player, category, itemId, 1));
         } else {
-            DialogUI.openBuyConfirm(plugin, gui, player, category, itemId);
+            DialogUI.openBuyConfirm(plugin, gui, player, category, itemId, "shopui noop");
         }
     }
 

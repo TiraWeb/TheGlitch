@@ -15,6 +15,9 @@ commands:
     description: Admin commands for GlitchInsurance
     usage: /insuranceadmin <reload|list <player>|clear <player>>
     permission: glitchinsurance.admin
+  insureui:
+    description: UI bridge for GlitchInsurance dialogs and wall panel
+    usage: /insureui <noop|buy|buyconfirm|claim <index>|panel <here|undo|show>>
 
 permissions:
   glitchinsurance.use:

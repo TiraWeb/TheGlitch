@@ -30,6 +30,9 @@ commands:
     description: Admin commands for extraction variants
     usage: /extractadmin <reload|zones|armed>
     permission: glitchstash.admin
+  stashui:
+    description: Internal stash dialog actions
+    usage: /stashui <noop|take <index>|open|panel here|undo>
 
 permissions:
   glitchstash.use:

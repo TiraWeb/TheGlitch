@@ -51,6 +51,6 @@ modern-ui:
     y: -33.6
     z: 66.5
     facing: south
-    spacing: 1.15
+    spacing: 1.35
     instant-buy-max: 50
     refresh-seconds: 600

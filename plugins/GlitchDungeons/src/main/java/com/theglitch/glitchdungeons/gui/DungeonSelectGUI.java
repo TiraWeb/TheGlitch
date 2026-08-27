@@ -16,7 +16,7 @@ import java.util.List;
 
 public class DungeonSelectGUI implements Listener {
     private final GlitchDungeons plugin;
-    private static final String TITLE = "<font:minecraft:default>\uE049</font><font:theglitch:ui> <gradient:#C084FC:#F0ABFC><bold>SELECT DUNGEON</bold></gradient> </font><font:minecraft:default>\uE049</font>";
+    private static final String TITLE = "<font:minecraft:default>\uE049</font> <gradient:#C084FC:#F0ABFC><bold>SELECT DUNGEON</bold></gradient> <font:minecraft:default>\uE049</font>";
     private static final net.kyori.adventure.text.minimessage.MiniMessage MM = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage();
 
     public DungeonSelectGUI(GlitchDungeons plugin) {
@@ -95,7 +95,10 @@ public class DungeonSelectGUI implements Listener {
         if (tier == -1) return;
         player.closeInventory();
 
-        // Run join command
+        dispatchJoin(player, tier);
+    }
+
+    public void dispatchJoin(Player player, int tier) {
         plugin.getServer().dispatchCommand(player, "dungeon join " + tier);
     }
 

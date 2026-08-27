@@ -2,6 +2,8 @@ package com.theglitch.glitchshops;
 
 import com.theglitch.glitchshops.ui.DialogUI;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -31,6 +33,8 @@ public final class ShopUICommand implements CommandExecutor {
                 DialogUI.openRoot(plugin, gui, player, () -> gui.open(player, category));
                 return true;
             }
+            case "noop":
+                return true;
             case "open": {
                 String category = args.length > 1 ? args[1] : gui.defaultTab();
                 DialogUI.openCategory(plugin, gui, player, category, () -> gui.open(player, category));
@@ -101,6 +105,32 @@ public final class ShopUICommand implements CommandExecutor {
                 return true;
             }
             case "panel": {
+                String action = args.length > 1 ? args[1].toLowerCase() : "";
+                switch (action) {
+                    case "here": {
+                        if (!panelAdmin(player)) return true;
+                        panelHere(player);
+                        return true;
+                    }
+                    case "undo": {
+                        if (!panelAdmin(player)) return true;
+                        com.theglitch.glitchshops.ui.BazaarPanel.removeWall();
+                        plugin.getConfig().set("modern-ui.world-panel.enabled", false);
+                        plugin.saveConfig();
+                        player.sendMessage(MM.deserialize("<red>Bazaar wall removed</red>"));
+                        return true;
+                    }
+                    case "show": {
+                        if (!panelAdmin(player)) return true;
+                        plugin.getConfig().set("modern-ui.world-panel.enabled", true);
+                        plugin.saveConfig();
+                        com.theglitch.glitchshops.ui.BazaarPanel.reconfigureAndRebuild();
+                        player.sendMessage(MM.deserialize("<green>Bazaar wall shown.</green>"));
+                        return true;
+                    }
+                    default:
+                        break;
+                }
                 com.theglitch.glitchshops.ui.BazaarPanel.rebuild();
                 return true;
             }
@@ -110,6 +140,47 @@ public final class ShopUICommand implements CommandExecutor {
                 return true;
             }
         }
+    }
+
+    private boolean panelAdmin(Player player) {
+        try {
+            if (player.isOp() || player.hasPermission("glitchshops.admin")) {
+                return true;
+            }
+        } catch (Throwable t) {
+            return false;
+        }
+        player.sendMessage(MM.deserialize("<red>Admin only.</red>"));
+        return false;
+    }
+
+    private void panelHere(Player player) {
+        Location loc = player.getLocation();
+        World world = loc.getWorld();
+        double bx = Math.floor(loc.getX()) + 0.5D;
+        double by = loc.getY() + 1.0D;
+        double bz = Math.floor(loc.getZ()) + 0.5D;
+        float normYaw = ((loc.getYaw() % 360F) + 360F) % 360F;
+        String facing;
+        if (normYaw >= 315F || normYaw < 45F) {
+            facing = "south";
+        } else if (normYaw < 135F) {
+            facing = "west";
+        } else if (normYaw < 225F) {
+            facing = "north";
+        } else {
+            facing = "east";
+        }
+        plugin.getConfig().set("modern-ui.world-panel.world", world.getName());
+        plugin.getConfig().set("modern-ui.world-panel.x", bx);
+        plugin.getConfig().set("modern-ui.world-panel.y", by);
+        plugin.getConfig().set("modern-ui.world-panel.z", bz);
+        plugin.getConfig().set("modern-ui.world-panel.facing", facing);
+        plugin.getConfig().set("modern-ui.world-panel.enabled", true);
+        plugin.saveConfig();
+        com.theglitch.glitchshops.ui.BazaarPanel.reconfigureAndRebuild();
+        player.sendMessage(MM.deserialize("<green>Wall placed here (facing "
+                + facing + "). Use /shopui panel undo to remove.</green>"));
     }
 
     private String findCategory(String itemId) {

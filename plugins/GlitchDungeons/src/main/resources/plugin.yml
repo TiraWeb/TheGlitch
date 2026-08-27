@@ -29,6 +29,9 @@ commands:
     description: Dungeon admin commands
     usage: /dungeonadmin <reload|force-start|cancel|slots|reset-cooldowns>
     permission: glitchdungeons.admin
+  dungeonui:
+    description: UI bridge for GlitchDungeons dialogs and wall panel
+    usage: /dungeonui <noop|open <tier>|panel <here|undo|show>>
 
 permissions:
   glitchdungeons.party:

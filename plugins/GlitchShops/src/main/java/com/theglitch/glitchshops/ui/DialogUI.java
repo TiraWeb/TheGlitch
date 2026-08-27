@@ -4,8 +4,10 @@ import com.theglitch.glitchshops.GlitchShops;
 import com.theglitch.glitchshops.ShopGUI;
 import com.theglitch.glitchshops.ShopManager;
 import net.milkbowl.vault.economy.Economy;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -141,7 +143,7 @@ public final class DialogUI {
     }
 
     public static void openBuyConfirm(GlitchShops plugin, ShopGUI gui, Player player,
-                                      String category, String itemId) {
+                                      String category, String itemId, String backTemplate) {
         String matId;
         Integer cmd = null;
         String name;
@@ -174,6 +176,8 @@ public final class DialogUI {
                 + "}";
         String inputs = "{type:\"minecraft:number_range\",label:{text:\"Amount\"},key:\"amt\",start:1,end:"
                 + maxAmt + ",step:1,initial:1}";
+        String backCommand = backTemplate == null || backTemplate.isBlank()
+                ? "shopui open " + category : backTemplate.trim();
         String actions = "{label:" + txt("CONFIRM PURCHASE", "green", false)
                 + ",tooltip:" + txt("Total shown before confirm runs", "dark_gray", false)
                 + ",width:250"
@@ -181,7 +185,7 @@ public final class DialogUI {
                 + esc("shopui buyslider " + category + " " + itemId + " $(amt)")
                 + "}}"
                 + ","
-                + button("\u00ab BACK", "yellow", "Back to " + gui.categoryLabel(category), "shopui open " + category);
+                + button("\u00ab BACK", "yellow", "Back to " + gui.categoryLabel(category), backCommand);
         FloatingBanner.show(plugin, player, UiKit.title("BUY"), 60L);
         String snbt = "{type:\"minecraft:multi_action\",title:"
                 + txt("BUY " + name.toUpperCase(), "aqua", true)
@@ -193,6 +197,72 @@ public final class DialogUI {
         boolean shown = show(plugin, player, snbt);
         if (!shown) {
             gui.open(player, category);
+        }
+    }
+
+    public static void openGearConfirm(GlitchShops plugin, ShopGUI gui, Player player, int idx) {
+        String matId;
+        Integer cmd = null;
+        String name;
+        int price;
+        try {
+            List<ShopManager.GearStockEntry> stock = plugin.getShopManager().getGearStock();
+            if (idx < 0 || idx >= stock.size()) return;
+            ShopManager.GearStockEntry entry = stock.get(idx);
+            if (entry == null || entry.item() == null) return;
+            ItemStack stack = entry.item();
+            price = entry.price();
+            matId = stack.getType().getKey().getKey();
+            try {
+                if (stack.getItemMeta().hasCustomModelData()) {
+                    cmd = stack.getItemMeta().getCustomModelData();
+                }
+            } catch (Throwable ignored) {
+            }
+            name = plainStackName(stack);
+        } catch (Throwable t) {
+            return;
+        }
+        String body = itemBody(matId, 1, cmd)
+                + ",{type:\"minecraft:plain_message\",contents:"
+                + txt("Price: " + price + " Shards", "gray", false)
+                + "}";
+        String actions = "{label:" + txt("CONFIRM PURCHASE", "green", false)
+                + ",width:250"
+                + ",action:{type:\"minecraft:run_command\",command:"
+                + esc("shopui buygear " + idx)
+                + "}}"
+                + ","
+                + button("\u00ab BACK", "yellow", "Back to the bazaar", "shopui noop");
+        FloatingBanner.show(plugin, player, UiKit.title("BUY"), 60L);
+        String snbt = "{type:\"minecraft:multi_action\",title:"
+                + txt("BUY " + name.toUpperCase(), "aqua", true)
+                + ",body:[" + body + "]"
+                + ",columns:2"
+                + ",actions:[" + actions + "]"
+                + ",exit_action:{label:" + txt("Close", "dark_gray", false) + "}}";
+        boolean shown = show(plugin, player, snbt);
+        if (!shown) {
+            gui.open(player, "gear");
+        }
+    }
+
+    private static String plainStackName(ItemStack stack) {
+        try {
+            if (stack.hasItemMeta() && stack.getItemMeta().hasCustomName()) {
+                var custom = stack.getItemMeta().customName();
+                if (custom != null) {
+                    String plain = PlainTextComponentSerializer.plainText().serialize(custom);
+                    if (!plain.isEmpty()) return plain;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            String mat = stack.getType().name().toLowerCase().replace('_', ' ');
+            return Character.toUpperCase(mat.charAt(0)) + mat.substring(1);
+        } catch (Throwable t) {
+            return "gear";
         }
     }
 
