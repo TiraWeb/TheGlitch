@@ -33,7 +33,7 @@ public final class DungeonUICommand implements CommandExecutor {
                 }
             }
             case "panel" -> handlePanel(player, args);
-            default -> { }
+            default -> DungeonPanel.rebuild();
         }
         return true;
     }

@@ -20,10 +20,4 @@ public final class DialogBridge {
     public static boolean dialogsRuntime() {
         return PRESENT;
     }
-
-    public static String runtimeSummary() {
-        return dialogsRuntime()
-                ? "modern-ui active (holographic layer) | native client dialogs runtime: PRESENT"
-                : "modern-ui active (holographic layer) | native client dialogs runtime: NOT DETECTED (legacy inventory UI)";
-    }
 }

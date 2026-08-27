@@ -69,10 +69,6 @@ public final class InsuranceManager {
             return itemName;
         }
 
-        public boolean isExpired() {
-            return System.currentTimeMillis() > expiresAt;
-        }
-
         public long remainingSeconds() {
             long rem = (expiresAt - System.currentTimeMillis()) / 1000;
             return Math.max(0, rem);
@@ -279,33 +275,6 @@ public final class InsuranceManager {
             saveInsurance(uuid);
         }
         return result;
-    }
-
-    /**
-     * Claim a single insured item by index within {@link #getInsured(UUID)} order.
-     * Other policies are preserved and re-persisted. Returns null when the
-     * index is out of range or the entry expired.
-     */
-    public ItemStack claimOne(UUID uuid, int index) {
-        List<InsuredItem> list = insured.get(uuid);
-        if (list == null || list.isEmpty()) return null;
-        if (index < 0 || index >= list.size()) return null;
-        InsuredItem target = list.get(index);
-        if (target == null) return null;
-        long now = System.currentTimeMillis();
-        if (now > target.expiresAt()) {
-            purgeExpired(uuid);
-            return null;
-        }
-        ItemStack out = target.item();
-        list.remove(index);
-        if (list.isEmpty()) {
-            insured.remove(uuid);
-            deleteFile(uuid);
-        } else {
-            saveInsurance(uuid);
-        }
-        return out;
     }
 
     public ItemStack claimOrdinal(UUID uuid, int ordinal) {
@@ -626,9 +595,5 @@ public final class InsuranceManager {
         // Use material name
         String mat = stack.getType().name().toLowerCase().replace('_', ' ');
         return mat;
-    }
-
-    public Map<UUID, List<InsuredItem>> getAllInsured() {
-        return Collections.unmodifiableMap(insured);
     }
 }

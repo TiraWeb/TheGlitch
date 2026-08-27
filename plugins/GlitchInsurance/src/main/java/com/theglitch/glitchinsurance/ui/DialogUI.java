@@ -26,25 +26,6 @@ public final class DialogUI {
         return SUPPORTED != null && SUPPORTED;
     }
 
-    public static boolean canRemote(GlitchInsurance plugin, Player player) {
-        String perm = "theglitch.remoteui";
-        try {
-            String configured = plugin.getConfig().getString("modern-ui.remote-perm", "theglitch.remoteui");
-            if (configured != null) {
-                perm = configured.trim();
-            }
-        } catch (Throwable ignored) {
-        }
-        if (perm.isBlank() || "*".equals(perm)) {
-            return true;
-        }
-        try {
-            return player.isOp() || player.hasPermission(perm);
-        } catch (Throwable t) {
-            return false;
-        }
-    }
-
     public static boolean show(JavaPlugin plugin, Player player, String snbt) {
         try {
             return Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
@@ -163,25 +144,6 @@ public final class DialogUI {
                 body.toString(), actions.toString(), 2, "Close"));
         if (!shown && chestFallback != null) {
             chestFallback.run();
-        }
-    }
-
-    public static void openBuy(GlitchInsurance plugin, Player player, Runnable fallback) {
-        if (!supported()) {
-            if (fallback != null) fallback.run();
-            return;
-        }
-        int premium = premiumOf(plugin);
-        String actions = wideButton("CONFIRM", "green",
-                "Insure the item in your main hand", "insureui buyconfirm", 250)
-                + ","
-                + button("\u00ab BACK", "yellow", "Never mind", "insureui noop");
-        boolean shown = show(plugin, player, multiAction(
-                "INSURE ITEM", "light_purple",
-                "Hold the item you want to insure.\nCost: " + premium + " shards.",
-                actions, 1, "Close"));
-        if (!shown && fallback != null) {
-            fallback.run();
         }
     }
 }

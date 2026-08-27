@@ -39,24 +39,7 @@ public final class ShopGUI implements Listener {
     // \uE049 = glitch-diamond glyph (default font) + Inter UI font for readable title
     private static final Component BAZAAR_TITLE = UiKit.deserialized(UiKit.title("GRAND BAZAAR"));
 
-    // Cached border — single allocation cloned per slot instead of new ItemStack per open * per slot
-    private static final ItemStack CACHED_BORDER_PANE;
-    static {
-        ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta meta = pane.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.empty());
-            pane.setItemMeta(meta);
-        }
-        CACHED_BORDER_PANE = pane;
-    }
-
     private static final int SIZE = 54;
-    private static final int[] LEGACY_STOCK_SLOTS = {
-            19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34,
-            37, 38, 39, 40, 41, 42, 43
-    };
 
     private static final NamespacedKey ACTION_KEY = new NamespacedKey("glitchshops", "action");
     private static final NamespacedKey CATEGORY_KEY = new NamespacedKey("glitchshops", "category");
@@ -77,7 +60,6 @@ public final class ShopGUI implements Listener {
     private volatile String cachedDefaultTab;
     private volatile int cachedBuyStackSize;
     private volatile Economy cachedEconomy;
-    private volatile boolean modernEnabled;
     private volatile boolean holoEnabled;
     private volatile boolean dialogsEnabled;
 
@@ -93,7 +75,6 @@ public final class ShopGUI implements Listener {
         this.cachedDefaultTab = shopManager.getDefaultTab();
         this.cachedBuyStackSize = shopManager.getBuyStackSize();
         this.cachedEconomy = plugin.getEconomy(); // invalidated already in plugin
-        this.modernEnabled = plugin.getConfig().getBoolean("modern-ui.enabled", true);
         this.holoEnabled = plugin.getConfig().getBoolean("modern-ui.hologram-banner", true);
         this.dialogsEnabled = plugin.getConfig().getBoolean("modern-ui.dialogs", true);
         if (this.cachedTabOrder == null || this.cachedTabOrder.isEmpty()) {
@@ -118,14 +99,9 @@ public final class ShopGUI implements Listener {
                 category = cachedTabOrder.get(0);
             }
         }
-        boolean modern = modernEnabled;
         Inventory inv = Bukkit.createInventory(null, SIZE, BAZAAR_TITLE);
 
-        if (modern) {
-            ModernLayout.paintBands(inv, SIZE);
-        } else {
-            fillBorder(inv);
-        }
+        ModernLayout.paintBands(inv, SIZE);
 
         inv.setItem(0, balanceItem(player));
         inv.setItem(3, tabButton("tab_buy", "gui_buy", Material.EMERALD, "BUY",
@@ -147,28 +123,23 @@ public final class ShopGUI implements Listener {
                     "<gold><bold>SELLING</bold></gold>",
                     "<gray>Click items in your inventory below.</gray>",
                     "<yellow>Left-click = 1 · Shift-click = stack</yellow>");
-            if (modern) {
-                ModernLayout.setStateIcon(inv, sellingIcon);
-            } else {
-                inv.setItem(31, sellingIcon);
-            }
+            ModernLayout.setStateIcon(inv, sellingIcon);
         } else {
-            fillStock(inv, player, category, modern);
+            fillStock(inv, player, category);
         }
 
         sessions.put(player.getUniqueId(), new Session(category, sellMode));
         switchingGui.add(player.getUniqueId());
         player.openInventory(inv);
         switchingGui.remove(player.getUniqueId());
-        if (modern && holoEnabled) {
+        if (holoEnabled) {
             FloatingBanner.show(plugin, player,
                     sellMode ? UiKit.titleCustom("#FFD166", "#FFE9A8", "SELL MODE") : UiKit.title(categoryLabel(category)), 90L);
         }
     }
 
-    private void fillStock(Inventory inv, Player player, String category, boolean modern) {
-        // Centered 7-per-row layout (Wynncraft-style, breathable)
-        final int[] STOCK_SLOTS = modern ? ModernLayout.STOCK_SLOTS : LEGACY_STOCK_SLOTS;
+    private void fillStock(Inventory inv, Player player, String category) {
+        final int[] STOCK_SLOTS = ModernLayout.STOCK_SLOTS;
         int idx = 0;
         if (category.equals("gear")) {
             for (int i = 0; i < shopManager.getGearStock().size() && idx < STOCK_SLOTS.length; i++) {
@@ -328,32 +299,6 @@ public final class ShopGUI implements Listener {
         item.editMeta(ItemMeta.class, m ->
                 m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "close"));
         return item;
-    }
-
-    private void fillBorder(Inventory inv) {
-        // Pollished layout — leave stock area (18-44) open to show window background,
-        // only fill header (0-8), category row gaps (9-17 except tabs), and footer (45-53)
-        for (int i = 0; i < SIZE; i++) {
-            if (i < 9) {
-                // header row — will be overwritten by balance/tabs/close, keep filler elsewhere
-                if (i != 0 && i != 3 && i != 5 && i != 8) {
-                    inv.setItem(i, CACHED_BORDER_PANE.clone());
-                }
-            } else if (i >= 9 && i < 18) {
-                // category row — tabs at 11-15, rest filler
-                if (i < 11 || i > 15) {
-                    inv.setItem(i, CACHED_BORDER_PANE.clone());
-                }
-            } else if (i >= 45) {
-                // footer row
-                inv.setItem(i, CACHED_BORDER_PANE.clone());
-            }
-        }
-        // decorative divider between categories and stock
-        inv.setItem(17, CACHED_BORDER_PANE.clone());
-        inv.setItem(26, CACHED_BORDER_PANE.clone());
-        inv.setItem(35, CACHED_BORDER_PANE.clone());
-        inv.setItem(44, CACHED_BORDER_PANE.clone());
     }
 
     @EventHandler

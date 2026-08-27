@@ -117,6 +117,7 @@ public final class BazaarPanel implements Listener {
             if (plugin == null) return;
             if (instance != null) {
                 if (instance.loadConfig()) {
+                    scheduleTasks();
                     instance.build();
                 } else {
                     cancelTasks();
@@ -137,8 +138,22 @@ public final class BazaarPanel implements Listener {
         }
     }
 
+    private static void scheduleTasks() {
+        long refreshSeconds;
+        try {
+            refreshSeconds = plugin.getConfig().getLong("modern-ui.world-panel.refresh-seconds", 600L);
+        } catch (Throwable t) {
+            refreshSeconds = 600L;
+        }
+        long period = Math.max(200L, refreshSeconds * 20L);
+        cancelTasks();
+        buildTask = plugin.getServer().getScheduler().runTaskLater(plugin, instance::build, 20L);
+        refreshTask = plugin.getServer().getScheduler().runTaskTimer(plugin, instance::refreshContents, period, period);
+    }
+
     public static void removeWall() {
         try {
+            cancelTasks();
             if (instance != null) {
                 instance.cfgEnabled = false;
                 instance.removeAll();

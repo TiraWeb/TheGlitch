@@ -24,8 +24,19 @@ public class DungeonCommand implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            // Open dungeon select GUI
-            new DungeonSelectGUI(plugin).open(player);
+            if (com.theglitch.glitchdungeons.ui.DialogUI.canRemote(plugin, player)) {
+                com.theglitch.glitchdungeons.ui.DialogUI.openRoot(plugin, player, () -> {
+                    DungeonSelectGUI gui = plugin.getSelectGui();
+                    if (gui != null) {
+                        gui.open(player);
+                    }
+                });
+            } else {
+                DungeonSelectGUI gui = plugin.getSelectGui();
+                if (gui != null) {
+                    gui.open(player);
+                }
+            }
             return true;
         }
 

@@ -5,7 +5,6 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -20,7 +19,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -289,20 +287,8 @@ public final class GlitchHideout extends JavaPlugin {
         return cachedEconomy;
     }
 
-    public void invalidateEconomy() {
-        cachedEconomy = null;
-    }
-
     public int getMedCooldownSeconds() {
         return medCooldownSeconds;
-    }
-
-    public int getIntelGlowTicks() {
-        return intelGlowTicks;
-    }
-
-    public int getIntelRange() {
-        return intelRange;
     }
 
     public static MiniMessage mm() {

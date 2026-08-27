@@ -130,12 +130,6 @@ public final class ClassPanel implements Listener {
         }
     }
 
-    public static void rebuild() {
-        if (instance != null) {
-            instance.build();
-        }
-    }
-
     public static void reconfigureAndRebuild() {
         if (plugin == null) {
             return;

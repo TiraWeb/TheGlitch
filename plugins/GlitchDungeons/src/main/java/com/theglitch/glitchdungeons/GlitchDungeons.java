@@ -14,7 +14,6 @@ import com.theglitch.glitchdungeons.managers.PartyManager;
 import com.theglitch.glitchdungeons.managers.RewardManager;
 import com.theglitch.glitchdungeons.managers.WaveManager;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import net.kyori.adventure.text.minimessage.MiniMessage;

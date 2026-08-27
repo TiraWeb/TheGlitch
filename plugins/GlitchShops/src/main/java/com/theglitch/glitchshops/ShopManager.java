@@ -2,16 +2,13 @@ package com.theglitch.glitchshops;
 
 import com.theglitch.glitchitems.GearRolls;
 import com.theglitch.glitchitems.GlitchItems;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -25,7 +22,6 @@ public final class ShopManager {
 
     private static final NamespacedKey ORAXEN_ID_KEY = new NamespacedKey("oraxen", "custom_item_id");
     private static final NamespacedKey GEAR_KEY = new NamespacedKey("glitchitems", "gear");
-    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     public record StockEntry(int buy, int sell) {
     }
@@ -298,12 +294,7 @@ public final class ShopManager {
         return glitchItems == null ? null : glitchItems.getGearManager();
     }
 
-    public Map<String, Shop> getShops() {
-        return shops;
-    }
-
-    public List<GearStockEntry> getGearStock() {
-        return gearStock;
+    public List<GearStockEntry> getGearStock() {        return gearStock;
     }
 
     public Shop getShop(String id) {
@@ -377,44 +368,5 @@ public final class ShopManager {
     public String getMessageTemplate(String key) {
         String t = messageTemplates.get(key);
         return t != null ? t : key;
-    }
-
-    public int getRestockMinutes() {
-        return restockMinutes;
-    }
-
-    public List<String> getWeaponSlots() {
-        return weaponSlots;
-    }
-
-    public List<String> getArmorSlots() {
-        return armorSlots;
-    }
-
-    public int getMaxSlots() {
-        return maxSlots;
-    }
-
-    public Map<String, Integer> getRarityWeights() {
-        return rarityWeights;
-    }
-
-    public int getRarityTotalWeight() {
-        return rarityTotalWeight;
-    }
-
-    public Economy getCachedEconomy() {
-        if (cachedEconomy != null) return cachedEconomy;
-        Economy e = plugin.getEconomy();
-        cachedEconomy = e;
-        return e;
-    }
-
-    public void invalidateEconomy() {
-        cachedEconomy = null;
-    }
-
-    public static MiniMessage mm() {
-        return MM;
     }
 }

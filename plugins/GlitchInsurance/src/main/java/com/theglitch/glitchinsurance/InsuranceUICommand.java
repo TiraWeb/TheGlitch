@@ -23,10 +23,6 @@ public final class InsuranceUICommand implements CommandExecutor {
         String sub = args.length > 0 ? args[0].toLowerCase(java.util.Locale.ROOT) : "";
         switch (sub) {
             case "buy" -> plugin.uiBuy(player);
-            case "buyconfirm" -> {
-                plugin.uiBuy(player);
-                scheduleReopen(() -> DialogUI.openBuy(plugin, player, () -> { }));
-            }
             case "claim" -> {
                 int index = parseIndex(args);
                 plugin.uiClaim(player, index);

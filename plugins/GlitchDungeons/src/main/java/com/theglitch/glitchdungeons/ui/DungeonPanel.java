@@ -539,7 +539,7 @@ public final class DungeonPanel implements Listener {
                 Integer tierObj = tiers.get(c);
                 if (tierObj == null) continue;
                 final int tier = tierObj;
-                double off = (c - 3) * spacing;
+                double off = (c - (count - 1) / 2.0D) * spacing;
                 Material mat = iconFor(tier);
                 String name = nameFor(tier);
                 spawnItem(point(off, rowY), new ItemStack(mat));

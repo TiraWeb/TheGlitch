@@ -125,10 +125,6 @@ public final class GlitchInsurance extends JavaPlugin {
         return cachedEconomy;
     }
 
-    public void invalidateEconomy() {
-        this.cachedEconomy = null;
-    }
-
     public InsuranceManager getManager() {
         return manager;
     }

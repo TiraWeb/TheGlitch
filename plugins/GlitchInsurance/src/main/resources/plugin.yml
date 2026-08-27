@@ -17,7 +17,7 @@ commands:
     permission: glitchinsurance.admin
   insureui:
     description: UI bridge for GlitchInsurance dialogs and wall panel
-    usage: /insureui <noop|buy|buyconfirm|claim <index>|panel <here|undo|show>>
+    usage: /insureui <noop|buy|claim <index>|panel <here|undo|show>>
 
 permissions:
   glitchinsurance.use:

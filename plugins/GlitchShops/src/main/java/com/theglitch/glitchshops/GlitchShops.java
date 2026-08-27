@@ -115,11 +115,6 @@ public final class GlitchShops extends JavaPlugin {
         return economy;
     }
 
-    /** Invalidate cached economy — called on reload or when provider changes. */
-    public void invalidateEconomy() {
-        this.economy = null;
-    }
-
     public Set<String> getBazaarNpcNames() {
         return bazaarNpcNames;
     }

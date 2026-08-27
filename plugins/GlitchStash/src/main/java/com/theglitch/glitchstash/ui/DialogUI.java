@@ -10,16 +10,11 @@ import java.util.List;
 
 public final class DialogUI {
 
-    private static final boolean SUPPORTED = detectRuntime();
     private static final String REMOTE_PERM_DEFAULT = "theglitch.remoteui";
     private static final int MAX_ITEM_BUTTONS = 20;
     private static final int NAME_MAX = 24;
 
     private DialogUI() {
-    }
-
-    public static boolean supported() {
-        return SUPPORTED;
     }
 
     public static boolean canRemote(Player player) {
@@ -163,15 +158,5 @@ public final class DialogUI {
             return s;
         }
         return s.substring(0, max) + "\u2026";
-    }
-
-    private static boolean detectRuntime() {
-        try {
-            Class.forName("io.papermc.paper.dialog.Dialog");
-            Class.forName("io.papermc.paper.registry.data.dialog.type.NoticeTypeImpl");
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
     }
 }

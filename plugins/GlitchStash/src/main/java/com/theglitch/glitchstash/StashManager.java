@@ -166,18 +166,6 @@ public final class StashManager {
     }
 
     /**
-     * Retrieve and remove all items from a player's stash.
-     * Returns empty optional if stash is empty or doesn't exist.
-     */
-    public Optional<StashData> retrieveStash(UUID uuid) {
-        StashData data = stashes.remove(uuid);
-        if (data != null) {
-            deleteFile(uuid);
-        }
-        return Optional.ofNullable(data);
-    }
-
-    /**
      * Check if a player has a stored stash.
      */
     public boolean hasStash(UUID uuid) {
@@ -270,23 +258,6 @@ public final class StashManager {
             out.add(data.offhand().clone());
         }
         return out;
-    }
-
-    /**
-     * Get the number of items in a stash.
-     */
-    public int getStashItemCount(UUID uuid) {
-        StashData data = stashes.get(uuid);
-        if (data == null) return 0;
-        int count = 0;
-        for (ItemStack item : data.contents()) {
-            if (item != null) count += item.getAmount();
-        }
-        for (ItemStack item : data.armor()) {
-            if (item != null) count += item.getAmount();
-        }
-        if (data.offhand() != null) count += data.offhand().getAmount();
-        return count;
     }
 
     /**
