@@ -197,12 +197,21 @@ public final class HideoutManager {
     }
 
     public int getLevel(UUID uuid, String stationId) {
-        return levels.computeIfAbsent(uuid, this::loadPlayer)
-                .getOrDefault(stationId, 0);
+        Map<String, Integer> cached = levels.get(uuid);
+        if (cached == null) {
+            // Must NOT be inside computeIfAbsent: loadPlayer writes into `levels`,
+            // which would throw IllegalStateException (recursive update) and poison
+            // every subsequent hideout access for that player. Main-thread only.
+            cached = loadPlayer(uuid);
+        }
+        return cached.getOrDefault(stationId, 0);
     }
 
     public void setLevel(UUID uuid, String stationId, int level) {
-        Map<String, Integer> playerLevels = levels.computeIfAbsent(uuid, this::loadPlayer);
+        Map<String, Integer> playerLevels = levels.get(uuid);
+        if (playerLevels == null) {
+            playerLevels = loadPlayer(uuid);
+        }
         playerLevels.put(stationId, Math.max(0, level));
         savePlayer(uuid);
     }
