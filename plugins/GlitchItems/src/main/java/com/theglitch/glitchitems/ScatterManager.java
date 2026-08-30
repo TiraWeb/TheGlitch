@@ -723,6 +723,16 @@ public final class ScatterManager {
         // Track positions added this cycle for persistence
         List<ScatteredPos> newlyPlaced = new ArrayList<>();
 
+        // Diagnostics: where do rejected attempts come from? (one INFO line per cycle)
+        int diagAttempts = 0;
+        int diagChunkFail = 0;
+        int diagYNull = 0;
+        int diagNotAir = 0;
+        int diagWgReject = 0;
+        final int[] diagYNullQuad = new int[4]; // [x<0,z<0],[x>=0,z<0],[x<0,z>=0],[x>=0,z>=0]
+        String diagSampleYNull = "";
+        String diagSampleNotAir = "";
+
         ThreadLocalRandom rand = ThreadLocalRandom.current();
 
         for (Map.Entry<String, Integer> entry : toPlace.entrySet()) {
@@ -768,6 +778,8 @@ public final class ScatterManager {
                         if (HAS_CHUNK_ASYNC) {
                             // We could schedule async placement for this single container
                             // but to keep the loop simple and bounded, just skip.
+                            diagAttempts++;
+                            diagChunkFail++;
                             continue;
                         }
                         // Fall through to try sync load if no async
@@ -780,23 +792,39 @@ public final class ScatterManager {
                         world.getChunkAt(cx, cz);
                         // Re-check loaded after?
                     } catch (Exception e) {
+                        diagAttempts++;
+                        diagChunkFail++;
                         continue;
                     }
                 }
+                diagAttempts++;
 
                 // Find valid Y at this column
                 Integer targetY = findValidTargetY(world, x, z);
-                if (targetY == null) continue;
+                if (targetY == null) {
+                    diagYNull++;
+                    int qi = (x < 0 ? 0 : 1) + (z < 0 ? 0 : 2);
+                    diagYNullQuad[qi]++;
+                    if (diagSampleYNull.isEmpty()) diagSampleYNull = "(" + x + "," + z + ")";
+                    continue;
+                }
 
                 Location loc = new Location(world, x + 0.5, targetY, z + 0.5);
                 Block target = world.getBlockAt(x, targetY, z);
 
                 // Double-check target is still air and not already container (race)
-                if (!target.getType().isAir()) continue;
+                if (!target.getType().isAir()) {
+                    diagNotAir++;
+                    if (diagSampleNotAir.isEmpty()) diagSampleNotAir = "(" + x + "," + targetY + "," + z + ")=" + target.getType();
+                    continue;
+                }
                 if (containers.isContainer(target)) continue;
 
                 // WorldGuard protection check (except __global__)
-                if (isProtectedRegion(loc)) continue;
+                if (isProtectedRegion(loc)) {
+                    diagWgReject++;
+                    continue;
+                }
 
                 // All validations passed — place container
                 // On Folia, block modification must be on region thread
@@ -854,6 +882,11 @@ public final class ScatterManager {
         synchronized (scattered) {
             scattered.addAll(newlyPlaced);
         }
+        plugin.getLogger().info(String.format(
+                "[Scatter] Diag: attempts=%d placed=%d chunkFail=%d yNull=%d notAir=%d wgReject=%d | yNull quads [--]=%d [+-]=%d [-+]=%d [++]=%d | samples: yNull@%s notAir@%s",
+                diagAttempts, totalPlaced, diagChunkFail, diagYNull, diagNotAir, diagWgReject,
+                diagYNullQuad[0], diagYNullQuad[1], diagYNullQuad[2], diagYNullQuad[3],
+                diagSampleYNull, diagSampleNotAir));
         return totalPlaced;
     }
 
