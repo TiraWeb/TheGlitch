@@ -13,6 +13,9 @@ entry-invulnerability:
   duration-seconds: 30
   # Apply when the player joins or respawns already inside a mercy world
   apply-on-join-respawn: true
+  # Cooldown (seconds) before join/respawn can re-grant immunity — blocks relog-refresh.
+  # World-change entry protection is never gated by this. 0 = disabled.
+  relog-cooldown-seconds: 300
   # Optional entry point zones (world + rectangle). Empty = any entry into the world.
   # The player's location at the moment of world change is checked against these.
   entry-points:

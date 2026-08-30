@@ -585,7 +585,11 @@ public class ClassGUI implements Listener {
             return null;
         }
         boolean leveledUp = classManager.addXp(player.getUniqueId(), classManager.getXpForLevel(data.level() + 1));
-        if (!leveledUp) return null;
+        if (!leveledUp) {
+            economy.depositPlayer(player, cost);
+            player.sendMessage(Component.text("Upgrade failed — shards refunded.", NamedTextColor.RED));
+            return null;
+        }
 
         ClassData newData = classManager.getClassData(player.getUniqueId());
         player.sendMessage(plugin.getComponent("level-up",
@@ -614,6 +618,10 @@ public class ClassGUI implements Listener {
         if (current.equals("none")) {
             Bukkit.getScheduler().runTaskLater(plugin,
                     () -> DialogUI.openRoot(plugin, this, player, () -> openMainMenu(player)), 5L);
+            return;
+        }
+        if (data.level() >= classManager.getMaxLevel()) {
+            player.sendMessage(Component.text("Already at max level.", NamedTextColor.YELLOW));
             return;
         }
         applyUpgradeCore(player, data);

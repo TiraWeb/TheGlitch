@@ -2,6 +2,8 @@ config-version: 1
 # GlitchDungeons Configuration
 
 # General settings
+staging-world: glitch_pve
+hub-world: hub
 prep-time: 30
 extraction-time: 30
 wave-delay: 10

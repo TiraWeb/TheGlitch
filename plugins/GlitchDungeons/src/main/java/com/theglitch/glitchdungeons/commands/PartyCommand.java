@@ -76,6 +76,10 @@ public class PartyCommand implements CommandExecutor {
             player.sendMessage(colorize("&cOnly the party leader can invite."));
             return true;
         }
+        if (party.getState() == Party.State.IN_DUNGEON) {
+            player.sendMessage(colorize("&cYou can't invite players while your party is in a dungeon."));
+            return true;
+        }
         Player target = Bukkit.getPlayer(args[1]);
         if (target == null) {
             player.sendMessage(colorize("&cPlayer not found."));
@@ -103,6 +107,11 @@ public class PartyCommand implements CommandExecutor {
     private boolean handleAccept(Player player) {
         if (plugin.getPartyManager().hasParty(player.getUniqueId())) {
             player.sendMessage(colorize("&cYou are already in a party."));
+            return true;
+        }
+        Party inviting = plugin.getPartyManager().getInvitingParty(player.getUniqueId());
+        if (inviting != null && inviting.getState() == Party.State.IN_DUNGEON) {
+            player.sendMessage(colorize("&cThat party is currently in a dungeon. Try again later."));
             return true;
         }
         if (plugin.getPartyManager().acceptInvite(player)) {

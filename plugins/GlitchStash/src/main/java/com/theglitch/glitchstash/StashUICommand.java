@@ -8,6 +8,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 public final class StashUICommand implements CommandExecutor {
 
@@ -42,16 +43,40 @@ public final class StashUICommand implements CommandExecutor {
                 } catch (NumberFormatException e) {
                     return true;
                 }
+                // Dialog-only path — same rank gate the stash panel applies.
+                if (!DialogUI.canRemote(player)) {
+                    player.sendMessage(MM.deserialize(
+                            "<gray>Remote stash is a rank perk — use the chest menu.</gray>"));
+                    Bukkit.dispatchCommand(player, "stash");
+                    return true;
+                }
                 StashManager manager = plugin.getStashManager();
                 if (manager == null) return true;
+                // Positional index + expected Material: if the stash changed since
+                // the dialog was rendered, re-render instead of giving a wrong item.
+                final String expected = args.length >= 3 ? args[2].toUpperCase(java.util.Locale.ROOT) : null;
                 final int index = parsed;
                 FoliaScheduler.runDelayedEntity(player, plugin, () -> {
+                    java.util.List<ItemStack> flat = manager.listStash(player.getUniqueId());
+                    ItemStack at = index >= 0 && index < flat.size() ? flat.get(index) : null;
+                    if (expected != null && (at == null || !at.getType().name().equals(expected))) {
+                        player.sendMessage(MM.deserialize("<red>Stash changed — reopening.</red>"));
+                        DialogUI.openStash(plugin, player, () -> Bukkit.dispatchCommand(player, "stash"));
+                        return;
+                    }
                     manager.takeFromUi(player, index);
                     DialogUI.openStash(plugin, player, () -> Bukkit.dispatchCommand(player, "stash"));
                 }, 1L);
                 return true;
             }
             case "open": {
+                // Dialog-only path — same rank gate the stash panel applies.
+                if (!DialogUI.canRemote(player)) {
+                    player.sendMessage(MM.deserialize(
+                            "<gray>Remote stash is a rank perk — use the chest menu.</gray>"));
+                    Bukkit.dispatchCommand(player, "stash");
+                    return true;
+                }
                 FoliaScheduler.runEntity(player, plugin, () ->
                         DialogUI.openStash(plugin, player, () -> Bukkit.dispatchCommand(player, "stash")));
                 return true;

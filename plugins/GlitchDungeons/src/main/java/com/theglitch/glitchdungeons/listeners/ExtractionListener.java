@@ -91,8 +91,12 @@ public class ExtractionListener implements Listener {
             Location loc = player.getLocation();
             int cx = slot.getCenterX();
             int cz = slot.getCenterZ();
-            int highestY = Bukkit.getWorld(plugin.getDungeonConfig().getStagingWorld())
-                .getHighestBlockYAt(cx, cz);
+            World world = Bukkit.getWorld(plugin.getDungeonConfig().getStagingWorld());
+            if (world == null) {
+                plugin.getDungeonManager().failDungeon(run, DungeonRun.FailReason.WIPE);
+                return;
+            }
+            int highestY = world.getHighestBlockYAt(cx, cz);
 
             boolean inZone = Math.abs(loc.getBlockX() - cx) <= 4 &&
                              Math.abs(loc.getBlockZ() - cz) <= 4 &&
@@ -111,16 +115,21 @@ public class ExtractionListener implements Listener {
                 player.sendActionBar(colorize("&aExtracting... " + percent + "%"));
 
                 if (progress >= extractionTime * 20) {
-                    // Extraction complete!
+                    // Extraction complete! (cleanupRun clears this run's progress)
                     plugin.getDungeonManager().completeDungeon(run);
-                    extractProgress.clear();
-                    lastLocation.clear();
                     return;
                 }
             } else {
                 extractProgress.put(member, 0);
             }
             lastLocation.put(member, loc.clone());
+        }
+    }
+
+    public void clearRun(DungeonRun run) {
+        for (UUID member : run.getParty().getMembers()) {
+            extractProgress.remove(member);
+            lastLocation.remove(member);
         }
     }
 

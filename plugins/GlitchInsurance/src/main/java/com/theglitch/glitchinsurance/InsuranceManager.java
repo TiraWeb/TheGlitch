@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 /**
@@ -79,7 +80,11 @@ public final class InsuranceManager {
     private final Map<UUID, List<InsuredItem>> insured = new ConcurrentHashMap<>();
     private final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
     private final Path dataDir;
-    private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
+    // Per-UUID save generation: write-latest-wins guard for async persistence
+    private final Map<UUID, AtomicLong> saveGenerations = new ConcurrentHashMap<>();
+    private final Map<UUID, Object> saveLocks = new ConcurrentHashMap<>();
+    // Generation value that voids all in-flight writes (set on file deletion)
+    private static final long TOMBSTONE = Long.MIN_VALUE;
 
     // Cached config
     private volatile int premiumPerItem = 100;
@@ -342,6 +347,39 @@ public final class InsuranceManager {
         return kept;
     }
 
+    /**
+     * Kept-inventory deaths (keepInventory or cleared drops): consume policies
+     * matching items the player still holds. No payout — gear kept, policy spent.
+     * Returns the number of policies consumed.
+     */
+    public int consumeMatchingRetained(UUID uuid, ItemStack[] retained) {
+        List<InsuredItem> list = insured.get(uuid);
+        if (list == null || list.isEmpty()) return 0;
+        purgeExpired(uuid);
+        list = insured.get(uuid);
+        if (list == null || list.isEmpty()) return 0;
+
+        List<InsuredItem> matched = new ArrayList<>();
+        for (InsuredItem insuredItem : list) {
+            for (ItemStack content : retained) {
+                if (content != null && content.isSimilar(insuredItem.rawItem())) {
+                    matched.add(insuredItem);
+                    break;
+                }
+            }
+        }
+        if (!matched.isEmpty()) {
+            list.removeAll(matched);
+            if (list.isEmpty()) {
+                insured.remove(uuid);
+                deleteFile(uuid);
+            } else {
+                saveInsurance(uuid);
+            }
+        }
+        return matched.size();
+    }
+
     private void purgeExpired(UUID uuid) {
         List<InsuredItem> list = insured.get(uuid);
         if (list == null) return;
@@ -441,31 +479,30 @@ public final class InsuranceManager {
         if (cd != null) yaml.set("cooldown", cd);
         yaml.set("uuid", uuid.toString());
 
+        // Serialize on the calling (main) thread at mutation time
+        String payload = yaml.saveToString();
         Path file = dataDir.resolve(uuid.toString() + ".yml");
-        dirty.add(uuid);
+        AtomicLong generation = saveGenerations.computeIfAbsent(uuid, k -> new AtomicLong());
+        Object lock = saveLocks.computeIfAbsent(uuid, k -> new Object());
+        long gen = generation.incrementAndGet();
         try {
             Bukkit.getAsyncScheduler().runNow(plugin, task -> {
-                try {
-                    atomicSave(yaml, file);
-                } finally {
-                    dirty.remove(uuid);
+                synchronized (lock) {
+                    // Write-latest-wins: skip if a newer generation or tombstone is pending
+                    if (generation.get() != gen) return;
+                    atomicSave(payload, file);
                 }
             });
         } catch (Throwable t) {
             try {
                 plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-                    try {
-                        atomicSave(yaml, file);
-                    } finally {
-                        dirty.remove(uuid);
+                    synchronized (lock) {
+                        if (generation.get() != gen) return;
+                        atomicSave(payload, file);
                     }
                 });
             } catch (Throwable t2) {
-                try {
-                    atomicSave(yaml, file);
-                } finally {
-                    dirty.remove(uuid);
-                }
+                atomicSave(payload, file);
                 plugin.getLogger().log(Level.WARNING, "Async scheduler unavailable, saved synchronously for " + uuid, t2);
             }
         }
@@ -512,17 +549,17 @@ public final class InsuranceManager {
         }
     }
 
-    static void atomicSave(YamlConfiguration yaml, Path target) {
-        atomicSave(yaml, target, Bukkit.getLogger());
+    static void atomicSave(String yamlPayload, Path target) {
+        atomicSave(yamlPayload, target, Bukkit.getLogger());
     }
 
-    static void atomicSave(YamlConfiguration yaml, Path target, java.util.logging.Logger logger) {
+    static void atomicSave(String yamlPayload, Path target, java.util.logging.Logger logger) {
         try {
             Path parent = target.getParent();
             if (parent != null) Files.createDirectories(parent);
             Path tmp = Files.createTempFile(parent, target.getFileName().toString() + "-", ".tmp");
             try {
-                yaml.save(tmp.toFile());
+                Files.writeString(tmp, yamlPayload);
                 try {
                     Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
                 } catch (AtomicMoveNotSupportedException ex) {
@@ -537,6 +574,21 @@ public final class InsuranceManager {
     }
 
     private void deleteFile(UUID uuid) {
+        Object lock = saveLocks.get(uuid);
+        if (lock == null) {
+            // No async write was ever scheduled — plain delete is safe
+            deleteFileNow(uuid);
+            return;
+        }
+        // Tombstone under the write lock so in-flight tasks cannot resurrect the file
+        synchronized (lock) {
+            AtomicLong gen = saveGenerations.get(uuid);
+            if (gen != null) gen.set(TOMBSTONE);
+            deleteFileNow(uuid);
+        }
+    }
+
+    private void deleteFileNow(UUID uuid) {
         Path file = dataDir.resolve(uuid.toString() + ".yml");
         try {
             Files.deleteIfExists(file);
@@ -547,9 +599,20 @@ public final class InsuranceManager {
 
     public void saveAll() {
         for (Map.Entry<UUID, List<InsuredItem>> e : insured.entrySet()) {
-            saveInsuranceSync(e.getKey(), e.getValue());
+            UUID uuid = e.getKey();
+            Object lock = saveLocks.get(uuid);
+            if (lock == null) {
+                saveInsuranceSync(uuid, e.getValue());
+                continue;
+            }
+            // Bump the generation under the write lock so no late async task
+            // can regress this final sync save
+            synchronized (lock) {
+                AtomicLong gen = saveGenerations.get(uuid);
+                if (gen != null) gen.incrementAndGet();
+                saveInsuranceSync(uuid, e.getValue());
+            }
         }
-        dirty.clear();
     }
 
     public void shutdown() {

@@ -6,6 +6,9 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.HashMap;
@@ -26,6 +29,9 @@ public final class ResidualGlitchManager {
     private final NamespacedKey eliteKey;
     private final Map<UUID, BossBar> bars = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> lastShownStacks = new ConcurrentHashMap<>();
+    private final Map<UUID, SavedXp> savedXp = new ConcurrentHashMap<>();
+
+    private record SavedXp(int level, float exp) {}
 
     // Cached config
     private volatile Set<String> enabledWorlds = Set.of("glitch_red");
@@ -80,6 +86,12 @@ public final class ResidualGlitchManager {
 
     public void start() {
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
+        plugin.getServer().getPluginManager().registerEvents(new Listener() {
+            @EventHandler
+            public void onQuit(PlayerQuitEvent event) {
+                restoreXp(event.getPlayer());
+            }
+        }, plugin);
     }
 
     private void tick() {
@@ -145,8 +157,19 @@ public final class ResidualGlitchManager {
         lastShownStacks.put(player.getUniqueId(), stacks);
 
         if (showXpBar) {
+            savedXp.putIfAbsent(player.getUniqueId(), new SavedXp(player.getLevel(), player.getExp()));
             player.setLevel(stacks);
             player.setExp((float) stacks / maxStacks);
+        } else {
+            restoreXp(player);
+        }
+    }
+
+    private void restoreXp(Player player) {
+        SavedXp saved = savedXp.remove(player.getUniqueId());
+        if (saved != null) {
+            player.setLevel(saved.level());
+            player.setExp(saved.exp());
         }
     }
 
@@ -156,10 +179,7 @@ public final class ResidualGlitchManager {
         if (bar != null) {
             player.hideBossBar(bar);
         }
-        if (showXpBar && (player.getLevel() != 0 || player.getExp() > 0.0f)) {
-            player.setLevel(0);
-            player.setExp(0.0f);
-        }
+        restoreXp(player);
     }
 
     public int getStacks(Player player) {
@@ -245,5 +265,9 @@ public final class ResidualGlitchManager {
         }
         bars.clear();
         lastShownStacks.clear();
+        for (UUID id : savedXp.keySet()) {
+            Player player = plugin.getServer().getPlayer(id);
+            if (player != null) restoreXp(player);
+        }
     }
 }

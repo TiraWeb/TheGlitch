@@ -8,11 +8,15 @@ import org.bukkit.World;
 import org.bukkit.block.Barrel;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +43,11 @@ public final class EventManager {
     private final GlitchEvents plugin;
     private final Random random = new Random();
     private final Map<UUID, BukkitTask> activeTasks = new ConcurrentHashMap<>();
+    /** Roaming bosses tracked for despawn, keyed by event id. */
+    private final Map<UUID, LivingEntity> spawnedBosses = new ConcurrentHashMap<>();
+    /** Persisted supply-drop barrel locations ("world;x;y;z") — swept/cleared on enable. */
+    private final Set<String> pendingBarrels = ConcurrentHashMap.newKeySet();
+    private final File barrelStoreFile;
 
     private volatile BukkitTask pendingAutoTask;
 
@@ -65,7 +74,9 @@ public final class EventManager {
 
     public EventManager(GlitchEvents plugin) {
         this.plugin = plugin;
+        this.barrelStoreFile = new File(plugin.getDataFolder(), "placed-supply-barrels.yml");
         reload();
+        sweepOrphanedBarrels();
     }
 
     public void reload() {
@@ -180,6 +191,8 @@ public final class EventManager {
 
         target.setType(Material.BARREL);
         fillBarrel(target);
+        // Persist so a stop/restart cannot orphan the barrel — swept on next enable
+        persistBarrelKey(barrelKey(target), true);
 
         String coords = spot.getBlockX() + ", " + spot.getBlockY() + ", " + spot.getBlockZ();
         broadcastNear(spot, Messages.msg(plugin, "supply-drop-start",
@@ -195,6 +208,7 @@ public final class EventManager {
         final World dropWorld = world;
         BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             activeTasks.remove(eventId);
+            persistBarrelKey(barrelKey(dropBlock), false);
             if (dropBlock.getType() == Material.BARREL) {
                 dropBlock.setType(Material.AIR);
             }
@@ -204,6 +218,66 @@ public final class EventManager {
         }, supplyDurationSeconds * 20L);
         activeTasks.put(eventId, task);
         return true;
+    }
+
+    // ---- Supply-drop barrel persistence ------------------------------------------
+
+    private String barrelKey(Block block) {
+        return block.getWorld().getName() + ";" + block.getX() + ";" + block.getY() + ";" + block.getZ();
+    }
+
+    /** Adds/removes a barrel location from the persisted store file. */
+    private void persistBarrelKey(String key, boolean add) {
+        if (add) {
+            pendingBarrels.add(key);
+        } else {
+            pendingBarrels.remove(key);
+        }
+        try {
+            YamlConfiguration yml = new YamlConfiguration();
+            yml.set("barrels", new ArrayList<>(pendingBarrels));
+            yml.save(barrelStoreFile);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to persist supply barrel store: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Removes any supply-drop barrels left over from a previous run (no content drops),
+     * then clears the store. Called on enable.
+     */
+    public void sweepOrphanedBarrels() {
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(barrelStoreFile);
+        List<String> stored = yml.getStringList("barrels");
+        pendingBarrels.clear();
+        int removed = 0;
+        for (String key : stored) {
+            String[] parts = key.split(";");
+            if (parts.length != 4) continue;
+            World world = Bukkit.getWorld(parts[0]);
+            if (world == null) {
+                // World not loaded yet — keep the entry for the next sweep
+                pendingBarrels.add(key);
+                continue;
+            }
+            try {
+                Block block = world.getBlockAt(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+                if (block.getType() == Material.BARREL) {
+                    block.setType(Material.AIR);
+                    removed++;
+                }
+            } catch (Exception ignored) {}
+        }
+        try {
+            YamlConfiguration save = new YamlConfiguration();
+            save.set("barrels", new ArrayList<>(pendingBarrels));
+            save.save(barrelStoreFile);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to clear supply barrel store: " + e.getMessage());
+        }
+        if (removed > 0) {
+            plugin.getLogger().info("Swept " + removed + " orphaned supply-drop barrel(s) from a previous run.");
+        }
     }
 
     private void fillBarrel(Block barrelBlock) {
@@ -273,6 +347,16 @@ public final class EventManager {
             return false;
         }
 
+        UUID eventId = UUID.randomUUID();
+        // Snapshot nearby living entities BEFORE spawning so we can identify the new boss
+        final Location spawnCenter = new Location(world, x + 0.5, y, z + 0.5);
+        Set<UUID> before = new HashSet<>();
+        for (Entity e : world.getNearbyEntities(spawnCenter, 32, 32, 32)) {
+            if (e instanceof LivingEntity) {
+                before.add(e.getUniqueId());
+            }
+        }
+
         String command = "mm mobs spawn " + bossMob + " " + world.getName() + " " + x + " " + y + " " + z;
         try {
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
@@ -288,9 +372,30 @@ public final class EventManager {
                 "x", String.valueOf(x), "y", String.valueOf(y), "z", String.valueOf(z));
         Bukkit.getConsoleSender().sendMessage(spawnedMsg);
 
-        UUID eventId = UUID.randomUUID();
+        // Short delayed scan to capture the spawned boss so the despawn task can remove it
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            LivingEntity boss = null;
+            for (Entity e : world.getNearbyEntities(spawnCenter, 32, 32, 32)) {
+                if (e instanceof LivingEntity living && !before.contains(living.getUniqueId())) {
+                    boss = living;
+                    break;
+                }
+            }
+            if (boss != null) {
+                spawnedBosses.put(eventId, boss);
+                plugin.getLogger().fine("Roaming boss tracked for despawn (" + boss.getType() + ") in " + world.getName());
+            } else {
+                plugin.getLogger().fine("Roaming boss scan found no new living entity near " + world.getName() + " " + x + "," + y + "," + z + " — despawn will not remove anything.");
+            }
+        }, 40L);
+
         BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             activeTasks.remove(eventId);
+            // Kill the tracked boss so bosses do not accumulate past the despawn timer
+            LivingEntity boss = spawnedBosses.remove(eventId);
+            if (boss != null && boss.isValid()) {
+                boss.remove();
+            }
             broadcastAll(Messages.msg(plugin, "boss-despawned", "mob", mob));
         }, bossDespawnSeconds * 20L);
         activeTasks.put(eventId, task);
@@ -303,6 +408,7 @@ public final class EventManager {
             task.cancel();
         }
         activeTasks.clear();
+        spawnedBosses.clear();
         nextEventAtMillis = 0L;
     }
 

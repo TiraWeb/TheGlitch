@@ -39,7 +39,11 @@ public final class IdentifyManager {
     public Rarity riftRarity(ItemStack item) {
         String id = oraxenId(item);
         if (id == null) return null;
-        if (!id.startsWith("unstable_rift_")) return null;
+        if (!id.startsWith("unstable_rift_")) {
+            String lower = id.toLowerCase();
+            if (!lower.contains("unstable rift")) return null;
+            return matchRarityName(id);
+        }
         String suffix = id.substring("unstable_rift_".length());
         Rarity rarity = Rarity.fromId(suffix);
         if (rarity == null) {

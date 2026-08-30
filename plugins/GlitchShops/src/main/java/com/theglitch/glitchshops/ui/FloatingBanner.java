@@ -108,7 +108,7 @@ public final class FloatingBanner {
                 tracked.remove(display);
             }
         };
-        Object token = scheduleDelayed(plugin, player, removal, ticks);
+        Object token = scheduleDelayed(plugin, player, removal, removal, ticks);
         if (token != null) {
             CANCEL_TOKENS.put(player.getUniqueId(), token);
         } else {
@@ -116,10 +116,10 @@ public final class FloatingBanner {
         }
     }
 
-    private static Object scheduleDelayed(JavaPlugin plugin, Player player, Runnable task, long delayTicks) {
+    private static Object scheduleDelayed(JavaPlugin plugin, Player player, Runnable task, Runnable retired, long delayTicks) {
         if (FOLIA_RUNTIME) {
             try {
-                return runDelayedOnEntity(player, plugin, task, delayTicks);
+                return runDelayedOnEntity(player, plugin, task, retired, delayTicks);
             } catch (Throwable ignored) {
             }
         }
@@ -131,7 +131,7 @@ public final class FloatingBanner {
         }
     }
 
-    private static Object runDelayedOnEntity(Player player, Plugin plugin, Runnable task, long delayTicks)
+    private static Object runDelayedOnEntity(Player player, Plugin plugin, Runnable task, Runnable retired, long delayTicks)
             throws ReflectiveOperationException {
         Method schedulerGetter = null;
         for (Method candidate : player.getClass().getMethods()) {
@@ -158,7 +158,7 @@ public final class FloatingBanner {
                     || params[3] != long.class) {
                 continue;
             }
-            return candidate.invoke(scheduler, plugin, wrapper, null, delayTicks);
+            return candidate.invoke(scheduler, plugin, wrapper, retired, delayTicks);
         }
         throw new ReflectiveOperationException("runDelayed signature not found");
     }

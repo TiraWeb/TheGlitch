@@ -7,6 +7,7 @@ import net.kyori.adventure.title.Title;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -38,6 +39,12 @@ public final class RaidManager {
     private final Map<UUID, FoliaScheduler.Cancellable> timers = new ConcurrentHashMap<>();
     private final Set<UUID> timeoutVictims = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Long> lastDeathMillis = new ConcurrentHashMap<>();
+    // Players extracted during the current global cycle — prevents party pull re-abducting them
+    private final Set<UUID> extractedThisRaid = ConcurrentHashMap.newKeySet();
+    // Stored solo-raid end timestamps (solo-new mode) so quit/relog cannot reset the timer
+    private final Map<UUID, Long> soloRaidEnds = new ConcurrentHashMap<>();
+    // PDC tag marking item entities/stacks already counted for loot (anti drop/re-pickup farming)
+    private final NamespacedKey lootCountedKey;
 
     // --- Global session support: ONE shared 30m extraction per world (not per player) ---
     // Global auto-cycle is 31m (30m extraction + 1m scatter buffer). All players who
@@ -59,6 +66,7 @@ public final class RaidManager {
 
     public RaidManager(GlitchRaid plugin) {
         this.plugin = plugin;
+        this.lootCountedKey = new NamespacedKey(plugin, "raid_loot_counted");
         cacheConfig();
         this.partyManager = new PartyManager(plugin);
     }
@@ -172,6 +180,38 @@ public final class RaidManager {
 
     public boolean isGlobalRemainingMode() {
         return "global-remaining".equalsIgnoreCase(joinMode);
+    }
+
+    /** Public wrapper so listeners can classify a session without touching internals. */
+    public boolean isSessionGlobal(RaidSession session) {
+        return isGlobalSession(session);
+    }
+
+    /** PDC key used to tag item entities/stacks already counted toward raid loot. */
+    public NamespacedKey getLootCountedKey() {
+        return lootCountedKey;
+    }
+
+    // ---- Extraction markers (prevents party pull re-abducting extracted players) ----
+
+    public boolean hasExtractedThisRaid(UUID uuid) {
+        return extractedThisRaid.contains(uuid);
+    }
+
+    public void clearAllExtracted() {
+        extractedThisRaid.clear();
+    }
+
+    // ---- Solo raid end persistence (solo-new quit/relog timer restore) ----
+
+    /** Stores the player's solo raid end-timestamp so a relog cannot reset the timer. */
+    public void storeSoloRaidEnd(UUID uuid, long endMillis) {
+        soloRaidEnds.put(uuid, endMillis);
+    }
+
+    /** Consumes (returns and clears) the stored solo raid end-timestamp, or null if none. */
+    public Long takeSoloRaidEnd(UUID uuid) {
+        return soloRaidEnds.remove(uuid);
     }
 
     // ---- Global session helpers ------------------------------------------------
@@ -534,6 +574,8 @@ public final class RaidManager {
         final RaidEndReason summaryReason = reason;
         FoliaScheduler.runLaterGlobal(plugin, () -> sendSummary(summarySession, summaryReason), summaryDelayTicks);
         String worldLog = world;
+        // Global cycle fully ended — extraction markers no longer needed
+        extractedThisRaid.clear();
         plugin.getLogger().info("Global raid ended for world " + worldLog + " reason=" + reason + " members=" + membersSnapshot.size());
     }
 
@@ -570,6 +612,8 @@ public final class RaidManager {
         if (isInRaid(uuid)) {
             return false;
         }
+        // A fresh raid supersedes any stored (restorable) solo timer
+        soloRaidEnds.remove(uuid);
         // Global-remaining mode: RED world has ONE shared 30m extraction.
         // If a global is already running, join it with remaining time instead of creating a fresh solo timer.
         if (isGlobalRemainingMode()) {
@@ -713,6 +757,70 @@ public final class RaidManager {
     }
 
     /**
+     * Recreates a solo (solo-new mode) raid session with the ORIGINAL remaining time
+     * from a stored end-timestamp (quit/relog timer restore). Returns false if the
+     * player is already in a raid or the timestamp is already expired.
+     */
+    public boolean restoreSoloRaid(Player player, long endMillis) {
+        UUID uuid = player.getUniqueId();
+        if (isInRaid(uuid)) return false;
+        long now = System.currentTimeMillis();
+        if (endMillis <= now) return false;
+        int remainingSeconds = (int) ((endMillis - now) / 1000);
+        Set<UUID> members = ConcurrentHashMap.newKeySet();
+        members.add(uuid);
+        RaidSession session = new RaidSession(uuid, members, now, endMillis);
+        activeRaids.put(uuid, session);
+
+        String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
+        String formatted = formatTime(remainingSeconds);
+        Component initialName = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
+        BossBar bar = BossBar.bossBar(initialName, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
+        bossBars.put(uuid, bar);
+        player.showBossBar(bar);
+        try {
+            player.sendMessage(MM.deserialize("<yellow>Raid timer restored — <gray>you keep your previous raid's remaining time: <white>" + formatted + "</white>.</gray></yellow>"));
+        } catch (Exception ignored) {}
+        FoliaScheduler.Cancellable task = FoliaScheduler.runAtFixedRateGlobal(plugin, () -> tick(uuid), 20L, 20L);
+        timers.put(uuid, task);
+        plugin.getLogger().info("Restored solo raid for " + player.getName() + " (remaining=" + formatted + ")");
+        return true;
+    }
+
+    /**
+     * Applies the existing timeout/loss rules to a player whose stored solo raid
+     * timer expired while they were away (solo-new quit/relog evasion guard).
+     */
+    public void handleExpiredRestoredRaid(Player player) {
+        UUID uuid = player.getUniqueId();
+        if (!player.getWorld().getName().equalsIgnoreCase(autoStartWorld)) return;
+        final UUID victimId = uuid;
+        timeoutVictims.add(victimId);
+        FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
+        String killedRaw = plugin.getConfig().getString("messages.raid-timeout-killed",
+                "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
+        try { player.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
+        Title.Times times = Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(500));
+        try {
+            player.showTitle(Title.title(MM.deserialize("<dark_red><bold>Time's up</bold></dark_red>"),
+                    MM.deserialize("<red>The Glitch consumed you</red>"), times));
+        } catch (Exception ignored) {}
+        try { player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_WITHER_DEATH, 1.0f, 0.8f); } catch (Exception ignored) {}
+        try {
+            player.setHealth(0.0);
+        } catch (Exception e) {
+            try { player.damage(1000.0); } catch (Exception ignored) {}
+        }
+        FoliaScheduler.runLaterGlobal(plugin, () -> {
+            Player pp = Bukkit.getPlayer(victimId);
+            if (pp != null && pp.isOnline() && pp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                teleportToHub(pp);
+            }
+        }, 60L);
+        plugin.getLogger().info("Stored raid timer for " + player.getName() + " expired while away — applied timeout rules");
+    }
+
+    /**
      * Ends the raid for the given player (leader or member).
      * Removes all members of that raid.
      * Global sessions: extraction is per-player/per-party (don't nuke entire global);
@@ -815,6 +923,8 @@ public final class RaidManager {
 
         for (UUID memberId : membersSnapshot) {
             activeRaids.remove(memberId);
+            // Non-global raid fully ended — its extraction markers are no longer needed
+            extractedThisRaid.remove(memberId);
             BossBar bar = bossBars.remove(memberId);
             if (bar != null) {
                 Player p = Bukkit.getPlayer(memberId);
@@ -954,6 +1064,9 @@ public final class RaidManager {
             if (session != null) membersSnapshot.add(player.getUniqueId());
             else membersSnapshot.add(player.getUniqueId());
         }
+
+        // Mark everyone extracted this cycle so party pull cannot re-abduct them into the raid
+        extractedThisRaid.addAll(membersSnapshot);
 
         // Payout per-player before ending (so loot still available)
         if (session != null) {
@@ -1165,13 +1278,7 @@ public final class RaidManager {
             }
         } catch (Exception ignored) {
         }
-        if (value <= 0) {
-            for (ItemStack item : items) {
-                if (item == null || item.getType().isAir()) continue;
-                value += item.getAmount() * 5;
-            }
-            if (value <= 0) value = items.size() * 10;
-        }
+        // Unsellable items contribute 0 — no flat fallback (prevents junk farms inflating loot)
         if (value > 0) {
             session.addLoot(player.getUniqueId(), value);
             String lootRaw = plugin.getConfig().getString("messages.loot-added", "<gold>+<amount> loot value</gold>");
@@ -1718,5 +1825,7 @@ public final class RaidManager {
         activeRaids.clear();
         timeoutVictims.clear();
         lastDeathMillis.clear();
+        extractedThisRaid.clear();
+        soloRaidEnds.clear();
     }
 }

@@ -36,6 +36,10 @@ public final class StashManager {
     private final Map<UUID, StashData> stashes = new ConcurrentHashMap<>();
     private final Path stashDir;
     private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
+    // Per-UUID save generation: each scheduled write captures its generation and
+    // skips itself if a newer save (or a clearStash tombstone) superseded it —
+    // prevents out-of-order async writes resurrecting stale/retrieved items.
+    private final Map<UUID, Long> saveGens = new ConcurrentHashMap<>();
 
     public record StashData(
             UUID uuid,
@@ -243,6 +247,9 @@ public final class StashManager {
             player.sendMessage(Component.text("Inventory full! Dropped " + dropped + " at your feet.",
                     NamedTextColor.RED));
         }
+        // Keep any open StashGUI in sync — the manager is the single source of
+        // truth, so a dialog/`stashui take` must invalidate the stale chest view.
+        StashGUI.refresh(player);
         return true;
     }
 
@@ -273,6 +280,9 @@ public final class StashManager {
     public boolean clearStash(UUID uuid) {
         StashData removed = stashes.remove(uuid);
         if (removed != null) {
+            // Tombstone: voids any in-flight async write so it cannot
+            // re-create the file we are about to delete.
+            saveGens.put(uuid, Long.MIN_VALUE);
             deleteFile(uuid);
             return true;
         }
@@ -317,10 +327,13 @@ public final class StashManager {
         yaml.set("offhand", serializeItemStack(data.offhand()));
 
         dirty.add(uuid);
+        final long gen = saveGens.merge(uuid, 1L, Long::sum);
         try {
             Bukkit.getAsyncScheduler().runNow(plugin, task -> {
                 try {
-                    atomicSave(yaml, file);
+                    if (saveGens.get(uuid) == gen) {
+                        atomicSave(yaml, file);
+                    }
                 } finally {
                     dirty.remove(uuid);
                 }
@@ -329,7 +342,9 @@ public final class StashManager {
             try {
                 plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                     try {
-                        atomicSave(yaml, file);
+                        if (saveGens.get(uuid) == gen) {
+                            atomicSave(yaml, file);
+                        }
                     } finally {
                         dirty.remove(uuid);
                     }

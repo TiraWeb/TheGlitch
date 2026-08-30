@@ -13,7 +13,7 @@ WorkingDirectory=/opt/theglitch
 ExecStart=/bin/bash -c 'for r in /home/ubuntu/TheGlitch /home/minecraft/TheGlitch /opt/theglitch/TheGlitch; do if [ -x "$r/scripts/backup-now.sh" ]; then exec /bin/bash "$r/scripts/backup-now.sh"; fi; done; echo "No backup-now.sh found" >&2; exit 1'
 StandardOutput=journal
 StandardError=journal
-TimeoutStartSec=600
+TimeoutStartSec=2h
 
 [Install]
 WantedBy=multi-user.target

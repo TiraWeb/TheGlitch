@@ -23,8 +23,10 @@ mc "mv modify set pvp false glitch_pve"
 mc "mv modify set pvp true glitch_red"
 
 log "Setting spawns..."
-mc "mv setspawn glitch_red 0 70 0"
-mc "mv setspawn glitch_pve 0 -60 0"
+# Multiverse 5.x syntax: mv setspawn <world>:<x>,<y>,<z>
+# TODO: verify on next run (older MV used space-separated coords).
+mc "mv setspawn glitch_red:0,70,0"
+mc "mv setspawn glitch_pve:0,-60,0"
 
 echo ""
 log "============================================"

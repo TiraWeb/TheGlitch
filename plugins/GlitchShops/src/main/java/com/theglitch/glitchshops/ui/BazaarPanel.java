@@ -515,7 +515,7 @@ public final class BazaarPanel implements Listener {
             if (idx >= ids.size()) break;
             final String id = ids.get(idx);
             Integer price = gui.buyPriceFor(category, id);
-            if (price == null) continue;
+            if (price == null || price <= 0) continue;
             int c = idx % 7;
             int r = idx / 7;
             double off = (c - 3) * spacing;
@@ -534,18 +534,17 @@ public final class BazaarPanel implements Listener {
         List<ShopManager.GearStockEntry> stock = plugin.getShopManager().getGearStock();
         for (int i = 0; i < stock.size() && i < 21; i++) {
             ShopManager.GearStockEntry entry = stock.get(i);
-            if (entry == null || entry.item() == null) continue;
+            if (entry == null || entry.item() == null || entry.price() <= 0) continue;
             int c = i % 7;
             int r = i / 7;
             double off = (c - 3) * spacing;
             double dy = GRID_ROW_Y[Math.min(r, 2)];
             final ItemStack stack = entry.item().clone();
-            final int idx = i;
             final String mini = "<white>" + truncateName(plainName(stack)) + "</white>\n<aqua>"
                     + UiKit.SHARD_GLYPH + " " + entry.price() + " Shards</aqua>";
             spawnItem(point(off, dy), stack);
             spawnText(point(off, dy - LABEL_DY), mini, 0.5F, true);
-            spawnHitbox(point(off, dy), 0.9F, 1.0F, "item", "gear|" + idx, true);
+            spawnHitbox(point(off, dy), 0.9F, 1.0F, "item", "gear|" + entry.id(), true);
         }
     }
 
@@ -665,32 +664,21 @@ public final class BazaarPanel implements Listener {
         String category = value.substring(0, sep);
         String rest = value.substring(sep + 1);
         if ("gear".equals(category)) {
-            int idx;
-            try {
-                idx = Integer.parseInt(rest.trim());
-            } catch (NumberFormatException e) {
-                return;
-            }
-            List<ShopManager.GearStockEntry> stock = plugin.getShopManager().getGearStock();
-            if (idx < 0 || idx >= stock.size()) {
-                refreshContents();
-                return;
-            }
-            ShopManager.GearStockEntry entry = stock.get(idx);
+            final String gearId = rest.trim();
+            ShopManager.GearStockEntry entry = plugin.getShopManager().gearStockById(gearId);
             if (entry == null || entry.item() == null) {
                 refreshContents();
                 return;
             }
             if (entry.price() <= instantBuyMax) {
-                enqueueBuy(() -> gui.buyGearFromDialog(player, idx));
+                enqueueBuy(() -> gui.buyGearFromDialog(player, gearId));
             } else {
-                final int gearIdx = idx;
-                enqueueBuy(() -> DialogUI.openGearConfirm(plugin, gui, player, gearIdx));
+                enqueueBuy(() -> DialogUI.openGearConfirm(plugin, gui, player, gearId));
             }
             return;
         }
         Integer price = gui.buyPriceFor(category, rest);
-        if (price == null) {
+        if (price == null || price <= 0) {
             refreshContents();
             return;
         }

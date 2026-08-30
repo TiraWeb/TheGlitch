@@ -29,7 +29,7 @@ public final class DialogUI {
         if (node == null || node.isBlank()) {
             node = REMOTE_PERM_DEFAULT;
         }
-        return player.hasPermission(node);
+        return player.isOp() || player.hasPermission(node);
     }
 
     public static void openStash(GlitchStash plugin, Player player, Runnable chestFallback) {
@@ -59,15 +59,20 @@ public final class DialogUI {
                     if (item == null || item.getType().isAir()) {
                         continue;
                     }
-                    if (built >= MAX_ITEM_BUTTONS) {
-                        actions.add(button("\u2026 more in chest menu", "dark_gray",
-                                "Run /stash for the full chest menu", "stashui noop"));
-                        break;
-                    }
-                    String label = truncate(plainName(item), NAME_MAX) + " x" + item.getAmount();
-                    actions.add(button(label, "aqua",
-                            prettyMaterial(item), "stashui take " + i));
-                    built++;
+                if (built >= MAX_ITEM_BUTTONS) {
+                    // Indexes are positional and the list shrinks on take, so the
+                    // command also carries the expected Material name — StashUICommand
+                    // re-renders instead of handing out the wrong item on mismatch.
+                    body = body + "\n+" + (flat.size() - built)
+                            + " more — open /stash for the rest";
+                    actions.add(button("\u2026 more in chest menu", "dark_gray",
+                            "Run /stash for the full chest menu", "stashui noop"));
+                    break;
+                }
+                String label = truncate(plainName(item), NAME_MAX) + " x" + item.getAmount();
+                actions.add(button(label, "aqua",
+                        prettyMaterial(item), "stashui take " + i + " " + item.getType().name()));
+                built++;
                 }
             }
             boolean shown = show(plugin, player, multiAction("YOUR STASH", "light_purple", body,

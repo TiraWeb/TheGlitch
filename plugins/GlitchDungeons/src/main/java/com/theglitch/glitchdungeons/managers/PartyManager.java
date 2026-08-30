@@ -53,15 +53,24 @@ public class PartyManager {
         Party party = getParty(leader.getUniqueId());
         if (party == null) return false;
         if (!party.isLeader(leader.getUniqueId())) return false;
+        if (party.getState() == Party.State.IN_DUNGEON) return false;
         if (hasParty(target.getUniqueId())) return false;
         if (party.getSize() >= plugin.getDungeonConfig().getMaxPartySize()) return false;
         party.setPendingInvite(target.getUniqueId(), System.currentTimeMillis() + 30000);
         return true;
     }
 
+    public Party getInvitingParty(UUID playerUuid) {
+        for (Party party : parties.values()) {
+            if (party.isInviteValid(playerUuid)) return party;
+        }
+        return null;
+    }
+
     public boolean acceptInvite(Player player) {
         for (Party party : parties.values()) {
             if (party.isInviteValid(player.getUniqueId())) {
+                if (party.getState() == Party.State.IN_DUNGEON) return false;
                 party.addMember(player.getUniqueId());
                 playerToParty.put(player.getUniqueId(), party.getLeaderUuid());
                 party.clearInvite();
@@ -77,21 +86,31 @@ public class PartyManager {
         if (target.getUniqueId().equals(leader.getUniqueId())) return false;
         party.removeMember(target.getUniqueId());
         playerToParty.remove(target.getUniqueId());
+        removeFromRun(target.getUniqueId());
         return true;
+    }
+
+    private void removeFromRun(UUID playerUuid) {
+        DungeonRun run = plugin.getDungeonManager().getPlayerRun(playerUuid);
+        if (run == null) return;
+        run.playerDied(playerUuid);
+        plugin.getDungeonManager().removePlayer(playerUuid);
+        plugin.getDungeonManager().teleportToHub(playerUuid);
     }
 
     public void leaveParty(UUID playerUuid) {
         Party party = getParty(playerUuid);
         if (party == null) return;
+        DungeonRun runBeforeLeave = plugin.getDungeonManager().getPlayerRun(playerUuid);
+        removeFromRun(playerUuid);
         party.removeMember(playerUuid);
         playerToParty.remove(playerUuid);
         if (party.isLeader(playerUuid)) {
             // If in dungeon, fail it before dissolving
-            DungeonRun run = plugin.getDungeonManager().getPlayerRun(playerUuid);
-            if (run != null && (run.getState() == DungeonRun.State.ACTIVE
-                    || run.getState() == DungeonRun.State.PREP
-                    || run.getState() == DungeonRun.State.EXTRACTING)) {
-                plugin.getDungeonManager().failDungeon(run, DungeonRun.FailReason.WIPE);
+            if (runBeforeLeave != null && (runBeforeLeave.getState() == DungeonRun.State.ACTIVE
+                    || runBeforeLeave.getState() == DungeonRun.State.PREP
+                    || runBeforeLeave.getState() == DungeonRun.State.EXTRACTING)) {
+                plugin.getDungeonManager().failDungeon(runBeforeLeave, DungeonRun.FailReason.WIPE);
             }
             dissolveParty(party);
         }

@@ -41,12 +41,20 @@ if systemctl is-active --quiet theglitch 2>/dev/null; then
   echo "$LOG_PREFIX Server is active — flushing saves..."
   # save-all flush is safer than save-all (forces OS sync)
   # Use RCON via mc-cmd.py; fall back to screen stuff if RCON fails
+  FLUSH_OK=false
   if [[ -n "$MC_CMD" ]] && $MC_CMD "save-all flush" >/dev/null 2>&1; then
+    FLUSH_OK=true
     echo "$LOG_PREFIX save-all flush OK"
   else
     echo "$LOG_PREFIX RCON save-all flush failed, trying screen..."
-    # screen may not be available if not root, ignore failure
-    sudo -u minecraft /usr/bin/screen -S theglitch -p 0 -X stuff "save-all flush$(printf \\r)" 2>/dev/null || true
+    # screen may not be available if not root
+    if sudo -u minecraft /usr/bin/screen -S theglitch -p 0 -X stuff "save-all flush$(printf \\r)" 2>/dev/null; then
+      FLUSH_OK=true
+    fi
+  fi
+  if [[ "$FLUSH_OK" != "true" ]]; then
+    echo "$LOG_PREFIX ERROR: server is active but save-all flush failed via BOTH RCON and screen — refusing to tar live region files (torn snapshot risk). Aborting before any archive is created." >&2
+    exit 1
   fi
   sleep 5
   # Also ask plugins that keep in-memory state to flush if they have commands (best-effort)
@@ -64,6 +72,7 @@ rm -f "$TMP_TAR"
 
 # We archive from /opt/theglitch so paths are server/...  (easier to restore with -C /opt/theglitch)
 # Exclude rebuildable jars and ephemeral files; keep Oraxen.jar for later append
+TAR_RC=0
 tar -cpf "$TMP_TAR" \
   --exclude='server/logs' \
   --exclude='server/logs/*' \
@@ -133,7 +142,12 @@ tar -cpf "$TMP_TAR" \
   server/plugins/TAB \
   server/plugins/PlaceholderAPI \
   server/plugins/Vault \
-  2>&1 | grep -v "Removing leading" || true
+  2> >(grep -v "Removing leading" >&2) || TAR_RC=$?
+if [[ $TAR_RC -ne 0 ]]; then
+  echo "$LOG_PREFIX ERROR: tar failed (exit $TAR_RC) — deleting partial archive and aborting before retention." >&2
+  rm -f "$TMP_TAR" "${TMP_TAR}.gz" "$ARCHIVE" "${ARCHIVE}.sha256" 2>/dev/null || true
+  exit 1
+fi
 
 # Re-include Oraxen.jar (the one rebuildable jar the user explicitly wants)
 if [[ -f "${SERVER_DIR}/plugins/Oraxen.jar" ]]; then

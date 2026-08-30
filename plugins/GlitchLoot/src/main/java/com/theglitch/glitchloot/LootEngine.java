@@ -107,7 +107,9 @@ public final class LootEngine {
         UUID id = p.getUniqueId();
         long now = System.currentTimeMillis();
         Long last = lastRollTime.get(id);
-        boolean stale = windowSeconds <= 0 || last == null || now - last > windowSeconds * 1000L;
+        // windowSeconds <= 0 means "no window" — the streak never goes stale
+        // (mirrors currentStreak) so the adaptive bonus is not capped every roll
+        boolean stale = last == null || (windowSeconds > 0 && now - last > windowSeconds * 1000L);
         int next = stale ? 1 : currentStreak(id) + 1;
         dryStreak.put(id, next);
         lastRollTime.put(id, now);

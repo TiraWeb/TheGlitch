@@ -1117,13 +1117,6 @@ public final class ScatterManager {
                 if (bw.getName().equalsIgnoreCase(name)) return bw;
             }
         }
-        // Fallback: if enabledWorlds contains glitch_red but world not found, try Bukkit.getWorld("glitch_red")
-        World red = Bukkit.getWorld("glitch_red");
-        if (red != null) return red;
-        // Last fallback: any world whose name contains "red"
-        for (World w : Bukkit.getWorlds()) {
-            if (w.getName().toLowerCase(java.util.Locale.ROOT).contains("red")) return w;
-        }
         return null;
     }
 

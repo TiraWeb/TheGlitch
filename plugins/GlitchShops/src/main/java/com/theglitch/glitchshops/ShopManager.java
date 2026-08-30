@@ -29,13 +29,14 @@ public final class ShopManager {
     public record Shop(String id, String title, String tabIcon, LinkedHashMap<String, StockEntry> stock) {
     }
 
-    public record GearStockEntry(ItemStack item, int price, boolean superRare) {
+    public record GearStockEntry(String id, ItemStack item, int price, boolean superRare) {
     }
 
     private final GlitchShops plugin;
     private final Map<String, Shop> shops = new LinkedHashMap<>();
     private final Map<String, Integer> sellPrices = new HashMap<>();
     private final List<GearStockEntry> gearStock = new ArrayList<>();
+    private long gearIdCounter = 0;
     private int restockTaskId = -1;
 
     // ---- Cached config (refreshed on reload, read without getConfig() on hot path) ----
@@ -247,14 +248,15 @@ public final class ShopManager {
 
     private GearStockEntry rollGearEntry(String typeId, boolean weapon, double superRareChance,
                                          double buyMultiplier, ThreadLocalRandom rand) {
+        String id = typeId + "-" + (++gearIdCounter);
         com.theglitch.glitchitems.GearManager manager = gearManager();
         if (manager == null) {
-            return new GearStockEntry(null, 0, false);
+            return new GearStockEntry(id, null, 0, false);
         }
         com.theglitch.glitchitems.GearType type = com.theglitch.glitchitems.GearType.fromId(typeId);
         if (type == null) {
             plugin.getLogger().warning("Unknown gear type in shop rotation: " + typeId);
-            return new GearStockEntry(null, 0, false);
+            return new GearStockEntry(id, null, 0, false);
         }
         boolean superRare = rand.nextDouble() < superRareChance;
         ItemStack item;
@@ -266,7 +268,7 @@ public final class ShopManager {
         }
         int sellValue = manager.sellValue(gearRarity(item));
         int price = (int) Math.round(sellValue * buyMultiplier);
-        return new GearStockEntry(item, price, superRare);
+        return new GearStockEntry(id, item, price, superRare);
     }
 
     private com.theglitch.glitchitems.Rarity weightedRarity(ThreadLocalRandom rand) {
@@ -295,6 +297,14 @@ public final class ShopManager {
     }
 
     public List<GearStockEntry> getGearStock() {        return gearStock;
+    }
+
+    public GearStockEntry gearStockById(String id) {
+        if (id == null || id.isBlank()) return null;
+        for (GearStockEntry entry : gearStock) {
+            if (entry.id() != null && entry.id().equals(id)) return entry;
+        }
+        return null;
     }
 
     public Shop getShop(String id) {

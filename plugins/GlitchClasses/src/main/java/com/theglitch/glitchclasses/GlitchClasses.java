@@ -38,6 +38,7 @@ public final class GlitchClasses extends JavaPlugin {
         abilityListener.startTickers();
         Bukkit.getPluginManager().registerEvents(classGUI, this);
         Bukkit.getPluginManager().registerEvents(abilityListener, this);
+        abilityListener.purgeStaleTurrets();
 
         if (getConfig().getBoolean("modern-ui.enabled", true)) {
             getLogger().info(DialogBridge.runtimeSummary());

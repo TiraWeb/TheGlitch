@@ -70,6 +70,10 @@ public final class HideoutManager {
     private final Map<UUID, Long> medCooldown = new ConcurrentHashMap<>();
     private final Path dataDir;
     private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
+    // Per-UUID save generation: each scheduled write captures its generation and
+    // skips itself if a newer save (or a resetPlayer tombstone) superseded it —
+    // prevents out-of-order async writes resurrecting stale/deleted data.
+    private final Map<UUID, Long> saveGens = new ConcurrentHashMap<>();
 
     // Cached economy — invalidated on reload
     private volatile Economy cachedEconomy;
@@ -323,13 +327,36 @@ public final class HideoutManager {
             return plugin.getComponent("craft-missing",
                     "<missing>", String.join(", ", missing));
         }
-        for (Map.Entry<String, Integer> entry : recipe.materials().entrySet()) {
-            consumeItems(player, entry.getKey(), entry.getValue());
+        // Validate the output command BEFORE consuming anything.
+        String output = recipe.output() == null ? "" : recipe.output().trim();
+        if (output.isEmpty()) {
+            plugin.getLogger().warning("Hideout craft: recipe '" + recipe.id()
+                    + "' has an empty output — refusing to consume materials.");
+            Component msg = Component.text("Craft failed — recipe output is misconfigured.",
+                    net.kyori.adventure.text.format.NamedTextColor.RED);
+            player.sendMessage(msg);
+            return msg;
         }
-        String command = recipe.output().replace("<player>", player.getName());
+        List<ItemStack> consumed = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : recipe.materials().entrySet()) {
+            consumed.addAll(consumeItems(player, entry.getKey(), entry.getValue()));
+        }
+        String command = output.replace("<player>", player.getName());
         boolean dispatched = plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), command);
         if (!dispatched) {
-            plugin.getLogger().warning("Hideout craft: could not dispatch '" + command + "'");
+            // Dispatch failed (unknown command etc.) — refund what was consumed.
+            plugin.getLogger().warning("Hideout craft: could not dispatch '"
+                    + command + "' — refunding consumed materials.");
+            for (ItemStack stack : consumed) {
+                var leftover = player.getInventory().addItem(stack.clone());
+                for (ItemStack left : leftover.values()) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), left);
+                }
+            }
+            Component msg = Component.text("Craft failed — materials refunded.",
+                    net.kyori.adventure.text.format.NamedTextColor.RED);
+            player.sendMessage(msg);
+            return msg;
         }
         player.sendMessage(plugin.getComponent("crafted", "<output>", recipe.display()));
         player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_ANVIL_USE, 1.0f, 1.2f);
@@ -337,24 +364,27 @@ public final class HideoutManager {
     }
 
     private int countItems(Player player, String id) {
+        // getContents() already includes the offhand (slot 40) — counting it
+        // again here under-consumed crafts.
         int count = 0;
         for (ItemStack stack : player.getInventory().getContents()) {
             if (stack != null && isItem(stack, id)) {
                 count += stack.getAmount();
             }
         }
-        ItemStack offhand = player.getInventory().getItemInOffHand();
-        if (offhand != null && isItem(offhand, id)) {
-            count += offhand.getAmount();
-        }
         return count;
     }
 
-    private void consumeItems(Player player, String id, int amount) {
+    private List<ItemStack> consumeItems(Player player, String id, int amount) {
+        // Returns exactly what was consumed (clones) so craft() can refund on failure.
+        List<ItemStack> consumed = new ArrayList<>();
         for (int i = 0; i < player.getInventory().getSize() && amount > 0; i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack == null || !isItem(stack, id)) continue;
             int take = Math.min(amount, stack.getAmount());
+            ItemStack taken = stack.clone();
+            taken.setAmount(take);
+            consumed.add(taken);
             if (stack.getAmount() > take) {
                 stack.setAmount(stack.getAmount() - take);
             } else {
@@ -365,12 +395,16 @@ public final class HideoutManager {
         ItemStack offhand = player.getInventory().getItemInOffHand();
         if (amount > 0 && offhand != null && isItem(offhand, id)) {
             int take = Math.min(amount, offhand.getAmount());
+            ItemStack taken = offhand.clone();
+            taken.setAmount(take);
+            consumed.add(taken);
             if (offhand.getAmount() > take) {
                 offhand.setAmount(offhand.getAmount() - take);
             } else {
                 player.getInventory().setItemInOffHand(null);
             }
         }
+        return consumed;
     }
 
     /**
@@ -442,6 +476,9 @@ public final class HideoutManager {
         armory.remove(uuid);
         medCooldown.remove(uuid);
         dirty.remove(uuid);
+        // Tombstone: voids any in-flight async write so it cannot
+        // re-create the file we are about to delete.
+        saveGens.put(uuid, Long.MIN_VALUE);
         File file = dataDir.resolve(uuid + ".yml").toFile();
         if (file.exists() && !file.delete()) {
             plugin.getLogger().warning("Could not delete player data for " + uuid);
@@ -483,10 +520,12 @@ public final class HideoutManager {
                 plugin.getLogger().log(Level.WARNING, "Failed to load hideout data for " + uuid, e);
             }
         }
-        stash.put(uuid, loadedStash);
-        armory.put(uuid, loadedArmory);
-        levels.put(uuid, playerLevels);
-        return playerLevels;
+        // Absent-only fill: a direct loadPlayer call must never clobber live
+        // in-memory state the caller already holds (only seed fresh players).
+        Map<String, Integer> existingLevels = levels.putIfAbsent(uuid, playerLevels);
+        stash.putIfAbsent(uuid, loadedStash);
+        armory.putIfAbsent(uuid, loadedArmory);
+        return existingLevels != null ? existingLevels : playerLevels;
     }
 
     private void savePlayer(UUID uuid) {
@@ -519,10 +558,13 @@ public final class HideoutManager {
 
         Path file = dataDir.resolve(uuid + ".yml");
         dirty.add(uuid);
+        final long gen = saveGens.merge(uuid, 1L, Long::sum);
         try {
             Bukkit.getAsyncScheduler().runNow(plugin, task -> {
                 try {
-                    atomicSave(yaml, file);
+                    if (saveGens.get(uuid) == gen) {
+                        atomicSave(yaml, file);
+                    }
                 } finally {
                     dirty.remove(uuid);
                 }
@@ -531,7 +573,9 @@ public final class HideoutManager {
             try {
                 plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                     try {
-                        atomicSave(yaml, file);
+                        if (saveGens.get(uuid) == gen) {
+                            atomicSave(yaml, file);
+                        }
                     } finally {
                         dirty.remove(uuid);
                     }

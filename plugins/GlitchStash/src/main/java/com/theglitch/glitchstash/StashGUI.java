@@ -1,14 +1,12 @@
 package com.theglitch.glitchstash;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -19,14 +17,31 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 /**
- * Chest GUI for stash retrieval. 6 rows (54 slots).
- * Top row: border. Items fill from slot 10.
+ * Chest GUI for stash retrieval. 6 rows (54 slots), paginated.
+ * Header row: border + info/close. Content: slots 9-44 + 46-52.
+ * Nav arrows at slots 45/53 page through the FULL stash list — the
+ * StashManager state is the single source of truth: clicks write
+ * through immediately (takeFromUi) and the close handler does NOT
+ * write back a snapshot (that duplicated retrieved items and could
+ * overwrite an extraction landing while the GUI was open).
  */
 public class StashGUI implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final int ROWS = 6;
     private static final int SIZE = ROWS * 9;
+    private static final int SLOT_PREV = 45;
+    private static final int SLOT_NEXT = 53;
+    private static final int PAGE_SIZE = 43; // slots 9-44 + 46-52 (nav arrows at 45/53)
+    private static final int[] CONTENT_SLOTS = new int[PAGE_SIZE];
+    static {
+        int idx = 0;
+        for (int slot = 9; slot < SIZE; slot++) {
+            if (slot == SLOT_PREV || slot == SLOT_NEXT) continue;
+            CONTENT_SLOTS[idx++] = slot;
+        }
+    }
+
     private static final Map<UUID, openSession> openSessions = new HashMap<>();
 
     // Cached border — themed to match void-purple window (subtle, readable)
@@ -42,7 +57,7 @@ public class StashGUI implements Listener {
         CACHED_BORDER = b;
     }
 
-    private record openSession(UUID playerUuid, List<ItemStack> allItems, int displayedCount) {}
+    private record openSession(int page) {}
 
     public static void open(Player player, StashManager stashManager, GlitchStash plugin) {
         UUID uuid = player.getUniqueId();
@@ -52,17 +67,6 @@ public class StashGUI implements Listener {
             return;
         }
 
-        StashManager.StashData data = dataOpt.get();
-
-        List<ItemStack> stashItems = new ArrayList<>();
-        for (ItemStack item : data.contents()) {
-            if (item != null) stashItems.add(item.clone());
-        }
-        for (ItemStack item : data.armor()) {
-            if (item != null) stashItems.add(item.clone());
-        }
-        if (data.offhand() != null) stashItems.add(data.offhand().clone());
-
         // Use cached display-name — no getConfig() polling per open
         String titleRaw = plugin.getCachedDisplayName();
         Inventory inv = Bukkit.createInventory(null, SIZE, MM.deserialize(titleRaw));
@@ -71,31 +75,82 @@ public class StashGUI implements Listener {
         for (int i = 0; i < 9; i++) {
             inv.setItem(i, CACHED_BORDER.clone());
         }
-        inv.setItem(4, stashInfoItem(stashItems.size()));
         inv.setItem(8, stashCloseItem());
 
-        int slot = 9;
-        int displayed = 0;
-        for (ItemStack item : stashItems) {
-            if (slot >= SIZE) break;
-            inv.setItem(slot, item);
-            slot++;
-            displayed++;
-        }
-
-        openSessions.put(uuid, new openSession(uuid, stashItems, displayed));
+        openSessions.put(uuid, new openSession(0));
+        renderPage(player, inv, 0);
 
         player.openInventory(inv);
         player.sendMessage(plugin.getComponent("stash-opened"));
     }
 
-    private static ItemStack stashInfoItem(int count) {
+    /**
+     * Re-render the open GUI from current manager state (write-through sync).
+     * Closes the GUI if the stash emptied while it was open.
+     */
+    public static void refresh(Player player) {
+        openSession session = openSessions.get(player.getUniqueId());
+        if (session == null) return;
+        GlitchStash plugin = GlitchStash.getInstance();
+        if (plugin == null || plugin.getStashManager() == null) return;
+        if (plugin.getStashManager().listStash(player.getUniqueId()).isEmpty()) {
+            openSessions.remove(player.getUniqueId());
+            FoliaScheduler.runDelayedEntity(player, plugin, player::closeInventory, 1L);
+            return;
+        }
+        renderPage(player, player.getOpenInventory().getTopInventory(), session.page());
+    }
+
+    private static void renderPage(Player player, Inventory inv, int page) {
+        GlitchStash plugin = GlitchStash.getInstance();
+        StashManager manager = plugin == null ? null : plugin.getStashManager();
+        List<ItemStack> flat = manager == null ? new ArrayList<>() : manager.listStash(player.getUniqueId());
+
+        int pages = Math.max(1, (flat.size() + PAGE_SIZE - 1) / PAGE_SIZE);
+        int current = Math.min(Math.max(0, page), pages - 1);
+        if (current != page) {
+            openSessions.put(player.getUniqueId(), new openSession(current));
+        }
+
+        for (int slot = 9; slot < SIZE; slot++) {
+            inv.setItem(slot, null);
+        }
+        for (int i = 0; i < PAGE_SIZE; i++) {
+            int index = current * PAGE_SIZE + i;
+            if (index >= flat.size()) break;
+            inv.setItem(CONTENT_SLOTS[i], flat.get(index));
+        }
+
+        inv.setItem(4, stashInfoItem(flat.size(), current + 1, pages));
+        inv.setItem(SLOT_PREV, current > 0
+                ? stashNavItem("<yellow>\u00ab Previous page") : CACHED_BORDER.clone());
+        inv.setItem(SLOT_NEXT, current < pages - 1
+                ? stashNavItem("<yellow>Next page \u00bb") : CACHED_BORDER.clone());
+    }
+
+    private static int contentIndexOf(int slot) {
+        for (int i = 0; i < PAGE_SIZE; i++) {
+            if (CONTENT_SLOTS[i] == slot) return i;
+        }
+        return -1;
+    }
+
+    private static ItemStack stashInfoItem(int count, int page, int pages) {
         ItemStack item = new ItemStack(Material.CHEST);
         ItemMeta meta = item.getItemMeta();
         meta.customName(MM.deserialize("<aqua><bold>" + count + " items stashed</bold></aqua>"));
         meta.lore(List.of(
-                MM.deserialize("<gray>Click items below to retrieve.</gray>"),
-                MM.deserialize("<dark_gray>Closes automatically on exit.</dark_gray>")));
+                MM.deserialize("<gray>Page " + page + "/" + pages + "</gray>"),
+                MM.deserialize("<gray>Click items to retrieve.</gray>"),
+                MM.deserialize("<dark_gray>Changes save instantly.</dark_gray>")));
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private static ItemStack stashNavItem(String label) {
+        ItemStack item = new ItemStack(Material.ARROW);
+        ItemMeta meta = item.getItemMeta();
+        meta.customName(MM.deserialize(label));
         item.setItemMeta(meta);
         return item;
     }
@@ -112,7 +167,8 @@ public class StashGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (!openSessions.containsKey(player.getUniqueId())) return;
+        openSession session = openSessions.get(player.getUniqueId());
+        if (session == null) return;
 
         event.setCancelled(true);
 
@@ -127,37 +183,27 @@ public class StashGUI implements Listener {
             return;
         }
 
-        ItemStack clicked = event.getClickedInventory().getItem(slot);
-        if (clicked == null || clicked.getType() == Material.AIR) return;
+        Inventory top = event.getView().getTopInventory();
 
-        ItemStack toGive = clicked.clone();
-        HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(toGive);
-
-        if (leftover.isEmpty()) {
-            event.getClickedInventory().setItem(slot, null);
-            player.sendMessage(Component.text("+ " + clicked.getAmount() + " " +
-                    clicked.getType().name().toLowerCase().replace("_", " "),
-                    NamedTextColor.GREEN));
-        } else {
-            int given = clicked.getAmount();
-            if (!leftover.isEmpty()) {
-                int leftoverAmount = 0;
-                for (ItemStack left : leftover.values()) {
-                    leftoverAmount += left.getAmount();
-                }
-                given = clicked.getAmount() - leftoverAmount;
-            }
-            if (given > 0) {
-                ItemStack remaining = clicked.clone();
-                remaining.setAmount(clicked.getAmount() - given);
-                event.getClickedInventory().setItem(slot, remaining);
-                player.sendMessage(Component.text("Inventory full! Only took " + given + " items.",
-                        NamedTextColor.RED));
-            } else {
-                player.sendMessage(Component.text("Inventory full! Clear some space first.",
-                        NamedTextColor.RED));
-            }
+        if (slot == SLOT_PREV) {
+            if (session.page() > 0) renderPage(player, top, session.page() - 1);
+            return;
         }
+        if (slot == SLOT_NEXT) {
+            renderPage(player, top, session.page() + 1); // clamped inside renderPage
+            return;
+        }
+
+        int contentIndex = contentIndexOf(slot);
+        if (contentIndex < 0) return;
+
+        GlitchStash instance = GlitchStash.getInstance();
+        if (instance == null || instance.getStashManager() == null) return;
+
+        // Write-through: mutate the manager immediately; takeFromUi gives the
+        // item, updates stored state, and refreshes this open view.
+        int flatIndex = session.page() * PAGE_SIZE + contentIndex;
+        instance.getStashManager().takeFromUi(player, flatIndex);
     }
 
     @EventHandler
@@ -170,33 +216,9 @@ public class StashGUI implements Listener {
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
-        openSession session = openSessions.remove(player.getUniqueId());
-        if (session == null) return;
-
-        GlitchStash instance = GlitchStash.getInstance();
-        if (instance == null) return;
-
-        List<ItemStack> remaining = new ArrayList<>();
-        for (int i = 9; i < SIZE; i++) {
-            ItemStack item = event.getInventory().getItem(i);
-            if (item != null && item.getType() != Material.AIR) {
-                remaining.add(item.clone());
-            }
-        }
-
-        if (session.displayedCount() < session.allItems().size()) {
-            remaining.addAll(
-                    session.allItems().subList(session.displayedCount(), session.allItems().size()));
-        }
-
-        if (remaining.isEmpty()) {
-            instance.getStashManager().clearStash(player.getUniqueId());
-            player.sendMessage(instance.getComponent("all-retrieved"));
-        } else {
-            ItemStack[] newContents = new ItemStack[remaining.size()];
-            remaining.toArray(newContents);
-            instance.getStashManager().replaceStash(
-                    player.getUniqueId(), newContents);
-        }
+        openSessions.remove(player.getUniqueId());
+        // NO snapshot write-back: every click already wrote through to the
+        // StashManager, so replacing the stash here would resurrect items
+        // from a stale view and clobber any extraction that merged meanwhile.
     }
 }

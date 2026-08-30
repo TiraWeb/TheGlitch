@@ -66,7 +66,8 @@ public class DungeonConfig {
     public int getCooldownPerDungeon() { return config.getInt("cooldown-per-dungeon", 600); }
     public boolean isCooldownPerPlayer() { return config.getBoolean("cooldown-per-player", true); }
     public String getMessage(String key) { return config.getString("messages." + key, "&cMessage not found: " + key); }
-    public String getStagingWorld() { return "glitch_pve"; }
+    public String getStagingWorld() { return config.getString("staging-world", "glitch_pve"); }
+    public String getHubWorld() { return config.getString("hub-world", "hub"); }
 
     public int getStagingX() { return config.getInt("staging.x", 0); }
     public int getStagingY() { return config.getInt("staging.y", 65); }

@@ -68,16 +68,10 @@ public final class ShopUICommand implements CommandExecutor {
             }
             case "buygear": {
                 if (args.length < 2) return true;
-                int index;
-                try {
-                    index = Integer.parseInt(args[1]);
-                } catch (NumberFormatException e) {
-                    return true;
-                }
-                final int gearIndex = index;
+                final String gearId = args[1];
                 final String category = "gear";
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    gui.buyGearFromDialog(player, gearIndex);
+                    gui.buyGearFromDialog(player, gearId);
                     DialogUI.openCategory(plugin, gui, player, category, () -> gui.open(player, category));
                 });
                 return true;
@@ -96,7 +90,7 @@ public final class ShopUICommand implements CommandExecutor {
                 }
                 final int amount = Math.max(1, Math.min(parsed, 64));
                 Integer price = gui.buyPriceFor(category, itemId);
-                if (price == null) {
+                if (price == null || price <= 0) {
                     player.sendMessage(MM.deserialize("<red>This offer just changed — reopen the shop.</red>"));
                     return true;
                 }

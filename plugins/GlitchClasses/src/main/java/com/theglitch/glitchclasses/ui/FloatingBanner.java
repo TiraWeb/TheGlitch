@@ -113,7 +113,8 @@ public final class FloatingBanner {
             if (run == null) return false;
             Consumer<Object> unused = t -> {
             };
-            run.invoke(scheduler, plugin, unused, null, delayTicks);
+            // runDelayed(Plugin, Consumer retired, Runnable task, long delay)
+            run.invoke(scheduler, plugin, unused, task, delayTicks);
             return true;
         } catch (Throwable t) {
             return false;

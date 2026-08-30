@@ -39,7 +39,7 @@ public final class VaultHook {
      */
     public static synchronized Object getEconomy(JavaPlugin plugin) {
         long now = System.currentTimeMillis();
-        if (economy != null && now - cacheTime < 30000L) {
+        if (cacheTime != 0L && now - cacheTime < 30000L) {
             return economy;
         }
         try {

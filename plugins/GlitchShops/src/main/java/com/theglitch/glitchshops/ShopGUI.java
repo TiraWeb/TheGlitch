@@ -112,8 +112,9 @@ public final class ShopGUI implements Listener {
                 "<gray>Click items in your inventory below.</gray>", sellMode));
         inv.setItem(8, closeButton());
 
-        // Centered category tabs (row 1, slots 11-15)
-        for (int i = 0; i < cachedTabOrder.size(); i++) {
+        // Centered category tabs (row 1, slots 11-16 — clamped so extra tabs can't overwrite borders/stock)
+        int maxTabs = Math.min(cachedTabOrder.size(), 6);
+        for (int i = 0; i < maxTabs; i++) {
             String tab = cachedTabOrder.get(i);
             inv.setItem(11 + i, categoryTab(tab, tab.equals(category)));
         }
@@ -144,7 +145,7 @@ public final class ShopGUI implements Listener {
         if (category.equals("gear")) {
             for (int i = 0; i < shopManager.getGearStock().size() && idx < STOCK_SLOTS.length; i++) {
                 ShopManager.GearStockEntry entry = shopManager.getGearStock().get(i);
-                if (entry.item() == null) continue;
+                if (entry.item() == null || entry.price() <= 0) continue;
                 ItemStack display = entry.item().clone();
                 ItemMeta meta = display.getItemMeta();
                 List<Component> lore = meta.lore() == null ? new java.util.ArrayList<>() : meta.lore();
@@ -154,9 +155,8 @@ public final class ShopGUI implements Listener {
                 lore.add(MM.deserialize("<aqua>Buy: " + entry.price() + " Shards</aqua>"));
                 meta.lore(lore);
                 display.setItemMeta(meta);
-                int gearIndex = i;
                 display.editMeta(ItemMeta.class, m -> {
-                    m.getPersistentDataContainer().set(GEAR_SLOT_KEY, PersistentDataType.INTEGER, gearIndex);
+                    m.getPersistentDataContainer().set(GEAR_SLOT_KEY, PersistentDataType.STRING, entry.id());
                     m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "buygear");
                 });
                 inv.setItem(STOCK_SLOTS[idx++], display);
@@ -173,6 +173,7 @@ public final class ShopGUI implements Listener {
         if (shop == null) return;
         for (Map.Entry<String, ShopManager.StockEntry> entry : shop.stock().entrySet()) {
             if (idx >= STOCK_SLOTS.length) break;
+            if (entry.getValue().buy() <= 0) continue;
             ItemStack item;
             try {
                 ItemBuilder builder = OraxenItems.getItemById(entry.getKey());
@@ -349,19 +350,23 @@ public final class ShopGUI implements Listener {
                 String itemId = clicked.getItemMeta().getPersistentDataContainer()
                         .get(ITEM_KEY, PersistentDataType.STRING);
                 Integer price = shopManager.buyPrice(session.category(), itemId);
-                if (itemId != null && price != null) {
-                    buyItem(player, itemId, price, click.isShiftClick() ? buyStackSize() : 1, -1);
+                if (itemId != null && price != null && price > 0) {
+                    buyItem(player, itemId, price, click.isShiftClick() ? buyStackSize() : 1, null);
                 }
                 break;
             }
             case "buygear": {
                 if (session.sellMode()) return;
-                Integer gearSlot = clicked.getItemMeta().getPersistentDataContainer()
-                        .get(GEAR_SLOT_KEY, PersistentDataType.INTEGER);
-                if (gearSlot != null && gearSlot >= 0 && gearSlot < shopManager.getGearStock().size()) {
-                    ShopManager.GearStockEntry entry = shopManager.getGearStock().get(gearSlot);
-                    buyItem(player, null, entry.price(), 1, gearSlot);
+                String gearId = clicked.getItemMeta().getPersistentDataContainer()
+                        .get(GEAR_SLOT_KEY, PersistentDataType.STRING);
+                if (gearId == null) return;
+                ShopManager.GearStockEntry entry = shopManager.gearStockById(gearId);
+                if (entry == null || entry.item() == null || entry.price() <= 0) {
+                    player.sendMessage(MM.deserialize("<red>This offer just changed — reopen the shop.</red>"));
+                    sound(player, false);
+                    return;
                 }
+                buyItem(player, null, entry.price(), 1, entry);
                 break;
             }
             default:
@@ -379,7 +384,7 @@ public final class ShopGUI implements Listener {
             return;
         }
         Integer price = shopManager.sellPrice(item);
-        if (price == null) {
+        if (price == null || price <= 0) {
             message(player, "no-value");
             sound(player, false);
             return;
@@ -389,6 +394,22 @@ public final class ShopGUI implements Listener {
         int total = price * amount;
         ItemStack snapshot = item.clone();
         snapshot.setAmount(amount);
+
+        int remaining = item.getAmount() - amount;
+        try {
+            if (remaining <= 0) {
+                player.getInventory().setItem(slot, null);
+            } else {
+                ItemStack copy = item.clone();
+                copy.setAmount(remaining);
+                player.getInventory().setItem(slot, copy);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Shop sell removal failed for " + player.getName() + ": " + e.getMessage());
+            message(player, "denied");
+            sound(player, false);
+            return;
+        }
 
         net.milkbowl.vault.economy.EconomyResponse depResp;
         try {
@@ -407,15 +428,6 @@ public final class ShopGUI implements Listener {
             return;
         }
 
-        int remaining = item.getAmount() - amount;
-        if (remaining <= 0) {
-            player.getInventory().setItem(slot, null);
-        } else {
-            ItemStack copy = item.clone();
-            copy.setAmount(remaining);
-            player.getInventory().setItem(slot, copy);
-        }
-
         message(player, "sold", "{amount}", String.valueOf(amount),
                 "{item}", plainName(snapshot), "{price}", String.valueOf(total));
         sound(player, true);
@@ -423,7 +435,7 @@ public final class ShopGUI implements Listener {
         player.sendActionBar(UiKit.deserialized("<gold>" + UiKit.SHARD_GLYPH + " +" + total + " Shards</gold>"));
     }
 
-    private void buyItem(Player player, String itemId, int price, int amount, int gearSlot) {
+    private void buyItem(Player player, String itemId, int price, int amount, ShopManager.GearStockEntry gearEntry) {
         Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
         if (cachedEconomy == null) cachedEconomy = economy;
         if (economy == null) {
@@ -462,23 +474,15 @@ public final class ShopGUI implements Listener {
         }
 
         ItemStack bought;
-        if (gearSlot >= 0) {
-            if (gearSlot < 0 || gearSlot >= shopManager.getGearStock().size()) {
-                plugin.getLogger().warning("Shop buy failed: gear slot " + gearSlot + " out of range for " + player.getName() + " — refunding " + total);
+        if (gearEntry != null) {
+            if (gearEntry.item() == null) {
+                plugin.getLogger().warning("Shop buy failed: gear entry " + gearEntry.id() + " empty for " + player.getName() + " — refunding " + total);
                 refundDeposit(economy, player, total);
                 message(player, "denied");
                 sound(player, false);
                 return;
             }
-            ShopManager.GearStockEntry entry = shopManager.getGearStock().get(gearSlot);
-            if (entry == null || entry.item() == null) {
-                plugin.getLogger().warning("Shop buy failed: gear slot " + gearSlot + " empty for " + player.getName() + " — refunding " + total);
-                refundDeposit(economy, player, total);
-                message(player, "denied");
-                sound(player, false);
-                return;
-            }
-            bought = entry.item().clone();
+            bought = gearEntry.item().clone();
         } else {
             if (itemId == null) {
                 plugin.getLogger().warning("Shop buy failed: null itemId for " + player.getName() + " — refunding " + total);
@@ -535,26 +539,38 @@ public final class ShopGUI implements Listener {
             player.sendActionBar(UiKit.deserialized("<aqua>" + UiKit.SHARD_GLYPH + " <gray>-" + total + " Shards</gray>"));
         } catch (Exception e) {
             plugin.getLogger().log(java.util.logging.Level.WARNING, "Failed to give bought item to " + player.getName() + " — refunding " + total, e);
-            refundDeposit(economy, player, total);
+            boolean refunded = false;
             try {
-                player.getWorld().dropItem(player.getLocation(), bought);
-                message(player, "full-inventory");
+                refunded = refundDeposit(economy, player, total);
             } catch (Exception ex) {
-                plugin.getLogger().warning("Failed to drop fallback item for " + player.getName() + ": " + ex.getMessage());
+                plugin.getLogger().warning("CRITICAL: refund threw for " + player.getName() + ": " + ex.getMessage() + " amount=" + total);
+            }
+            if (refunded) {
+                message(player, "denied");
+            } else {
+                try {
+                    player.getWorld().dropItem(player.getLocation(), bought);
+                    message(player, "full-inventory");
+                } catch (Exception ex) {
+                    plugin.getLogger().warning("Failed to drop fallback item for " + player.getName() + ": " + ex.getMessage());
+                }
             }
             refreshBalance(player);
         }
     }
 
-    private void refundDeposit(Economy economy, Player player, int amount) {
+    private boolean refundDeposit(Economy economy, Player player, int amount) {
         try {
             net.milkbowl.vault.economy.EconomyResponse resp = economy.depositPlayer(player, amount);
             if (resp == null || !resp.transactionSuccess()) {
                 String err = resp != null ? resp.errorMessage : "null response";
                 plugin.getLogger().warning("CRITICAL: refund deposit failed for " + player.getName() + ": " + err + " amount=" + amount + " — shards may be lost, needs manual correction.");
+                return false;
             }
+            return true;
         } catch (Exception e) {
             plugin.getLogger().warning("CRITICAL: refund deposit exception for " + player.getName() + ": " + e.getMessage() + " amount=" + amount);
+            return false;
         }
     }
 
@@ -651,18 +667,21 @@ public final class ShopGUI implements Listener {
 
     public void buyFromDialog(Player p, String category, String itemId, int amount) {
         Integer price = shopManager.buyPrice(category, itemId);
-        if (price == null) {
+        if (price == null || price <= 0) {
             message(p, "denied");
             sound(p, false);
             return;
         }
-        buyItem(p, itemId, price, Math.max(1, amount), -1);
+        buyItem(p, itemId, price, Math.max(1, amount), null);
     }
 
-    public void buyGearFromDialog(Player p, int index) {
-        if (index < 0 || index >= shopManager.getGearStock().size()) return;
-        ShopManager.GearStockEntry entry = shopManager.getGearStock().get(index);
-        if (entry == null || entry.item() == null) return;
-        buyItem(p, null, entry.price(), 1, index);
+    public void buyGearFromDialog(Player p, String gearId) {
+        ShopManager.GearStockEntry entry = shopManager.gearStockById(gearId);
+        if (entry == null || entry.item() == null || entry.price() <= 0) {
+            p.sendMessage(MM.deserialize("<red>This offer just changed — reopen the shop.</red>"));
+            sound(p, false);
+            return;
+        }
+        buyItem(p, null, entry.price(), 1, entry);
     }
 }

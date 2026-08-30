@@ -11,12 +11,16 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class CombatListener implements Listener {
+
+    private record PendingSideEffects(Player attacker, LivingEntity victim, double healed, double maxHealth, int fireTicks) {}
 
     private final GlitchItems plugin;
     private final GearManager gearManager;
     private final ResidualGlitchManager glitchManager;
+    private final Map<EntityDamageByEntityEvent, PendingSideEffects> pendingSideEffects = new ConcurrentHashMap<>();
 
     public CombatListener(GlitchItems plugin, GearManager gearManager, ResidualGlitchManager glitchManager) {
         this.plugin = plugin;
@@ -27,10 +31,10 @@ public final class CombatListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof LivingEntity victim)) return;
-        double damage = event.getFinalDamage();
+        double damage = event.getDamage();
 
         if (event.getDamager() instanceof Player attacker) {
-            damage = applyWeaponModifiers(attacker, victim, damage);
+            damage = applyWeaponModifiers(attacker, victim, damage, event);
         }
 
         if (victim instanceof Player defender) {
@@ -40,7 +44,19 @@ public final class CombatListener implements Listener {
         event.setDamage(damage);
     }
 
-    private double applyWeaponModifiers(Player attacker, LivingEntity victim, double damage) {
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDamageMonitor(EntityDamageByEntityEvent event) {
+        PendingSideEffects pending = pendingSideEffects.remove(event);
+        if (pending == null || event.isCancelled()) return;
+        if (pending.healed() > 0.0) {
+            pending.attacker().setHealth(Math.min(pending.attacker().getHealth() + pending.healed(), pending.maxHealth()));
+        }
+        if (pending.fireTicks() > 0) {
+            pending.victim().setFireTicks(pending.fireTicks());
+        }
+    }
+
+    private double applyWeaponModifiers(Player attacker, LivingEntity victim, double damage, EntityDamageByEntityEvent event) {
         ItemStack held = attacker.getInventory().getItemInMainHand();
         GearRolls rolls = gearManager.parse(held);
         if (rolls == null || !rolls.type.isWeapon()) return damage;
@@ -53,15 +69,17 @@ public final class CombatListener implements Listener {
 
         Map<String, Integer> attributes = gearManager.parseAttributes(rolls.attributes);
         Integer lifesteal = attributes.get("lifesteal");
+        double healed = 0.0;
+        double maxHp = 0.0;
         if (lifesteal != null && lifesteal > 0) {
-            double maxHp = attacker.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) == null
+            maxHp = attacker.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) == null
                     ? 20.0 : attacker.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
-            double healed = out * lifesteal / 100.0;
-            attacker.setHealth(Math.min(attacker.getHealth() + healed, maxHp));
+            healed = out * lifesteal / 100.0;
         }
         Integer fire = attributes.get("fire-aspect");
-        if (fire != null && fire > 0) {
-            victim.setFireTicks(fire * 20);
+        int fireTicks = fire != null && fire > 0 ? fire * 20 : 0;
+        if (healed > 0.0 || fireTicks > 0) {
+            pendingSideEffects.put(event, new PendingSideEffects(attacker, victim, healed, maxHp, fireTicks));
         }
 
         return out;

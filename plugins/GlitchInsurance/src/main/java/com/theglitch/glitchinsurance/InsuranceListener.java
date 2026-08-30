@@ -38,6 +38,18 @@ public final class InsuranceListener implements Listener {
         List<InsuranceManager.InsuredItem> insured = manager.getInsured(uuid);
         if (insured.isEmpty()) return;
 
+        // Kept-inventory deaths (e.g. dungeons calling setKeepInventory(true) and
+        // clearing drops): drops are empty, so consume matching policies against the
+        // retained inventory instead — gear kept, policy spent, nothing to claim.
+        if (event.getKeepInventory() || event.getDrops().isEmpty()) {
+            int consumed = manager.consumeMatchingRetained(uuid, player.getInventory().getContents());
+            if (consumed > 0) {
+                player.sendMessage(Component.text(
+                        "Your insured gear was kept on death — the policy was spent (nothing to claim)."));
+            }
+            return;
+        }
+
         // Move insured items from drops to itemsToKeep (Paper API)
         int kept = manager.consumeMatching(event.getDrops(), event.getItemsToKeep(), uuid);
         if (kept > 0) {

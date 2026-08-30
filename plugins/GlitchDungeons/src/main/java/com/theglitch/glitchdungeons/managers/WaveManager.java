@@ -10,6 +10,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -27,6 +29,8 @@ public class WaveManager {
             run.setState(DungeonRun.State.EXTRACTING);
             run.setExtractionStartTime(System.currentTimeMillis());
             broadcastToParty(run, "&aAll waves cleared! Get to the extraction point!");
+            new com.theglitch.glitchdungeons.tasks.ExtractionTask(plugin, run,
+                plugin.getExtractionListener()).start();
             return;
         }
 
@@ -61,11 +65,27 @@ public class WaveManager {
 
         DungeonSlot slot = run.getSlot();
         World world = Bukkit.getWorld(plugin.getDungeonConfig().getStagingWorld());
-        if (world == null) return;
+        if (world == null) {
+            plugin.getLogger().warning("Staging world '" + plugin.getDungeonConfig().getStagingWorld()
+                + "' not found - failing run " + run.getRunId());
+            plugin.getDungeonManager().failDungeon(run, DungeonRun.FailReason.WIPE);
+            return;
+        }
 
-        // Spawn regular mobs
-        ConfigurationSection mobsSection = waveSection.getConfigurationSection("mobs");
-        if (mobsSection != null) {
+        // Spawn regular mobs (supports both list and section forms)
+        Object mobsRaw = waveSection.get("mobs");
+        if (mobsRaw instanceof List) {
+            for (Map<?, ?> mob : waveSection.getMapList("mobs")) {
+                Object typeObj = mob.get("type");
+                String type = typeObj != null ? String.valueOf(typeObj) : "GlitchStalker";
+                Object countObj = mob.get("count");
+                int count = countObj instanceof Number n ? n.intValue() : 1;
+                Object radiusObj = mob.get("radius");
+                int radius = radiusObj instanceof Number r ? r.intValue() : 16;
+                spawnMobs(world, slot, type, count, radius);
+            }
+        } else if (mobsRaw instanceof ConfigurationSection) {
+            ConfigurationSection mobsSection = (ConfigurationSection) mobsRaw;
             for (String mobKey : mobsSection.getKeys(false)) {
                 ConfigurationSection mobSection = mobsSection.getConfigurationSection(mobKey);
                 if (mobSection == null) continue;
@@ -141,22 +161,27 @@ public class WaveManager {
         World world = Bukkit.getWorld(plugin.getDungeonConfig().getStagingWorld());
         if (world == null) return true;
         DungeonSlot slot = run.getSlot();
+        // Derive origin from the slot's actual surface (matches spawnWave heights)
+        int originY = world.getHighestBlockYAt(slot.getCenterX(), slot.getCenterZ());
+        Location origin = new Location(world, slot.getCenterX(), originY, slot.getCenterZ());
 
         // Check nearby entities for any non-player living entities
         // MythicMobs sets "MythicMob" metadata on spawned mobs
         boolean mmAvailable = Bukkit.getPluginManager().getPlugin("MythicMobs") != null;
         int checkRadius = 32;
         for (org.bukkit.entity.Entity entity : world.getNearbyEntities(
-                new Location(world, slot.getCenterX(), 64, slot.getCenterZ()),
-                checkRadius, 32, checkRadius)) {
+                origin, checkRadius, checkRadius, checkRadius)) {
             if (!(entity instanceof org.bukkit.entity.LivingEntity living)) continue;
             if (entity instanceof Player) continue;
             if (living.isDead()) continue;
-            // If MythicMobs is available, check its metadata
-            if (mmAvailable && entity.hasMetadata("MythicMob")) return false;
-            // Fallback: if any non-player living entity exists in the area, wave isn't clear
-            if (!mmAvailable && entity.getLocation().distanceSquared(
-                    new Location(world, slot.getCenterX(), entity.getLocation().getY(), slot.getCenterZ())) < checkRadius * checkRadius) {
+            // If MythicMobs is available, only count its tagged mobs
+            if (mmAvailable) {
+                if (entity.hasMetadata("MythicMob")) return false;
+                continue;
+            }
+            // Fallback: only hostile monsters spawned inside the slot radius
+            if (entity instanceof org.bukkit.entity.Monster
+                    && entity.getLocation().distanceSquared(origin) < (double) checkRadius * checkRadius) {
                 return false;
             }
         }

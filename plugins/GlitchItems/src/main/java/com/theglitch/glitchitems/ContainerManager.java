@@ -237,12 +237,9 @@ public final class ContainerManager {
             return false;
         }
 
-        if (type.requiresKey()) {
-            if (!hasKey(player, type)) {
-                player.sendMessage(msg("need-key", "<container>", type.display(), "<key>", keyDisplayName(type)));
-                return false;
-            }
-            consumeKey(player, type);
+        if (type.requiresKey() && !hasKey(player, type)) {
+            player.sendMessage(msg("need-key", "<container>", type.display(), "<key>", keyDisplayName(type)));
+            return false;
         }
 
         ThreadLocalRandom rand = ThreadLocalRandom.current();
@@ -278,6 +275,9 @@ public final class ContainerManager {
         }
 
         boolean emptied = loot.isEmpty();
+        if (type.requiresKey() && !emptied) {
+            consumeKey(player, type);
+        }
         // Hook: count loot toward active GlitchRaid (if installed) — fixes raid loot not ticking for containers
         if (!loot.isEmpty()) {
             try {

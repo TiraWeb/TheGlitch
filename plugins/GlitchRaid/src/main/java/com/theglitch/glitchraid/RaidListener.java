@@ -54,9 +54,14 @@ public final class RaidListener implements Listener {
             } else {
                 // No global running — first entrant after 1m buffer becomes anchor for next 30m
                 // startRaid() in global-remaining mode will create a new global anchor
-                boolean started = manager.startRaid(player, true);
-                if (started) {
-                    plugin.getLogger().info("Auto-started raid for " + player.getName() + " (entered " + to + ")");
+                // solo-new mode: restore the player's persisted timer instead of a fresh one
+                if (!manager.isGlobalRemainingMode() && tryRestoreSoloRaid(player)) {
+                    // timer restored or expired-handled — no fresh start
+                } else {
+                    boolean started = manager.startRaid(player, true);
+                    if (started) {
+                        plugin.getLogger().info("Auto-started raid for " + player.getName() + " (entered " + to + ")");
+                    }
                 }
             }
         } else if (to.equalsIgnoreCase(raidWorld) && manager.isInRaid(player.getUniqueId())) {
@@ -66,6 +71,8 @@ public final class RaidListener implements Listener {
             if (party != null) {
                 for (java.util.UUID mid : party.getMembers()) {
                     if (mid.equals(player.getUniqueId())) continue;
+                    // Never re-abduct members who already extracted during this raid cycle
+                    if (!manager.isInRaid(mid) && manager.hasExtractedThisRaid(mid)) continue;
                     Player other = Bukkit.getPlayer(mid);
                     if (other != null && other.isOnline() && !other.getWorld().getName().equalsIgnoreCase(raidWorld)) {
                         // Don't pull if other is recently dead (avoid death loop)
@@ -121,6 +128,8 @@ public final class RaidListener implements Listener {
                     if (added) {
                         plugin.getLogger().info("Auto-joined GLOBAL raid for " + player.getName() + " (join in " + world + " remaining=" + manager.formatTime(global.getRemainingSeconds()) + ")");
                     }
+                } else if (!manager.isGlobalRemainingMode() && tryRestoreSoloRaid(player)) {
+                    // solo-new: original timer restored (or already expired — timeout rules applied)
                 } else {
                     boolean started = manager.startRaid(player, true);
                     if (started) {
@@ -199,6 +208,22 @@ public final class RaidListener implements Listener {
 
     // ---- Death / quit ----
 
+    /**
+     * solo-new mode: restores the persisted raid timer after a quit/relog, or applies
+     * the existing timeout rules if the stored timer already expired.
+     * Returns true when handled (no fresh raid should start).
+     */
+    private boolean tryRestoreSoloRaid(Player player) {
+        Long endMillis = manager.takeSoloRaidEnd(player.getUniqueId());
+        if (endMillis == null) return false;
+        if (endMillis <= System.currentTimeMillis()) {
+            plugin.getLogger().info("Stored raid timer for " + player.getName() + " expired while away — applying timeout rules");
+            manager.handleExpiredRestoredRaid(player);
+            return true;
+        }
+        return manager.restoreSoloRaid(player, endMillis);
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
@@ -243,6 +268,10 @@ public final class RaidListener implements Listener {
         if (session == null) {
             return;
         }
+        // Persist the remaining solo timer (solo-new mode) so relogging cannot reset it
+        if (!manager.isSessionGlobal(session)) {
+            manager.storeSoloRaidEnd(player.getUniqueId(), session.getEndTime());
+        }
         if (session.getLeader().equals(player.getUniqueId())) {
             manager.endRaid(player.getUniqueId(), RaidEndReason.LEADER_QUIT);
         } else {
@@ -280,6 +309,22 @@ public final class RaidListener implements Listener {
         // Only count if the item has sell value (avoid counting junk like dirt)
         org.bukkit.inventory.ItemStack stack = event.getItem().getItemStack();
         if (stack == null || stack.getType().isAir()) return;
+        // Anti-farm: skip items already counted (drop/re-pickup of the same stack must not re-add loot)
+        org.bukkit.persistence.PersistentDataType<Byte, Byte> tagType = org.bukkit.persistence.PersistentDataType.BYTE;
+        if (event.getItem().getPersistentDataContainer().has(manager.getLootCountedKey(), tagType)) {
+            return;
+        }
+        org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+        if (meta != null && meta.getPersistentDataContainer().has(manager.getLootCountedKey(), tagType)) {
+            return;
+        }
+        // Tag both the item entity and the stack meta so re-drops cannot be counted again
+        event.getItem().getPersistentDataContainer().set(manager.getLootCountedKey(), tagType, (byte) 1);
+        if (meta != null) {
+            meta.getPersistentDataContainer().set(manager.getLootCountedKey(), tagType, (byte) 1);
+            stack.setItemMeta(meta);
+            event.getItem().setItemStack(stack);
+        }
         // Use the sell-price path so only meaningful loot ticks the counter
         java.util.List<org.bukkit.inventory.ItemStack> single = java.util.List.of(stack);
         // Check quickly if it would have value before calling heavy reflection path

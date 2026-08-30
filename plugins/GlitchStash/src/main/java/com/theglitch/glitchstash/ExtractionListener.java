@@ -33,7 +33,10 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
         if (player == null) return;
 
         // 1. Save inventory to stash.
-        ItemStack[] contents = player.getInventory().getContents();
+        // getStorageContents() = 36 main slots only — getContents() would ALSO
+        // include armor + offhand, which are stored separately (and were being
+        // duplicated into the stash by flattenUi).
+        ItemStack[] contents = player.getInventory().getStorageContents();
         ItemStack[] armor = player.getInventory().getArmorContents();
         ItemStack offhand = player.getInventory().getItemInOffHand();
 

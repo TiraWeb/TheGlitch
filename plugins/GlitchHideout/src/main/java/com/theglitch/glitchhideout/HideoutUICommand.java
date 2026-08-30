@@ -38,6 +38,12 @@ public final class HideoutUICommand implements CommandExecutor {
         if (!DialogUI.supported()) return true;
         HideoutGUI gui = plugin.getGui();
         if (gui == null) return true;
+        // Dialog-only subcommands — same rank gate the /hideout root path applies
+        // (ops bypass, modern-ui.remote-perm). Graceful chest-GUI fallback.
+        if (!DialogUI.canRemote(plugin, player)) {
+            gui.openMain(player);
+            return true;
+        }
         switch (sub) {
             case "station" -> {
                 if (args.length < 2) return true;

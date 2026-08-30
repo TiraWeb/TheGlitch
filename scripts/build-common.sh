@@ -291,7 +291,7 @@ mvn_build() {
 
   # Locate built jar (handle -SNAPSHOT variants, e.g. GlitchDungeons 1.0-SNAPSHOT)
   local jar
-  jar="$(ls ${output_pattern} 2>/dev/null | head -1 || true)"
+  jar="$(ls -t ${output_pattern} 2>/dev/null | head -1 || true)"
   if [[ -z "${jar}" || ! -f "${jar}" ]]; then
     die "Build failed — JAR not found at ${plugin_dir}/target/${plugin}-*.jar"
   fi
@@ -312,7 +312,7 @@ deploy_jar() {
   local jar="${2:-${BUILD_OUTPUT_JAR:-}}"
 
   if [[ -z "${jar}" ]]; then
-    jar="$(ls "${REPO_DIR}/plugins/${plugin}/target/${plugin}-"*.jar 2>/dev/null | head -1 || true)"
+    jar="$(ls -t "${REPO_DIR}/plugins/${plugin}/target/${plugin}-"*.jar 2>/dev/null | head -1 || true)"
   fi
 
   if [[ -z "${jar}" || ! -f "${jar}" ]]; then

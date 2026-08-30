@@ -29,6 +29,7 @@ public class GlitchDungeons extends JavaPlugin {
     private CooldownManager cooldownManager;
     private RewardManager rewardManager;
     private DungeonSelectGUI selectGui;
+    private ExtractionListener extractionListener;
 
     @Override
     public void onEnable() {
@@ -44,7 +45,8 @@ public class GlitchDungeons extends JavaPlugin {
         dungeonManager = new DungeonManager(this);
 
         getServer().getPluginManager().registerEvents(new DungeonListener(this), this);
-        getServer().getPluginManager().registerEvents(new ExtractionListener(this), this);
+        extractionListener = new ExtractionListener(this);
+        getServer().getPluginManager().registerEvents(extractionListener, this);
         getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
         selectGui = new DungeonSelectGUI(this);
         getServer().getPluginManager().registerEvents(selectGui, this);
@@ -87,6 +89,7 @@ public class GlitchDungeons extends JavaPlugin {
     public CooldownManager getCooldownManager() { return cooldownManager; }
     public RewardManager getRewardManager() { return rewardManager; }
     public DungeonSelectGUI getSelectGui() { return selectGui; }
+    public ExtractionListener getExtractionListener() { return extractionListener; }
 
     public static MiniMessage mm() {
         return MM;

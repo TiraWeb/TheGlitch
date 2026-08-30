@@ -181,7 +181,7 @@ for plugin in "${SELECTED[@]}"; do
       for jar in GlitchItems GlitchShops; do
         if [[ ! -f "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar" ]]; then
           seed_lib GlitchStash "$jar" || {
-            local src2="${REPO_DIR}/plugins/${jar}/target/${jar}-1.0.0.jar"
+            src2="${REPO_DIR}/plugins/${jar}/target/${jar}-1.0.0.jar"
             if [[ -f "$src2" ]]; then
               mkdir -p "${REPO_DIR}/plugins/GlitchStash/lib"
               cp -f "$src2" "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar"
@@ -210,7 +210,7 @@ for plugin in "${SELECTED[@]}"; do
       for jar in GlitchStash VaultUnlocked; do
         if [[ ! -f "${REPO_DIR}/plugins/GlitchRaid/lib/${jar}.jar" ]]; then
           if ! seed_lib GlitchRaid "$jar"; then
-            local src2="${REPO_DIR}/plugins/${jar}/target/${jar}-1.0.0.jar"
+            src2="${REPO_DIR}/plugins/${jar}/target/${jar}-1.0.0.jar"
             if [[ -f "$src2" ]]; then
               mkdir -p "${REPO_DIR}/plugins/GlitchRaid/lib"
               cp -f "$src2" "${REPO_DIR}/plugins/GlitchRaid/lib/${jar}.jar"

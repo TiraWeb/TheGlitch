@@ -17,6 +17,7 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -182,6 +183,24 @@ public class AbilityListener implements Listener {
         player.sendActionBar(keyHint(data.className()));
     }
 
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        UUID uuid = event.getPlayer().getUniqueId();
+        cooldowns.remove(uuid);
+        shieldWallActive.remove(uuid);
+        cloakActive.remove(uuid);
+        tauntActive.remove(uuid);
+        turretBlocks.remove(uuid);
+        turretExpiry.remove(uuid);
+        turretRepairs.remove(uuid);
+        repairCooldown.remove(uuid);
+        guardianProtection.remove(uuid);
+        deathInvuln.remove(uuid);
+        ghostUntil.remove(uuid);
+        lastStandCooldown.remove(uuid);
+        mendCooldown.remove(uuid);
+    }
+
     private Component keyHint(String className) {
         Component cached = keyHintCache.get(className);
         if (cached != null) return cached;
@@ -230,7 +249,9 @@ public class AbilityListener implements Listener {
             right = new Vector(1, 0, 0);
         }
         Location base = playerLoc.clone().add(direction.clone().multiply(2));
-        List<Block> wallBlocks = new ArrayList<>();
+        // Re-cast while a wall is active: append to the existing list so the
+        // first removal task reverts both walls (no orphaned BARRIER blocks).
+        List<Block> wallBlocks = turretBlocks.computeIfAbsent(player.getUniqueId(), k -> new ArrayList<>());
 
         for (int x = -1; x <= 1; x++) {
             for (int y = 0; y <= 2; y++) {
@@ -374,11 +395,20 @@ public class AbilityListener implements Listener {
         Location loc = player.getLocation();
         int channelTicks = 60 - (data.level() >= 4 ? 20 : 0); // 3s base, -1s at level 4
 
-        player.sendMessage(plugin.getComponent("revive-placed"));
-
-        // Place a beacon-like block
-        Block beaconBlock = loc.getBlock();
+        // Place a beacon-like block — only into air/replaceable space; never
+        // destroy an existing solid block or container. Try one block up if
+        // the feet position is blocked, else cancel.
+        Block target = loc.getBlock();
+        if (!target.isReplaceable()) {
+            target = target.getRelative(BlockFace.UP);
+        }
+        if (!target.isReplaceable()) {
+            player.sendMessage(Component.text("No room for the Revive Beacon here.", NamedTextColor.RED));
+            return;
+        }
+        Block beaconBlock = target;
         beaconBlock.setType(Material.BEACON);
+        player.sendMessage(plugin.getComponent("revive-placed"));
 
         // Particle beacon effect — clone so the delayed ally search below
         // still targets the beacon position (add() would mutate loc).
@@ -533,13 +563,15 @@ public class AbilityListener implements Listener {
 
         Location destination;
         if (targetBlock != null) {
+            // Land on top of the hit block — no surface clamp, which would
+            // teleport through terrain (e.g. onto a roof above a cave).
             destination = targetBlock.getLocation().add(0.5, 1, 0.5);
         } else {
             destination = eyeLoc.add(direction);
+            // Ensure destination is safe — clamp to surface only when the
+            // trace found no block at all.
+            destination.setY(destination.getWorld().getHighestBlockYAt(destination) + 1);
         }
-
-        // Ensure destination is safe
-        destination.setY(destination.getWorld().getHighestBlockYAt(destination) + 1);
 
         // Teleport with particles
         Location startLoc = player.getLocation().clone();
@@ -600,6 +632,13 @@ public class AbilityListener implements Listener {
         UUID uuid = player.getUniqueId();
         Location turretLoc = player.getLocation().add(player.getLocation().getDirection().multiply(3).setY(0));
 
+        // Remove any previous construct before deploying a new one — the old
+        // armor stand would otherwise linger (it is persistent by default).
+        ArmorStand previous = turrets.remove(uuid);
+        if (previous != null && !previous.isDead()) {
+            previous.remove();
+        }
+
         // Create turret — armor stand with dispenser head
         ArmorStand turret = player.getWorld().spawn(turretLoc, ArmorStand.class);
         turret.setCustomName("§bTURRET");
@@ -626,6 +665,23 @@ public class AbilityListener implements Listener {
 
         startTurretFireLoop(player, turret);
         scheduleTurretRemoval(uuid, durationTicks);
+    }
+
+    /**
+     * Remove orphaned turret armor stands left over from a previous run
+     * (mirrors ClassPanel's stale-entity purge). Called on plugin enable.
+     */
+    public void purgeStaleTurrets() {
+        for (World world : Bukkit.getWorlds()) {
+            for (ArmorStand stand : world.getEntitiesByClass(ArmorStand.class)) {
+                try {
+                    if (stand.getPersistentDataContainer().has(turretOwnerKey, PersistentDataType.STRING)) {
+                        stand.remove();
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }
     }
 
     private void startTurretFireLoop(Player player, ArmorStand turret) {

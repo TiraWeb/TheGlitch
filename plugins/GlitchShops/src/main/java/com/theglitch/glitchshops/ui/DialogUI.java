@@ -90,21 +90,21 @@ public final class DialogUI {
             List<ShopManager.GearStockEntry> stock = plugin.getShopManager().getGearStock();
             for (int i = 0; i < stock.size(); i++) {
                 ShopManager.GearStockEntry entry = stock.get(i);
-                if (entry == null || entry.item() == null) continue;
+                if (entry == null || entry.item() == null || entry.price() <= 0) continue;
                 boolean superRare = entry.superRare();
                 actions.add(button(
                         superRare ? "SUPER RARE Gear \u2014 " + entry.price() + " Shards"
                                 : "Buy Gear \u2014 " + entry.price() + " Shards",
                         superRare ? "gold" : "aqua",
                         superRare ? "Legendary max-roll gear" : "Randomly rolled gear",
-                        "shopui buygear " + i));
+                        "shopui buygear " + entry.id()));
             }
         } else {
             List<String> ids = gui.stockIds(category);
             int stackSize = gui.buyStackSizePublic();
             for (String id : ids) {
                 Integer price = gui.buyPriceFor(category, id);
-                if (price == null) continue;
+                if (price == null || price <= 0) continue;
                 String name = gui.displayNameOf(id);
                 actions.add(button("Buy " + name, "aqua",
                         "Cost: " + price + " Shards", "shopui buy " + id + " 1"));
@@ -162,7 +162,7 @@ public final class DialogUI {
             name = itemId;
         }
         Integer price = gui.buyPriceFor(category, itemId);
-        if (price == null) {
+        if (price == null || price <= 0) {
             String template = plugin.getShopManager().getMessageTemplate("no-value");
             player.sendMessage(GlitchShops.mm().deserialize(template));
             return;
@@ -200,16 +200,14 @@ public final class DialogUI {
         }
     }
 
-    public static void openGearConfirm(GlitchShops plugin, ShopGUI gui, Player player, int idx) {
+    public static void openGearConfirm(GlitchShops plugin, ShopGUI gui, Player player, String gearId) {
         String matId;
         Integer cmd = null;
         String name;
         int price;
         try {
-            List<ShopManager.GearStockEntry> stock = plugin.getShopManager().getGearStock();
-            if (idx < 0 || idx >= stock.size()) return;
-            ShopManager.GearStockEntry entry = stock.get(idx);
-            if (entry == null || entry.item() == null) return;
+            ShopManager.GearStockEntry entry = plugin.getShopManager().gearStockById(gearId);
+            if (entry == null || entry.item() == null || entry.price() <= 0) return;
             ItemStack stack = entry.item();
             price = entry.price();
             matId = stack.getType().getKey().getKey();
@@ -230,7 +228,7 @@ public final class DialogUI {
         String actions = "{label:" + txt("CONFIRM PURCHASE", "green", false)
                 + ",width:250"
                 + ",action:{type:\"minecraft:run_command\",command:"
-                + esc("shopui buygear " + idx)
+                + esc("shopui buygear " + gearId)
                 + "}}"
                 + ","
                 + button("\u00ab BACK", "yellow", "Back to the bazaar", "shopui noop");

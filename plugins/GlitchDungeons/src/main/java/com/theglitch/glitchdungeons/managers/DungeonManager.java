@@ -73,6 +73,11 @@ public class DungeonManager {
         // Set state to ASSIGNING, then PREP after teleport
         run.setState(DungeonRun.State.ASSIGNING);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            // Run may have failed/cleaned up during the delay window
+            if (activeRuns.get(run.getRunId()) != run
+                    || run.getState() != DungeonRun.State.ASSIGNING) {
+                return;
+            }
             teleportToSlot(party, slot);
             run.setState(DungeonRun.State.PREP);
             // Start prep timer
@@ -84,7 +89,11 @@ public class DungeonManager {
 
     public void teleportToStaging(Party party) {
         World world = Bukkit.getWorld(plugin.getDungeonConfig().getStagingWorld());
-        if (world == null) return;
+        if (world == null) {
+            plugin.getLogger().warning("Staging world '" + plugin.getDungeonConfig().getStagingWorld()
+                + "' not found! Cannot teleport party to staging.");
+            return;
+        }
         DungeonConfig config = plugin.getDungeonConfig();
         Location loc = new Location(world, config.getStagingX(), config.getStagingY(), config.getStagingZ());
         for (UUID member : party.getMembers()) {
@@ -97,7 +106,11 @@ public class DungeonManager {
 
     public void teleportToSlot(Party party, DungeonSlot slot) {
         World world = Bukkit.getWorld(plugin.getDungeonConfig().getStagingWorld());
-        if (world == null) return;
+        if (world == null) {
+            plugin.getLogger().warning("Staging world '" + plugin.getDungeonConfig().getStagingWorld()
+                + "' not found! Cannot teleport party to slot.");
+            return;
+        }
         Location loc = new Location(world, slot.getCenterX() + 0.5, world.getHighestBlockYAt(slot.getCenterX(), slot.getCenterZ()) + 2, slot.getCenterZ() + 0.5);
         for (UUID member : party.getMembers()) {
             Player player = Bukkit.getPlayer(member);
@@ -108,9 +121,10 @@ public class DungeonManager {
     }
 
     public void teleportToHub(Party party) {
-        World hubWorld = Bukkit.getWorld("hub");
+        World hubWorld = Bukkit.getWorld(plugin.getDungeonConfig().getHubWorld());
         if (hubWorld == null) {
-            plugin.getLogger().warning("Hub world not found! Cannot teleport party.");
+            plugin.getLogger().warning("Hub world '" + plugin.getDungeonConfig().getHubWorld()
+                + "' not found! Cannot teleport party.");
             return;
         }
         DungeonConfig config = plugin.getDungeonConfig();
@@ -123,6 +137,28 @@ public class DungeonManager {
                 player.teleport(loc);
             }
         }
+    }
+
+    public void teleportToHub(UUID playerUuid) {
+        World hubWorld = Bukkit.getWorld(plugin.getDungeonConfig().getHubWorld());
+        if (hubWorld == null) {
+            plugin.getLogger().warning("Hub world '" + plugin.getDungeonConfig().getHubWorld()
+                + "' not found! Cannot teleport player.");
+            return;
+        }
+        DungeonConfig config = plugin.getDungeonConfig();
+        Location loc = new Location(hubWorld,
+            config.getHubX(), config.getHubY(), config.getHubZ()
+        );
+        Player player = Bukkit.getPlayer(playerUuid);
+        if (player != null && player.isOnline()) {
+            player.teleport(loc);
+        }
+    }
+
+    public void removePlayer(UUID playerUuid) {
+        playerRuns.remove(playerUuid);
+        plugin.getPartyManager().setInDungeon(playerUuid, false);
     }
 
     public void completeDungeon(DungeonRun run) {
@@ -180,6 +216,7 @@ public class DungeonManager {
             plugin.getPartyManager().setInDungeon(member, false);
         }
         activeRuns.remove(run.getRunId());
+        plugin.getExtractionListener().clearRun(run);
     }
 
     public DungeonRun getPlayerRun(UUID playerUuid) {

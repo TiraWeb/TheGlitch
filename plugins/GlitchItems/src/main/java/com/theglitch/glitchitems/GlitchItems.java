@@ -18,6 +18,7 @@ public final class GlitchItems extends JavaPlugin {
     private ScatterManager scatterManager;
     private Economy economy;
     private boolean economyLookupDone;
+    private long economyLookupFailedAt;
 
     @Override
     public void onEnable() {
@@ -100,6 +101,7 @@ public final class GlitchItems extends JavaPlugin {
     public void invalidateEconomyCache() {
         economy = null;
         economyLookupDone = false;
+        economyLookupFailedAt = 0L;
     }
 
     public static GlitchItems getInstance() {
@@ -138,15 +140,19 @@ public final class GlitchItems extends JavaPlugin {
 
     public Economy getEconomy() {
         if (economyLookupDone) return economy;
+        long now = System.currentTimeMillis();
+        if (now - economyLookupFailedAt < 5000L) return economy;
         RegisteredServiceProvider<Economy> provider =
                 getServer().getServicesManager().getRegistration(Economy.class);
         if (provider != null) {
             economy = provider.getProvider();
             if (economy != null) {
                 getLogger().info("Economy provider found: " + economy.getName());
+                economyLookupDone = true;
+                return economy;
             }
         }
-        economyLookupDone = true;
+        economyLookupFailedAt = now;
         return economy;
     }
 }

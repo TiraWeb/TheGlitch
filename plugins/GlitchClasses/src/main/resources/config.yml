@@ -8,6 +8,11 @@ max-level: 10
 # Level at which the class ultimate unlocks
 ultimate-level: 10
 
+# Worlds where class abilities are active
+game-worlds:
+  - glitch_pve
+  - glitch_red
+
 # Cost in shards to reset class (0 = free)
 reset-cost: 500
 
@@ -214,4 +219,15 @@ modern-ui:
   enabled: true
   hologram-banner: true
   dialogs: true
+  # Permission required for remote/dialog UI commands
+  remote-perm: theglitch.remoteui
+  # Wall-mounted holographic class panel
+  class-panel:
+    enabled: true
+    world: hub
+    x: 177.0
+    y: -33.5
+    z: -59.4
+    facing: west
+    spacing: 1.35
 

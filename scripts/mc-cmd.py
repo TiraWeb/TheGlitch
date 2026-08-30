@@ -28,6 +28,18 @@ COMMAND_TIMEOUT = int(os.environ.get("GLITCH_RCON_TIMEOUT", "120"))
 SERVERDATA_AUTH = 3
 SERVERDATA_EXECCOMMAND = 2
 
+ERROR_PATTERNS = (
+    "unknown or incomplete command",
+    "incorrect argument",
+    "expected whitespace",
+    "an unexpected error",
+    "that world does not exist",
+    "could not",
+    "unknown or incomplete",
+    "uncaught exception",
+    "error",
+)
+
 
 def ensure_root():
     if os.geteuid() != 0:
@@ -113,7 +125,10 @@ def main():
                 output = run_command(sock, command.lstrip("/"))
                 if output:
                     print(output)
-    except (OSError, ConnectionError) as exc:
+                    if any(p in output.lower() for p in ERROR_PATTERNS):
+                        print(f"server command failed: {command}", file=sys.stderr)
+                        return 1
+    except (OSError, ConnectionError, struct.error) as exc:
         print(f"RCON error: {exc} (is the server fully started?)", file=sys.stderr)
         return 1
     return 0

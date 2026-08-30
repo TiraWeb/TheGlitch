@@ -65,7 +65,10 @@ log "World borders skipped (removed per operator request — using vanilla defau
 # ---- clear mobs ----
 log "Clearing leftover mobs..."
 for dim in overworld glitch_pve; do
-  mc "execute in minecraft:${dim} run kill @e[type=!minecraft:player]" >/dev/null || true
+  # Kill only actual mobs: keep armor stands, item frames, paintings, dropped
+  # items, displays, XP orbs, interaction entities, and villagers (shop/NPC
+  # infrastructure and hub trades must survive this cleanup).
+  mc "execute in minecraft:${dim} run kill @e[type=!minecraft:player,type=!minecraft:armor_stand,type=!minecraft:item_frame,type=!minecraft:glow_item_frame,type=!minecraft:painting,type=!minecraft:item,type=!minecraft:interaction,type=!minecraft:text_display,type=!minecraft:item_display,type=!minecraft:experience_orb,type=!minecraft:villager]" >/dev/null || true
 done
 mc "execute in minecraft:glitch_red run kill @e[type=!minecraft:player,type=!minecraft:warden]" >/dev/null || true
 
@@ -142,6 +145,9 @@ flag glitch_red item-pickup allow
 
 # ---- exp setting ----
 log "Setting hub spawn..."
-mc "mv setspawn overworld:0,-60,0" >/dev/null
+# Multiverse 5.x syntax: mv setspawn <world>:<x>,<y>,<z>. Hub world dir/level-name
+# is "hub" (server.properties level-name=hub; /mv tp hub used in paste-hub-schematic.sh).
+# TODO: verify on next run with 'mv info hub'.
+mc "mv setspawn hub:0,-60,0" >/dev/null
 
 log "Done! All config re-applied."

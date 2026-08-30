@@ -166,7 +166,7 @@ public final class DialogUI {
             bodyParts.add(componentBody(txt("MAX LEVEL", "gold", true)));
         } else {
             bodyParts.add(messageBody("Next upgrade: " + station.costs()[level] + " shards", "yellow", false));
-            String prereq = unmetPrereq(manager, player, station);
+            String prereq = unmetPrereq(manager, player, station, level);
             if (prereq != null) {
                 bodyParts.add(messageBody(prereq, "red", false));
             }
@@ -217,9 +217,11 @@ public final class DialogUI {
         return station.costs().length;
     }
 
-    private static String unmetPrereq(HideoutManager manager, Player player, HideoutManager.Station station) {
+    private static String unmetPrereq(HideoutManager manager, Player player, HideoutManager.Station station, int level) {
         try {
-            String req = station.requires().get(costs(station));
+            // Prereqs are keyed by the level being upgraded TO — match the chest
+            // GUI (HideoutGUI#stationCard) which reads requires().get(level + 1).
+            String req = station.requires().get(level + 1);
             if (req == null || req.isBlank()) return null;
             String[] parts = req.split(":", 2);
             if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) return null;

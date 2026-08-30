@@ -80,6 +80,12 @@ public class DungeonCommand implements CommandExecutor {
             return true;
         }
 
+        // Reject if the party is already in an active run
+        if (isPartyInRun(party)) {
+            player.sendMessage(colorize("&cYour party is already in an active dungeon run."));
+            return true;
+        }
+
         // Check dungeon exists
         if (!plugin.getDungeonConfig().getDungeons().containsKey(tier)) {
             player.sendMessage(colorize("&cInvalid dungeon tier."));
@@ -147,6 +153,12 @@ public class DungeonCommand implements CommandExecutor {
             party = plugin.getPartyManager().createParty(player);
         }
 
+        // Reject if the party is already in an active run
+        if (isPartyInRun(party)) {
+            player.sendMessage(colorize("&cYour party is already in an active dungeon run."));
+            return true;
+        }
+
         // Find any available tier the player has permission for
         for (int tier = 1; tier <= 4; tier++) {
             if (!player.hasPermission("glitchdungeons.dungeon.tier" + tier)) continue;
@@ -155,6 +167,19 @@ public class DungeonCommand implements CommandExecutor {
             if (plugin.getDungeonManager().getFreeSlotCount() == 0) {
                 player.sendMessage(colorize("&cAll dungeon slots are full."));
                 return true;
+            }
+
+            // Validate members the same way handleJoin does
+            for (java.util.UUID memberUuid : party.getMembers()) {
+                Player member = org.bukkit.Bukkit.getPlayer(memberUuid);
+                if (member == null || !member.isOnline()) {
+                    player.sendMessage(colorize("&cAll party members must be online."));
+                    return true;
+                }
+                if (!member.hasPermission("glitchdungeons.dungeon.tier" + tier)) {
+                    player.sendMessage(colorize("&c" + member.getName() + " doesn't have permission for this dungeon tier."));
+                    return true;
+                }
             }
 
             DungeonRun run = plugin.getDungeonManager().startDungeon(party, tier);
@@ -196,6 +221,14 @@ public class DungeonCommand implements CommandExecutor {
             player.sendMessage(colorize("&cCan't leave right now."));
         }
         return true;
+    }
+
+    private boolean isPartyInRun(Party party) {
+        if (party.getState() == Party.State.IN_DUNGEON) return true;
+        for (java.util.UUID memberUuid : party.getMembers()) {
+            if (plugin.getDungeonManager().getPlayerRun(memberUuid) != null) return true;
+        }
+        return false;
     }
 
     private String formatTime(long seconds) {

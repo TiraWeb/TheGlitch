@@ -36,6 +36,10 @@ public final class ClassManager {
     private volatile int cachedMaxLevel = 10;
     private volatile int cachedResetCost = 500;
     private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
+    // Async write coalescing: one in-flight write per player, draining the
+    // latest snapshot, so independent mutations can never land out of order.
+    private final Set<UUID> writePending = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, YamlConfiguration> latestSnapshot = new ConcurrentHashMap<>();
 
     public ClassManager(GlitchClasses plugin) {
         this.plugin = plugin;
@@ -78,12 +82,16 @@ public final class ClassManager {
     }
 
     /**
-     * Set a player's class.
+     * Set a player's class. Switching to a different class resets level and
+     * XP to 0 — progress is not carried across classes. The explicit paid
+     * reset flow (resetClass) is separate and unaffected.
      */
     public void setClass(UUID uuid, String className) {
         String sanitized = sanitizeClassName(className);
         ClassData data = getClassData(uuid);
-        ClassData updated = new ClassData(uuid, sanitized, data.level(), data.xp());
+        boolean changed = !data.className().equals(sanitized);
+        ClassData updated = new ClassData(uuid, sanitized,
+                changed ? 0 : data.level(), changed ? 0 : data.xp());
         players.put(uuid, updated);
         saveToFile(uuid, updated);
     }
@@ -230,43 +238,56 @@ public final class ClassManager {
     }
 
     private void saveToFile(UUID uuid, ClassData data) {
+        // Serialize the snapshot on the calling (main) thread — immutable
+        // state, single source of truth. The async task only writes these.
         Path file = playerDir.resolve(uuid.toString() + ".yml");
         YamlConfiguration yaml = new YamlConfiguration();
-
         yaml.set("uuid", uuid.toString());
         yaml.set("class", data.className());
         yaml.set("level", data.level());
         yaml.set("xp", data.xp());
 
         dirty.add(uuid);
-        // Schedule async atomic write — offloads YAML IO from main thread
+        latestSnapshot.put(uuid, yaml);
+        // Only one write in flight per player; it drains the latest snapshot
+        // so the last scheduled write always persists the newest state.
+        if (writePending.add(uuid)) {
+            scheduleWrite(uuid, file);
+        }
+    }
+
+    private void scheduleWrite(UUID uuid, Path file) {
         try {
             // Paper async scheduler (1.20+)
-            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
-                try {
-                    atomicSave(yaml, file);
-                } finally {
-                    dirty.remove(uuid);
-                }
-            });
+            Bukkit.getAsyncScheduler().runNow(plugin, task -> drainWrites(uuid, file));
         } catch (Throwable t) {
             // Fallback to Bukkit scheduler for compatibility / unit tests
             try {
-                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-                    try {
-                        atomicSave(yaml, file);
-                    } finally {
-                        dirty.remove(uuid);
-                    }
-                });
+                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> drainWrites(uuid, file));
             } catch (Throwable t2) {
                 // Last resort: synchronous atomic save (e.g. scheduler shut down during disable)
-                try {
-                    atomicSave(yaml, file);
-                } finally {
-                    dirty.remove(uuid);
-                }
+                drainWrites(uuid, file);
                 plugin.getLogger().log(Level.WARNING, "Async scheduler unavailable, saved synchronously for " + uuid, t2);
+            }
+        }
+    }
+
+    private void drainWrites(UUID uuid, Path file) {
+        try {
+            YamlConfiguration snapshot;
+            while ((snapshot = latestSnapshot.remove(uuid)) != null) {
+                atomicSave(snapshot, file);
+            }
+        } finally {
+            writePending.remove(uuid);
+        }
+        // A snapshot may have raced in while the flag was still held — its
+        // caller could not schedule a write, so claim and flush it here.
+        if (writePending.add(uuid)) {
+            if (latestSnapshot.remove(uuid) != null) {
+                scheduleWrite(uuid, file);
+            } else {
+                writePending.remove(uuid);
             }
         }
     }
