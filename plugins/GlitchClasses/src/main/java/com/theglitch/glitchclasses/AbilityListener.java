@@ -6,6 +6,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -420,24 +421,24 @@ public class AbilityListener implements Listener {
             int maxTargets = data.level() >= 8 ? 2 : 1; // level 8 upgrade: can reach 2 allies
             List<Player> allies = new ArrayList<>();
             for (Entity entity : loc.getWorld().getNearbyEntities(loc, 5, 5, 5)) {
-                if (entity instanceof Player target && !target.equals(player) && !target.isDead()) {
-                    allies.add(target);
+                if (entity instanceof Player ally && !ally.equals(player) && !ally.isDead()) {
+                    allies.add(ally);
                 }
             }
             allies.sort(Comparator.comparingDouble(Player::getHealth));
 
             int healed = 0;
-            for (Player target : allies) {
+            for (Player ally : allies) {
                 if (healed >= maxTargets) break;
-                double max = target.getAttribute(Attribute.MAX_HEALTH).getValue();
-                target.setHealth(max);
-                target.removePotionEffect(PotionEffectType.POISON);
-                target.removePotionEffect(PotionEffectType.WITHER);
-                target.removePotionEffect(PotionEffectType.SLOWNESS);
-                target.removePotionEffect(PotionEffectType.WEAKNESS);
-                target.removePotionEffect(PotionEffectType.HUNGER);
-                target.removePotionEffect(PotionEffectType.MINING_FATIGUE);
-                target.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 1));
+                double max = ally.getAttribute(Attribute.MAX_HEALTH).getValue();
+                ally.setHealth(max);
+                ally.removePotionEffect(PotionEffectType.POISON);
+                ally.removePotionEffect(PotionEffectType.WITHER);
+                ally.removePotionEffect(PotionEffectType.SLOWNESS);
+                ally.removePotionEffect(PotionEffectType.WEAKNESS);
+                ally.removePotionEffect(PotionEffectType.HUNGER);
+                ally.removePotionEffect(PotionEffectType.MINING_FATIGUE);
+                ally.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 1));
                 healed++;
             }
             if (healed > 0 && player.isOnline()) {
