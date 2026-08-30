@@ -137,6 +137,8 @@ public final class ScatterManager {
     private volatile boolean clearPrevious = DEFAULT_CLEAR_PREVIOUS;
     private volatile boolean onTopOnly = DEFAULT_ON_TOP_ONLY;
     private volatile int borderRadius = DEFAULT_BORDER_RADIUS;
+    private volatile int centerX = 0;
+    private volatile int centerZ = 0;
     private volatile int chunksPerContainer = DEFAULT_CHUNKS_PER_CONTAINER;
     private volatile int maxAttemptsPerContainer = DEFAULT_MAX_ATTEMPTS;
     private volatile Map<String, Integer> counts = new LinkedHashMap<>(DEFAULT_COUNTS);
@@ -230,6 +232,11 @@ public final class ScatterManager {
         }
         borderRadius = radius;
 
+        // Scatter square center — defaults to world origin. Imported maps may be
+        // offset (e.g. Odyssey 2k land at [0..2000]²), so the center is configurable.
+        centerX = sec.getInt("center-x", 0);
+        centerZ = sec.getInt("center-z", 0);
+
         int cpc = sec.getInt("chunks-per-container", DEFAULT_CHUNKS_PER_CONTAINER);
         if (cpc < 1 || cpc > 1000) {
             plugin.getLogger().warning("[Scatter] Invalid chunks-per-container " + cpc + " — clamped to " + DEFAULT_CHUNKS_PER_CONTAINER + ".");
@@ -286,7 +293,8 @@ public final class ScatterManager {
 
         plugin.getLogger().info("[Scatter] Config reloaded — enabled=" + enabled
                 + " interval=" + intervalMinutes + "m worlds=" + enabledWorlds
-                + " borderRadius=" + borderRadius + " clearPrevious=" + clearPrevious
+                + " center=(" + centerX + "," + centerZ + ") borderRadius=" + borderRadius
+                + " clearPrevious=" + clearPrevious
                 + " onTopOnly=" + onTopOnly + " counts=" + counts
                 + " maxAttempts=" + maxAttemptsPerContainer + ".");
     }
@@ -298,6 +306,8 @@ public final class ScatterManager {
         clearPrevious = DEFAULT_CLEAR_PREVIOUS;
         onTopOnly = DEFAULT_ON_TOP_ONLY;
         borderRadius = DEFAULT_BORDER_RADIUS;
+        centerX = 0;
+        centerZ = 0;
         chunksPerContainer = DEFAULT_CHUNKS_PER_CONTAINER;
         maxAttemptsPerContainer = DEFAULT_MAX_ATTEMPTS;
         counts = new LinkedHashMap<>(DEFAULT_COUNTS);
@@ -751,8 +761,8 @@ public final class ScatterManager {
             while (placedForType < needed && attempts < maxAttempts) {
                 attempts++;
                 // Pick random x,z within border square
-                int x = rand.nextInt(-borderRadius, borderRadius + 1);
-                int z = rand.nextInt(-borderRadius, borderRadius + 1);
+                int x = centerX + rand.nextInt(-borderRadius, borderRadius + 1);
+                int z = centerZ + rand.nextInt(-borderRadius, borderRadius + 1);
 
                 // Optional: enforce sparse stride? The spec "every 5-10 chunks" suggests
                 // we could quantize to chunk centers every N chunks, but random within

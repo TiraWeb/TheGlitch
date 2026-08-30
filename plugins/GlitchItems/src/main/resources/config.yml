@@ -185,6 +185,10 @@ scatter:
   clear-previous: true
   on-top-only: true
   border-radius: 1000
+  # Center of the scatter square. The imported Odyssey 2k map's land sits at
+  # [0..2000]² (offset +1000,+1000 from world origin), so the scatter targets it.
+  center-x: 1000
+  center-z: 1000
   chunks-per-container: 8
   max-attempts-per-container: 50
   persist-file: "scattered.json"
