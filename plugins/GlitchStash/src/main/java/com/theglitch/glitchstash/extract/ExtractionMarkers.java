@@ -34,6 +34,7 @@ public final class ExtractionMarkers {
     private final GlitchStash plugin;
     private final WaypointBridge bridge;
     private final List<ActivePoint> active = new ArrayList<>();
+    private final List<long[]> forcedChunks = new ArrayList<>();
     private FoliaScheduler.Cancellable particleTask;
 
     private record ActivePoint(ExtractionPoint point, ArmorStand marker, TextDisplay label) {}
@@ -64,6 +65,19 @@ public final class ExtractionMarkers {
             }
             ArmorStand marker = spawnMarker(world, point);
             TextDisplay label = spawnLabel(world, point);
+            // Waypoints/labels only track while the chunk ticks — keep it loaded
+            // for the cycle so distant points stay on the locator bar.
+            int cx = point.x() >> 4;
+            int cz = point.z() >> 4;
+            try {
+                if (!world.isChunkForceLoaded(cx, cz)) {
+                    world.setChunkForceLoaded(cx, cz, true);
+                    forcedChunks.add(new long[]{world.getUID().getMostSignificantBits(),
+                            world.getUID().getLeastSignificantBits(), cx, cz});
+                }
+            } catch (Throwable t) {
+                plugin.getLogger().fine("chunk force-load failed: " + t.getClass().getSimpleName());
+            }
             if (marker != null) {
                 bridge.register(marker, pointTag(point.index()), color);
                 active.add(new ActivePoint(point, marker, label));
@@ -92,10 +106,29 @@ public final class ExtractionMarkers {
             if (entry.label() != null) entry.label().remove();
         }
         active.clear();
+        for (long[] fc : forcedChunks) {
+            World world = findWorld(fc[0], fc[1]);
+            if (world != null) {
+                try {
+                    world.setChunkForceLoaded((int) fc[2], (int) fc[3], false);
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+        forcedChunks.clear();
         // Backup sweep: restarts mid-cycle or kills can leak tagged entities.
         for (World world : Bukkit.getWorlds()) {
             for (ArmorStand stand : world.getEntitiesByClass(ArmorStand.class)) {
-                if (stand.getScoreboardTags().contains(BASE_TAG)) stand.remove();
+                if (stand.getScoreboardTags().contains(BASE_TAG)) {
+                    // Stale marker from a previous cycle — release its forced chunk too
+                    // (force-loads persist across restarts in level data).
+                    try {
+                        world.setChunkForceLoaded(stand.getLocation().getBlockX() >> 4,
+                                stand.getLocation().getBlockZ() >> 4, false);
+                    } catch (Throwable ignored) {
+                    }
+                    stand.remove();
+                }
             }
             for (TextDisplay display : world.getEntitiesByClass(TextDisplay.class)) {
                 if (display.getScoreboardTags().contains(BASE_TAG)) display.remove();
@@ -155,5 +188,13 @@ public final class ExtractionMarkers {
 
     private static String pointTag(int index) {
         return BASE_TAG + "_" + index;
+    }
+
+    private static World findWorld(long msb, long lsb) {
+        for (World world : Bukkit.getWorlds()) {
+            if (world.getUID().getMostSignificantBits() == msb
+                    && world.getUID().getLeastSignificantBits() == lsb) return world;
+        }
+        return null;
     }
 }
