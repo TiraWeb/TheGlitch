@@ -62,7 +62,6 @@ public final class ExtractionVariantManager {
         cachedArmDuration = arm;
 
         List<Variant> loaded = new ArrayList<>();
-        Map<String, List<Variant>> worldMap = new HashMap<>();
         ConfigurationSection zones = plugin.getConfig().getConfigurationSection("extraction-variants.zones");
         if (zones != null) {
             for (String name : zones.getKeys(false)) {
@@ -94,17 +93,38 @@ public final class ExtractionVariantManager {
                 }
                 Variant v = new Variant(name, world, x1, z1, x2, z2, keyId, keyMat, keyName, bonus);
                 loaded.add(v);
-                worldMap.computeIfAbsent(world, k -> new ArrayList<>()).add(v);
             }
         }
         variants = loaded;
-        byWorld = worldMap;
+        byWorld = indexByWorld(loaded);
         plugin.getLogger().info("Extraction variants loaded: " + loaded.size()
                 + " (enabled=" + cachedEnabled + ", arm=" + cachedArmDuration + "s)");
     }
 
     public List<Variant> getVariants() {
         return variants;
+    }
+
+    /**
+     * Replaces the in-memory zones used by the arm/consume lookup (variantAt)
+     * with the given runtime zones — used by the dynamic extraction manager so
+     * zones follow the randomly-picked arenas each cycle. Config zones remain
+     * the template/fallback: passing null/empty (or a reload) restores them.
+     */
+    public void setRuntimeZones(List<Variant> zones) {
+        if (zones == null || zones.isEmpty()) {
+            byWorld = indexByWorld(variants);
+            return;
+        }
+        byWorld = indexByWorld(zones);
+    }
+
+    private Map<String, List<Variant>> indexByWorld(List<Variant> list) {
+        Map<String, List<Variant>> map = new HashMap<>();
+        for (Variant v : list) {
+            map.computeIfAbsent(v.world(), k -> new ArrayList<>()).add(v);
+        }
+        return map;
     }
 
     public boolean isEnabledCached() {

@@ -1,5 +1,6 @@
 package com.theglitch.glitchstash;
 
+import com.theglitch.glitchstash.extract.DynamicExtractionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
@@ -57,6 +58,7 @@ public final class AutoExtractScheduler {
     private static final long SCATTER_DELAY_TICKS = 5L * 20L; // +5s after raid duration
 
     private final GlitchStash plugin;
+    private final DynamicExtractionManager dynamicManager; // nullable — null = legacy path only
 
     // Cached config — volatile for safe cross-thread reads (Folia may call from global region)
     private volatile boolean enabled = true;
@@ -72,7 +74,12 @@ public final class AutoExtractScheduler {
     private volatile long lastCycleStartMillis = 0L;
 
     public AutoExtractScheduler(GlitchStash plugin) {
+        this(plugin, null);
+    }
+
+    public AutoExtractScheduler(GlitchStash plugin, DynamicExtractionManager dynamicManager) {
         this.plugin = plugin;
+        this.dynamicManager = dynamicManager;
         reload();
     }
 
@@ -103,6 +110,7 @@ public final class AutoExtractScheduler {
             bufferMinutes = 1;
             configuredArenas = List.of();
             redWorld = "glitch_red";
+            reloadDynamic();
             return;
         }
 
@@ -147,6 +155,16 @@ public final class AutoExtractScheduler {
         if (world != null && !world.isBlank()) redWorld = world.trim();
 
         plugin.getLogger().info("[AutoExtract] Config reloaded — enabled=" + enabled + ", interval=" + intervalMinutes + "m, raidDuration=" + raidDurationMinutes + "m, buffer=" + bufferMinutes + "m, arenas=" + (configuredArenas.isEmpty() ? "<all discovered>" : configuredArenas) + ", redWorld=" + redWorld);
+        reloadDynamic();
+    }
+
+    private void reloadDynamic() {
+        if (dynamicManager == null) return;
+        try {
+            dynamicManager.reload();
+        } catch (Exception e) {
+            plugin.getLogger().warning("[AutoExtract] Dynamic extraction reload failed: " + e.getMessage());
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -216,24 +234,41 @@ public final class AutoExtractScheduler {
         lastCycleStartMillis = System.currentTimeMillis();
         plugin.getLogger().info("[AutoExtract] === Cycle #" + cycle + " starting =========================================");
 
-        List<String> arenas;
-        try {
-            arenas = discoverArenas();
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.WARNING, "[AutoExtract] Arena discovery threw — skipping cycle #" + cycle, e);
-            return;
+        // Dynamic path first: random validated spots each cycle. If it declines
+        // (disabled, missing world, no spots validated) the legacy discovery loop runs.
+        boolean dynamicRan = false;
+        if (dynamicManager != null) {
+            try {
+                dynamicRan = dynamicManager.runCycle(cycle);
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "[AutoExtract] Dynamic extraction threw — falling back to legacy arenas for cycle #" + cycle, e);
+                dynamicRan = false;
+            }
+            if (dynamicRan) {
+                plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — dynamic extraction active; legacy arena discovery skipped.");
+            }
         }
 
-        if (arenas == null || arenas.isEmpty()) {
-            plugin.getLogger().warning("[AutoExtract] No arenas discovered — cycle #" + cycle + " will not start any extraction. Check VelKoth arenas.yml or set auto-extract.arenas in GlitchStash config. VelKoth loaded: " + (Bukkit.getPluginManager().getPlugin(VELKOTH_PLUGIN_NAME) != null));
-            // Still schedule buffer hooks so the 1-minute spacing stays consistent
-        } else {
-            plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — starting " + arenas.size() + " arena(s): " + arenas);
-            for (String arena : arenas) {
-                try {
-                    startArena(arena, cycle);
-                } catch (Exception e) {
-                    plugin.getLogger().log(Level.WARNING, "[AutoExtract] Failed to start arena '" + arena + "' in cycle #" + cycle, e);
+        if (!dynamicRan) {
+            List<String> arenas;
+            try {
+                arenas = discoverArenas();
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "[AutoExtract] Arena discovery threw — skipping cycle #" + cycle, e);
+                return;
+            }
+
+            if (arenas == null || arenas.isEmpty()) {
+                plugin.getLogger().warning("[AutoExtract] No arenas discovered — cycle #" + cycle + " will not start any extraction. Check VelKoth arenas.yml or set auto-extract.arenas in GlitchStash config. VelKoth loaded: " + (Bukkit.getPluginManager().getPlugin(VELKOTH_PLUGIN_NAME) != null));
+                // Still schedule buffer hooks so the 1-minute spacing stays consistent
+            } else {
+                plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — starting " + arenas.size() + " arena(s): " + arenas);
+                for (String arena : arenas) {
+                    try {
+                        startArena(arena, cycle);
+                    } catch (Exception e) {
+                        plugin.getLogger().log(Level.WARNING, "[AutoExtract] Failed to start arena '" + arena + "' in cycle #" + cycle, e);
+                    }
                 }
             }
         }
@@ -251,6 +286,20 @@ public final class AutoExtractScheduler {
         // Schedule intra-cycle buffer tasks: t0+30m kill, t0+30m+5s scatter
         scheduleBufferTasks(cycle, lastCycleStartMillis);
         plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " t0 complete — next cycle in " + intervalMinutes + "m (kill in " + raidDurationMinutes + "m, scatter +5s).");
+    }
+
+    /**
+     * Ends the dynamic portion of the cycle (arena stops + marker clear).
+     * Guarded — DynamicExtractionManager.endCycle is idempotent, so calling
+     * this from both cycle-end paths is safe.
+     */
+    private void endDynamicCycle(int cycle) {
+        if (dynamicManager == null) return;
+        try {
+            dynamicManager.endCycle();
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.WARNING, "[AutoExtract] Failed to end dynamic cycle #" + cycle, e);
+        }
     }
 
     /**
@@ -279,6 +328,7 @@ public final class AutoExtractScheduler {
      */
     private void handleCycleTimeout(int cycle, long cycleStartMillis) {
         plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — t0+" + raidDurationMinutes + "m timeout reached. RED-world extraction window closed.");
+        endDynamicCycle(cycle);
         World red = Bukkit.getWorld(redWorld);
         if (red == null) {
             red = Bukkit.getWorld("glitch_red");
@@ -330,6 +380,7 @@ public final class AutoExtractScheduler {
      */
     private void handleCycleEndScatter(int cycle, long cycleStartMillis) {
         plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — t0+" + raidDurationMinutes + "m+5s scatter phase. Firing AutoExtractCycleEndEvent.");
+        endDynamicCycle(cycle); // no-op if the timeout path already ended it
 
         // Primary hook — loot team listens for this
         try {

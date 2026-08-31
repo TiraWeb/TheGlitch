@@ -59,6 +59,28 @@ auto-extract:
   # Allow-list of arenas to auto-start. Empty = all discovered via VelKoth API or arenas.yml.
   # Example: arenas: ["extraction_alpha", "extraction_bravo"]
   arenas: []
+  # Dynamic extraction — each cycle picks N random validated surface spots on the
+  # land box, creates/moves VelKoth arenas there (arena-prefix + index), starts them
+  # and shows locator markers. Variant-key zones follow the arenas automatically.
+  # Set enabled: false to use the legacy fixed arena discovery above instead.
+  dynamic:
+    enabled: true
+    # Number of extraction points per cycle
+    points: 3
+    # Land box center and half-width (random x/z within center ± radius)
+    center-x: 1000
+    center-z: 1000
+    radius: 1000
+    # Minimum 2D distance between two points in the same cycle
+    min-separation: 400
+    # Reject spots above this Y (floating islands); capture square must be ±3 flat
+    max-surface-y: 100
+    # VelKoth capture timer for the generated arenas
+    capture-time-seconds: 30
+    # Arena id prefix — slots are <prefix>0, <prefix>1, ...
+    arena-prefix: extraction_dyn
+    # Existing static arenas used to fill in when random validation fails
+    fallback-arenas: []
 
 # Modern UI layer — shared stash kiosk wall + dialog-based remote stash
 modern-ui:

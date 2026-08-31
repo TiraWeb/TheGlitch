@@ -13,6 +13,9 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.theglitch.glitchstash.extract.DynamicExtractionManager;
+import com.theglitch.glitchstash.extract.ExtractionMarkers;
+
 public final class GlitchStash extends JavaPlugin {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
@@ -21,6 +24,8 @@ public final class GlitchStash extends JavaPlugin {
     private StashManager stashManager;
     private ExtractionVariantManager variantManager;
     private AutoExtractScheduler autoExtractScheduler;
+    private ExtractionMarkers extractionMarkers;
+    private DynamicExtractionManager dynamicExtractionManager;
     private FileConfiguration messagesConfig;
     private File messagesFile;
 
@@ -63,9 +68,18 @@ public final class GlitchStash extends JavaPlugin {
 
         // Automated extraction — starts ALL VelKoth arenas every 31m (30m raid + 1m scatter buffer)
         // Folia-safe fixed-rate scheduler; discovers arenas reflectively or via config allow-list.
+        // Dynamic mode (auto-extract.dynamic) picks random validated spots per cycle instead.
         // See AutoExtractScheduler.java:1 and extraction-variants for zone design (ROADMAP 5.11.5)
         try {
-            autoExtractScheduler = new AutoExtractScheduler(this);
+            extractionMarkers = new ExtractionMarkers(this);
+            dynamicExtractionManager = new DynamicExtractionManager(this, extractionMarkers);
+        } catch (Throwable t) {
+            getLogger().warning("Dynamic extraction unavailable: " + t.getMessage());
+            extractionMarkers = null;
+            dynamicExtractionManager = null;
+        }
+        try {
+            autoExtractScheduler = new AutoExtractScheduler(this, dynamicExtractionManager);
             autoExtractScheduler.start();
         } catch (Exception e) {
             getLogger().warning("Failed to start AutoExtractScheduler: " + e.getMessage());
@@ -85,6 +99,11 @@ public final class GlitchStash extends JavaPlugin {
         if (autoExtractScheduler != null) {
             try { autoExtractScheduler.shutdown(); } catch (Exception e) { getLogger().warning("Error shutting down AutoExtractScheduler: " + e.getMessage()); }
             autoExtractScheduler = null;
+        }
+        if (dynamicExtractionManager != null) {
+            try { dynamicExtractionManager.endCycle(); } catch (Exception e) { getLogger().warning("Error ending dynamic extraction cycle: " + e.getMessage()); }
+            dynamicExtractionManager = null;
+            extractionMarkers = null;
         }
         if (stashManager != null) {
             stashManager.shutdown();
@@ -238,5 +257,13 @@ public final class GlitchStash extends JavaPlugin {
 
     public AutoExtractScheduler getAutoExtractScheduler() {
         return autoExtractScheduler;
+    }
+
+    public DynamicExtractionManager getDynamicExtractionManager() {
+        return dynamicExtractionManager;
+    }
+
+    public ExtractionMarkers getExtractionMarkers() {
+        return extractionMarkers;
     }
 }
