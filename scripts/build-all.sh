@@ -39,6 +39,7 @@ TRACK1_ORDER=(
   "GlitchInsurance"
   "GlitchEvents"
   "GlitchLoot"
+  "GlitchHUD"
 )
 ALL_WITH_DUNGEONS=(
   "GlitchItems"
@@ -52,6 +53,7 @@ ALL_WITH_DUNGEONS=(
   "GlitchInsurance"
   "GlitchEvents"
   "GlitchLoot"
+  "GlitchHUD"
   "GlitchDungeons"
 )
 
@@ -318,6 +320,29 @@ for plugin in "${SELECTED[@]}"; do
       log "Seeded ${plugin}/${cfg}"
     fi
   done
+done
+
+# --- GlitchHUD extras: TAB takeover + Oraxen negative-space font ---
+for plugin in "${SELECTED[@]}"; do
+  if [[ "$plugin" == "GlitchHUD" ]]; then
+    # TAB sidebar is now owned by GlitchHUD — force repo TAB config to live so scoreboard.enabled=false takes effect.
+    # The repo file is the source of truth for TAB after the HUD takeover (box's copy no longer wins).
+    if [[ -f "${REPO_DIR}/server/plugins/TAB/config.yml" ]]; then
+      mkdir -p "${LIVE_PLUGIN_DIR}/TAB"
+      cp -f "${REPO_DIR}/server/plugins/TAB/config.yml" "${LIVE_PLUGIN_DIR}/TAB/config.yml"
+      cp -f "${REPO_DIR}/server/plugins/TAB/config.yml" "${REPO_DEPLOY}/TAB/config.yml" 2>/dev/null || true
+      log "Synced TAB/config.yml (HUD takeover — scoreboard.enabled=false)"
+    fi
+    # Negative-space font for pixel-perfect HUD shifts (HUD uses \uF80x glyphs)
+    if [[ -f "${REPO_DIR}/server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json" ]]; then
+      mkdir -p "${LIVE_PLUGIN_DIR}/Oraxen/pack/assets/minecraft/font"
+      cp -f "${REPO_DIR}/server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json" "${LIVE_PLUGIN_DIR}/Oraxen/pack/assets/minecraft/font/negative_space.json"
+      mkdir -p "${REPO_DEPLOY}/Oraxen/pack/assets/minecraft/font"
+      cp -f "${REPO_DIR}/server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json" "${REPO_DEPLOY}/Oraxen/pack/assets/minecraft/font/negative_space.json" 2>/dev/null || true
+      log "Synced Oraxen negative_space font (HUD shifts)"
+    fi
+    break
+  fi
 done
 
 cat <<'EOF'

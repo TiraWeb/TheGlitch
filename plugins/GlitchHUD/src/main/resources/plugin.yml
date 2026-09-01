@@ -1,0 +1,24 @@
+name: GlitchHUD
+version: '${project.version}'
+main: com.theglitch.glitchhud.GlitchHUD
+api-version: '1.21'
+description: Modern icon sidebar with NumberFormat, below-name and bossbar polish for The Glitch
+author: The Glitch
+softdepend: [PlaceholderAPI, Vault, GlitchItems, GlitchRaid, GlitchClasses, GlitchStash, TAB]
+
+commands:
+  glitchhud:
+    description: GlitchHUD admin commands
+    usage: /glitchhud <reload|toggle|debug>
+    permission: glitchhud.admin
+  sb:
+    description: Toggle GlitchHUD sidebar
+    usage: /sb
+
+permissions:
+  glitchhud.admin:
+    description: Admin for GlitchHUD
+    default: op
+  glitchhud.toggle:
+    description: Toggle sidebar visibility
+    default: true

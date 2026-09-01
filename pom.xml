@@ -42,6 +42,7 @@
         <module>plugins/GlitchInsurance</module>
         <module>plugins/GlitchEvents</module>
         <module>plugins/GlitchLoot</module>
+        <module>plugins/GlitchHUD</module>
     </modules>
 
     <repositories>

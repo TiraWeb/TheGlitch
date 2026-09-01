@@ -145,12 +145,26 @@ public final class ResidualGlitchManager {
         }
 
         BossBar bar = existing;
+        BossBar.Overlay overlay = stacks == maxStacks && maxStacks == 10 ? BossBar.Overlay.NOTCHED_10
+                : (maxStacks == 8 ? BossBar.Overlay.NOTCHED_10 : BossBar.Overlay.PROGRESS);
+        // 8 stacks maps cleanly onto 10 notches; 10 stacks is 1:1. Sub 8 still benefits from segmented look (rare HUD).
+        // Progress still drives fill; notches are visual segmentation.
         if (bar == null) {
-            bar = BossBar.bossBar(title, 0.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+            bar = BossBar.bossBar(title, 0.0f, BossBar.Color.RED, overlay);
+            // Max stacks → subtle dread: darken sky + fog (GlitchHUD config mirrors this, but direct here is reliable)
+            if (stacks >= maxStacks) {
+                try { bar.addFlag(BossBar.Flag.DARKEN_SCREEN); } catch (Exception ignored) {}
+            }
             player.showBossBar(bar);
             bars.put(player.getUniqueId(), bar);
         } else {
             bar.name(title);
+            try { bar.overlay(overlay); } catch (Exception ignored) {}
+            // Toggle DARKEN_SCREEN only at cap so it doesn't linger
+            try {
+                if (stacks >= maxStacks) bar.addFlag(BossBar.Flag.DARKEN_SCREEN);
+                else bar.removeFlag(BossBar.Flag.DARKEN_SCREEN);
+            } catch (Exception ignored) {}
         }
         bar.progress((float) Math.min(1.0, (double) stacks / maxStacks));
         bar.color(stacks >= eliteHuntStacks ? BossBar.Color.PURPLE : BossBar.Color.RED);

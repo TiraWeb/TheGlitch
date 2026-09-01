@@ -1,0 +1,35 @@
+# GlitchHUD — modern sidebar config
+# Requires Paper 1.20.3+ (Paper 1.21.4 compile target). Runtime Purpur 26.2.
+
+hud:
+  enabled: true
+  refresh-ticks: 20              # 1s — most lines; subtle pulse handled internally
+  toggle-default: true           # sidebar visible by default
+  remember-toggle: false         # persist toggle in PDC? false = resets on join
+  title:
+    hub: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
+    pve: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
+    red: "<gradient:#FF2A2A:#FF6A00><bold>RED ZONE</bold></gradient>"
+    default: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
+  glyphs:
+    shard: "\uE045"
+    divider: "\uE048"
+    rune: "\uE049"
+  # NumberFormat on right side — we keep it blank for clean look (no red numbers).
+  # Fixed/styled variants are available per-line via code if needed.
+
+below-name:
+  enabled: true
+  world: "glitch_red"
+  # What to show under nametag: stacks | payout | level
+  mode: "stacks"
+  # FixedFormat glyph shown when value is 0
+  empty-icon: "<dark_gray>\uE047</dark_gray>"
+
+bossbar:
+  # Residual HUD improvements — applied reflectively to GlitchItems if present
+  residual-overlay: "NOTCHED_10"  # PROGRESS | NOTCHED_6 | NOTCHED_10 | NOTCHED_12 | NOTCHED_20
+  darken-at-max: true            # DARKEN_SCREEN flag when stacks == max
+  fog-at-elite: false            # CREATE_WORLD_FOG when >= elite threshold
+
+debug: false

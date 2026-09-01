@@ -14,7 +14,7 @@ scoreboard-teams:
   enabled: true
 
 scoreboard:
-  enabled: true
+  enabled: false
   toggle-command: /sb
   remember-toggle-choice: false
   hidden-by-default: false
