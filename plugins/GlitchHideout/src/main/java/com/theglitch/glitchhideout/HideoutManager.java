@@ -424,11 +424,16 @@ public final class HideoutManager {
         if (stack == null || !stack.hasItemMeta()) return null;
         org.bukkit.persistence.PersistentDataContainer pdc =
                 stack.getItemMeta().getPersistentDataContainer();
-        String pdcId = pdc.get(ORAXEN_KEY, PersistentDataType.STRING);
-        if (pdcId != null && !pdcId.isEmpty()) return pdcId;
+        try {
+            String pdcId = pdc.get(ORAXEN_KEY, PersistentDataType.STRING);
+            if (pdcId != null && !pdcId.isEmpty()) return pdcId;
+        } catch (Exception ignored) {}
         for (NamespacedKey key : pdc.getKeys()) {
-            String value = pdc.get(key, PersistentDataType.STRING);
-            if (isIdShaped(value)) return value;
+            try {
+                if (!pdc.has(key, PersistentDataType.STRING)) continue;
+                String value = pdc.get(key, PersistentDataType.STRING);
+                if (isIdShaped(value)) return value;
+            } catch (Exception ignored) {}
         }
         return null;
     }

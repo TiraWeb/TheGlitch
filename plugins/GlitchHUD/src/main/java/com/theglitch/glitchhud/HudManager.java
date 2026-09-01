@@ -362,15 +362,10 @@ public final class HudManager {
         String clazz = placeholders.getGlitchClass(p);
         String lvl = placeholders.getGlitchLevel(p);
         String resIcon = UiConstants.resIcon(clazz);
-        String tps = placeholders.resolve(p, "%tps%");
-        String ping = placeholders.resolve(p, "%ping%");
-        if (tps == null || tps.isBlank() || tps.contains("%")) tps = "—";
-        if (ping == null || ping.isBlank() || ping.contains("%")) ping = "—";
-        // Trim TPS to 1 decimal if needed
-        try {
-            double tv = Double.parseDouble(tps);
-            tps = String.format("%.1f", tv);
-        } catch (Exception ignored) {}
+        int pingVal = placeholders.getPing(p);
+        double tpsVal = placeholders.getTps();
+        String ping = pingVal >= 0 ? String.valueOf(pingVal) : "—";
+        String tps = tpsVal >= 0 ? String.format("%.1f", tpsVal) : "—";
 
         List<String> out = new ArrayList<>(10);
         out.add(""); // 1 blank top

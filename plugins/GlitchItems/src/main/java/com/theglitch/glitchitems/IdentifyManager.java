@@ -56,14 +56,19 @@ public final class IdentifyManager {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
 
-        String id = pdc.get(ORAXEN_ID_KEY, PersistentDataType.STRING);
-        if (id != null && !id.isEmpty()) return id;
+        try {
+            String id = pdc.get(ORAXEN_ID_KEY, PersistentDataType.STRING);
+            if (id != null && !id.isEmpty()) return id;
+        } catch (Exception ignored) {}
 
         for (NamespacedKey key : pdc.getKeys()) {
-            String value = pdc.get(key, PersistentDataType.STRING);
-            if (value != null && value.startsWith("unstable_rift_")) {
-                return value;
-            }
+            try {
+                if (!pdc.has(key, PersistentDataType.STRING)) continue;
+                String value = pdc.get(key, PersistentDataType.STRING);
+                if (value != null && value.startsWith("unstable_rift_")) {
+                    return value;
+                }
+            } catch (Exception ignored) {}
         }
 
         if (item.getItemMeta().hasCustomName()) {

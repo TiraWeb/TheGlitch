@@ -167,6 +167,65 @@ public final class PlaceholderResolver {
         return null;
     }
 
+    public int getPing(Player player) {
+        if (player == null) return -1;
+        if (hasPapi) {
+            String[] candidates = {"%player_ping%", "%ping%"};
+            for (String ph : candidates) {
+                String v = papi(player, ph);
+                if (v != null && !v.isBlank() && !v.contains("%")) {
+                    try { return Integer.parseInt(v.replace(",", "").trim()); } catch (NumberFormatException ignored) {}
+                    try { return (int) Math.round(Double.parseDouble(v.trim())); } catch (NumberFormatException ignored) {}
+                }
+            }
+        }
+        // Direct Paper API (1.19.4+)
+        try { return player.getPing(); } catch (Exception ignored) {}
+        // Reflective fallback (older / Purpur)
+        try {
+            java.lang.reflect.Method m = player.getClass().getMethod("getPing");
+            Object r = m.invoke(player);
+            if (r instanceof Number n) return n.intValue();
+        } catch (Exception ignored) {}
+        return -1;
+    }
+
+    public double getTps() {
+        // Try PAPI first (Server expansion)
+        if (hasPapi) {
+            // Use dummy offline player for server placeholders; PAPI can handle null
+            try {
+                Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
+                java.lang.reflect.Method m = papiClass.getMethod("setPlaceholders", org.bukkit.OfflinePlayer.class, String.class);
+                String[] candidates = {"%server_tps_1%", "%server_tps%", "%tps%"};
+                for (String ph : candidates) {
+                    try {
+                        Object out = m.invoke(null, (org.bukkit.OfflinePlayer) null, ph);
+                        if (out instanceof String s && !s.contains("%") && !s.isBlank()) {
+                            try { return Double.parseDouble(s.trim()); } catch (NumberFormatException ignored) {}
+                        }
+                    } catch (Exception ignored) {}
+                }
+            } catch (Exception ignored) {}
+        }
+        // Direct Paper/Bukkit TPS
+        try {
+            double[] tps = Bukkit.getTPS();
+            if (tps != null && tps.length > 0 && tps[0] > 0) return tps[0];
+        } catch (Exception ignored) {}
+        try {
+            double[] tps = Bukkit.getServer().getTPS();
+            if (tps != null && tps.length > 0 && tps[0] > 0) return tps[0];
+        } catch (Exception ignored) {}
+        // Reflective last resort
+        try {
+            java.lang.reflect.Method m = Bukkit.class.getMethod("getTPS");
+            Object r = m.invoke(null);
+            if (r instanceof double[] arr && arr.length > 0) return arr[0];
+        } catch (Exception ignored) {}
+        return -1;
+    }
+
     public String getWorldShardPlaceholder(Player p) { return "%vault_eco_balance%"; }
 
     private static String capitalize(String s) {
