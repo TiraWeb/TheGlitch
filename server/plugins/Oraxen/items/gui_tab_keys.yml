@@ -1,5 +1,5 @@
 gui_tab_keys:
-  displayname: <gold>Keys</gold>
+  itemname: <gold>Keys</gold>
   material: TRIPWIRE_HOOK
   Pack:
     generate_model: true

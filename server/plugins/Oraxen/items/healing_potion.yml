@@ -1,5 +1,5 @@
 healing_potion:
-  displayname: <green>Healing Potion</green>
+  itemname: <green>Healing Potion</green>
   material: HONEY_BOTTLE
   Pack:
     generate_model: true

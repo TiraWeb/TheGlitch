@@ -1,5 +1,5 @@
 rift_reveal_pack:
-  displayname: <blue>Rift Attunement Pack</blue>
+  itemname: <blue>Rift Attunement Pack</blue>
   material: PAPER
   Pack:
     generate_model: true

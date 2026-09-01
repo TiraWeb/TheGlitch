@@ -1,5 +1,5 @@
 gui_sell:
-  displayname: <gold>SELL</gold>
+  itemname: <gold>SELL</gold>
   material: GOLD_INGOT
   Pack:
     generate_model: true

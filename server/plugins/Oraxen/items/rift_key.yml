@@ -1,5 +1,5 @@
 rift_key:
-  displayname: <gold>Rift Key</gold>
+  itemname: <gold>Rift Key</gold>
   material: TRIPWIRE_HOOK
   Pack:
     generate_model: true

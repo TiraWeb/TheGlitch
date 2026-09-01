@@ -1,5 +1,5 @@
 corrupted_heal:
-  displayname: <dark_purple>Corrupted Heal</dark_purple>
+  itemname: <dark_purple>Corrupted Heal</dark_purple>
   material: HONEY_BOTTLE
   Pack:
     generate_model: true

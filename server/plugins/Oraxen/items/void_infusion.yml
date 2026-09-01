@@ -1,5 +1,5 @@
 void_infusion:
-  displayname: <light_purple>Void Infusion</light_purple>
+  itemname: <light_purple>Void Infusion</light_purple>
   material: GLASS_BOTTLE
   Pack:
     generate_model: true

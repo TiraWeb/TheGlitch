@@ -1,5 +1,5 @@
 unstable_rift_rare:
-  displayname: <blue>Unstable Rift (Rare)</blue>
+  itemname: <blue>Unstable Rift (Rare)</blue>
   material: AMETHYST_SHARD
   Pack:
     generate_model: true

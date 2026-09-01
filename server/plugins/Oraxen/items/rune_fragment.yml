@@ -1,5 +1,5 @@
 rune_fragment:
-  displayname: <white>Rune Fragment</white>
+  itemname: <white>Rune Fragment</white>
   material: PAPER
   Pack:
     generate_model: true

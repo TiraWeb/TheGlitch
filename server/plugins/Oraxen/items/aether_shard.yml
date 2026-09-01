@@ -1,5 +1,5 @@
 aether_shard:
-  displayname: <aqua>Aether Shard</aqua>
+  itemname: <aqua>Aether Shard</aqua>
   material: PRISMARINE_SHARD
   Pack:
     generate_model: true

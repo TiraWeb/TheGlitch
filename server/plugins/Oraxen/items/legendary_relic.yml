@@ -1,5 +1,5 @@
 legendary_relic:
-  displayname: <gold>Legendary Relic</gold>
+  itemname: <gold>Legendary Relic</gold>
   material: GOLD_NUGGET
   Pack:
     generate_model: true

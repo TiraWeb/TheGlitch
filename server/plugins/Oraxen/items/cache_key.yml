@@ -1,5 +1,5 @@
 cache_key:
-  displayname: <gray>Cache Key</gray>
+  itemname: <gray>Cache Key</gray>
   material: TRIPWIRE_HOOK
   Pack:
     generate_model: true

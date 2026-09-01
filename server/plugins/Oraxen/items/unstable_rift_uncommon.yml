@@ -1,5 +1,5 @@
 unstable_rift_uncommon:
-  displayname: <green>Unstable Rift (Uncommon)</green>
+  itemname: <green>Unstable Rift (Uncommon)</green>
   material: AMETHYST_SHARD
   Pack:
     generate_model: true

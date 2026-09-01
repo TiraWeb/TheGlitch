@@ -1,5 +1,5 @@
 unstable_rift_epic:
-  displayname: <light_purple>Unstable Rift (Epic)</light_purple>
+  itemname: <light_purple>Unstable Rift (Epic)</light_purple>
   material: AMETHYST_SHARD
   Pack:
     generate_model: true

@@ -1,5 +1,5 @@
 unstable_rift_legendary:
-  displayname: <gold>Unstable Rift (Legendary)</gold>
+  itemname: <gold>Unstable Rift (Legendary)</gold>
   material: AMETHYST_SHARD
   Pack:
     generate_model: true

@@ -1,5 +1,5 @@
 rift_crystal:
-  displayname: <light_purple>Rift Crystal</light_purple>
+  itemname: <light_purple>Rift Crystal</light_purple>
   material: AMETHYST_SHARD
   Pack:
     generate_model: true

@@ -1,5 +1,5 @@
 vault_key:
-  displayname: <blue>Vault Key</blue>
+  itemname: <blue>Vault Key</blue>
   material: TRIPWIRE_HOOK
   Pack:
     generate_model: true

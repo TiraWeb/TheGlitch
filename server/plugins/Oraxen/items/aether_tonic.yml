@@ -1,5 +1,5 @@
 aether_tonic:
-  displayname: <aqua>Aether Tonic</aqua>
+  itemname: <aqua>Aether Tonic</aqua>
   material: HONEY_BOTTLE
   Pack:
     generate_model: true

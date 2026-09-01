@@ -1,5 +1,5 @@
 gui_buy:
-  displayname: <green>BUY</green>
+  itemname: <green>BUY</green>
   material: EMERALD
   Pack:
     generate_model: true

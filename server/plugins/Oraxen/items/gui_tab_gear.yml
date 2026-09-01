@@ -1,5 +1,5 @@
 gui_tab_gear:
-  displayname: <gray>Gear</gray>
+  itemname: <gray>Gear</gray>
   material: DIAMOND_SWORD
   Pack:
     generate_model: true

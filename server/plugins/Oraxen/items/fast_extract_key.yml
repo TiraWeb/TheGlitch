@@ -1,5 +1,5 @@
 fast_extract_key:
-  displayname: <aqua>Fast Extract Key</aqua>
+  itemname: <aqua>Fast Extract Key</aqua>
   material: TRIPWIRE_HOOK
   Pack:
     generate_model: true

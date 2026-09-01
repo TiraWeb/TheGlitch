@@ -1,5 +1,5 @@
 ward_salve:
-  displayname: <gold>Ward Salve</gold>
+  itemname: <gold>Ward Salve</gold>
   material: HONEY_BOTTLE
   Pack:
     generate_model: true

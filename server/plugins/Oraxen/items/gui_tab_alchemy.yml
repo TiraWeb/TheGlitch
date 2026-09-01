@@ -1,5 +1,5 @@
 gui_tab_alchemy:
-  displayname: <green>Alchemy</green>
+  itemname: <green>Alchemy</green>
   material: HONEY_BOTTLE
   Pack:
     generate_model: true

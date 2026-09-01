@@ -1,5 +1,5 @@
 gui_coin:
-  displayname: <aqua>Shards</aqua>
+  itemname: <aqua>Shards</aqua>
   material: ECHO_SHARD
   Pack:
     generate_model: true

@@ -1,5 +1,5 @@
 void_essence:
-  displayname: <dark_purple>Void Essence</dark_purple>
+  itemname: <dark_purple>Void Essence</dark_purple>
   material: PHANTOM_MEMBRANE
   Pack:
     generate_model: true

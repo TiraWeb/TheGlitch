@@ -1,5 +1,5 @@
 gui_tab_materials:
-  displayname: <light_purple>Materials</light_purple>
+  itemname: <light_purple>Materials</light_purple>
   material: REDSTONE
   Pack:
     generate_model: true
