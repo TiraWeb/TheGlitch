@@ -1,0 +1,37 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "openrouter/z-ai/glm-5.3-flash:floor",
+  "small_model": "openrouter/google/gemma-4-26b-a4b-it:free",
+  "agent": {
+    "java-coder": {
+      "description": "Paper/Purpur plugin coder for Bukkit listeners, commands, schedulers, and Vault/Oraxen/MythicMobs integrations. Use when implementing or extending The Glitch custom plugins (GlitchStash, GlitchClasses, GlitchItems, GlitchHUD, etc.), event handlers, or Folia-safe logic.",
+      "mode": "subagent",
+      "model": "openrouter/z-ai/glm-5.2:free",
+      "prompt": "You write clean, highly optimized Spigot/Purpur Java code. Ensure all event listeners and command executors follow best practices. Match the existing code style of each file you touch and keep diffs minimal — never reformat unrelated code. Never run git commit, git push, or any build/deploy commands; only modify files and report what you changed."
+    },
+    "docs-reader": {
+      "description": "Purpur/Paper Javadoc, Spigot API, NMS mappings, and decompiled server source lookup. Use ONLY when resolving Paper/Purpur API signatures, NMS classes, obfuscation mappings, or extracting exact methods from large Javadoc/source dumps.",
+      "mode": "subagent",
+      "model": "openrouter/minimax/minimax-m3:free",
+      "prompt": "You are a Minecraft Java API expert. Analyze the provided Javadocs and source code, and summarize the exact methods and logic needed."
+    },
+    "syntax-fixer": {
+      "description": "Fast Paper/Purpur syntax fixer for plugin.yml, config.yml, pom.xml, YAML spacing, and Maven/stack-trace errors. Use ONLY for quick one-line fixes and pinpointing the exact failing line — not for writing new plugin features or logic.",
+      "mode": "subagent",
+      "model": "openrouter/cohere/north-mini-code:free",
+      "prompt": "You are a fast code debugger. Provide only the corrected code or the exact line that caused the error."
+    },
+    "explore": {
+      "description": "Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. \"src/components/**/*.tsx\"), search code for keywords (eg. \"API endpoints\"), or answer questions about the codebase (eg. \"how do API endpoints work?\"). When calling this agent, specify the desired thoroughness level: \"quick\" for basic searches, \"medium\" for moderate exploration, or \"very thorough\" for comprehensive analysis across multiple locations and naming conventions.",
+      "mode": "subagent",
+      "model": "openrouter/minimax/minimax-m2.7:free",
+      "prompt": "You are a read-only codebase explorer. Search and read files, then report findings with exact file paths and line numbers. Never modify, create, or delete files. Never run git commands that change state."
+    },
+    "general": {
+      "description": "General-purpose agent for researching complex questions and executing multi-step tasks. Use this agent to execute multiple units of work in parallel.",
+      "mode": "subagent",
+      "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "prompt": "You are a research and multi-step task agent. Complete the assigned task thoroughly and report results concisely with exact file paths and evidence. Only modify files when the task explicitly asks for it."
+    }
+  }
+}
