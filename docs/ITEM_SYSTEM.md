@@ -90,6 +90,39 @@ from **damage-reduction / thorns / glitch-ward**:
 Rare up.** No multi-slot complexity; leggings+boots are also the pieces kept on
 death (see §12).
 
+#### Armor rework (2026-09-02): per-slot identity + upgrade levels
+
+**Per-slot identity** — each piece multiplies its rolled stats (config
+`piece-identity`, docs/ITEM_BALANCE.md §7):
+
+| Slot | Profile |
+|---|---|
+| Helmet | speed-focused (×2.0 speed, ×0.5 armor/HP) — awareness slot |
+| Chestplate | tank king (×2.0 max HP, ×1.5 armor, ×0.5 speed) |
+| Leggings | armor focus (×1.5 armor, ×0.5 speed) |
+| Boots | speed + mobility (×1.5 speed, ×0.5 armor/HP) |
+
+Same rarity feels different per slot — a loadout is now a decision, not four
+identical picks.
+
+**Upgrade levels (+0..+5)** — armor pieces can be upgraded at the hideout
+Workbench ("Upgrade Held Armor" anvil button, or `/armor upgrade` with the
+piece in hand). Each level grants **+1 armor point**; cost is shards
+(rarity base × level multiplier) + rune/aether/crystal materials:
+
+| Level | Shards (×rarity base: 10/25/60/150/400) | Materials |
+|---|---|---|
+| → 1 | ×1 | 2 Rune Fragment |
+| → 2 | ×2 | 3 Rune Fragment |
+| → 3 | ×3 | 4 Rune + 1 Aether |
+| → 4 | ×4 | 5 Rune + 2 Aether |
+| → 5 | ×6 | 6 Rune + 3 Aether + 1 Rift Crystal |
+
+Maxing a common piece costs ~160 shards; a legendary piece ~6,400 (the deep
+endgame shard sink). Upgrade level is **excluded from sell value** by design —
+upgrades are personal power, not resale inventory, so upgrade-then-sell farming
+is impossible. Old gear deserializes as +0 and stays fully valid.
+
 **Sources:** Unstable Rifts (random rolls — the identify loop), Workbench crafting
 (targeted Resonance with Aether Shards, §7), merchants (fixed base + small roll variance,
 super-rare 0.01% max-roll variant, §11), elites/bosses (guaranteed rare+, rare-only

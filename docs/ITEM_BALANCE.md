@@ -159,7 +159,27 @@ name, lore, and behavior change.
 | void_infusion | no listener, +2% dmg for 1000 | held-gear rework (boost + star reroll) |
 | arcane_staff ladder | epic == rare material | END_ROD at epic |
 
-## 7. Future knobs (not in this pass)
+## 7. Armor upgrade sink (2026-09-02)
+
+Armor pieces take +0..+5 upgrade levels (+1 armor point/level) at the
+Workbench — shards (rarity base × [1,2,3,4,6]) + materials. Level is excluded
+from sell value (no upgrade-then-sell farming). Totals per piece to +5:
+
+| Rarity | Base/level | Shards 1→5 | + Materials (shard-equiv) | Full set (4 pieces) |
+|---|---|---|---|---|
+| Common | 10 | 160 | ~32 | ~770 |
+| Uncommon | 25 | 400 | ~64 | ~1,850 |
+| Rare | 60 | 960 | ~96 | ~4,220 |
+| Epic | 150 | 2,400 | ~176 | ~10,300 |
+| Legendary | 400 | 6,400 | ~256 | ~26,600 |
+
+The legendary column is the deliberate endgame shard sink (~66h at the 400/h
+endgame target for a full maxed legendary set) — optional chase, not a wall.
+Per-slot identity multipliers (helmet speed ×2.0, chestplate HP ×2.0,
+leggings armor ×1.5, boots speed ×1.5) reshape new rolls only; existing items
+keep their current stats.
+
+## 8. Future knobs (not in this pass)
 
 - Mob HP/damage scaling per zone (GAME_DESIGN §2) once MythicMobs tuning lands.
 - Per-archetype roll range skew (e.g. staff higher damage% range, lower stars).

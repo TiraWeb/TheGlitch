@@ -173,6 +173,18 @@
 - [ ] Boss drops corrupted_heal ~25%: spawn `mm mobs spawn GlitchSentinel` won't (that's T3) — check `/mm items`? verify via GlitchKing/Core spawn or trust `mm reload` + table parse
 - [ ] Alchemy tab shows 6 items with new prices (attunement 300/150, tonic 70/35, salve 100/50)
 
+## Armor rework: upgrades + per-slot identity (2026-09-02)
+
+- [ ] `/glitchitems give rare chestplate` → lore shows `» Upgrade +0/5` and boosted stats (armor ×1.5, maxhp ×2.0 vs old ranges); `rare helmet` shows ×2.0 speed / ×0.5 armor; `rare boots` shows ×1.5 speed
+- [ ] `/armor upgrade` while holding the piece → charged shards (rare: 60/120/180/240/360 per level) + materials (rune/aether/crystal), lore line becomes `+1/5`, armor stat +1, piece stays in main hand
+- [ ] `/armor upgrade` without armor in hand → "Hold an armor piece" error; holding a blade → same error (weapons not upgradable)
+- [ ] Insufficient shards → blocked with cost message, nothing consumed; missing materials → blocked listing what's missing
+- [ ] Upgrade a piece to +5 → "fully upgraded" message; further upgrades refused
+- [ ] Old gear from before the rework: put on an existing armor piece → `/armor upgrade` works (deserializes as +0), stats unchanged
+- [ ] Workbench: open `/hideout` → Workbench (chest GUI) → ANVIL "Upgrade Held Armor" button at slot 40 → dispatches `armor upgrade <you>`; dialog UI path (modern-ui) shows the same button and works
+- [ ] Sell an upgraded piece → sell price equals the un-upgraded base+stars value (level excluded)
+- [ ] Re-roll identity: new rare chestplate has higher armor than new rare helmet of same star count
+
 ## Custom UI theming (Arcane Ruins UI kit)
 
 - [ ] Java client auto-receives the updated Oraxen pack on join (accept prompt)
