@@ -6,7 +6,7 @@ Centralizes duplicated code so updates are easy — fix once, all plugins benefi
 
 | Class | Purpose | Replaces |
 |---|---|---|
-| `OraxenUtil` | `isIdShaped` (char loop), `available()`, `build(id)`, `idOf(item)` — PDC scan | `com.theglitch.glitchitems.OraxenUtil` (canonical copy) |
+| `OraxenUtil` | `isIdShaped` (char loop), `available()`, `build(id)`, `idOf(item)` — PDC scan with `pdc.has(STRING)` + try/catch guard for `ByteTag` mismatch (2026-09-01 `c9a229e`) | `com.theglitch.glitchitems.OraxenUtil` (canonical copy) |
 | `ScavengeTag` | `TAG = "specter_scavenge"` constant | `AbilityListener.SCAVENGE_TAG` |
 | `VaultHook` | Cached Vault `Economy` (30s), `getEconomy(plugin)` / `invalidate()` via `Bukkit.getServicesManager` | Per-plugin `getEconomy()` / `cachedEconomy` |
 | `MiniMessageUtil` | `MM = MiniMessage.miniMessage()` + `deserialize(raw)` with fallback | 8+ duplicated `MM` fields |

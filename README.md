@@ -64,28 +64,23 @@ Live server data (worlds, edited configs) is never overwritten; `start.sh` and t
 
 First join: open the console and run `whitelist add YourName`, then `op YourName`.
 
-## The extraction loop (core implemented, live verification pending)
+## The extraction loop (dynamic, deployed 2026-09-01)
 
-The core gameplay loop is extraction via VelKoth zones:
+The core loop is extraction via VelKoth zones in `glitch_red`:
 
-1. Player enters an extraction zone in `glitch_red` (marked by particles/boss bar)
-2. Player holds the Standard zone for 30 seconds
-3. On completion:
-   - Inventory auto-saved to GlitchStash (accumulates across extractions)
-   - Residual Glitch payout bonus credited (sell value × stacks multiplier)
-   - Player auto-teleported to hub via Multiverse-Core (`mv tp`)
-4. Player retrieves items in hub with `/stash`
+1. `AutoExtractScheduler` drives a 31-minute cycle: `raidTicks 36000` (30m open) + `+5s scatter`. On `AutoExtractCycleEndEvent`, `DynamicExtractionManager` picks **3 validated random spots** per cycle (`SpotPicker`: 250 attempts, 12-deep terrain scan, 9-point flatness tolerance 2, solid `isOccluding` ground, barrier/bedrock/shulker rejection, WorldGuard-aware, 30-block separation).
+2. Each point becomes a VelKoth arena (`extraction_dyn0/1/2`) via reflection (`ArenaManager.addArena/saveArenas`, `CuboidRegion p.y()-1 to p.y()+4` — 6 tall), with `ExtractionVariantManager.setRuntimeZones(...)` syncing payout keys, force-loaded chunks, locator-bar waypoints (`WaypointBridge` living-entity beacons) + particle ring (`END_ROD` column + `r*0.6` ring + flare) + `TextDisplay` labels.
+3. Player holds any dynamic zone for **30 seconds** (boss bar + capture). On completion: inventory auto-saved to GlitchStash (accumulates), Residual Glitch payout bonus credited, auto-teleport to hub via Multiverse-Core (`mv tp`), retrieval via `/stash`.
+4. Keys are **universal**: one existing key works at all active points; variant zones auto-follow `extraction-variants.zones`. Fallback arenas exist if a cycle yields <3 valid spots.
 
-**Extraction variants (GlitchStash, source):** Fast (15s, consumes a Fast
-Extract Key) and Silent (10s, consumes a Rift Key) zones earn a payout bonus
-(+5% / +10%). Right-click the key inside the zone to consume and arm it.
+**Extraction variants (GlitchStash, deployed):** Fast (15s, Fast Extract Key) and Silent (10s, Rift Key) zones earn a payout bonus (+5% / +10%). Right-click the key inside the zone to consume and arm it (also works on dynamic points).
 
 **Commands:**
-- `/koth start extraction_x1` — start an extraction event
+- `/koth list` — list all arenas and status (look for `extraction_dyn*` during a cycle)
 - `/stash` — open stash GUI, click items to retrieve
 - `/stashtp` — teleport to hub
 - `/extractadmin zones|reload|armed` — variant zone admin
-- `/koth list` — list all arenas and status
+- VelKoth `/koth start` still works for manual arenas; dynamic cycles are automatic (no manual `/koth start extraction_x1` needed).
 
 **Important:** EssentialsX is INCOMPATIBLE with Minecraft 26.x / Java 25. Commands like `/spawn`, `/warp` do not work. Teleport uses Multiverse-Core instead.
 
@@ -202,11 +197,12 @@ Admin: `/hideoutadmin set <player> <station> <level> | reset <player> | reload`
 | MythicMobs | Custom mobs + loot | `server/plugins/MythicMobs/` |
 | FancyNpcs | Packet-based NPCs | `server/plugins/FancyNpcs/` |
 | DeluxeMenus | GUI menus | `server/plugins/DeluxeMenus/gui_configs/` |
-| TAB | Scoreboard + tab list | `server/plugins/TAB/config.yml` |
+| TAB | Tab list + header/footer (sidebar owned by GlitchHUD) | `server/plugins/TAB/config.yml` (`scoreboard.enabled: false`) |
 | PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
 | VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
-| Oraxen | Custom items (18 Arcane Ruins items) | `server/plugins/Oraxen/` |
-| **GlitchStash** | **Extraction vault + Fast/Silent variants** (custom) | `plugins/GlitchStash/` |
+| Oraxen | Custom items (18 Arcane Ruins items) + UI glyphs | `server/plugins/Oraxen/` |
+| **GlitchHUD** | **Scoreboard/HUD** (custom: per-world sidebar, below-name stacks, residual boss bar) | `plugins/GlitchHUD/` |
+| **GlitchStash** | **Extraction vault + dynamic spots + Fast/Silent variants** (custom) | `plugins/GlitchStash/` |
 | **GlitchClasses** | **Class system** (custom: abilities, ultimates, starter kit) | `plugins/GlitchClasses/` |
 | **GlitchItems** | **Item system** (custom: gear rolls, /identify, Resonance, Residual Glitch, loot containers) | `plugins/GlitchItems/` |
 | **GlitchShops** | **Grand Bazaar** (custom: buy/sell merchants, gear vendor) | `plugins/GlitchShops/` |
@@ -222,7 +218,7 @@ Admin: `/hideoutadmin set <player> <station> <level> | reset <player> | reload`
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
 | Chunky | World pre-generation | `server/plugins/Chunky/` |
 
-All 11 deployable custom plugins share the `com.theglitch` Maven reactor; `plugins/GlitchCommon/` is a shared library module (no plugin.yml — never deployed).
+All **12** deployable custom plugins share the `com.theglitch` Maven reactor; `plugins/GlitchCommon/` is a shared library module (no plugin.yml — never deployed). `GlitchDungeons` is deferred/excluded by default — total 14 reactor modules.
 
 ## The three zones (Phase 4)
 
@@ -250,13 +246,13 @@ Built from source on the server — **preferred: single reactor build** (Paper r
 
 ```bash
 cd ~/TheGlitch
-sudo ./scripts/build-all.sh              # all 11 deployable plugins in topological order (reactor, -T 1C)
+sudo ./scripts/build-all.sh              # all 12 deployable plugins in topological order (reactor, -T 1C)
 # sudo ./scripts/build-all.sh --clean    # full clean build
 # sudo ./scripts/build-all.sh GlitchDungeons   # deferred dungeon plugin — opt-in only
 sudo systemctl restart theglitch
 ```
 
-Legacy per-plugin (still works for first-time lib seeding or single-plugin debug — order matters; the four newest plugins have no `build.sh` and are built by the reactor only):
+Legacy per-plugin (still works for first-time lib seeding or single-plugin debug — order matters; the five newest plugins have no `build.sh` and are built by the reactor only):
 
 ```bash
 # Topological order: Items → Shops → Stash → Classes → Hideout → DeathRules → HealthBar
@@ -267,13 +263,15 @@ sudo ./plugins/GlitchClasses/build.sh
 sudo ./plugins/GlitchHideout/build.sh
 sudo ./plugins/GlitchDeathRules/build.sh
 sudo ./plugins/GlitchHealthBar/build.sh
-# GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot: reactor-only
-#   mvn -B -DskipTests package -pl :GlitchRaid -am   (etc.)
+# GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD: reactor-only
+#   mvn -B -DskipTests package -pl :GlitchHUD -am   (etc.)
 # sudo ./plugins/GlitchDungeons/build.sh   # deferred — source only, not deployed by default
 sudo systemctl restart theglitch
 ```
 
-Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all 13 modules. CI validate: `./scripts/build-all.sh --no-deploy`.
+Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **14** modules. CI validate: `./scripts/build-all.sh --no-deploy`.
+
+`build-all.sh` also syncs `GlitchHUD` extras on deploy: forces `server/plugins/TAB/config.yml` (`scoreboard.enabled: false` — sidebar owned by GlitchHUD) and `server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json`.
 
 GlitchInsurance additionally needs `lib/VaultUnlocked.jar` for its compile-time Vault API (`systemPath`) — `build-all.sh` auto-seeds it from `/opt/theglitch/server/plugins/` or `server/plugins/`.
 
@@ -299,11 +297,11 @@ setup-imported-worlds.sh  Phase 4: import custom maps (glitch_red + glitch_pve) 
 reapply-world-config.sh   Phase 4: re-apply gamerules/flags/borders after world import
 setup-luckperms.sh        Phase 5.1: LuckPerms groups, hierarchy
 setup-essentials.sh       Phase 5.2: spawn, warps, starter kit (INCOMPATIBLE)
-setup-tab.sh              Phase 5.7: TAB scoreboard
+setup-tab.sh              Phase 5.7: TAB header/footer (sidebar now owned by GlitchHUD)
 setup-papi.sh             Phase 5.7: PlaceholderAPI expansions
 setup-mythicmobs.sh       Phase 5.3: MythicMobs reload
 setup-coins.sh            Phase 5.2: Glitch Shards economy
-setup-velkoth.sh          Phase 5.8: VelKoth extraction arenas
+setup-velkoth.sh          Phase 5.8: VelKoth extraction arenas (static fallback)
 setup-glitchstash.sh      Phase 5.9: GlitchStash extraction vault
 setup-deluxemenus.sh      Phase 5.5: GUI menus
 setup-fancynpcs.sh        Phase 5.5: NPC system
@@ -311,9 +309,9 @@ setup-geyser.sh           Phase 3.1: Bedrock bridge
 setup-all-plugins.sh      Master runner: all setup scripts in order
 setup-oraxen.sh           Phase 5.10: build Oraxen from source (paid jars avoided)
 setup-oraxen-items.sh     Phase 5.10: deploy items/textures/lang to Oraxen, reload
-plugins/GlitchStash/      GlitchStash source (built via build.sh)
+plugins/GlitchStash/      GlitchStash source — vault + dynamic extraction (SpotPicker/DynamicExtractionManager)
 plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
-plugins/GlitchItems/      GlitchItems source (built via build.sh)
+plugins/GlitchItems/      GlitchItems source (built via build.sh) — gear, residual, containers
 plugins/GlitchShops/      GlitchShops source (built via build.sh)
 plugins/GlitchHealthBar/  GlitchHealthBar source (built via build.sh)
 plugins/GlitchDeathRules/ GlitchDeathRules source (built via build.sh)
@@ -323,8 +321,11 @@ plugins/GlitchRaid/       GlitchRaid source (reactor-only build)
 plugins/GlitchInsurance/  GlitchInsurance source (reactor-only; needs lib/VaultUnlocked.jar)
 plugins/GlitchEvents/     GlitchEvents source (reactor-only build)
 plugins/GlitchLoot/       GlitchLoot source (reactor-only build)
+plugins/GlitchHUD/        GlitchHUD source (reactor-only; per-world sidebar + TAB takeover + negative_space sync)
 plugins/GlitchDungeons/   GlitchDungeons source (deferred — not deployed by default)
 server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
+server/plugins/TAB/config.yml  TAB config (scoreboard.enabled: false — HUD owns sidebar)
+server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json  HUD shift glyphs
 console.sh                attach to the live server console
 scripts/mc-cmd.py         local RCON client
 server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM

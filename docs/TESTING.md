@@ -8,11 +8,11 @@
 
 - [ ] `git pull && sudo ./bootstrap.sh` (seeds new MythicMobs SpawnAreas + Spawners subdirs)
 - [ ] Build all changed plugins:
-  - `sudo ./scripts/build-all.sh`  *(preferred: reactor, topological order — covers all 11 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents/GlitchLoot)*
-  - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar` (newer four are reactor-only)
+  - `sudo ./scripts/build-all.sh`  *(preferred: reactor, topological order — covers all 12 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents/GlitchLoot/GlitchHUD; also syncs `TAB/config.yml` + `negative_space.json`)*
+  - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar` (newer five are reactor-only)
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./setup-mythicmobs.sh` (`mm reload` + verify mobs list)
-- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot
+- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD (+ `TAB scoreboard.enabled: false` + `Oraxen negative_space` sync lines)
 
 ## GlitchDeathRules (mercy rule + entry protection)
 
@@ -37,9 +37,21 @@
 - [ ] Identify a rift with stacks → observe +1 star rolls and the rarity-surge message (`rarity-upgrade-percent-per-stack` chance)
 - [ ] `/glitchitems glitch` debug tools still work (stacks set/clear)
 
-## Extraction variants (GlitchStash + VelKoth)
+## Dynamic extraction (GlitchStash — primary, 2026-09-01)
 
-- [ ] Create Fast/Silent arenas in-game: `/koth wand` → select → `/koth create extract_fast` → `/koth set time extract_fast 15`; same for `extract_silent` at 10s; `/koth start extract_fast` etc.
+> **Verified in-game 2026-09-01:** cycle 3/3 spawn, capture inside the region at all 3 dyn points, ring/flare particles. Remaining below: armed-key bonus, locator-bar, regression over more cycles.
+
+- [ ] After shard timer expiry, `logs/latest.log` shows `Cycle #N — scheduled timeout kill in 30m and scatter in +5s` then `Cycle #N t0 complete — next cycle in 31m` and `Cycle #N — 3/3 started at (...),(...),(...) (world=glitch_red)` (or fallback warning if <3 points) — `grep -E 'Cycle #|DynamicExtract|started at' logs/latest.log`
+- [ ] `/koth list` during a cycle shows `extraction_dyn0/1/2` active with correct `CuboidRegion y-1..y+4` (6 high) — capture must work while standing inside (not just on center block)
+- [ ] At each of the 3 points: ground-level `END_ROD` column + ring `r*0.6` (8+8) + central flare visible (not just a single column at `p.y()`); coordinate TextDisplay label present; chunk stays loaded for cycle duration (`a0edffa`)
+- [ ] Locator-bar (F3 compass/waypoint) shows distinct-colored beacons for all 3 points at render distance (via `WaypointBridge` living-entity `WAYPOINT_TRANSMIT_RANGE`)
+- [ ] Capture any `extraction_dyn*` with no key: 30s hold → stash saved (`GlitchStash` log), teleport to hub, inventory retrievable via `/stash`
+- [ ] Capture a dynamic point while armed with Fast/Silent key: right-click key to consume+arm then win → +5%/+10% bonus credited; variant zones now auto-follow dynamic via `setRuntimeZones`
+- [ ] Regression — stepped pyramid / narrow roof / ocean/chest/barrier tile must be **rejected**: next cycle should not place on a stepped roof; `SpotPicker` 9-point tol2 + 2-deep `isOccluding` reject guards this (verified via `bdde14c`/`9d8f05a` diagnostics)
+
+## Extraction variants (GlitchStash + VelKoth — static fallback)
+
+- [ ] (Manual fallback) Create Fast/Silent arenas: `/koth wand` → select → `/koth create extract_fast` → `/koth set time extract_fast 15`; same for `extract_silent` at 10s; `/koth start extract_fast` etc.
 - [ ] Mirror the arena bounds into `plugins/GlitchStash/config.yml` → `extraction-variants.zones` (fast/silent), then `/extractadmin reload`
 - [ ] `/extractadmin zones` lists both arenas with correct key/bonus
 - [ ] Stand in a key zone without a key → warning message (throttled to 10s)
@@ -47,7 +59,7 @@
 - [ ] Win the fast arena → stash saved + variant bonus message (+5%); verify bonus shards credited
 - [ ] Win the silent arena armed with Rift Key → +10% bonus
 - [ ] Win a key zone WITHOUT arming → warning + no variant bonus (logged)
-- [ ] Standard arena (30s) still works with no key
+- [ ] Standard static arena (30s) still works with no key (if still present)
 
 ## Loot containers (GlitchItems)
 
@@ -135,11 +147,21 @@
 - [ ] Auto-scheduler: temporarily set `min-interval-minutes: 1`, reload, confirm a random event fires within ~2 min, then restore config
 - [ ] `/glitchevents stop` cancels pending tasks; `/glitchevents reload` applies config changes
 
+## GlitchHUD (new, 2026-09-01)
+
+> **Verified in-game 2026-09-01:** trimmed divider, hub `Ping`/`TPS` live. Remaining below: `/sb`, below-name, `NOTCHED_10`, per-world layouts.
+
+- [ ] On join, `logs/latest.log` shows `GlitchHUD enabled (refresh=20 ticks, below-name=true)` and `HUD takeover: TAB scoreboard disabled`
+- [ ] In `hub`, `glitch_pve`, and `glitch_red`, sidebar shows no red numbers (`NumberFormat.blank`), per-world layout, dim `<dark_gray>DIVIDER</dark_gray>` only (no `────────` dashes), live `Ping: <ms> TPS: <x.x>` not `—` (hub), `◆ EXTRACTION ◆` pulses subtly (`tick%2` — not flashing), shard/class/next-cycle lines render, and `BELOW_NAME` stacks render under nametags
+- [ ] `/sb` toggle hides/shows the sidebar without needing a rejoin; below-name stacks also hide; re-join restores
+- [ ] Residual Glitch boss bar at cap is `NOTCHED_10` purple with `DARKEN_SCREEN`; otherwise level-based color
+- [ ] `/tab reload` + Oraxen pack still loads and `negative_space.json` shifts are present (no glyph overlap)
+
 ## Custom UI theming (Arcane Ruins UI kit)
 
 - [ ] Java client auto-receives the updated Oraxen pack on join (accept prompt)
 - [ ] Every chest GUI (Grand Bazaar, /class, /stash, /hideout, world chests) shows the dark void-purple panel with amethyst frame + corner diamonds (no vanilla gray)
-- [ ] Menu titles render the glitch-diamond rune glyph on both sides (Bazaar/Stash/Class/Hideout)
+- [ ] Menu titles render the glitch-diamond rune glyph on both sides (Bazaar/Stash/Class/Hideout) — HUD rune `E049` is separate and should not appear here
 - [ ] `/identify` a rift → gear lore is Wynncraft-style: divider rule, colored rarity line ("Rare · Melee Weapon"), » stat lines with gold/gray star pips, resonance icon + bold label, italic dark-gray flavor, shard-glyph sell price last
 - [ ] Star pips show 5 slots total (filled gold sparkle + empty gray outline)
 - [ ] Legendary godroll (all 5-star pips) shows "Perfectly resonant." in gold
@@ -156,3 +178,11 @@
 - [ ] Power budget drains by rarity cost (20/60/150); when exhausted, no bonus items until next hourly reset (log/action-bar says capped)
 - [ ] Anti-funnel: two qualifying kills within 120s → second one suppressed with "cooling down" message
 - [ ] Bonus drops never break normal death loot (vanilla + MythicMobs tables unaffected)
+
+## Container keys regression (ByteTag PDC fix, 2026-09-01)
+
+> **Verified in-game 2026-09-01:** need-key message without crash; key open/consume clean.
+
+- [ ] With no key, right-clicking a marked `loot_cache`/`vault` block shows `need-key` (not a `PlayerInteractEvent` stack trace); before `c9a229e` this threw `IllegalArgumentException: The found tag instance (ByteTag) cannot store String at CraftPersistentDataTypeRegistry.extract:347 → OraxenUtil.idOf:66 → ContainerManager.isKey:376`
+- [ ] `/o give <you> cache_key` then right-click the same chest → key consumed, loot rolls (uncommon/rare weighted), no crash even on modded lore items
+- [ ] `vault_key`/`rift_key` vaults also open cleanly; tested in `hub` (can set) and `glitch_red` loot cycle with Residual stacks

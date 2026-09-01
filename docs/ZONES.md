@@ -144,11 +144,7 @@ camper at one entry point cannot even see arrivals at its neighbors. The
 Phase 6 entry manager rotates/randomizes assignment (weighted by gear score);
 until then these are documented teleport targets.
 
-**Extraction sites — operator-placed** (3 arenas recommended; asymmetric on
-purpose — equidistance would make rotations trivially predictable). Site
-coordinates are chosen in-game by the operator: create the VelKoth arenas with
-`/koth wand` → `/koth create <name>` → `/koth set time <name> 30` → `/koth start <name>`
-and mirror Fast/Silent variant bounds into `GlitchStash/config.yml`.
+**Extraction sites — dynamic (primary) + operator-placed (fallback/variant).** `DynamicExtractionManager` (GlitchStash, 2026-09-01 `c1634b3`/`9d8f05a`/`a0edffa`) drives the live loop: `AutoExtractScheduler` 31m cycle (`36000` ticks open + `5s` scatter) → `SpotPicker` (250 tries, 12-deep scan, 9-point flatness tol 2, `isOccluding` 2-deep solid, shulker/barrier/bedrock/chest rejection, WorldGuard, 30-block separation) → 3 validated random `extraction_dyn*` VelKoth arenas (`CuboidRegion y-1..y+4`, force-loaded chunks, `WaypointBridge` locator-bar beacons + `ExtractionMarkers` ring). Operators can still create manual arenas (`/koth wand` → `/koth create <name>` → `/koth set time <name> 30` → `/koth start <name>`) and mirror Fast/Silent variant bounds into `GlitchStash/config.yml` `extraction-variants.zones` (now auto-synced to dynamic points as well). For world generation, recommend 3 dynamic points per cycle; asymmetry is automatic via random validation.
 
 **Loot topology:** risk scales inward. Tier 4/5 loot and bosses only at/near
 **The Core (0, 0)** — the center POI every extraction route has to gamble

@@ -11,8 +11,8 @@
 > **Implementation status:** This document is the intended Arcane Ruins design.
 > Oraxen item definitions/assets, GlitchItems V1 source, containers, and parts
 > of GlitchShops exist. Rift drops are wired (T2-T4 tables), Residual Glitch
-> consumers (identify/containers/elite hunt) are in source, and death rules
-> are implemented (GlitchDeathRules + Coins account-bound `player-drop:false` 2026-08-23). Identifier NPC behavior and crafting
+> consumers (identify/containers/elite hunt) are in source, death rules
+> are implemented (GlitchDeathRules + Coins account-bound `player-drop:false` 2026-08-23), **dynamic extraction** is live (2026-09-01 `c1634b3`/`9d8f05a` 3 validated random points, universal keys, ring particles), and **GlitchHUD** sidebar/HUD is deployed (`f312262`). Identifier NPC behavior and crafting
 > (GlitchHideout workbench covers §7 recipes) still need live verification.
 > Root `pom.xml:53` now resolves PlaceholderAPI via `https://repo.extendedclip.com/content/repositories/placeholderapi/`.
 > See [`docs/STATUS.md`](STATUS.md).

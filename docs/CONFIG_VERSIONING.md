@@ -1,6 +1,6 @@
 # Config Versioning
 
-How `config.yml` upgrades work for The Glitch custom plugins: GlitchItems, GlitchShops, GlitchStash, GlitchClasses, GlitchHideout, GlitchDeathRules, GlitchHealthBar, GlitchRaid, GlitchInsurance, GlitchEvents, and GlitchLoot. (GlitchCommon has no config; GlitchDungeons is deferred.)
+How `config.yml` upgrades work for The Glitch custom plugins: GlitchItems, GlitchShops, GlitchStash, GlitchClasses, GlitchHideout, GlitchDeathRules, GlitchHealthBar, GlitchRaid, GlitchInsurance, GlitchEvents, GlitchLoot, and GlitchHUD. (GlitchCommon has no config; GlitchDungeons is deferred.)
 
 ## Rule: live configs are seeded only if missing
 

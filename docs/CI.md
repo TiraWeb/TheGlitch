@@ -60,7 +60,7 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 
 - Make scripts executable: `chmod +x scripts/*.sh plugins/*/build.sh bootstrap.sh` (fix with `sudo bash scripts/fix-script-modes.sh`)
 - Keep YAML `indent_size: 2` (see `.editorconfig`)
-- Pin Java/Paper once in root `pom.xml` (`<java.version>21</java.version>`, `<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`)
+- Pin Java/Paper once in root `pom.xml` (`<java.version>21</java.version>`, `<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`) — applies to all 14 modules
 - If CI fails on `package` due to network (`Could not transfer artifact`), `validate` green is still a passing signal — `package` is `continue-on-error: true`.
 
 ## Files
@@ -68,4 +68,4 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 - Workflow: `.github/workflows/ci.yml`
 - Config versioning: `docs/CONFIG_VERSIONING.md` (why bumping `config-version` needs manual merge or `copyDefaults(true)`)
 - Build order: `HANDOFF.md` (Build Order) and `README.md` (Building section)
-- The reactor covers all 13 modules: 11 deployable plugins + the GlitchCommon library + deferred GlitchDungeons. `scripts/build-all.sh` (no args) builds/deploys the 11 deployable plugins; GlitchCommon builds only when something depends on it or via full-reactor fallback.
+- The reactor covers all **14** modules: **12** deployable plugins (incl. GlitchHUD) + the GlitchCommon library + deferred GlitchDungeons. `scripts/build-all.sh` (no args) builds/deploys the 12 deployable plugins; GlitchCommon builds only when something depends on it or via full-reactor fallback. It also syncs GlitchHUD extras (`server/plugins/TAB/config.yml` `scoreboard.enabled: false` + `server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json`).

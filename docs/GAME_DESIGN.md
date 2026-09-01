@@ -6,12 +6,15 @@
 > Item names/rarities per docs/ITEM_SYSTEM.md; merchant economy per ITEM_SYSTEM.md §11.
 
 > **Implementation status:** This is a design specification, not an as-built
-> feature list. The tables below describe intended gameplay. As of 2026-08-23:
+> feature list. The tables below describe intended gameplay. As of 2026-09-01:
 > the full ten-mob roster, class plugin (abilities + ultimates + starter kit),
-> GlitchStash (incl. Fast/Silent variants), GlitchItems (identify, Residual
-> consumers, loot containers), GlitchShops, GlitchHealthBar, GlitchDeathRules,
-> GlitchRaid/Insurance/Events/Loot and GlitchHideout exist in source and are
-> deployed 2026-08-22/23 (Folia-safe, real PAPI, Coins account-bound); most world content, the Identifier NPC,
+> GlitchStash (**dynamic 3-point validated random extraction** + Fast/Silent variants),
+> GlitchItems (identify, Residual consumers, loot containers), GlitchShops,
+> GlitchHealthBar, GlitchDeathRules, GlitchRaid/Insurance/Events/Loot,
+> GlitchHideout, and **GlitchHUD** (per-world sidebar, below-name, TAB takeover)
+> exist in source and are deployed 2026-09-01 (Folia-safe, real PAPI `2.12.3`,
+> Coins account-bound, `ByteTag` PDC crash + ping/TPS fixed, `SpotPicker` flatness tightened,
+> scatter land-corrected `[0..2000]²`); most world content, the Identifier NPC,
 > dungeon content, and anti-grief remainder (friendly-fire/AFK) are still incomplete. See
 > [`docs/STATUS.md`](STATUS.md).
 
@@ -370,12 +373,7 @@ Five dungeon tiers, each harder than the last. Tier 1 is for beginners, Tier 5 i
 | **Silent Extract** | 10s | Silent | Rift Key (rare drop) | 1 per map (hidden) |
 
 **Key design:** Standard is free but loud — attracts mobs and players. Fast is quicker but costs a key. Silent is the best but the key is extremely rare.
-**Repository configuration:** VelKoth is set to **30 seconds** for the Standard
-extract. The live arena timer is stored in generated `arenas.yml` and must be
-verified on the server. Fast/Silent extraction is **implemented in source
-(2026-08-06)** in GlitchStash (key-requiring zones, arming, payout bonus) —
-VelKoth arenas with 15s/10s capture times must still be created live and
-mirrored into the GlitchStash config.
+**Live implementation (2026-09-01):** `AutoExtractScheduler` 31m cycle drives **dynamic** Standard extraction — 30s capture on 3 validated random `extraction_dyn*` arenas per cycle (`SpotPicker` 9-point tol2, `CuboidRegion y-1..y+4`, ring particles, locator-bar waypoints, force-loaded chunks; see `plugins/GlitchStash/src/main/java/com/theglitch/glitchstash/extract/*`). Static VelKoth `30s` timer remains in repo `arenas.yml`; Fast/Silent extraction **implemented in source (2026-08-06)** in GlitchStash (key-requiring zones, arming, payout bonus) — keys now universal over dynamic points. Static Fast/Silent arenas (`extract_fast` 15s / `extract_silent` 10s) remain creatable live and mirrored into `GlitchStash/config.yml` `extraction-variants.zones` for manual tests.
 
 ### Death Rules
 

@@ -1,6 +1,6 @@
 # Low-Level Bug Tracker - Custom Plugins
 
-Updated: 2026-08-10
+Updated: 2026-09-01
 
 This tracker lists known implementation issues. It is not a substitute for
 runtime testing. Source-only plugins must be built and tested on the target
@@ -132,3 +132,22 @@ Resolved (2026-08-10):
 - Fixed a compile-blocking type mismatch in `getStash`/`getArmory`
   (lazy-load now registers station levels so storage always persists), and
   `savePlayer` persists storage even without station data.
+
+## GlitchHUD (new, 2026-09-01)
+
+Resolved:
+
+- **Divider too wide:** `HudManager` hub/pve/red built `DIVIDER + " ────────"` overflow — trimmed to `<dark_gray>DIVIDER</dark_gray>` only (`9d8f05a`).
+- **Ping/TPS always `—`:** `PlaceholderResolver` `%ping%`/`%player_ping%`/`%server_tps_1%` via `PlaceholderAPI.setPlaceholders` could stay literal — added reflective `Player.getPing()` + `Bukkit.getTPS()[0]` fallback; `HudManager.buildHub` now guards `pingVal>=0`/`tpsVal>=0` (`c9a229e`).
+- **Locator-bar chunk unload:** `DynamicExtractionManager` waypoints vanished at distance — added force-load of marker chunks for cycle duration + stale sweep (`a0edffa`).
+
+## Cross-plugin PDC crash (2026-09-01 `c9a229e`)
+
+| ID | Severity | Location | Status / Description |
+|---|---|---|---|
+| P1 | Critical | `GlitchItems/OraxenUtil.java:60`, `GlitchCommon/OraxenUtil.java:75`, `GlitchHideout/HideoutManager.java:423`, `GlitchShops/ShopManager.java:345`, `GlitchStash/ExtractionVariantManager.java:175`, `GlitchItems/IdentifyManager.java:55` → `ContainerManager.isKey:376 → hasKey:352 → open:240 → ContainerListener.onInteract:30` | `IllegalArgumentException: The found tag instance (ByteTag) cannot store String at CraftPersistentDataTypeRegistry.extract:347` when scanning PDC for Oraxen `String` id on items storing a `Byte` tag — threw through `PlayerInteractEvent` breaking *all* container keys and silencing `need-key`. **Fixed:** guard `if (!pdc.has(key, STRING)) return null` + try/catch around `pdc.get` returning `null` on wrong type. |
+| P2 | Warning | `plugins/GlitchStash/src/main/java/com/theglitch/glitchstash/extract/SpotPicker.java` | Stepped-pyramid / narrow roof spots could pass flatness (5-point, tol 3) and thin `y-1..y+3` capture — tightened to 9-point tol 2 + 2-deep `isOccluding` solid + `CuboidRegion y-1..y+4` + ring `r*0.6` particles + stale chunk sweep (`9d8f05a`/`c1634b3`). |
+
+Open:
+
+- Verified in-game 2026-09-01: hub divider, hub Ping/TPS values, container open/need-key flows. Locator-bar waypoint rendering at distance still unconfirmed.
