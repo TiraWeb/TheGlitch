@@ -13,6 +13,7 @@ reasoning, decisions, and orchestration.
 | Quick fixes: plugin.yml, config.yml, pom.xml, YAML spacing, Maven/stack-trace errors | `syntax-fixer` |
 | Paper/Purpur API signatures, NMS mappings, javadoc lookups | `docs-reader` |
 | General research / multi-step non-plugin tasks | `general` |
+| Deploy/verify loops (scp script → ssh run → service status → log greps) | `ops-runner` |
 
 Guidelines:
 
