@@ -373,7 +373,7 @@ public final class HudManager {
         out.add("<gray>Shards:</gray> <white>" + UiConstants.SHARD + " " + shards + "</white>");
         out.add("<gray>Class:</gray> <white>" + resIcon + " " + clazz + " <gray>Lv</gray>" + lvl + "</white>");
         out.add("");
-        out.add("<gray>" + UiConstants.DIVIDER + " \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</gray>");
+        out.add("<dark_gray>" + UiConstants.DIVIDER + "</dark_gray>");
         out.add("<gray>Ping:</gray> <white>" + ping + "ms</white> <gray>TPS:</gray> <white>" + tps + "</white>");
         out.add("");
         out.add("<gray><italic>Warp NPCs to deploy</italic></gray>");
@@ -393,7 +393,7 @@ public final class HudManager {
         out.add("<gray>Shards:</gray> <white>" + UiConstants.SHARD + " " + shards + "</white>");
         out.add("<gray>Class:</gray> <white>" + resIcon + " " + clazz + " <gray>Lv</gray>" + lvl + "</white>");
         out.add("");
-        out.add("<gray>" + UiConstants.DIVIDER + " \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</gray>");
+        out.add("<dark_gray>" + UiConstants.DIVIDER + "</dark_gray>");
         out.add("<green>\u2713 Keep Inventory</green>");
         out.add("<yellow>\u26A0 Shards drop on death</yellow>");
         out.add("");
@@ -422,7 +422,7 @@ public final class HudManager {
         out.add("<gray>Shards:</gray> <white>" + UiConstants.SHARD + " " + shards + "</white>");
         out.add("<gray>Class:</gray> <white>" + resIcon + " " + clazz + " <gray>Lv</gray>" + lvl + "</white>");
         out.add("");
-        out.add("<gray>" + UiConstants.DIVIDER + " \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</gray>");
+        out.add("<dark_gray>" + UiConstants.DIVIDER + "</dark_gray>");
 
         // Residual line — subtle pulse when >=5 or max
         if (stacks > 0) {

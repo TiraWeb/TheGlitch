@@ -25,9 +25,9 @@ import java.util.logging.Level;
  */
 public final class SpotPicker {
 
-    private static final int MAX_ATTEMPTS = 200;
-    private static final int SCAN_DEPTH = 10;
-    private static final int FLATNESS_TOLERANCE = 3;
+    private static final int MAX_ATTEMPTS = 250;
+    private static final int SCAN_DEPTH = 12;
+    private static final int FLATNESS_TOLERANCE = 2;
 
     /** Per-cycle placement parameters from {@code auto-extract.dynamic}. */
     public record PickSpec(int centerX, int centerZ, int radius, int minSeparation,
@@ -110,14 +110,17 @@ public final class SpotPicker {
         return null;
     }
 
-    /** Ground Y at the 4 corners + center of the capture square must be within ±3 of center ground Y. */
+    /** Ground Y at 9 points (center + 4 edges + 4 corners) must be within ±2 of center. */
     private boolean isFlatEnough(World world, int x, int z, int groundY, int r) {
-        int[] cornersX = {x - r, x + r, x - r, x + r, x};
-        int[] cornersZ = {z - r, z - r, z + r, z + r, z};
-        for (int i = 0; i < cornersX.length; i++) {
-            Integer colY = findValidTargetY(world, cornersX[i], cornersZ[i]);
+        int[] checkX = {x, x - r, x + r, x, x, x - r, x + r, x - r, x + r};
+        int[] checkZ = {z, z, z, z - r, z + r, z - r, z - r, z + r, z + r};
+        for (int i = 0; i < checkX.length; i++) {
+            Integer colY = findValidTargetY(world, checkX[i], checkZ[i]);
             if (colY == null) return false;
             if (Math.abs((colY - 1) - groundY) > FLATNESS_TOLERANCE) return false;
+            // Also ensure the column has solid ground 2 deep (not a 1-block pillar)
+            Block below = world.getBlockAt(checkX[i], colY - 2, checkZ[i]);
+            if (below == null || !below.getType().isSolid()) return false;
         }
         return true;
     }
@@ -132,7 +135,7 @@ public final class SpotPicker {
         return false;
     }
 
-    /** Existing static arena used as fallback: center x/z of its region, keep its y. */
+    /** Existing static arena used as fallback: re-validate its center Y. */
     private ExtractionPoint fallbackPoint(String arenaName, int index, int radiusBlocks, long openUntil) {
         try {
             VelKothPlugin velkoth = VelKothPlugin.getInstance();
@@ -144,7 +147,13 @@ public final class SpotPicker {
             Location center = cr.getCenter();
             World world = cr.world();
             if (world == null) return null;
-            return new ExtractionPoint(arenaName, world.getName(), center.getBlockX(), center.getBlockY(),
+            // Re-validate Y instead of trusting stale region center
+            Integer validY = findValidTargetY(world, center.getBlockX(), center.getBlockZ());
+            int y = validY != null ? validY : center.getBlockY();
+            if (validY == null) {
+                plugin.getLogger().warning("[DynamicExtract] Fallback arena '" + arenaName + "' center Y " + center.getBlockY() + " not on valid ground — using raw Y but may float.");
+            }
+            return new ExtractionPoint(arenaName, world.getName(), center.getBlockX(), y,
                     center.getBlockZ(), radiusBlocks, openUntil, index);
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "[DynamicExtract] Failed to read fallback arena '" + arenaName + "': " + e.getMessage());
@@ -208,7 +217,9 @@ public final class SpotPicker {
         Material m = ground.getType();
         if (m.isAir()) return false;
         if (!m.isSolid()) return false;
+        if (!m.isOccluding()) return false;
         if (m == Material.WATER || m == Material.LAVA) return false;
+        if (m == Material.BARRIER || m == Material.BEDROCK) return false;
         try {
             if (Tag.LEAVES.isTagged(m)) return false;
             if (Tag.LOGS.isTagged(m)) return false;
@@ -216,6 +227,9 @@ public final class SpotPicker {
             String n = m.name();
             if (n.contains("LEAVES") || n.contains("LOG")) return false;
         }
+        // Reject container / scaffolding / fragile blocks that would make capture weird
+        String n = m.name();
+        if (n.contains("SHULKER") || n.contains("CHEST") || n.contains("BARREL") || n.contains("SCAFFOLDING")) return false;
         return true;
     }
 

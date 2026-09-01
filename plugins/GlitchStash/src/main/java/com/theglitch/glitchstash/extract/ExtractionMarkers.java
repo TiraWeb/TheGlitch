@@ -179,10 +179,25 @@ public final class ExtractionMarkers {
             if (world == null || world.getPlayers().isEmpty()) continue;
             double x = entry.point().x() + 0.5;
             double z = entry.point().z() + 0.5;
+            int y = entry.point().y();
+            int r = entry.point().radiusBlocks();
+            // Vertical column (core)
             for (int i = 0; i < PARTICLE_STACK; i++) {
-                world.spawnParticle(Particle.END_ROD, x, entry.point().y() + 0.5 + i, z,
-                        1, 0, 0, 0, 0);
+                world.spawnParticle(Particle.END_ROD, x, y + 0.5 + i, z, 1, 0, 0, 0, 0);
             }
+            // Horizontal ring at feet + beacon beam — makes it visible from distance and clearly spread
+            try {
+                // Ring at y+1
+                for (int i = 0; i < 8; i++) {
+                    double angle = 2 * Math.PI * i / 8;
+                    double rx = x + Math.cos(angle) * (r * 0.6);
+                    double rz = z + Math.sin(angle) * (r * 0.6);
+                    world.spawnParticle(Particle.END_ROD, rx, y + 1, rz, 1, 0, 0, 0, 0);
+                    world.spawnParticle(Particle.END_ROD, rx, y + 0.2, rz, 1, 0, 0, 0, 0);
+                }
+                // Extra central flare
+                world.spawnParticle(Particle.END_ROD, x, y + 1, z, 3, r * 0.3, 0.5, r * 0.3, 0.02);
+            } catch (Exception ignored) {}
         }
     }
 

@@ -118,7 +118,7 @@ public final class DynamicExtractionManager {
             boolean dirty = false;
             for (ExtractionPoint p : picked) {
                 CuboidRegion region = new CuboidRegion(world, p.x() - radiusBlocks, p.y() - 1,
-                        p.z() - radiusBlocks, p.x() + radiusBlocks, p.y() + 3, p.z() + radiusBlocks);
+                        p.z() - radiusBlocks, p.x() + radiusBlocks, p.y() + 4, p.z() + radiusBlocks);
                 Arena arena = arenaManager.getArena(p.arenaId());
                 if (arena != null) {
                     arena.setRegion(region);
