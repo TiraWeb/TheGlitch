@@ -208,6 +208,8 @@ public final class DialogUI {
             actions.append(button("No recipes available", "dark_gray",
                     "The rift provides nothing yet.", backTemplate));
         }
+        actions.append(',').append(button("Upgrade Held Armor", "yellow",
+                "Upgrade the armor piece you are holding", "hideoutui upgrade-armor"));
         actions.append(',').append(button("\u00ab BACK", "yellow", null, backTemplate));
         show(plugin, player, multiAction("WORKBENCH", "gold",
                 "Craft gear from rift materials:", actions.toString(), 2, "Close"));

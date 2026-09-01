@@ -24,6 +24,10 @@ commands:
     description: Mark and manage in-world loot containers
     usage: /glitchcontainers <set <type>|clear|info|types|reload|scatter|scatterinfo>
     permission: glitchitems.admin
+  armor:
+    description: Upgrade held armor pieces (+levels)
+    usage: /armor upgrade [player]
+    permission: glitchitems.use
 
 permissions:
   glitchitems.use:

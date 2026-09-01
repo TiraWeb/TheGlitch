@@ -2,8 +2,9 @@ package com.theglitch.glitchitems;
 
 /**
  * Parsed stat rolls stored on a gear item (persisted in PDC).
- * Serialized as: rarity|type|resonance|attributes|damage|armor|speed|maxhp|boost
- * where attributes = "lifesteal:8;fire-aspect:2" (semicolon-separated, may be empty).
+ * Serialized as: rarity|type|resonance|attributes|damage|armor|speed|maxhp|boost|level
+ * where attributes = "lifesteal:8;fire-aspect:2" (semicolon-separated, may be empty)
+ * and level = upgrade level 0..max (armor-only; 9-field legacy items deserialize as 0).
  */
 public final class GearRolls {
 
@@ -18,6 +19,7 @@ public final class GearRolls {
     public int speed;
     public int maxhp;
     public int boost;
+    public int level;
     public int starsPrimary;
     public int starsSpeed;
     public int starsHp;
@@ -25,7 +27,8 @@ public final class GearRolls {
     public String serialize() {
         return rarity.getId() + "|" + type.name() + "|" + resonance.name() + "|"
                 + attributes + "|"
-                + damage + "|" + armor + "|" + speed + "|" + maxhp + "|" + boost;
+                + damage + "|" + armor + "|" + speed + "|" + maxhp + "|" + boost
+                + "|" + level;
     }
 
     public static GearRolls deserialize(String data) {
@@ -43,6 +46,14 @@ public final class GearRolls {
             rolls.speed = Integer.parseInt(parts[6]);
             rolls.maxhp = Integer.parseInt(parts[7]);
             rolls.boost = Integer.parseInt(parts[8]);
+            rolls.level = 0;
+            if (parts.length >= 10) {
+                try {
+                    rolls.level = Integer.parseInt(parts[9]);
+                } catch (NumberFormatException ignored) {
+                    rolls.level = 0;
+                }
+            }
             // Rarity.fromId returns null for unknown ids (it does not throw) —
             // treat that as corrupt data so callers get null instead of a
             // GearRolls whose rarity access NPEs.

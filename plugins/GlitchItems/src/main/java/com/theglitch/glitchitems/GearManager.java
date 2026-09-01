@@ -49,6 +49,14 @@ public final class GearManager {
     private int armorPointsCap = 25;
     private int armorAttributeReductionCap = 30;
 
+    // Armor upgrade config (cached in reload())
+    private int armorUpgradeMaxLevel = 5;
+    private int armorPointsPerLevel = 1;
+    private final Map<Rarity, Integer> armorUpgradeShardCosts = new EnumMap<>(Rarity.class);
+    private double[] armorUpgradeLevelMultiplier = new double[0];
+    private final List<Map<String, Integer>> armorUpgradeMaterials = new ArrayList<>();
+    private final Map<GearType, Map<String, Double>> pieceIdentity = new EnumMap<>(GearType.class);
+
     public GearManager(GlitchItems plugin) {
         this.plugin = plugin;
         this.gearKey = new NamespacedKey(plugin, GearRolls.SERIAL_KEY);
@@ -65,6 +73,9 @@ public final class GearManager {
         materialsCache.clear();
         weaponAttrPool.clear();
         armorAttrPool.clear();
+        armorUpgradeShardCosts.clear();
+        armorUpgradeMaterials.clear();
+        pieceIdentity.clear();
 
         ConfigurationSection sr = plugin.getConfig().getConfigurationSection("stat-ranges");
         if (sr != null) {
@@ -113,6 +124,54 @@ public final class GearManager {
         armorPointsReductionPerPoint = plugin.getConfig().getInt("resonance.armor-points-reduction-per-point", 2);
         armorPointsCap = plugin.getConfig().getInt("resonance.armor-points-cap", 25);
         armorAttributeReductionCap = plugin.getConfig().getInt("resonance.armor-attribute-reduction-cap", 30);
+
+        // Armor upgrade config
+        armorUpgradeMaxLevel = plugin.getConfig().getInt("armor-upgrade.max-level", 5);
+        armorPointsPerLevel = plugin.getConfig().getInt("armor-upgrade.armor-points-per-level", 1);
+        for (Rarity r : Rarity.values()) {
+            armorUpgradeShardCosts.put(r, plugin.getConfig().getInt("armor-upgrade.shard-costs." + r.getId(), 0));
+        }
+        armorUpgradeLevelMultiplier = toDoubleArray(plugin.getConfig().getDoubleList("armor-upgrade.shard-level-multiplier"));
+
+        ConfigurationSection matsSec = plugin.getConfig().getConfigurationSection("armor-upgrade.materials-per-level");
+        if (matsSec != null) {
+            for (String key : matsSec.getKeys(false)) {
+                int levelNum;
+                try {
+                    levelNum = Integer.parseInt(key);
+                } catch (NumberFormatException ignored) {
+                    continue;
+                }
+                int idx = levelNum - 1;
+                if (idx < 0) continue;
+                while (armorUpgradeMaterials.size() <= idx) armorUpgradeMaterials.add(new HashMap<>());
+                Map<String, Integer> map = new HashMap<>();
+                ConfigurationSection levelSec = matsSec.getConfigurationSection(key);
+                if (levelSec != null) {
+                    for (String id : levelSec.getKeys(false)) {
+                        map.put(id, levelSec.getInt(id));
+                    }
+                }
+                armorUpgradeMaterials.set(idx, map);
+            }
+        }
+
+        // Per-slot identity multipliers
+        ConfigurationSection piSec = plugin.getConfig().getConfigurationSection("piece-identity");
+        if (piSec != null) {
+            for (String key : piSec.getKeys(false)) {
+                GearType type = GearType.fromId(key);
+                if (type == null) continue;
+                Map<String, Double> stats = new HashMap<>();
+                ConfigurationSection statSec = piSec.getConfigurationSection(key);
+                if (statSec != null) {
+                    for (String stat : statSec.getKeys(false)) {
+                        stats.put(stat, statSec.getDouble(stat, 1.0));
+                    }
+                }
+                pieceIdentity.put(type, stats);
+            }
+        }
     }
 
     public int[] statRange(Rarity rarity, String stat) {
@@ -157,6 +216,30 @@ public final class GearManager {
     public int getArmorPointsCap() { return armorPointsCap; }
     public int getArmorAttributeReductionCap() { return armorAttributeReductionCap; }
 
+    // Armor upgrade accessors (used by ArmorCommand + buildItem lore)
+    public int armorUpgradeMaxLevel() { return armorUpgradeMaxLevel; }
+    public int armorPointsPerLevel() { return armorPointsPerLevel; }
+
+    public int shardCostFor(Rarity rarity, int currentLevel) {
+        int base = armorUpgradeShardCosts.getOrDefault(rarity, 0);
+        if (currentLevel < 0 || currentLevel >= armorUpgradeLevelMultiplier.length) return base;
+        return Math.max(0, (int) Math.round(base * armorUpgradeLevelMultiplier[currentLevel]));
+    }
+
+    public Map<String, Integer> materialsForLevel(int nextLevel) {
+        int idx = nextLevel - 1;
+        if (idx < 0 || idx >= armorUpgradeMaterials.size()) return Map.of();
+        Map<String, Integer> map = armorUpgradeMaterials.get(idx);
+        return map == null ? Map.of() : map;
+    }
+
+    public double pieceIdentityMultiplier(GearType type, String stat) {
+        Map<String, Double> stats = pieceIdentity.get(type);
+        if (stats == null) return 1.0;
+        Double val = stats.get(stat);
+        return val == null ? 1.0 : val;
+    }
+
     public Material materialFor(GearType type, Rarity rarity) {
         List<Material> mats = materialsCache.get(type);
         if (mats == null || mats.isEmpty()) return Material.STICK;
@@ -195,6 +278,11 @@ public final class GearManager {
         rolls.speed = statRange(rarity, "speed")[1];
         rolls.maxhp = statRange(rarity, "maxhp")[1];
 
+        // Per-slot identity multipliers (armor pieces; weapons have no entry → 1.0)
+        rolls.armor = (int) Math.max(0, Math.round(rolls.armor * pieceIdentityMultiplier(type, "armor")));
+        rolls.speed = (int) Math.max(0, Math.round(rolls.speed * pieceIdentityMultiplier(type, "speed")));
+        rolls.maxhp = (int) Math.max(0, Math.round(rolls.maxhp * pieceIdentityMultiplier(type, "maxhp")));
+
         return buildItem(rolls);
     }
 
@@ -225,6 +313,11 @@ public final class GearManager {
         rolls.speed = rand.nextInt(speedRange[0], speedRange[1] + 1);
         int[] hpRange = statRange(rarity, "maxhp");
         rolls.maxhp = rand.nextInt(hpRange[0], hpRange[1] + 1);
+
+        // Per-slot identity multipliers (armor pieces; weapons have no entry → 1.0)
+        rolls.armor = (int) Math.max(0, Math.round(rolls.armor * pieceIdentityMultiplier(type, "armor")));
+        rolls.speed = (int) Math.max(0, Math.round(rolls.speed * pieceIdentityMultiplier(type, "speed")));
+        rolls.maxhp = (int) Math.max(0, Math.round(rolls.maxhp * pieceIdentityMultiplier(type, "maxhp")));
 
         rolls.attributes = type.isWeapon()
                 ? rollWeaponAttribute(rarity, rand)
@@ -334,6 +427,20 @@ public final class GearManager {
         return buildItem(rolls);
     }
 
+    /**
+     * Upgrades an armor piece by one level (+armor per level). Returns the
+     * rebuilt stack, or null if the item is not armor or is already maxed.
+     */
+    public ItemStack applyUpgrade(ItemStack gear) {
+        GearRolls rolls = parse(gear);
+        if (rolls == null || rolls.rarity == null) return null;
+        if (rolls.type.isWeapon()) return null;
+        if (rolls.level >= armorUpgradeMaxLevel) return null;
+        rolls.level++;
+        rolls.armor += armorPointsPerLevel;
+        return buildItem(rolls);
+    }
+
     private ItemStack buildItem(GearRolls rolls) {
         Material material = materialFor(rolls.type, rolls.rarity);
         ItemStack item = new ItemStack(material);
@@ -349,6 +456,11 @@ public final class GearManager {
         lore.add(MM.deserialize(GlitchUI.DIVIDER));
         lore.add(MM.deserialize(color + "<bold>" + rolls.rarity.getDisplayName()
                 + "</bold></" + tagSuffix(color) + "> <dark_gray>" + archetypeLabel(rolls.type) + "</dark_gray>"));
+
+        // --- upgrade level line (armor always; weapons only if > 0)
+        if (!rolls.type.isWeapon() || rolls.level > 0) {
+            lore.add(MM.deserialize("<gray>» Upgrade <white>+" + rolls.level + "</white>/" + armorUpgradeMaxLevel + "</gray>"));
+        }
 
         // --- stat block with star pips
         if (rolls.type.isWeapon()) {

@@ -50,6 +50,7 @@ public final class GlitchItems extends JavaPlugin {
         getCommand("identify").setExecutor(new IdentifyCommand(identifyManager));
         getCommand("glitchitems").setExecutor(new GlitchItemsCommand(this, gearManager, glitchManager));
         getCommand("glitchcontainers").setExecutor(new ContainerCommand(this, containerManager, scatterManager));
+        getCommand("armor").setExecutor(new ArmorCommand(this, gearManager));
 
         // Late-hook for GlitchStash if it loads after GlitchItems (soft-depend)
         Bukkit.getPluginManager().registerEvents(new Listener() {

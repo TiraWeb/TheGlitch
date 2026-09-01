@@ -46,6 +46,7 @@ public final class HideoutGUI implements Listener {
     private static final int USE_CLASS = 44;
     private static final int CLOSE_SLOT = 49;
     private static final int BACK_SLOT = 45;
+    private static final int WORKBENCH_UPGRADE_SLOT = 40;
 
     private record Session(String type, int from, int to, Inventory inventory) {}
 
@@ -142,6 +143,7 @@ public final class HideoutGUI implements Listener {
             inv.setItem(i, border());
         }
         inv.setItem(BACK_SLOT, useButton(Material.ARROW, "<gray>Back", "Back to hideout"));
+        inv.setItem(WORKBENCH_UPGRADE_SLOT, useButton(Material.ANVIL, "<yellow>Upgrade Held Armor", "Upgrade the armor piece you are holding"));
 
         List<HideoutManager.Recipe> recipes = manager.getRecipes();
         for (int i = 0; i < recipes.size() && i < 25; i++) {
@@ -359,6 +361,10 @@ public final class HideoutGUI implements Listener {
     private void handleWorkbenchClick(Player player, int slot) {
         if (slot == BACK_SLOT) {
             openMain(player);
+            return;
+        }
+        if (slot == WORKBENCH_UPGRADE_SLOT) {
+            plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), "armor upgrade " + player.getName());
             return;
         }
         List<HideoutManager.Recipe> recipes = manager.getRecipes();

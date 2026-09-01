@@ -55,6 +55,7 @@ public final class HideoutUICommand implements CommandExecutor {
                 DialogUI.openStation(plugin, player, id, "hideoutui noop");
             }
             case "workbench" -> DialogUI.openWorkbench(plugin, player, "hideoutui root");
+            case "upgrade-armor" -> plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), "armor upgrade " + player.getName());
             case "upgrade" -> {
                 if (args.length < 2) return true;
                 final String id = args[1].toLowerCase(Locale.ROOT);

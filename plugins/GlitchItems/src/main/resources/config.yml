@@ -1,10 +1,9 @@
-config-version: 2
+config-version: 3
 # GlitchItems — The Glitch item system
 # Gear rolls, Unstable Rift identify, Resonance, Residual Glitch
 # Design: docs/ITEM_SYSTEM.md, balance: docs/ITEM_BALANCE.md
-# v2 (2026-09-02): income retune (fees/containers), roll-based sell values,
-#                  attribute pools (execute/frost-touch/thorns/glitch-ward),
-#                  archetype modifiers, staff ladder fix.
+# v3 (2026-09-02): armor upgrade levels (+0..+5, shards + materials),
+#                  per-slot armor identity multipliers (armor/speed/maxhp).
 
 # Chance a rift reveals a weapon instead of an armor piece
 reveal-weapon-chance: 0.6
@@ -71,6 +70,36 @@ archetype:
   arcane-staff-attack-bonus: [2, 3, 5, 7, 9]
   # Greatblade ATTACK_KNOCKBACK per rarity tier
   greatblade-knockback-bonus: [0.1, 0.15, 0.2, 0.25, 0.3]
+
+# Armor upgrade levels (+0..+5) — shards + materials per level, applied at the
+# Workbench ("Upgrade Held Armor" button) or /armor upgrade. Each level grants
+# armor-points-per-level extra armor points. Level does NOT affect sell value.
+armor-upgrade:
+  max-level: 5
+  armor-points-per-level: 1
+  shard-costs:
+    common: 10
+    uncommon: 25
+    rare: 60
+    epic: 150
+    legendary: 400
+  # cost for level N = shard-costs[rarity] x multiplier[current-level (0-based)]
+  shard-level-multiplier: [1, 2, 3, 4, 6]
+  # material cost keyed by NEXT level (1..max-level); oraxen item ids
+  materials-per-level:
+    1: { rune_fragment: 2 }
+    2: { rune_fragment: 3 }
+    3: { rune_fragment: 4, aether_shard: 1 }
+    4: { rune_fragment: 5, aether_shard: 2 }
+    5: { rune_fragment: 6, aether_shard: 3, rift_crystal: 1 }
+
+# Per-slot armor identity: multipliers applied to armor/speed/maxhp at roll
+# time (docs/ITEM_SYSTEM.md armor rework). Missing keys default to 1.0.
+piece-identity:
+  helmet:     { armor: 0.5, speed: 2.0, maxhp: 0.5 }
+  chestplate: { armor: 1.5, speed: 0.5, maxhp: 2.0 }
+  leggings:   { armor: 1.5, speed: 0.5, maxhp: 1.0 }
+  boots:      { armor: 0.5, speed: 1.5, maxhp: 0.5 }
 
 # Void Infusion consumable — right-hand application to held gear (off-hand
 # holds the target): +1 Resonance boost up to this cap + star reroll (min +1)
