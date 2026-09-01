@@ -4,14 +4,15 @@
 #        rare rift 100%, epic rift 50%, legendary rift 15%
 
 GlitchCoreLoot:
-  TotalItems: 10
+  TotalItems: 11
   Drops:
-    - COINS 50-100 1
+    - COINS 40-80 1
     - oraxen rune_fragment 10-20 1
     - oraxen aether_shard 3-5 1
     - oraxen rift_crystal 1-3 1
     - oraxen void_essence 1 1
     - oraxen legendary_relic 1 0.1
+    - oraxen corrupted_heal 1 0.25
     - oraxen unstable_rift_rare 1 1
     - oraxen unstable_rift_epic 1 0.5
     - oraxen unstable_rift_legendary 1 0.15

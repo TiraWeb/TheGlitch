@@ -15,6 +15,7 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,12 +32,16 @@ public final class GearManager {
     private final Map<String, Map<Rarity, int[]>> statRanges = new HashMap<>();
     private final Map<Rarity, Integer> identifyFees = new EnumMap<>(Rarity.class);
     private final Map<Rarity, Integer> sellValues = new EnumMap<>(Rarity.class);
+    private final Map<Rarity, Integer> starSellBonus = new EnumMap<>(Rarity.class);
     private final Map<Rarity, Integer> resonanceBoosts = new EnumMap<>(Rarity.class);
     private final Map<Rarity, String> rarityColors = new EnumMap<>(Rarity.class);
     private final Map<GearType, List<Material>> materialsCache = new EnumMap<>(GearType.class);
-    private final Map<Rarity, Integer> weaponLifesteal = new EnumMap<>(Rarity.class);
-    private final Map<Rarity, Integer> weaponFireAspect = new EnumMap<>(Rarity.class);
-    private final Map<Rarity, Integer> armorDamageReduction = new EnumMap<>(Rarity.class);
+    // Generic attribute pools: attr name -> value per rarity (loaded from attributes.weapon / attributes.armor)
+    private final Map<String, Map<Rarity, Integer>> weaponAttrPool = new LinkedHashMap<>();
+    private final Map<String, Map<Rarity, Integer>> armorAttrPool = new LinkedHashMap<>();
+    private double[] arcaneStaffAttackBonus = new double[0];
+    private double[] greatbladeKnockbackBonus = new double[0];
+    private int voidInfusionMaxBoost = 4;
     private int weaponResonanceBase = 25;
     private int armorReductionPerPiece = 10;
     private int armorReductionCap = 40;
@@ -54,12 +59,12 @@ public final class GearManager {
         statRanges.clear();
         identifyFees.clear();
         sellValues.clear();
+        starSellBonus.clear();
         resonanceBoosts.clear();
         rarityColors.clear();
         materialsCache.clear();
-        weaponLifesteal.clear();
-        weaponFireAspect.clear();
-        armorDamageReduction.clear();
+        weaponAttrPool.clear();
+        armorAttrPool.clear();
 
         ConfigurationSection sr = plugin.getConfig().getConfigurationSection("stat-ranges");
         if (sr != null) {
@@ -78,6 +83,7 @@ public final class GearManager {
         for (Rarity r : Rarity.values()) {
             identifyFees.put(r, plugin.getConfig().getInt("identify-fees." + r.getId(), 0));
             sellValues.put(r, plugin.getConfig().getInt("sell-values." + r.getId(), 0));
+            starSellBonus.put(r, plugin.getConfig().getInt("star-sell-bonus." + r.getId(), 0));
             resonanceBoosts.put(r, plugin.getConfig().getInt("resonance-boost." + r.getId(), 0));
             String col = plugin.getConfig().getString("rarity-colors." + r.getId(), "<white>");
             rarityColors.put(r, col);
@@ -96,18 +102,11 @@ public final class GearManager {
             if (resolved.isEmpty()) resolved.add(Material.STICK);
             materialsCache.put(type, List.copyOf(resolved));
         }
-        ConfigurationSection weaponSec = plugin.getConfig().getConfigurationSection("attributes.weapon");
-        if (weaponSec != null) {
-            ConfigurationSection ls = weaponSec.getConfigurationSection("lifesteal");
-            if (ls != null) for (Rarity r : Rarity.values()) weaponLifesteal.put(r, ls.getInt(r.getId(), 0));
-            ConfigurationSection fa = weaponSec.getConfigurationSection("fire-aspect");
-            if (fa != null) for (Rarity r : Rarity.values()) weaponFireAspect.put(r, fa.getInt(r.getId(), 0));
-        }
-        ConfigurationSection armorSec = plugin.getConfig().getConfigurationSection("attributes.armor");
-        if (armorSec != null) {
-            ConfigurationSection dr = armorSec.getConfigurationSection("damage-reduction");
-            if (dr != null) for (Rarity r : Rarity.values()) armorDamageReduction.put(r, dr.getInt(r.getId(), 0));
-        }
+        loadAttrPool("attributes.weapon", weaponAttrPool);
+        loadAttrPool("attributes.armor", armorAttrPool);
+        arcaneStaffAttackBonus = toDoubleArray(plugin.getConfig().getDoubleList("archetype.arcane-staff-attack-bonus"));
+        greatbladeKnockbackBonus = toDoubleArray(plugin.getConfig().getDoubleList("archetype.greatblade-knockback-bonus"));
+        voidInfusionMaxBoost = plugin.getConfig().getInt("void-infusion.max-boost", 4);
         weaponResonanceBase = plugin.getConfig().getInt("resonance.weapon-damage-vs-matching", 25);
         armorReductionPerPiece = plugin.getConfig().getInt("resonance.armor-reduction-per-piece", 10);
         armorReductionCap = plugin.getConfig().getInt("resonance.armor-reduction-cap", 40);
@@ -130,6 +129,18 @@ public final class GearManager {
     public int sellValue(Rarity rarity) {
         if (rarity == null) return 0;
         return sellValues.getOrDefault(rarity, 0);
+    }
+
+    /**
+     * Roll-based sell value: rarity base + total star pips x star bonus
+     * (docs/ITEM_BALANCE.md §3). Godrolls are worth materially more than bricks.
+     */
+    public int sellValue(GearRolls rolls) {
+        if (rolls == null || rolls.rarity == null) return 0;
+        int base = sellValues.getOrDefault(rolls.rarity, 0);
+        int perStar = starSellBonus.getOrDefault(rolls.rarity, 0);
+        int stars = Math.max(0, rolls.starsPrimary) + Math.max(0, rolls.starsSpeed) + Math.max(0, rolls.starsHp);
+        return base + stars * perStar;
     }
 
     public int resonanceBoost(Rarity rarity) {
@@ -174,13 +185,12 @@ public final class GearManager {
 
         if (type.isWeapon()) {
             rolls.damage = statRange(rarity, "damage")[1];
-            int lifesteal = weaponLifesteal.getOrDefault(Rarity.LEGENDARY, 8);
-            int fire = weaponFireAspect.getOrDefault(Rarity.LEGENDARY, 2);
-            rolls.attributes = "lifesteal:" + lifesteal + ";fire-aspect:" + fire;
+            String attrs = pickAttributes(weaponAttrPool, Rarity.LEGENDARY, 2, null);
+            rolls.attributes = attrs.isEmpty() ? defaultLegendaryWeaponAttributes() : attrs;
         } else {
             rolls.armor = statRange(rarity, "armor")[1];
-            int reduction = armorDamageReduction.getOrDefault(Rarity.LEGENDARY, 12);
-            rolls.attributes = "damage-reduction:" + reduction;
+            String attrs = pickAttributes(armorAttrPool, Rarity.LEGENDARY, 1, null);
+            rolls.attributes = attrs.isEmpty() ? "damage-reduction:" + attrValue(armorAttrPool, "damage-reduction", Rarity.LEGENDARY, 12) : attrs;
         }
         rolls.speed = statRange(rarity, "speed")[1];
         rolls.maxhp = statRange(rarity, "maxhp")[1];
@@ -219,7 +229,6 @@ public final class GearManager {
         rolls.attributes = type.isWeapon()
                 ? rollWeaponAttribute(rarity, rand)
                 : rollArmorAttribute(rarity, rand);
-
         return buildItem(rolls);
     }
 
@@ -231,25 +240,98 @@ public final class GearManager {
         return Math.min(stars, 5);
     }
 
+    /**
+     * Weapons: Rare/Epic roll ONE attribute from the pool, Legendary rolls TWO
+     * distinct attributes (docs/ITEM_BALANCE.md §4).
+     */
     private String rollWeaponAttribute(Rarity rarity, ThreadLocalRandom rand) {
         if (rarity.getTier() < Rarity.RARE.getTier()) return "";
-        int lifesteal = weaponLifesteal.getOrDefault(rarity, 0);
-        int fire = weaponFireAspect.getOrDefault(rarity, 0);
-        if (rarity == Rarity.LEGENDARY) {
+        int count = rarity == Rarity.LEGENDARY ? 2 : 1;
+        String picked = pickAttributes(weaponAttrPool, rarity, count, rand);
+        if (!picked.isEmpty()) return picked;
+        // Pool empty / misconfigured — fall back to the classic pair.
+        int lifesteal = attrValue(weaponAttrPool, "lifesteal", rarity, 0);
+        int fire = attrValue(weaponAttrPool, "fire-aspect", rarity, 0);
+        if (rarity == Rarity.LEGENDARY && lifesteal > 0 && fire > 0) {
             return "lifesteal:" + lifesteal + ";fire-aspect:" + fire;
-        }
-        if (lifesteal > 0 && fire > 0) {
-            return rand.nextBoolean() ? "lifesteal:" + lifesteal : "fire-aspect:" + fire;
         }
         if (lifesteal > 0) return "lifesteal:" + lifesteal;
         if (fire > 0) return "fire-aspect:" + fire;
         return "";
     }
 
+    /** Armor: exactly ONE attribute per piece (design ITEM_SYSTEM §2) — which one varies. */
     private String rollArmorAttribute(Rarity rarity, ThreadLocalRandom rand) {
         if (rarity.getTier() < Rarity.RARE.getTier()) return "";
-        int reduction = armorDamageReduction.getOrDefault(rarity, 0);
-        return reduction > 0 ? "damage-reduction:" + reduction : "";
+        return pickAttributes(armorAttrPool, rarity, 1, rand);
+    }
+
+    /** Picks `count` distinct attributes from the pool with a value > 0 at this rarity. */
+    private String pickAttributes(Map<String, Map<Rarity, Integer>> pool, Rarity rarity, int count, ThreadLocalRandom rand) {
+        List<String> candidates = new ArrayList<>();
+        for (Map.Entry<String, Map<Rarity, Integer>> entry : pool.entrySet()) {
+            Integer value = entry.getValue().get(rarity);
+            if (value != null && value > 0) candidates.add(entry.getKey());
+        }
+        if (candidates.isEmpty()) return "";
+        ThreadLocalRandom r = rand != null ? rand : ThreadLocalRandom.current();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < count && !candidates.isEmpty(); i++) {
+            String attr = candidates.remove(r.nextInt(candidates.size()));
+            if (sb.length() > 0) sb.append(';');
+            sb.append(attr).append(':').append(pool.get(attr).get(rarity));
+        }
+        return sb.toString();
+    }
+
+    private String defaultLegendaryWeaponAttributes() {
+        int lifesteal = attrValue(weaponAttrPool, "lifesteal", Rarity.LEGENDARY, 8);
+        int fire = attrValue(weaponAttrPool, "fire-aspect", Rarity.LEGENDARY, 2);
+        return "lifesteal:" + lifesteal + ";fire-aspect:" + fire;
+    }
+
+    private int attrValue(Map<String, Map<Rarity, Integer>> pool, String attr, Rarity rarity, int def) {
+        Map<Rarity, Integer> perRarity = pool.get(attr);
+        Integer value = perRarity == null ? null : perRarity.get(rarity);
+        return value != null ? value : def;
+    }
+
+    private void loadAttrPool(String path, Map<String, Map<Rarity, Integer>> target) {
+        ConfigurationSection sec = plugin.getConfig().getConfigurationSection(path);
+        if (sec == null) return;
+        for (String attr : sec.getKeys(false)) {
+            ConfigurationSection perRaritySec = sec.getConfigurationSection(attr);
+            if (perRaritySec == null) continue;
+            Map<Rarity, Integer> values = new EnumMap<>(Rarity.class);
+            for (Rarity r : Rarity.values()) {
+                values.put(r, perRaritySec.getInt(r.getId(), 0));
+            }
+            target.put(attr, values);
+        }
+    }
+
+    private double[] toDoubleArray(List<Double> list) {
+        if (list == null || list.isEmpty()) return new double[0];
+        double[] out = new double[list.size()];
+        for (int i = 0; i < list.size(); i++) out[i] = list.get(i);
+        return out;
+    }
+
+    /**
+     * Void Infusion: applies to held Epic+ gear — +1 Resonance boost (capped)
+     * and +1 star on each pip. Returns the rebuilt stack, or null if the item
+     * is not eligible (wrong type, or boost already at cap).
+     */
+    public ItemStack applyVoidInfusion(ItemStack gear) {
+        GearRolls rolls = parse(gear);
+        if (rolls == null || rolls.rarity == null) return null;
+        if (rolls.rarity.getTier() < Rarity.EPIC.getTier()) return null;
+        if (rolls.boost >= voidInfusionMaxBoost) return null;
+        rolls.boost = Math.min(voidInfusionMaxBoost, rolls.boost + 1);
+        rolls.starsPrimary = Math.min(5, rolls.starsPrimary + 1);
+        rolls.starsSpeed = Math.min(5, rolls.starsSpeed + 1);
+        rolls.starsHp = Math.min(5, rolls.starsHp + 1);
+        return buildItem(rolls);
     }
 
     private ItemStack buildItem(GearRolls rolls) {
@@ -295,6 +377,19 @@ public final class GearManager {
                     + rolls.resonance.getLabel() + "</" + resClose + "> damage</dark_gray>"));
         }
 
+        // --- archetype identity (flat modifiers per docs/ITEM_BALANCE.md §4)
+        int tier = Math.min(rolls.rarity.getTier(), 4);
+        if (rolls.type == GearType.ARCANE_STAFF && tier < arcaneStaffAttackBonus.length
+                && arcaneStaffAttackBonus[tier] > 0) {
+            lore.add(MM.deserialize("<dark_gray>» <aqua>Arcane core</aqua> <gray>+" + trimNum(arcaneStaffAttackBonus[tier])
+                    + " attack damage</gray></dark_gray>"));
+        }
+        if (rolls.type == GearType.GREATBLADE && tier < greatbladeKnockbackBonus.length
+                && greatbladeKnockbackBonus[tier] > 0) {
+            lore.add(MM.deserialize("<dark_gray>» <aqua>Heavy head</aqua> <gray>+"
+                    + trimNum(greatbladeKnockbackBonus[tier] * 10) + "% knockback</gray></dark_gray>"));
+        }
+
         // --- special attributes
         if (!rolls.attributes.isEmpty()) {
             for (String attr : rolls.attributes.split(";")) {
@@ -317,7 +412,7 @@ public final class GearManager {
         lore.add(MM.deserialize("<dark_gray><italic>" + pool[flavorRand.nextInt(pool.length)] + "</italic></dark_gray>"));
         lore.add(Component.empty());
         lore.add(MM.deserialize(GlitchUI.SHARD
-                + " <gray>Sell price: <aqua>" + sellValue(rolls.rarity) + " Shards</aqua></gray>"));
+                + " <gray>Sell price: <aqua>" + sellValue(rolls) + " Shards</aqua></gray>"));
 
         meta.lore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
@@ -329,6 +424,16 @@ public final class GearManager {
         if (rolls.maxhp > 0) {
             meta.addAttributeModifier(Attribute.MAX_HEALTH,
                     new AttributeModifier(uniqueKey("maxhp"), rolls.maxhp, AttributeModifier.Operation.ADD_NUMBER));
+        }
+        if (rolls.type == GearType.ARCANE_STAFF && tier < arcaneStaffAttackBonus.length
+                && arcaneStaffAttackBonus[tier] > 0) {
+            meta.addAttributeModifier(Attribute.ATTACK_DAMAGE,
+                    new AttributeModifier(uniqueKey("arcanecore"), arcaneStaffAttackBonus[tier], AttributeModifier.Operation.ADD_NUMBER));
+        }
+        if (rolls.type == GearType.GREATBLADE && tier < greatbladeKnockbackBonus.length
+                && greatbladeKnockbackBonus[tier] > 0) {
+            meta.addAttributeModifier(Attribute.ATTACK_KNOCKBACK,
+                    new AttributeModifier(uniqueKey("heavyhead"), greatbladeKnockbackBonus[tier], AttributeModifier.Operation.ADD_NUMBER));
         }
 
         meta.getPersistentDataContainer().set(gearKey, PersistentDataType.STRING, rolls.serialize());
@@ -360,9 +465,21 @@ public final class GearManager {
                 return "Fire Aspect " + value;
             case "damage-reduction":
                 return "Damage taken -" + value + "%";
+            case "execute":
+                return "Execute +" + value + "% vs low HP";
+            case "frost-touch":
+                return "Frost Touch " + value + " (slow on hit)";
+            case "thorns":
+                return "Thorns " + value + "%";
+            case "glitch-ward":
+                return "Glitch Ward +" + value + "% resonance resist";
             default:
                 return null;
         }
+    }
+
+    private String trimNum(double value) {
+        return value == Math.floor(value) ? String.valueOf((long) value) : String.valueOf(value);
     }
 
     private static final String[] WEAPON_FLAVOR = {

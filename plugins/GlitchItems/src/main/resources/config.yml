@@ -1,7 +1,10 @@
-config-version: 1
+config-version: 2
 # GlitchItems — The Glitch item system
 # Gear rolls, Unstable Rift identify, Resonance, Residual Glitch
-# Design: docs/ITEM_SYSTEM.md
+# Design: docs/ITEM_SYSTEM.md, balance: docs/ITEM_BALANCE.md
+# v2 (2026-09-02): income retune (fees/containers), roll-based sell values,
+#                  attribute pools (execute/frost-touch/thorns/glitch-ward),
+#                  archetype modifiers, staff ladder fix.
 
 # Chance a rift reveals a weapon instead of an armor piece
 reveal-weapon-chance: 0.6
@@ -10,17 +13,23 @@ reveal-weapon-chance: 0.6
 identify-fees:
   common: 5
   uncommon: 20
-  rare: 75
+  rare: 60
   epic: 250
   legendary: 800
 
-# What merchants pay for gear (sell price line on the item)
+# Gear sell value: base per rarity + total star pips x star-sell-bonus[rarity]
 sell-values:
   common: 3
   uncommon: 17
   rare: 75
   epic: 350
   legendary: 1750
+star-sell-bonus:
+  common: 2
+  uncommon: 8
+  rare: 25
+  epic: 90
+  legendary: 350
 
 # Stat roll ranges per rarity: [min, max]
 stat-ranges:
@@ -38,13 +47,35 @@ resonance-boost:
   epic: 2
   legendary: 2
 
-# Special attributes (per rarity tier; empty = none)
+# Special attributes (per rarity tier; empty = none).
+# Weapons: Rare/Epic roll ONE of the pool, Legendary rolls TWO distinct.
+# Armor: exactly ONE attribute per piece (which one varies).
 attributes:
   weapon:
     lifesteal: { rare: 3, epic: 6, legendary: 8 }
     fire-aspect: { rare: 1, epic: 2, legendary: 2 }
+    # +% damage vs targets below 30% max HP (finishing tool)
+    execute: { rare: 10, epic: 15, legendary: 20 }
+    # Slowness level applied for 2s on hit (chase tool)
+    frost-touch: { rare: 1, epic: 2, legendary: 3 }
   armor:
     damage-reduction: { rare: 5, epic: 8, legendary: 12 }
+    # % of received melee damage reflected at the attacker
+    thorns: { rare: 2, epic: 4, legendary: 6 }
+    # extra % Resonance-damage reduction (stacks into the resonance bucket)
+    glitch-ward: { rare: 3, epic: 5, legendary: 8 }
+
+# Archetype identity modifiers (flat, added in buildItem)
+archetype:
+  # Arcane Staff flat ATTACK_DAMAGE per rarity tier (compensates weak rod base)
+  arcane-staff-attack-bonus: [2, 3, 5, 7, 9]
+  # Greatblade ATTACK_KNOCKBACK per rarity tier
+  greatblade-knockback-bonus: [0.1, 0.15, 0.2, 0.25, 0.3]
+
+# Void Infusion consumable — right-hand application to held gear (off-hand
+# holds the target): +1 Resonance boost up to this cap + star reroll (min +1)
+void-infusion:
+  max-boost: 4
 
 # Resonance combat math
 resonance:
@@ -59,7 +90,7 @@ resonance:
 materials:
   blade: [WOODEN_SWORD, STONE_SWORD, IRON_SWORD, DIAMOND_SWORD, NETHERITE_SWORD]
   greatblade: [WOODEN_AXE, STONE_AXE, IRON_AXE, DIAMOND_AXE, NETHERITE_AXE]
-  arcane_staff: [STICK, BLAZE_ROD, BONE, BLAZE_ROD, NETHER_STAR]
+  arcane_staff: [STICK, BLAZE_ROD, BONE, END_ROD, NETHER_STAR]
   helmet: [LEATHER_HELMET, CHAINMAIL_HELMET, IRON_HELMET, DIAMOND_HELMET, NETHERITE_HELMET]
   chestplate: [LEATHER_CHESTPLATE, CHAINMAIL_CHESTPLATE, IRON_CHESTPLATE, DIAMOND_CHESTPLATE, NETHERITE_CHESTPLATE]
   leggings: [LEATHER_LEGGINGS, CHAINMAIL_LEGGINGS, IRON_LEGGINGS, DIAMOND_LEGGINGS, NETHERITE_LEGGINGS]
@@ -133,8 +164,8 @@ containers:
       max-rolls: 2
       drops: { uncommon: 40, rare: 30, common: 20, nothing: 10 }
       materials: { rune_fragment: 30, aether_shard: 15, rift_crystal: 5 }
-      shards-min: 5
-      shards-max: 15
+      shards-min: 4
+      shards-max: 10
     vault:
       display: "<blue>Vault"
       material: BLUE_SHULKER_BOX
@@ -143,10 +174,10 @@ containers:
       key-name: "Vault Key"
       regen-seconds: 900
       max-rolls: 2
-      drops: { rare: 30, epic: 40, uncommon: 20, nothing: 10 }
+      drops: { rare: 28, epic: 42, legendary: 5, uncommon: 20, nothing: 5 }
       materials: { aether_shard: 20, rift_crystal: 15, void_essence: 8 }
-      shards-min: 15
-      shards-max: 40
+      shards-min: 10
+      shards-max: 30
     rift_vault:
       display: "<light_purple>Rift Vault"
       material: DECORATED_POT
@@ -157,8 +188,8 @@ containers:
       max-rolls: 3
       drops: { epic: 30, legendary: 50, rare: 20 }
       materials: { rift_crystal: 20, void_essence: 15, legendary_relic: 3 }
-      shards-min: 30
-      shards-max: 80
+      shards-min: 25
+      shards-max: 60
   messages:
     not-container: "<gray>That is not a Glitch container."
     disabled-world: "<red>Containers are dormant here."
@@ -196,7 +227,7 @@ scatter:
     debris: 70
     cache: 40
     vault: 25
-    rift_vault: 10
+    rift_vault: 6
   messages:
     scatter-broadcast: "<gray>Glitch energy coalesces — <white>{total}</white> caches scattered across the Red World."
     broadcast-enabled: true

@@ -4,7 +4,7 @@
 GlitchBruteLoot:
   TotalItems: 6
   Drops:
-    - COINS 8-15 1
+    - COINS 5-10 1
     - oraxen rune_fragment 3-6 1
     - oraxen aether_shard 1 0.12
     - oraxen rift_crystal 1 0.06

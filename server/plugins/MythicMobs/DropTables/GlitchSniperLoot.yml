@@ -4,7 +4,7 @@
 GlitchSniperLoot:
   TotalItems: 7
   Drops:
-    - COINS 15-25 1
+    - COINS 10-16 1
     - oraxen rune_fragment 3-6 1
     - oraxen aether_shard 1 0.3
     - oraxen rift_crystal 1 0.15

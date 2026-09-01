@@ -419,6 +419,12 @@ Full merchant price table (sell < buy): docs/ITEM_SYSTEM.md §11.
 
 ### Balance Target
 
+> **Retuned 2026-09-02** (docs/ITEM_BALANCE.md): mob COINS ranges cut toward
+> these targets (T1 1-2, T2 2-6/3-8/5-10, T3 10-16, boss 40-80), container
+> shards trimmed, Vault containers gained a 5% legendary-rift roll, crafting
+> EVs fixed, gear sell made roll-based. Working numbers and rationale live in
+> docs/ITEM_BALANCE.md — tune there, not here.
+
 - **New player:** ~50 shards/hour from Tier 1 dungeons
 - **Mid-game:** ~150 shards/hour from Tier 2-3 dungeons
 - **Endgame:** ~400 shards/hour from Tier 4-5 dungeons + Red Zone

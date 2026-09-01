@@ -11,6 +11,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class IdentifyManager {
@@ -22,11 +25,23 @@ public final class IdentifyManager {
     private final GearManager gearManager;
     private volatile double revealWeaponChance = 0.6;
     private volatile int cachedRarityUpgradePerStack = 2;
+    // Attunement Pack tokens: pending free identifies per player (any rarity)
+    private final Map<UUID, Integer> freeIdentifies = new ConcurrentHashMap<>();
 
     public IdentifyManager(GlitchItems plugin, GearManager gearManager) {
         this.plugin = plugin;
         this.gearManager = gearManager;
         reload();
+    }
+
+    /** Grants pending free-identify tokens (Rift Attunement Pack consume). */
+    public void addFreeIdentify(UUID playerId, int amount) {
+        if (amount <= 0) return;
+        freeIdentifies.merge(playerId, amount, Integer::sum);
+    }
+
+    public int freeIdentifyCount(UUID playerId) {
+        return freeIdentifies.getOrDefault(playerId, 0);
     }
 
     public void reload() {
@@ -106,7 +121,8 @@ public final class IdentifyManager {
 
         int fee = gearManager.identifyFee(rarity);
         Economy economy = plugin.getEconomy();
-        if (!force) {
+        boolean useFree = !force && freeIdentifyCount(player.getUniqueId()) > 0;
+        if (!force && !useFree) {
             if (economy == null) {
                 player.sendMessage(MM.deserialize(
                         "<red>Economy not available.</red>"));
@@ -120,10 +136,17 @@ public final class IdentifyManager {
             }
         }
 
-        if (!force && !economy.withdrawPlayer(player, fee).transactionSuccess()) {
+        if (!force && !useFree && !economy.withdrawPlayer(player, fee).transactionSuccess()) {
             player.sendMessage(MM.deserialize(
                     "<red>Could not take the identify fee.</red>"));
             return false;
+        }
+
+        if (useFree) {
+            freeIdentifies.merge(player.getUniqueId(), -1, Integer::sum);
+            freeIdentifies.remove(player.getUniqueId(), 0);
+            player.sendMessage(MM.deserialize(
+                    "<blue>The attunement takes hold — <white>no fee charged</white>.</blue>"));
         }
 
         int amount = held.getAmount();

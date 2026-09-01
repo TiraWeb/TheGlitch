@@ -1,0 +1,12 @@
+aether_tonic:
+  displayname: <aqua>Aether Tonic</aqua>
+  material: HONEY_BOTTLE
+  Pack:
+    generate_model: true
+    parent_model: "item/generated"
+    textures:
+      - aether_tonic
+  lore:
+    - '<aqua>Speed II + Absorption II for 30s.</aqua>'
+    - '<gray>Condensed rift-light for the bloodstream.</gray>'
+    - "\uE045 <gray>Sell price: <aqua>35 Shards</aqua></gray>"

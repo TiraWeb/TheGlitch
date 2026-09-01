@@ -4,7 +4,7 @@
 GlitchPhantomLoot:
   TotalItems: 6
   Drops:
-    - COINS 5-12 1
+    - COINS 3-8 1
     - oraxen rune_fragment 2-4 1
     - oraxen aether_shard 1 0.1
     - oraxen rift_crystal 1 0.05

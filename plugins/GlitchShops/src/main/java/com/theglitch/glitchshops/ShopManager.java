@@ -266,7 +266,11 @@ public final class ShopManager {
             com.theglitch.glitchitems.Rarity rarity = weightedRarity(rand);
             item = manager.generateGear(type, rarity);
         }
-        int sellValue = manager.sellValue(gearRarity(item));
+        int sellValue = 0;
+        GearRolls rolled = gearRolls(item);
+        if (rolled != null) {
+            sellValue = manager.sellValue(rolled);
+        }
         int price = (int) Math.round(sellValue * buyMultiplier);
         return new GearStockEntry(id, item, price, superRare);
     }
@@ -328,7 +332,7 @@ public final class ShopManager {
         }
         GearRolls rolls = gearRolls(item);
         if (rolls != null && rolls.rarity != null && gearManager() != null) {
-            return gearManager().sellValue(rolls.rarity);
+            return gearManager().sellValue(rolls);
         }
         return null;
     }

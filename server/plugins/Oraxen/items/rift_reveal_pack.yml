@@ -1,5 +1,5 @@
 rift_reveal_pack:
-  displayname: <blue>Rift Reveal Pack</blue>
+  displayname: <blue>Rift Attunement Pack</blue>
   material: PAPER
   Pack:
     generate_model: true
@@ -7,6 +7,7 @@ rift_reveal_pack:
     textures:
       - rift_reveal_pack
   lore:
-    - '<blue>Identifies one Uncommon rift for free.</blue>'
-    - '<gray>Crafted from 5 Rift Crystals.</gray>'
-    - "\uE045 <gray>Sell price: <aqua>75 Shards</aqua></gray>"
+    - '<blue>Attunes your next rift reveal — any rarity, no fee.</blue>'
+    - '<gray>Consume, then identify while the attunement holds.</gray>'
+    - '<dark_gray>One use. The rift does the rest.</dark_gray>'
+    - "\uE045 <gray>Sell price: <aqua>150 Shards</aqua></gray>"

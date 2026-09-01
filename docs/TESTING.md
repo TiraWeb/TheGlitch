@@ -157,6 +157,22 @@
 - [ ] Residual Glitch boss bar at cap is `NOTCHED_10` purple with `DARKEN_SCREEN`; otherwise level-based color
 - [ ] `/tab reload` + Oraxen pack still loads and `negative_space.json` shifts are present (no glyph overlap)
 
+## Economy & item balance (2026-09-02 — docs/ITEM_BALANCE.md)
+
+- [ ] Consumables work: `/o give <you> healing_potion` → eat → Regen II 5s; `corrupted_heal` → full HP + Regen III 10s; `aether_tonic` → Speed II + Absorption II 30s; `ward_salve` → Resistance I + Absorption I 20s (honey bottle leave is fine)
+- [ ] Rift Attunement Pack: `/o give <you> rift_reveal_pack` → eat → message "attunement stored" → `/identify` any rarity (legendary) → no fee charged, pack consumed
+- [ ] Void Infusion: hold Epic+ gear in off-hand, `/o give <you> void_infusion` → eat → off-hand gear gains +1 Resonance boost line and +1 star per pip; infusing below Epic or at boost cap → cancelled with message, infusion not consumed
+- [ ] Gear attributes vary: `/glitchitems give rare blade` several times → mix of lifesteal / fire-aspect / execute / frost-touch; rare armor → one of damage-reduction / thorns / glitch-ward; legendary weapon shows two distinct attributes
+- [ ] Execute procs: hit a low-HP (<30%) mob with an execute blade → visible damage jump; Frost Touch → mob gets Slowness 2s
+- [ ] Thorns procs: wear thorns armor, let a mob melee you → attacker takes reflected damage (you take reduced damage per your rolls)
+- [ ] Arcane Staff now hits: `/glitchitems give epic arcane_staff` → F3 shows +5 attack damage on the item; Greatblade shows knockback modifier in lore
+- [ ] Roll-based sell: sell a 0-star common (3) vs a 3-star common (9); legendary godroll sells ~3500 vs brick 1750 — vendor buy price = sell × 1.75
+- [ ] Vault containers: open with vault_key → occasional legendary rift (5%); shards 10-30
+- [ ] Crafting EV: workbench base blade = 3 rune + 1 crystal; targeted blade = +1 aether; attunement pack = 5 crystal + 2 aether
+- [ ] Mob coins reduced: kill T1/T2 mobs → 1-2 / 2-6 coins (was 1-3 / 3-8)
+- [ ] Boss drops corrupted_heal ~25%: spawn `mm mobs spawn GlitchSentinel` won't (that's T3) — check `/mm items`? verify via GlitchKing/Core spawn or trust `mm reload` + table parse
+- [ ] Alchemy tab shows 6 items with new prices (attunement 300/150, tonic 70/35, salve 100/50)
+
 ## Custom UI theming (Arcane Ruins UI kit)
 
 - [ ] Java client auto-receives the updated Oraxen pack on join (accept prompt)

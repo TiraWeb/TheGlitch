@@ -26,8 +26,10 @@ shops:
     tab-icon: "healing_potion"
     stock:
       healing_potion: { buy: 20, sell: 12 }
+      ward_salve: { buy: 100, sell: 50 }
+      aether_tonic: { buy: 70, sell: 35 }
       corrupted_heal: { buy: 250, sell: 150 }
-      rift_reveal_pack: { buy: 150, sell: 75 }
+      rift_reveal_pack: { buy: 300, sell: 150 }
       void_infusion: { buy: 1000, sell: 600 }
   rifts:
     title: "Rifts"

@@ -39,6 +39,7 @@ public final class GlitchItems extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new CombatListener(this, gearManager, glitchManager), this);
         Bukkit.getPluginManager().registerEvents(new ContainerListener(containerManager), this);
+        Bukkit.getPluginManager().registerEvents(new ConsumableListener(this, gearManager, identifyManager), this);
         glitchManager.start();
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {

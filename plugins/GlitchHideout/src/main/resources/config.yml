@@ -73,37 +73,47 @@ recipes:
     display: "<green>Base Blade (Uncommon)"
     icon: STONE_SWORD
     output: "glitchitems give uncommon blade random <player>"
-    materials: { rune_fragment: 3, rift_crystal: 2 }
+    materials: { rune_fragment: 3, rift_crystal: 1 }
   targeted_weapon_aegis:
     display: "<gold>Aegis Blade (Uncommon)"
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade aegis <player>"
-    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+    materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_veil:
     display: "<aqua>Veil Blade (Uncommon)"
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade veil <player>"
-    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+    materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_bloom:
     display: "<green>Bloom Blade (Uncommon)"
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade bloom <player>"
-    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+    materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_ward:
     display: "<red>Ward Blade (Uncommon)"
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade ward <player>"
-    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+    materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_hollow:
     display: "<light_purple>Hollow Blade (Uncommon)"
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade hollow <player>"
-    materials: { rune_fragment: 3, rift_crystal: 2, aether_shard: 2 }
+    materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   rift_reveal_pack:
-    display: "<blue>Rift Reveal Pack"
+    display: "<blue>Rift Attunement Pack"
     icon: BOOK
     output: "o give <player> rift_reveal_pack 1"
-    materials: { rift_crystal: 5 }
+    materials: { rift_crystal: 5, aether_shard: 2 }
+  aether_tonic:
+    display: "<aqua>Aether Tonic"
+    icon: HONEY_BOTTLE
+    output: "o give <player> aether_tonic 1"
+    materials: { aether_shard: 2, rift_crystal: 1 }
+  ward_salve:
+    display: "<gold>Ward Salve"
+    icon: HONEY_BOTTLE
+    output: "o give <player> ward_salve 1"
+    materials: { rune_fragment: 3, aether_shard: 1 }
   vault_key:
     display: "<dark_gray>Vault Key"
     icon: TRIPWIRE_HOOK

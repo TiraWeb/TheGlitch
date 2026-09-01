@@ -72,7 +72,10 @@ item for the endgame economy.
 | **Arcane Staff** | wand/trident | ranged arcane bolt |
 
 Base material scales with rarity (wood/stone/iron/diamond/netherite). **Attributes** (special
-effects — the "boredom killer" vs Ravengard's 2-stat weapons):
+effects — the "boredom killer" vs Ravengard's 2-stat weapons). Pool expanded
+2026-09-02: weapons roll from **lifesteal / fire-aspect / execute / frost-touch**
+(Rare+ = 1, Legendary = 2 distinct); armor keeps exactly one attribute but rolls
+from **damage-reduction / thorns / glitch-ward**:
 
 | Rarity | Weapon attributes |
 |---|---|
@@ -127,7 +130,7 @@ Keys are named after what they open — no lore required:
 |---|---|
 | Common | 5 |
 | Uncommon | 20 |
-| Rare | 75 |
+| Rare | 60 |
 | Epic | 250 |
 | Legendary | 800 |
 
@@ -208,12 +211,15 @@ it draws more of the anomaly (better loot) while eroding your grip on reality (m
 
 | Recipe | Materials | Output |
 |---|---|---|
-| Base Weapon (Uncommon) | 3 Rune Fragment + 2 Rift Crystal | Uncommon weapon (random Resonance) |
-| Targeted Resonance Weapon | base + 2 Aether Shard of chosen Resonance | Weapon locked to chosen Resonance |
-| Rift Reveal Pack | 5 Rift Crystal | Free reveal of 1 Uncommon rift |
+| Healing Potion | 5 Rune Fragment + 1 Rift Crystal | 3x Healing Potion (Regen II, 5s) |
+| Ward Salve (2026-09-02) | 3 Rune Fragment + 1 Aether Shard | Ward Salve (Resistance I + Absorption I, 20s) |
+| Aether Tonic (2026-09-02) | 2 Aether Shard + 1 Rift Crystal | Aether Tonic (Speed II + Absorption II, 30s) |
+| Base Weapon (Uncommon) | 3 Rune Fragment + 1 Rift Crystal | Uncommon weapon (random Resonance) |
+| Targeted Resonance Weapon | base + 1 Aether Shard of chosen Resonance | Weapon locked to chosen Resonance |
+| Rift Attunement Pack | 5 Rift Crystal + 2 Aether Shard | Free identify of ONE rift, any rarity |
 | Vault Key | 3 Rift Crystal + 1 Void Essence | Vault Key |
 | Rift Key | 3 Void Essence + 1 Legendary Relic | Rift Key |
-| Void Infusion | 2 Void Essence + 1 Legendary Relic | +1 Resonance boost on an Epic item |
+| Void Infusion | 2 Void Essence + 1 Legendary Relic | +1 Resonance boost + star reroll on Epic+ gear (off-hand) |
 
 Crafting requires the hideout **Workbench** (as designed in GAME_DESIGN.md §4) — recipes stay
 table-based, only inputs/outputs change.
@@ -306,11 +312,16 @@ and — later — armour/weapon vendors).
 | Unstable Rift (Legendary) | 500 | 1500 | identify fee 800 |
 | Fast Extract Key | 40 | 75 | GAME_DESIGN §8 cost 75 |
 | Healing Potion | 12 | 20 | craft: 5 Rune Fragment + 1 Rift Crystal |
-| Corrupted Heal | 150 | 250 | rare consumable |
-| Rift Reveal Pack | 75 | 150 | craft: 5 Rift Crystal |
+| Ward Salve | 50 | 100 | craft: 3 Rune Fragment + 1 Aether Shard |
+| Aether Tonic | 35 | 70 | craft: 2 Aether Shard + 1 Rift Crystal |
+| Corrupted Heal | 150 | 250 | rare consumable, 25% boss drop |
+| Rift Attunement Pack | 150 | 300 | craft: 5 Rift Crystal + 2 Aether Shard |
 | Void Infusion | 600 | 1000 | craft: 2 Void Essence + 1 Legendary Relic |
 
-Rift sell price ≈ 60% of the identify fee (selling skips the gamble). Buy price ≈ sell × 1.5–3
+Gear sell price is **roll-based** (2026-09-02): `sell = base[rarity] + total
+star pips × starBonus[rarity]` — a 0-star brick sells at the base, a maxed
+godroll for roughly double (numbers in docs/ITEM_BALANCE.md §3). Rift sell
+price ≈ 60% of the identify fee (selling skips the gamble). Buy price ≈ sell × 1.5–3
 (greater for low-tier, keeps vendor margins meaningful).
 
 ### Lore format
