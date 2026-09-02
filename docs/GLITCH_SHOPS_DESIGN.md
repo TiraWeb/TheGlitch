@@ -54,7 +54,14 @@ shops:
       void_essence:   { slot: 3, buy: 200, sell: 100 }
        legendary_relic: { slot: 4, buy: 1500, sell: 800 }
   keys:        # stock: the 3 keys + Fast Extract Key
-  alchemy:     # stock: Healing Potion, Corrupted Heal, Rift Reveal Pack, Void Infusion
+  alchemy:     # stock: Healing Potion, Ward Salve [NEW], Aether Tonic [NEW], Corrupted Heal, Rift Attunement Pack [was Rift Reveal Pack], Void Infusion
+    stock:
+      healing_potion:    { slot: 0, buy: 20,   sell: 12 }
+      ward_salve:        { slot: 1, buy: 100,  sell: 50 }   # [NEW] 2026-09-02
+      aether_tonic:      { slot: 2, buy: 70,   sell: 35 }   # [NEW] 2026-09-02
+      corrupted_heal:    { slot: 3, buy: 250,  sell: 150 }
+      rift_reveal_pack:  { slot: 4, buy: 300,  sell: 150 }  # Rift Attunement Pack [was Rift Reveal Pack]
+      void_infusion:     { slot: 5, buy: 1000, sell: 600 }
   rifts:       # stock: the 5 Unstable Rift variants
 ```
 

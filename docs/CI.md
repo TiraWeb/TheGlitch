@@ -14,6 +14,7 @@ Runs on `push` and `pull_request` to `main`. Job `validate` on `ubuntu-latest` w
 | YAML lint | `python -c "import yaml; yaml.safe_load(...)"` over all `*.yml`/`*.yaml` (skips `target/`, `server/world*`) | parse errors |
 | Maven validate | `mvn -B --no-transfer-progress -DskipTests validate` (offline `mvn -o validate` fallback) | POMs, reactor, deps |
 | Maven package | `mvn -B --no-transfer-progress -DskipTests -Dmaven.test.skip=true package` (`continue-on-error: true`) | compile + jar (best-effort, needs network for Paper) |
+| Oraxen/itemname + config-version | `grep -r displayname: server/plugins/Oraxen/items/*.yml` should fail; `grep -r itemname:` count 20; `config-version == 3` assert (GlitchItems 2026-09-02) | CI must fail on `displayname:` (migrated to `itemname:`) and assert `config-version == 3` |
 
 `ShellCheck` steps use `continue-on-error: true` so lint warnings do not block the build; Maven `validate` is required.
 
@@ -22,12 +23,18 @@ Runs on `push` and `pull_request` to `main`. Job `validate` on `ubuntu-latest` w
 Prereqs: `shellcheck`, `python3 + pyyaml`, `java 21`, `maven 3.9`.
 
 ```bash
-# 1. ShellCheck — same files as CI
+# 1. ShellCheck — same files as CI (plus 2026-09-02 deploy scripts)
 shellcheck -S warning -x scripts/*.sh bootstrap.sh setup-*.sh plugins/*/build.sh
 # or file-by-file:
 shellcheck scripts/build-all.sh
 shellcheck plugins/GlitchItems/build.sh
 shellcheck bootstrap.sh
+shellcheck scripts/deploy-balance-2026-09-02.sh
+shellcheck scripts/deploy-armor-2026-09-02.sh
+# Oraxen itemname + config-version checks (CI must fail if displayname present or config-version !=3)
+! grep -qr "displayname:" server/plugins/Oraxen/items/*.yml || (echo "FAIL: displayname: still present (expected itemname:)" && exit 1)
+echo "itemname count:"; grep -r "itemname:" server/plugins/Oraxen/items/*.yml | wc -l # expect 20
+grep -q "config-version: 3" plugins/GlitchItems/src/main/resources/config.yml || (echo "FAIL: GlitchItems config-version !=3" && exit 1)
 
 # 2. YAML syntax (lightweight, no yamllint needed)
 python3 -c "
@@ -60,7 +67,8 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 
 - Make scripts executable: `chmod +x scripts/*.sh plugins/*/build.sh bootstrap.sh` (fix with `sudo bash scripts/fix-script-modes.sh`)
 - Keep YAML `indent_size: 2` (see `.editorconfig`)
-- Pin Java/Paper once in root `pom.xml` (`<java.version>21</java.version>`, `<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`) — applies to all 14 modules
+- Pin Java/Paper once in root `pom.xml` (`<java.version>21</java.version>`, `<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`) — applies to all 14 modules (GlitchItems v3 still 21; verify scatter rift_vault=6 and itemname count=20)
+- `shellcheck` must also cover `scripts/deploy-balance-2026-09-02.sh` and `scripts/deploy-armor-2026-09-02.sh`; CI must assert `itemname:` count=20 and fail on `displayname:` in `server/plugins/Oraxen/items/*.yml` and `config-version == 3`
 - If CI fails on `package` due to network (`Could not transfer artifact`), `validate` green is still a passing signal — `package` is `continue-on-error: true`.
 
 ## Files
@@ -68,4 +76,4 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 - Workflow: `.github/workflows/ci.yml`
 - Config versioning: `docs/CONFIG_VERSIONING.md` (why bumping `config-version` needs manual merge or `copyDefaults(true)`)
 - Build order: `HANDOFF.md` (Build Order) and `README.md` (Building section)
-- The reactor covers all **14** modules: **12** deployable plugins (incl. GlitchHUD) + the GlitchCommon library + deferred GlitchDungeons. `scripts/build-all.sh` (no args) builds/deploys the 12 deployable plugins; GlitchCommon builds only when something depends on it or via full-reactor fallback. It also syncs GlitchHUD extras (`server/plugins/TAB/config.yml` `scoreboard.enabled: false` + `server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json`).
+- The reactor covers all **14** modules: **12** deployable plugins (incl. GlitchHUD) + the GlitchCommon library + deferred GlitchDungeons. `scripts/build-all.sh` (no args) builds/deploys the 12 deployable plugins; GlitchCommon builds only when something depends on it or via full-reactor fallback. It also syncs GlitchHUD extras (`server/plugins/TAB/config.yml` `scoreboard.enabled: false` + `server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json`). It does NOT sync balance/armor live configs — GlitchItems config v3 + Oraxen itemname + MythicMobs COINS + scatter require manual diff via `scripts/deploy-balance-2026-09-02.sh` / `scripts/deploy-armor-2026-09-02.sh` + `mm reload` + `oraxen reload all`.

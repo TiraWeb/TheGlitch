@@ -12,8 +12,7 @@
 > Oraxen item definitions/assets, GlitchItems V1 source, containers, and parts
 > of GlitchShops exist. Rift drops are wired (T2-T4 tables), Residual Glitch
 > consumers (identify/containers/elite hunt) are in source, death rules
-> are implemented (GlitchDeathRules + Coins account-bound `player-drop:false` 2026-08-23), **dynamic extraction** is live (2026-09-01 `c1634b3`/`9d8f05a` 3 validated random points, universal keys, ring particles), and **GlitchHUD** sidebar/HUD is deployed (`f312262`). Identifier NPC behavior and crafting
-> (GlitchHideout workbench covers §7 recipes) still need live verification.
+> are implemented (GlitchDeathRules + Coins account-bound `player-drop:false` 2026-08-23), **dynamic extraction** is live (2026-09-01 `c1634b3`/`9d8f05a` 3 validated random points, universal keys, ring particles), and **GlitchHUD** sidebar/HUD is deployed (`f312262`). **Economy+armor rework deployed 2026-09-02** (`4d8c554+b638e45` via `scripts/deploy-balance-2026-09-02.sh` + `f1da4d0` via `scripts/deploy-armor-2026-09-02.sh`): roll-based sell, expanded attributes, archetype identity, working consumables, Vault +5% legendary rift, 20 items `itemname:` config v3, upgrades +0..+5 per-slot identity. Identifier NPC behavior still needs live verification.
 > Root `pom.xml:53` now resolves PlaceholderAPI via `https://repo.extendedclip.com/content/repositories/placeholderapi/`.
 > See [`docs/STATUS.md`](STATUS.md).
 
@@ -297,16 +296,18 @@ use) → built from source on the box via `sudo ./setup-oraxen.sh` (clones
 NOT in `bootstrap.sh` on purpose, and the built jar must never be committed to this repo (license
 forbids redistribution).
 
+> **2026-09-02 — Oraxen migration:** repo configs `displayname:` → `itemname:` to match live Oraxen and `config-version: 3` (was 1) for GlitchItems; both sections deployed live via `scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` (20 items, upgrades +0..+5 per-slot identity).
+
 Rough order:
 
 1. **Item base plugin + resource pack** — ✅ Oraxen built from source + deployed (setup-oraxen.sh)
-2. **Material + key + consumable items** — ✅ 18 items as Oraxen configs (server/plugins/Oraxen/): 5 materials, 4 keys, 5 Unstable Rifts, 4 alchemy — deploy via setup-oraxen-items.sh
+2. **Material + key + consumable items** — ✅ 20 items (5+4+5+6) as Oraxen configs (server/plugins/Oraxen/): 5 materials, 4 keys, 5 Unstable Rifts, 6 alchemy — deploy via setup-oraxen-items.sh
 3. **Source V1:** rarity tiers + stat-roll engine, 3 weapon archetypes, 4 armor pieces, attributes, `/identify`, Resonance math, and Residual Glitch source exist. Build and runtime testing are pending.
 4. Rift drops (mob loot tables emit rifts) — DONE in repo (2026-08-03, all T2-T4 tables); Identifier NPC flow — not complete.
 5. Resonance tags (MythicMobs metadata) + complete gear integration — DONE in repo (2026-08-03, ten mobs); live test pending.
 6. Residual Glitch timer/effects + extraction multiplier — source and payout hook exist; consumers DONE (2026-08-06 → 2026-08-10): identify loot luck (star-luck per roll, rarity surge per stack), elite hunt at 5+ stacks (console `mm spawn`, configurable), container loot luck (per-roll rarity surge + surge drop). Aggro-scaling consumer still open.
 7. World population (spawners, chests, regen) — DONE in repo (2026-08-10): glitch_red SpawnAreas seeded + GlitchItems container system (Debris/Cache/Vault/Rift Vault, key consumption, regen, loot luck). In-world marking/placement is operator work.
-8. Crafting recipes via Workbench — DONE in source (2026-08-10): GlitchHideout workbench implements the §7 recipes (healing potion, base + 5 targeted-resonance blades, reveal pack, vault/rift keys, void infusion); live build/test pending.
+8. Crafting recipes via Workbench — DONE in source (2026-08-10) + deployed 2026-09-02: GlitchHideout workbench implements the §7 recipes (Healing Potion 5R+1C, Ward Salve 3R+1A, Aether Tonic 2A+1C, Base 3R+1C, Targeted +1A, Rift Attunement Pack 5C+2A free any rarity, Vault/Rift Keys, Void Infusion); live verified via deploy scripts.
 9. Rename pass across runtime configs and menus — not complete.
 10. Death rules (§12: keep leggings+boots in glitch_red) — DONE in repo (2026-08-06): GlitchDeathRules plugin (mercy keep + entry invulnerability). Coins account-bound `player-drop:false` `lose-on-death:false` `drop-on-death:false` (2026-08-23 repo + live `coins reload`). Live playtest pending.
 
@@ -340,7 +341,7 @@ and — later — armour/weapon vendors).
 | Rift Key | 400 | 800 | craft: 3 Void Essence + 1 Legendary Relic |
 | Unstable Rift (Common) | 3 | 10 | identify fee 5 |
 | Unstable Rift (Uncommon) | 12 | 40 | identify fee 20 |
-| Unstable Rift (Rare) | 45 | 150 | identify fee 75 |
+| Unstable Rift (Rare) | 45 | 150 | identify fee 60 |
 | Unstable Rift (Epic) | 150 | 500 | identify fee 250 |
 | Unstable Rift (Legendary) | 500 | 1500 | identify fee 800 |
 | Fast Extract Key | 40 | 75 | GAME_DESIGN §8 cost 75 |

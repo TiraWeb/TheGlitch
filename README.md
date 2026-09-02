@@ -122,24 +122,23 @@ Keybinds work only in `glitch_pve` / `glitch_red`; entering a game world shows
 a keybind hint action bar (`F <prime> Sneak+F <tactical> Sneak+Q <ultimate>` — hold any item for `Sneak+Q`).
 In the hub, `F` swaps items and `Q` drops normally.
 
-## The item system (Phase 5.10, in progress)
+## The item system (Phase 5.10, deployed 2026-09-02)
 
 Arcane Ruins aesthetic (corrupted magical anomaly — no guns, no techy/circuit items).
-Design doc: [docs/ITEM_SYSTEM.md](docs/ITEM_SYSTEM.md). The core loop is "Unstable
+Design doc: [docs/ITEM_SYSTEM.md](docs/ITEM_SYSTEM.md) + balance pass [docs/ITEM_BALANCE.md](docs/ITEM_BALANCE.md) (retuned 2026-09-02). The core loop is "Unstable
 Rifts": mobs drop unrevealed rifts, you extract, and a hub Identifier NPC reveals the
 item with random stat rolls. Power comes from rarity tiers (Common → Legendary) +
 stat rolls + the **Resonance system** (5 arcane frequencies, weapon +25% damage vs
-matching mobs), not item levels.
+matching mobs), not item levels. See also [Armor upgrade](#armor-upgrade-deployed-2026-09-02-rcon-verified) (deployed 2026-09-02 f1da4d0/d847c69, config-version 3).
 
-**18 custom item definitions/assets exist:** 5 materials, 4 keys, 5 Unstable Rifts,
-and 4 alchemy items — every one ends with a `Sell price: N Shards` lore line.
-GlitchShops (`/shop`) buy/sell is deployed and live-tested (2026-08-03); prices
+**20 custom item definitions/assets exist:** 5 materials, 4 keys, 5 Unstable Rifts,
+and 6 alchemy items (added Aether Tonic [2026-09-02] + Ward Salve [2026-09-02]) — every one ends with a `Sell price: N Shards` lore line. Oraxen key is `itemname:` (migrated from `displayname:` in 6e2fba7, config-version 3).
+GlitchShops (`/shop`) buy/sell is deployed and live-tested (2026-08-03) (retuned 2026-09-02, docs/ITEM_BALANCE.md); prices
 come from the shop config, and buy prices appear only in the merchant GUI.
 
-**Gear line (deployed + tested):** 3 weapon archetypes (Blade,
+**Gear line (deployed + tested, retuned 2026-09-02, docs/ITEM_BALANCE.md):** 3 weapon archetypes (Blade,
 Greatblade, Arcane Staff) + 4 armor pieces; base stats scale by rarity, weapons
-gain special attributes (lifesteal, fire aspect...) from Rare up, armor keeps
-exactly one attribute. Gear comes from Unstable Rifts (`/identify`, shard fee —
+roll from 4 attributes (lifesteal / fire-aspect / execute / frost-touch — Rare/Epic 1 of 4, Legendary 2 distinct) and armor rolls exactly one of 3 (damage-reduction / thorns / glitch-ward) from Rare up. Archetype identity: Arcane Staff +2/3/5/7/9 ATTACK_DAMAGE per rarity, Greatblade +0.1/0.15/0.2/0.25/0.3 ATTACK_KNOCKBACK. Gear sell is roll-based (2026-09-02): `base[rarity] 3/17/75/350/1750 + total_stars × bonus 2/8/25/90/350`. Gear comes from Unstable Rifts (`/identify`, shard fee —
 live-tested), admin `/glitchitems give`, and Workbench crafting (GlitchHideout). Resonance
 combat math (weapon +25% dmg vs matching mobs, armor reduction) and the
 Residual Glitch loop are implemented — mobs need a `res_<name>` scoreboard
@@ -150,19 +149,19 @@ XP bar mirror, off by default), plus `%glitchitems_stacks%` /
 `%glitchitems_payout%` / `%glitchitems_payout_multiplier%` /
 `%glitchitems_dmg_taken%` PlaceholderAPI placeholders for the TAB scoreboard.
 
-**Residual Glitch consumers (source, 2026-08-06 → 08-10):** loot luck applies
+**Residual Glitch consumers (source, 2026-08-06 → 08-10, retuned 2026-09-02, docs/ITEM_BALANCE.md):** loot luck applies
 at `/identify` (star-luck per roll + rarity-surge chance) and at loot
 containers (per-roll rarity surge + surge drop); at 5+ stacks a MythicMobs
 elite hunts the player (repeat spawns every 10 min).
 
-**Loot containers (source, 2026-08-10):** Debris Pile (free) / Loot Cache
-(Cache Key) / Vault (Vault Key) / Rift Vault (Rift Key) — rarity-weighted
-rolls, per-block regen cooldown, loot-luck consumer. Mark blocks in-world
+**Loot containers (source, 2026-08-10, retuned 2026-09-02, docs/ITEM_BALANCE.md):** Debris Pile (free) / Loot Cache
+(Cache Key) / Vault (Vault Key, +5% legendary rift roll 2026-09-02) / Rift Vault (Rift Key) — rarity-weighted
+rolls, per-block regen cooldown, loot-luck consumer. Scatter `rift_vault` 10→6 (141 total per cycle, was 145). Mark blocks in-world
 with `/glitchcontainers set <type>`.
 
 **Risk (implemented in source, live verification pending):** glitch_red is
 full-loot with the mercy rule — on death you keep **leggings + boots**
-(GlitchDeathRules), shards are **account-bound** (`server/plugins/Coins/config.yml:85` `player-drop:false` etc — no shard loss on death, live reloaded 2026-08-23), plus 30s entry invulnerability at Red Zone entry points.
+(GlitchDeathRules), shards are **account-bound** (`server/plugins/Coins/config.yml:85` `player-drop:false` etc — no shard loss on death, live reloaded 2026-08-23; Mob COINS retuned 2026-09-02 T1 1-2 T2 Stalker 2-6 / Phantom 3-8 / Brute 5-10 T3 10-16 boss 40-80, docs/ITEM_BALANCE.md), plus 30s entry invulnerability at Red Zone entry points.
 glitch_pve stays keep-inventory as the training floor. Standard extract is
 configured for 30s; Fast (15s, Fast Extract Key) and Silent (10s, Rift Key)
 extraction variants are implemented in GlitchStash — VelKoth arenas must be
@@ -176,7 +175,7 @@ stations upgrade with Glitch Shards and prerequisites:
 | Station | What it does |
 |---|---|
 | Arcane Core | Prerequisite chain for the Armory |
-| Workbench | Crafting (ITEM_SYSTEM §7 recipes: healing potions, base/targeted resonance blades, reveal packs, vault/rift keys, void infusion) |
+| Workbench | Crafting (ITEM_SYSTEM §7 recipes: healing potions, Ward Salve, Aether Tonic, base 3R+1C / targeted +1A resonance blades, Rift Attunement Pack 5C+2A free any rarity, vault/rift keys, Void Infusion Epic+ boost+reroll) + armor upgrade +0..+5 (ANVIL slot 40 or /armor upgrade) (retuned 2026-09-02, docs/ITEM_BALANCE.md) |
 | Med Station | Free full heal between raids (30s cooldown) |
 | Stash | Extended storage: 27 / 45 / 54 slots by level |
 | Intel Center | Hostiles glow within 20 blocks while you are in the rift |
@@ -184,6 +183,10 @@ stations upgrade with Glitch Shards and prerequisites:
 | Armory | Gear storage (27 / 45 slots) with auto-sort |
 
 Admin: `/hideoutadmin set <player> <station> <level> | reset <player> | reload`
+
+## Armor upgrade (deployed 2026-09-02, RCON verified)
+
+Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or via `/armor upgrade` (hold piece). Each level grants **+1 armor point**; costs are shards `10/25/60/150/400 × [1,2,3,4,6]` + materials `2R / 3R / 4R+1A / 5R+2A / 6R+3A+1C` (R=Rune Fragment, A=Aether Shard, C=Rift Crystal). Per-slot identity (config `piece-identity`, `GlitchItems` config-version 3): helmet speed×2.0, chestplate HP×2.0, leggings armor×1.5, boots speed×1.5 — old gear deserializes as +0 and stays fully valid. Deployed via `scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` (4d8c554/f1da4d0/d847c69), service active, `rift_vault=6` and armor +5 verified via RCON (`mm reload` + `oraxen reload all` + restart, `BUILD SUCCESS`).
 
 ## Plugin stack
 
@@ -200,7 +203,7 @@ Admin: `/hideoutadmin set <player> <station> <level> | reset <player> | reload`
 | TAB | Tab list + header/footer (sidebar owned by GlitchHUD) | `server/plugins/TAB/config.yml` (`scoreboard.enabled: false`) |
 | PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
 | VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
-| Oraxen | Custom items (18 Arcane Ruins items) + UI glyphs | `server/plugins/Oraxen/` |
+| Oraxen | Custom items (20 Arcane Ruins items, `itemname:` — migrated from `displayname:` in 6e2fba7, config-version 3) + UI glyphs | `server/plugins/Oraxen/` |
 | **GlitchHUD** | **Scoreboard/HUD** (custom: per-world sidebar, below-name stacks, residual boss bar) | `plugins/GlitchHUD/` |
 | **GlitchStash** | **Extraction vault + dynamic spots + Fast/Silent variants** (custom) | `plugins/GlitchStash/` |
 | **GlitchClasses** | **Class system** (custom: abilities, ultimates, starter kit) | `plugins/GlitchClasses/` |
@@ -269,7 +272,7 @@ sudo ./plugins/GlitchHealthBar/build.sh
 sudo systemctl restart theglitch
 ```
 
-Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **14** modules. CI validate: `./scripts/build-all.sh --no-deploy`.
+Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **14** modules. CI validate: `./scripts/build-all.sh --no-deploy`. GlitchItems `config-version` is now 3 (2026-09-02, was 1) — armor upgrade + per-slot identity (see `plugins/GlitchItems/src/main/resources/config.yml`).
 
 `build-all.sh` also syncs `GlitchHUD` extras on deploy: forces `server/plugins/TAB/config.yml` (`scoreboard.enabled: false` — sidebar owned by GlitchHUD) and `server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json`.
 

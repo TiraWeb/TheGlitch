@@ -6,7 +6,7 @@
 > Item names/rarities per docs/ITEM_SYSTEM.md; merchant economy per ITEM_SYSTEM.md §11.
 
 > **Implementation status:** This is a design specification, not an as-built
-> feature list. The tables below describe intended gameplay. As of 2026-09-01:
+> feature list. The tables below describe intended gameplay. As of 2026-09-02:
 > the full ten-mob roster, class plugin (abilities + ultimates + starter kit),
 > GlitchStash (**dynamic 3-point validated random extraction** + Fast/Silent variants),
 > GlitchItems (identify, Residual consumers, loot containers), GlitchShops,
@@ -14,7 +14,7 @@
 > GlitchHideout, and **GlitchHUD** (per-world sidebar, below-name, TAB takeover)
 > exist in source and are deployed 2026-09-01 (Folia-safe, real PAPI `2.12.3`,
 > Coins account-bound, `ByteTag` PDC crash + ping/TPS fixed, `SpotPicker` flatness tightened,
-> scatter land-corrected `[0..2000]²`); most world content, the Identifier NPC,
+> scatter land-corrected `[0..2000]²`); **economy+armor rework deployed 2026-09-02** (`4d8c554+b638e45` via `scripts/deploy-balance-2026-09-02.sh` + `f1da4d0` via `scripts/deploy-armor-2026-09-02.sh`, `rift_vault=6` scatter confirmed, RCON armor verified, service active); most world content, the Identifier NPC,
 > dungeon content, and anti-grief remainder (friendly-fire/AFK) are still incomplete. See
 > [`docs/STATUS.md`](STATUS.md).
 
@@ -176,7 +176,7 @@ metadata field.
 | **The Glitch King** | Ender Dragon | 2000 | 20+ | Hollow | 3-phase fight. Phase 1 (100-75% HP): Summons Glitch Stalkers, ground slam AoE. Phase 2 (75-25% HP): Teleports around arena, fires laser beams, creates corruption zones (damage over time). Phase 3 (<25% HP): Enrage mode — faster attacks, more spawns, but core is exposed (3x damage). |
 | **The Corrupted Core** | Wither | 1500 | 15+ | Hollow | Stationary boss. Spawns corruption turrets that fire projectiles. Players must destroy turrets to damage the core. Every 25% HP lost, spawns a wave of Corrupted Crawlers. |
 
-**Drops:** Void Essence (guaranteed), Legendary Relic (10%), Epic/Legendary loot (30%), guaranteed high-rarity Unstable Rifts, Shards (50-100).
+**Drops:** Void Essence (guaranteed), Legendary Relic (10%), Epic/Legendary loot (30%), guaranteed high-rarity Unstable Rifts, Shards (40-80).
 
 ---
 
@@ -218,15 +218,13 @@ SniperLaser:
 
 Full design in docs/ITEM_SYSTEM.md §2: 3 weapon archetypes (**Blade**, **Greatblade**,
 **Arcane Staff**), 4 armor pieces (helmet, chestplate, leggings, boots). Base material
-scales with rarity (wood/leather → netherite). Weapons gain special attributes from
-Rare up (lifesteal, fire aspect, ...); armor keeps it simple: **base stats upgraded
-by rarity + exactly one attribute** from Rare up.
+scales with rarity (wood/leather → netherite). **Weapons roll 4 attributes** (lifesteal / fire-aspect / execute / frost-touch; Rare+ = 1, Legendary = 2 distinct) and **armor rolls 3** (damage-reduction / thorns / glitch-ward; exactly one from Rare up). **Archetype identity 2026-09-02:** Arcane Staff gains flat `ATTACK_DAMAGE` +2/3/5/7/9 by rarity (Common2/Uncommon3/Rare5/Epic7/Legendary9), Greatblade gains `ATTACK_KNOCKBACK`; per-slot armor identity × multipliers (helmet speed×2, chestplate HP×2, leggings armor×1.5, boots speed×1.5 — ITEM_SYSTEM §2).
 
 | Type | Common | Uncommon | Rare | Epic | Legendary |
 |---|---|---|---|---|---|
 | **Weapons** | Wooden Blade | Stone Blade | Iron Blade | Diamond Blade | Netherite Blade |
 | **Armor** | Leather | Chainmail | Iron | Diamond | Netherite (full set) |
-| **Consumables** | Bread | Golden carrot | Enchanted golden apple | Totem of undying | Custom: Corrupted Heal (full HP + 10s Regen III) |
+| **Consumables (6 alchemy, working 2026-09-02)** | Healing Potion (Regen II 5s) | Ward Salve (Resistance I + Absorption I 20s) | Aether Tonic (Speed II + Absorption II 30s) | Corrupted Heal (full HP + 10s Regen III) | Rift Attunement Pack (free identify any rarity) + Void Infusion (Epic+ boost+star reroll) |
 | **Materials** | Rune Fragment x1 | Aether Shard x1 | Rift Crystal x1 | Void Essence x1 | Legendary Relic x1 |
 | **Keys** | — | Cache Key (Loot Caches) | Vault Key (Vaults) | Rift Key (Rift Vaults) | — |
 | **Unstable Rifts** | Common rift | Uncommon rift | Rare rift | Epic rift | Legendary rift |
@@ -246,7 +244,7 @@ by rarity + exactly one attribute** from Rare up.
 |---|---|---|---|
 | **Debris Pile** | Everywhere | none | Common (60%), Uncommon (25%), nothing (15%) |
 | **Loot Cache** | Mid-tier areas | Cache Key | Uncommon (40%), Rare (30%), Common (20%), nothing (10%) |
-| **Vault** | Hard areas | Vault Key | Rare (30%), Epic (40%), Uncommon (20%), nothing (10%) |
+| **Vault** | Hard areas | Vault Key | Rare (30%), Epic (40%), Uncommon (20%), nothing (10%) +5% legendary rift roll added 2026-09-02 |
 | **Rift Vault** | Boss areas | Rift Key | Epic (30%), Legendary (50%), Rare (20%) |
 
 ---
@@ -275,12 +273,14 @@ and armory storage, med heal, intel glow. Live build/test pending.
 | Recipe | Materials | Output |
 |---|---|---|
 | Healing Potion | 5 Rune Fragment + 1 Rift Crystal | 3x Healing Potion (Regen II, 5s) |
-| Base Weapon (Uncommon) | 3 Rune Fragment + 2 Rift Crystal | Uncommon weapon (random Resonance) |
-| Targeted Resonance Weapon | base + 2 Aether Shard of chosen Resonance | Weapon locked to chosen Resonance |
-| Rift Reveal Pack | 5 Rift Crystal | Free reveal of 1 Uncommon rift |
+| Ward Salve | 3 Rune Fragment + 1 Aether Shard | Ward Salve (Resistance I + Absorption I, 20s) |
+| Aether Tonic | 2 Aether Shard + 1 Rift Crystal | Aether Tonic (Speed II + Absorption II, 30s) |
+| Base Weapon (Uncommon) | 3 Rune Fragment + 1 Rift Crystal | Uncommon weapon (random Resonance) |
+| Targeted Resonance Weapon | base + 1 Aether Shard of chosen Resonance | Weapon locked to chosen Resonance |
+| Rift Attunement Pack | 5 Rift Crystal + 2 Aether Shard | Free identify of ONE rift, any rarity |
 | Vault Key | 3 Rift Crystal + 1 Void Essence | Vault Key (1 use) |
 | Rift Key | 3 Void Essence + 1 Legendary Relic | Rift Key (1 use) |
-| Void Infusion | 2 Void Essence + 1 Legendary Relic | +1 Resonance boost on an Epic item |
+| Void Infusion | 2 Void Essence + 1 Legendary Relic | +1 Resonance boost + star reroll on Epic+ gear (off-hand) |
 
 ---
 
@@ -399,7 +399,7 @@ Coins is now account-bound; shards never drop as items on death. Merchant sell p
 | Tier 4 dungeon | 80-150 | Every 18 min |
 | Tier 5 dungeon | 150-300 | Every 20 min |
 | Red Zone extraction | 20-100 | Variable |
-| Boss kill | 50-100 | Rare |
+| Boss kill | 40-80 | Rare |
 | Loot sale (merchant) | 5-500 per item | Any time |
 
 ### Shard Expense Sources

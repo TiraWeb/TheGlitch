@@ -1,6 +1,6 @@
 # Low-Level Bug Tracker - Custom Plugins
 
-Updated: 2026-09-01
+Updated: 2026-09-02 — armor rework + balance pass deployed (GlitchItems v3, Oraxen itemname, Vault +5%, scatter rift_vault=6, alchemy 6)
 
 This tracker lists known implementation issues. It is not a substitute for
 runtime testing. Source-only plugins must be built and tested on the target

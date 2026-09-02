@@ -8,8 +8,9 @@
 
 - [ ] `git pull && sudo ./bootstrap.sh` (seeds new MythicMobs SpawnAreas + Spawners subdirs)
 - [ ] Build all changed plugins:
-  - `sudo ./scripts/build-all.sh`  *(preferred: reactor, topological order — covers all 12 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents/GlitchLoot/GlitchHUD; also syncs `TAB/config.yml` + `negative_space.json`)*
+  - `sudo ./scripts/build-all.sh`  *(preferred: 14-module reactor, topological order — covers all 12 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents/GlitchLoot/GlitchHUD; also syncs `TAB/config.yml` + `negative_space.json`, Oraxen `itemname:` config v3)*
   - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar` (newer five are reactor-only)
+  - `sudo ./scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` for economy+armor (Oraxen `itemname:`, config v3, `rift_vault=6`, RCON verified)
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./setup-mythicmobs.sh` (`mm reload` + verify mobs list)
 - [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD (+ `TAB scoreboard.enabled: false` + `Oraxen negative_space` sync lines)
@@ -165,13 +166,13 @@
 - [ ] Gear attributes vary: `/glitchitems give rare blade` several times → mix of lifesteal / fire-aspect / execute / frost-touch; rare armor → one of damage-reduction / thorns / glitch-ward; legendary weapon shows two distinct attributes
 - [ ] Execute procs: hit a low-HP (<30%) mob with an execute blade → visible damage jump; Frost Touch → mob gets Slowness 2s
 - [ ] Thorns procs: wear thorns armor, let a mob melee you → attacker takes reflected damage (you take reduced damage per your rolls)
-- [ ] Arcane Staff now hits: `/glitchitems give epic arcane_staff` → F3 shows +5 attack damage on the item; Greatblade shows knockback modifier in lore
+- [ ] Arcane Staff now hits: `/glitchitems give epic arcane_staff` → F3 shows +7 attack damage on the item (Common2/Uncommon3/Rare5/Epic7/Legendary9); Greatblade shows knockback modifier in lore
 - [ ] Roll-based sell: sell a 0-star common (3) vs a 3-star common (9); legendary godroll sells ~3500 vs brick 1750 — vendor buy price = sell × 1.75
 - [ ] Vault containers: open with vault_key → occasional legendary rift (5%); shards 10-30
 - [ ] Crafting EV: workbench base blade = 3 rune + 1 crystal; targeted blade = +1 aether; attunement pack = 5 crystal + 2 aether
-- [ ] Mob coins reduced: kill T1/T2 mobs → 1-2 / 2-6 coins (was 1-3 / 3-8)
+- [ ] Mob coins reduced: T1 1-2, T2 Stalker 2-6 / Phantom 3-8 / Brute 5-10, T3 10-16, boss 40-80 (was 1-3/3-8/5-12/8-15/15-25/50-100)
 - [ ] Boss drops corrupted_heal ~25%: spawn `mm mobs spawn GlitchSentinel` won't (that's T3) — check `/mm items`? verify via GlitchKing/Core spawn or trust `mm reload` + table parse
-- [ ] Alchemy tab shows 6 items with new prices (attunement 300/150, tonic 70/35, salve 100/50)
+- [ ] Alchemy tab shows 6 items (20 items total) with sell/buy: Healing Potion 12/20, Ward Salve 50/100, Aether Tonic 35/70, Corrupted Heal 150/250, Rift Attunement Pack 150/300, Void Infusion 600/1000
 
 ## Armor rework: upgrades + per-slot identity (2026-09-02)
 
