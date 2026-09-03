@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +102,8 @@ public final class ScatterManager {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type LIST_TYPE = new TypeToken<List<ScatteredPos>>() {}.getType();
+    private static final net.kyori.adventure.text.minimessage.MiniMessage MM =
+            net.kyori.adventure.text.minimessage.MiniMessage.miniMessage();
 
     // ------------------------------------------------------------------------
     // Config defaults
@@ -550,7 +551,7 @@ public final class ScatterManager {
         // Try MiniMessage if available; fall back to legacy
         net.kyori.adventure.text.Component comp;
         try {
-            comp = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(raw);
+            comp = MM.deserialize(raw);
         } catch (Exception e) {
             comp = net.kyori.adventure.text.Component.text(raw);
         }

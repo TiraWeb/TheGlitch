@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -47,6 +48,14 @@ public final class LootListener implements Listener {
         }
     }
 
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        try {
+            engine.handleQuit(event.getPlayer().getUniqueId());
+        } catch (Exception ignored) {
+        }
+    }
+
     private void handle(EntityDeathEvent event) throws Exception {
         if (!(event.getEntity() instanceof Monster victim)) {
             return;
@@ -59,18 +68,19 @@ public final class LootListener implements Listener {
             return;
         }
 
-        double bonus = engine.isAdaptiveEnabled() ? engine.bonusPercent(killer) : 0;
+        long now = System.currentTimeMillis();
+        double bonus = engine.isAdaptiveEnabled() ? engine.bonusPercent(killer, now) : 0;
         double chance = BASE_CHANCE_PERCENT + bonus;
         ThreadLocalRandom rand = ThreadLocalRandom.current();
         if (rand.nextDouble(100.0) >= chance) {
-            engine.recordDryRoll(killer);
+            engine.recordDryRoll(killer, now);
             return;
         }
 
-        if (engine.isAntiFunnelEnabled() && engine.withinAntiFunnel(killer)) {
+        if (engine.isAntiFunnelEnabled() && engine.withinAntiFunnel(killer, now)) {
             killer.sendActionBar(plugin.getMessages().comp(
                     "cooldown-message", "<gray>Loot surge cooling down here.</gray>"));
-            engine.recordDryRoll(killer);
+            engine.recordDryRoll(killer, now);
             return;
         }
 
@@ -78,7 +88,7 @@ public final class LootListener implements Listener {
         if (engine.powerRemaining() < engine.costOf(rarity)) {
             killer.sendMessage(plugin.getMessages().comp(
                     "power-capped", "<red>The Glitch is exhausted here — try again later.</red>"));
-            engine.recordDryRoll(killer);
+            engine.recordDryRoll(killer, now);
             return;
         }
 
@@ -86,7 +96,7 @@ public final class LootListener implements Listener {
         Location loc = victim.getLocation();
         victim.getWorld().dropItemNaturally(loc, item);
 
-        engine.recordLoot(killer, rarity);
+        engine.recordLoot(killer, rarity, now);
 
         killer.sendActionBar(plugin.getMessages().comp(
                 "bonus-applied", "<dark_purple><bold>GLITCH</bold> <gray>surge!</gray>"));

@@ -1,5 +1,9 @@
 package com.theglitch.glitchitems;
 
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 public enum Rarity {
     COMMON(0, "common"),
     UNCOMMON(1, "uncommon"),
@@ -9,6 +13,15 @@ public enum Rarity {
 
     private final int tier;
     private final String id;
+
+    /** Lower-cased id -> rarity, so {@link #fromId(String)} avoids a linear scan per call. */
+    private static final Map<String, Rarity> BY_ID = new HashMap<>();
+
+    static {
+        for (Rarity rarity : values()) {
+            BY_ID.put(rarity.id.toLowerCase(Locale.ROOT), rarity);
+        }
+    }
 
     Rarity(int tier, String id) {
         this.tier = tier;
@@ -28,11 +41,7 @@ public enum Rarity {
     }
 
     public static Rarity fromId(String id) {
-        for (Rarity rarity : values()) {
-            if (rarity.id.equalsIgnoreCase(id)) {
-                return rarity;
-            }
-        }
-        return null;
+        if (id == null) return null;
+        return BY_ID.get(id.toLowerCase(Locale.ROOT));
     }
 }

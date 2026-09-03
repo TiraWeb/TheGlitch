@@ -11,6 +11,14 @@ public final class StashCycleProbe {
 
     private StashCycleProbe() {}
 
+    // Cached reflection — formatNextCycle() runs per HUD tick per RED player,
+    // so avoid getMethod() on every call. Volatile + benign races.
+    private static volatile java.lang.reflect.Method CACHED_GET_INSTANCE;
+    private static volatile java.lang.reflect.Method CACHED_GET_SCHEDULER;
+    private static volatile java.lang.reflect.Method CACHED_GET_LAST;
+    private static volatile java.lang.reflect.Method CACHED_GET_INTERVAL;
+    private static final String[] SCHEDULER_NAMES = {"getAutoExtractScheduler", "getScheduler", "getExtractScheduler"};
+
     /** Millis until next extraction cycle, or -1 if unavailable. */
     public static long getMillisUntilNextCycle() {
         try {
@@ -18,21 +26,54 @@ public final class StashCycleProbe {
             if (stash == null || !stash.isEnabled()) return -1;
             Object inst = stash;
             try {
-                java.lang.reflect.Method gi = stash.getClass().getMethod("getInstance");
-                Object maybe = gi.invoke(null);
-                if (maybe != null) inst = maybe;
+                java.lang.reflect.Method gi = CACHED_GET_INSTANCE;
+                if (gi == null || !gi.getDeclaringClass().isInstance(stash)) {
+                    try {
+                        gi = stash.getClass().getMethod("getInstance");
+                        CACHED_GET_INSTANCE = gi;
+                    } catch (Exception ignored) { gi = null; }
+                }
+                if (gi != null) {
+                    Object maybe = gi.invoke(null);
+                    if (maybe != null) inst = maybe;
+                }
             } catch (Exception ignored) {}
             Object scheduler = null;
-            for (String m : new String[]{"getAutoExtractScheduler", "getScheduler", "getExtractScheduler"}) {
-                try {
-                    java.lang.reflect.Method method = inst.getClass().getMethod(m);
-                    scheduler = method.invoke(inst);
-                    if (scheduler != null) break;
-                } catch (NoSuchMethodException ignored) {}
-            }
+            try {
+                java.lang.reflect.Method cached = CACHED_GET_SCHEDULER;
+                if (cached != null && cached.getDeclaringClass().isInstance(inst)) {
+                    try {
+                        scheduler = cached.invoke(inst);
+                    } catch (Exception ignored) { scheduler = null; }
+                }
+                if (scheduler == null) {
+                    for (String m : SCHEDULER_NAMES) {
+                        try {
+                            java.lang.reflect.Method method = inst.getClass().getMethod(m);
+                            scheduler = method.invoke(inst);
+                            if (scheduler != null) {
+                                CACHED_GET_SCHEDULER = method;
+                                break;
+                            }
+                        } catch (NoSuchMethodException ignored) {}
+                    }
+                }
+            } catch (Exception ignored) {}
             if (scheduler == null) return -1;
-            java.lang.reflect.Method getLast = scheduler.getClass().getMethod("getLastCycleStartMillis");
-            java.lang.reflect.Method getInterval = scheduler.getClass().getMethod("getIntervalMinutes");
+            java.lang.reflect.Method getLast = CACHED_GET_LAST;
+            if (getLast == null || !getLast.getDeclaringClass().isInstance(scheduler)) {
+                try {
+                    getLast = scheduler.getClass().getMethod("getLastCycleStartMillis");
+                    CACHED_GET_LAST = getLast;
+                } catch (Exception ignored) { return -1; }
+            }
+            java.lang.reflect.Method getInterval = CACHED_GET_INTERVAL;
+            if (getInterval == null || !getInterval.getDeclaringClass().isInstance(scheduler)) {
+                try {
+                    getInterval = scheduler.getClass().getMethod("getIntervalMinutes");
+                    CACHED_GET_INTERVAL = getInterval;
+                } catch (Exception ignored) { return -1; }
+            }
             long last = (long) getLast.invoke(scheduler);
             int interval = (int) getInterval.invoke(scheduler);
             if (last <= 0 || interval <= 0) return -1;

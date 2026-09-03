@@ -21,6 +21,9 @@ public final class GlitchUI {
     public static final String DIVIDER = "\uE048";
     public static final String TITLE_RUNE = "\uE049";
 
+    private static final String FULL_PIP = "<gold>" + STAR_FULL + "</gold>";
+    private static final String EMPTY_PIP = "<dark_gray>" + STAR_EMPTY + "</dark_gray>";
+
     private GlitchUI() {
     }
 
@@ -38,8 +41,7 @@ public final class GlitchUI {
     public static String pips(int count) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 5; i++) {
-            sb.append(i < count ? "<gold>" + STAR_FULL + "</gold>"
-                    : "<dark_gray>" + STAR_EMPTY + "</dark_gray>");
+            sb.append(i < count ? FULL_PIP : EMPTY_PIP);
         }
         return sb.toString();
     }

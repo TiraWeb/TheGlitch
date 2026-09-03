@@ -10,9 +10,9 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class ExtractionVariantListener implements Listener {
 
@@ -20,7 +20,7 @@ public final class ExtractionVariantListener implements Listener {
 
     private final GlitchStash plugin;
     private final ExtractionVariantManager manager;
-    private final Map<UUID, Long> lastWarning = new HashMap<>();
+    private final Map<UUID, Long> lastWarning = new ConcurrentHashMap<>();
 
     public ExtractionVariantListener(GlitchStash plugin, ExtractionVariantManager manager) {
         this.plugin = plugin;

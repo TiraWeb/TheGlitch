@@ -97,20 +97,29 @@ public final class LootEngine {
      * min(dryStreak * perRoll, maxBonus). Stale streaks (outside the window) count as 0.
      */
     public int bonusPercent(Player p) {
+        return bonusPercent(p, System.currentTimeMillis());
+    }
+
+    /** Same as {@link #bonusPercent(Player)} but reuses a captured timestamp (micro-efficiency). */
+    public int bonusPercent(Player p, long now) {
         UUID id = p.getUniqueId();
-        int streak = currentStreak(id);
+        int streak = currentStreak(id, now);
         return Math.min(streak * bonusPercentPerRoll, maxBonusPercent);
     }
 
     /** Records a failed roll — increments the dry streak (respecting the staleness window). */
     public void recordDryRoll(Player p) {
+        recordDryRoll(p, System.currentTimeMillis());
+    }
+
+    /** Same as {@link #recordDryRoll(Player)} but reuses a captured timestamp. */
+    public void recordDryRoll(Player p, long now) {
         UUID id = p.getUniqueId();
-        long now = System.currentTimeMillis();
         Long last = lastRollTime.get(id);
         // windowSeconds <= 0 means "no window" — the streak never goes stale
         // (mirrors currentStreak) so the adaptive bonus is not capped every roll
         boolean stale = last == null || (windowSeconds > 0 && now - last > windowSeconds * 1000L);
-        int next = stale ? 1 : currentStreak(id) + 1;
+        int next = stale ? 1 : currentStreak(id, now) + 1;
         dryStreak.put(id, next);
         lastRollTime.put(id, now);
     }
@@ -122,8 +131,12 @@ public final class LootEngine {
      *         (nothing was spent and no cooldown applied); true when loot is allowed.
      */
     public boolean recordLoot(Player p, String rarityId) {
+        return recordLoot(p, rarityId, System.currentTimeMillis());
+    }
+
+    /** Same as {@link #recordLoot(Player, String)} but reuses a captured timestamp. */
+    public boolean recordLoot(Player p, String rarityId, long now) {
         UUID id = p.getUniqueId();
-        long now = System.currentTimeMillis();
 
         if (powerBudgetEnabled) {
             int cost = costOf(rarityId);
@@ -144,11 +157,16 @@ public final class LootEngine {
 
     /** True while the player is inside their anti-funnel cooldown window. */
     public boolean withinAntiFunnel(Player p) {
+        return withinAntiFunnel(p, System.currentTimeMillis());
+    }
+
+    /** Same as {@link #withinAntiFunnel(Player)} but reuses a captured timestamp. */
+    public boolean withinAntiFunnel(Player p, long now) {
         if (cooldownSeconds <= 0) {
             return false;
         }
         Long last = lastLootTime.get(p.getUniqueId());
-        return last != null && System.currentTimeMillis() - last < cooldownSeconds * 1000L;
+        return last != null && now - last < cooldownSeconds * 1000L;
     }
 
     /** Remaining unspent power for the current hourly window. */
@@ -170,9 +188,13 @@ public final class LootEngine {
     }
 
     private int currentStreak(UUID id) {
+        return currentStreak(id, System.currentTimeMillis());
+    }
+
+    private int currentStreak(UUID id, long now) {
         if (windowSeconds > 0) {
             Long last = lastRollTime.get(id);
-            if (last != null && System.currentTimeMillis() - last > windowSeconds * 1000L) {
+            if (last != null && now - last > windowSeconds * 1000L) {
                 return 0;
             }
         }
@@ -217,6 +239,17 @@ public final class LootEngine {
 
     public Set<String> getEnabledWorlds() {
         return enabledWorlds;
+    }
+
+    /**
+     * Clears per-player state on quit (prevents leak; no behavior change for online play).
+     */
+    public void handleQuit(UUID id) {
+        if (id == null) return;
+        dryStreak.remove(id);
+        lastLootTime.remove(id);
+        powerSpent.remove(id);
+        lastRollTime.remove(id);
     }
 
     public void shutdown() {

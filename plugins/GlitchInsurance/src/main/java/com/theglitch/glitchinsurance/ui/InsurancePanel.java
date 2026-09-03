@@ -28,11 +28,10 @@ import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class InsurancePanel implements Listener {
 
@@ -48,8 +47,8 @@ public final class InsurancePanel implements Listener {
     private static InsurancePanel instance;
     private static BukkitTask buildTask;
 
-    private final Map<UUID, Long> lastClick = new HashMap<>();
-    private final Set<UUID> trackedEntities = new HashSet<>();
+    private final Map<UUID, Long> lastClick = new ConcurrentHashMap<>();
+    private final Set<UUID> trackedEntities = ConcurrentHashMap.newKeySet();
 
     private World world;
     private double wx;

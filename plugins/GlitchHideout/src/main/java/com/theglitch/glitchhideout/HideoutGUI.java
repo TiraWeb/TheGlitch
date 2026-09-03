@@ -53,6 +53,8 @@ public final class HideoutGUI implements Listener {
     private final GlitchHideout plugin;
     private final HideoutManager manager;
     private final Map<UUID, Session> sessions = new HashMap<>();
+    // Resolved Material.matchMaterial results — config icon strings are a tiny fixed set
+    private final Map<String, Material> iconCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public HideoutGUI(GlitchHideout plugin, HideoutManager manager) {
         this.plugin = plugin;
@@ -87,7 +89,7 @@ public final class HideoutGUI implements Listener {
 
     private ItemStack stationCard(Player player, HideoutManager.Station station) {
         int level = manager.getLevel(player.getUniqueId(), station.id());
-        Material material = Material.matchMaterial(station.icon());
+        Material material = resolveIcon(station.icon());
         ItemStack item = new ItemStack(material == null ? Material.STONE : material);
         ItemMeta meta = item.getItemMeta();
 
@@ -155,7 +157,7 @@ public final class HideoutGUI implements Listener {
     }
 
     private ItemStack recipeItem(HideoutManager.Recipe recipe) {
-        Material material = Material.matchMaterial(recipe.icon());
+        Material material = resolveIcon(recipe.icon());
         ItemStack item = new ItemStack(material == null ? Material.STONE : material);
         ItemMeta meta = item.getItemMeta();
         meta.customName(MM.deserialize(recipe.display()));
@@ -240,6 +242,16 @@ public final class HideoutGUI implements Listener {
 
     private ItemStack border() {
         return CACHED_BORDER.clone();
+    }
+
+    private Material resolveIcon(String raw) {
+        if (raw == null) return null;
+        String key = raw.toUpperCase(java.util.Locale.ROOT);
+        if (iconCache.containsKey(key)) return iconCache.get(key);
+        Material resolved = Material.matchMaterial(raw);
+        // ConcurrentHashMap disallows null values — only cache successful resolutions
+        if (resolved != null) iconCache.put(key, resolved);
+        return resolved;
     }
 
     @EventHandler

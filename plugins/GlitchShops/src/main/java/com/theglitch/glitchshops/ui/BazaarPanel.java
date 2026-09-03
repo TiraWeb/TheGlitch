@@ -624,8 +624,9 @@ public final class BazaarPanel implements Listener {
             String kind;
             String value;
             try {
-                kind = hit.getPersistentDataContainer().get(PANEL_KEY, PersistentDataType.STRING);
-                value = hit.getPersistentDataContainer().get(VALUE_KEY, PersistentDataType.STRING);
+                PersistentDataContainer pdc = hit.getPersistentDataContainer();
+                kind = pdc.get(PANEL_KEY, PersistentDataType.STRING);
+                value = pdc.get(VALUE_KEY, PersistentDataType.STRING);
             } catch (Throwable t) {
                 return;
             }

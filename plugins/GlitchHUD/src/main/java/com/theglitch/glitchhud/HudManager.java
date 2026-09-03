@@ -3,7 +3,6 @@ package com.theglitch.glitchhud;
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -212,7 +211,7 @@ public final class HudManager {
 
     public Scoreboard getBoard(UUID id) { return boards.get(id); }
 
-    public Map<UUID, Scoreboard> getBoards() { return boards; }
+    public Map<UUID, Scoreboard> getBoards() { return Map.copyOf(boards); }
 
     void ensureBelowObjective(Scoreboard board) {
         if (board == null) return;

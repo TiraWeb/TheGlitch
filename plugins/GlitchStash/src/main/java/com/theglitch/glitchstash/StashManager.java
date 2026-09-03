@@ -199,7 +199,8 @@ public final class StashManager {
 
     public List<ItemStack> listStash(UUID uuid) {
         StashData data = stashes.get(uuid);
-        return data == null ? new ArrayList<>() : flattenUi(data);
+        if (data == null) return List.of();
+        return List.copyOf(flattenUi(data));
     }
 
     public boolean takeFromUi(Player player, int index) {
@@ -318,13 +319,7 @@ public final class StashManager {
 
     private void saveToFile(UUID uuid, StashData data) {
         Path file = stashDir.resolve(uuid.toString() + ".yml");
-        YamlConfiguration yaml = new YamlConfiguration();
-
-        yaml.set("player-name", data.playerName());
-        yaml.set("timestamp", data.timestamp());
-        yaml.set("contents", serializeItemStacks(data.contents()));
-        yaml.set("armor", serializeItemStacks(data.armor()));
-        yaml.set("offhand", serializeItemStack(data.offhand()));
+        YamlConfiguration yaml = buildYaml(data);
 
         dirty.add(uuid);
         final long gen = saveGens.merge(uuid, 1L, Long::sum);
@@ -362,29 +357,19 @@ public final class StashManager {
 
     private void saveToFileSync(UUID uuid, StashData data) {
         Path file = stashDir.resolve(uuid.toString() + ".yml");
+        YamlConfiguration yaml = buildYaml(data);
+        atomicSave(yaml, file, plugin.getLogger());
+    }
+
+    /** Single helper for YAML snapshot — saveToFile/saveToFileSync share it. */
+    private static YamlConfiguration buildYaml(StashData data) {
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("player-name", data.playerName());
         yaml.set("timestamp", data.timestamp());
         yaml.set("contents", serializeItemStacks(data.contents()));
         yaml.set("armor", serializeItemStacks(data.armor()));
         yaml.set("offhand", serializeItemStack(data.offhand()));
-        try {
-            Path parent = file.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path tmp = Files.createTempFile(parent, uuid.toString() + "-", ".tmp");
-            try {
-                yaml.save(tmp.toFile());
-                try {
-                    Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
-            }
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to save stash for " + data.playerName(), e);
-        }
+        return yaml;
     }
 
     /**

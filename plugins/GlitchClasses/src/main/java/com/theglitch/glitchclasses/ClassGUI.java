@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class system GUI.
@@ -59,6 +60,13 @@ public class ClassGUI implements Listener {
 
     private static final Map<UUID, String> openSessions = new HashMap<>();
     private static final Set<UUID> switchingGui = new HashSet<>();
+
+    // Static GUI icons — identical every open, cached once and cloned per use
+    private static final ItemStack CACHED_HINT = buildHint();
+    private static final ItemStack CACHED_CLOSE = buildClose();
+    private static final ItemStack CACHED_BACK = buildBack();
+    // Successful Material.valueOf results — failures return caller fallback, never cached
+    private static final Map<String, Material> MATERIAL_CACHE = new ConcurrentHashMap<>();
 
     private final GlitchClasses plugin;
     private final ClassManager classManager;
@@ -134,6 +142,10 @@ public class ClassGUI implements Listener {
     }
 
     private ItemStack hintItem() {
+        return CACHED_HINT.clone();
+    }
+
+    private static ItemStack buildHint() {
         ItemStack item = new ItemStack(Material.KNOWLEDGE_BOOK);
         ItemMeta meta = item.getItemMeta();
         meta.customName(MM.deserialize("<gray><italic>Choose wisely — you can reset for shards later.</italic></gray>"));
@@ -145,6 +157,10 @@ public class ClassGUI implements Listener {
     }
 
     private ItemStack closeItem() {
+        return CACHED_CLOSE.clone();
+    }
+
+    private static ItemStack buildClose() {
         ItemStack item = new ItemStack(Material.BARRIER);
         ItemMeta meta = item.getItemMeta();
         meta.customName(MM.deserialize("<red><bold>Close</bold></red>"));
@@ -364,6 +380,10 @@ public class ClassGUI implements Listener {
     }
 
     private ItemStack backItem() {
+        return CACHED_BACK.clone();
+    }
+
+    private static ItemStack buildBack() {
         ItemStack item = new ItemStack(Material.ARROW);
         ItemMeta meta = item.getItemMeta();
         meta.customName(Component.text("Back", NamedTextColor.GRAY));
@@ -685,8 +705,13 @@ public class ClassGUI implements Listener {
 
     private Material material(String name, Material fallback) {
         if (name == null || name.isEmpty()) return fallback;
+        String key = name.toUpperCase(java.util.Locale.ROOT);
+        Material cached = MATERIAL_CACHE.get(key);
+        if (cached != null) return cached;
         try {
-            return Material.valueOf(name.toUpperCase(java.util.Locale.ROOT));
+            Material resolved = Material.valueOf(key);
+            MATERIAL_CACHE.put(key, resolved);
+            return resolved;
         } catch (IllegalArgumentException e) {
             return fallback;
         }

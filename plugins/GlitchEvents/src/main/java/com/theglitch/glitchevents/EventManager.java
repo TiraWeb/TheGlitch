@@ -444,12 +444,17 @@ public final class EventManager {
 
     private void broadcastNear(Location origin, Component component) {
         int radius = announcementRadiusBlocks;
+        double radiusSq = (double) radius * (double) radius;
+        World originWorld = origin.getWorld();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!player.getWorld().equals(origin.getWorld())) {
+            if (!player.getWorld().equals(originWorld)) {
                 continue;
             }
-            if (radius > 0 && player.getLocation().distanceSquared(origin) > radius * (double) radius) {
-                continue;
+            if (radius > 0) {
+                Location playerLoc = player.getLocation();
+                if (playerLoc.distanceSquared(origin) > radiusSq) {
+                    continue;
+                }
             }
             player.sendMessage(component);
         }

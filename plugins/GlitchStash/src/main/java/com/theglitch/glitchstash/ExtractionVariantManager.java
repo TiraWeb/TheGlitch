@@ -12,9 +12,9 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Fast/Silent extraction variants (design ROADMAP 5.11.5):
@@ -27,9 +27,9 @@ public final class ExtractionVariantManager {
     private final GlitchStash plugin;
     private final NamespacedKey variantKey;
     private final NamespacedKey variantExpiryKey;
-    private volatile List<Variant> variants = new ArrayList<>();
+    private volatile List<Variant> variants = List.of();
     // World-indexed for fast variantAt without scanning all zones
-    private volatile Map<String, List<Variant>> byWorld = new HashMap<>();
+    private volatile Map<String, List<Variant>> byWorld = new ConcurrentHashMap<>();
 
     // Cached hot-path values — refreshed on reload
     private volatile int cachedArmDuration = 180;
@@ -95,7 +95,7 @@ public final class ExtractionVariantManager {
                 loaded.add(v);
             }
         }
-        variants = loaded;
+        variants = List.copyOf(loaded);
         byWorld = indexByWorld(loaded);
         plugin.getLogger().info("Extraction variants loaded: " + loaded.size()
                 + " (enabled=" + cachedEnabled + ", arm=" + cachedArmDuration + "s)");
@@ -120,7 +120,7 @@ public final class ExtractionVariantManager {
     }
 
     private Map<String, List<Variant>> indexByWorld(List<Variant> list) {
-        Map<String, List<Variant>> map = new HashMap<>();
+        Map<String, List<Variant>> map = new ConcurrentHashMap<>();
         for (Variant v : list) {
             map.computeIfAbsent(v.world(), k -> new ArrayList<>()).add(v);
         }

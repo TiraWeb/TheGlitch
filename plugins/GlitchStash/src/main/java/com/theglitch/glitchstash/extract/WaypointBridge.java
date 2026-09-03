@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 /**
  * Locator-bar integration for extraction markers.
@@ -31,6 +32,7 @@ public final class WaypointBridge {
 
     // Vanilla max for the attribute is 6.0E7; stay just under so setBaseValue never clamps.
     private static final double TRANSMIT_RANGE = 5.9E7;
+    private static final Pattern HEX6 = Pattern.compile("[0-9a-f]{6}");
     private static final Set<String> NAMED_COLORS = Set.of(
             "black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple",
             "gold", "gray", "dark_gray", "blue", "green", "aqua", "red",
@@ -137,7 +139,7 @@ public final class WaypointBridge {
         String value = colorConfig.trim().toLowerCase(Locale.ROOT);
         if (value.isEmpty()) return null;
         if (value.startsWith("#")) value = value.substring(1);
-        if (value.matches("[0-9a-f]{6}")) return "hex " + value;
+        if (HEX6.matcher(value).matches()) return "hex " + value;
         if (NAMED_COLORS.contains(value)) return value;
         if (!warnedColor) {
             warnedColor = true;

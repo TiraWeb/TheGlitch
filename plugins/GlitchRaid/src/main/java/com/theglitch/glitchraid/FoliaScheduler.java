@@ -5,9 +5,6 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-
 /**
  * Folia-safe scheduler wrapper — prefers Paper's GlobalRegionScheduler /
  * EntityScheduler when available, falls back to Bukkit scheduler on Purpur.

@@ -41,6 +41,8 @@ public final class HideoutPanel implements Listener {
 
     private static final NamespacedKey PANEL_KEY = new NamespacedKey("glitchhideout", "panel");
     private static final NamespacedKey VALUE_KEY = new NamespacedKey("glitchhideout", "value");
+    // Resolved Material.matchMaterial results — config icon strings are a tiny fixed set
+    private static final Map<String, Material> ICON_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static final double HEADER_Y = 4.3D;
     private static final float HEADER_SCALE = 1.1F;
@@ -503,7 +505,16 @@ public final class HideoutPanel implements Listener {
     private Material resolveIcon(HideoutManager.Station station) {
         Material configured = null;
         try {
-            configured = Material.matchMaterial(station.icon());
+            String raw = station.icon();
+            if (raw != null) {
+                String key = raw.toUpperCase(Locale.ROOT);
+                if (ICON_CACHE.containsKey(key)) {
+                    configured = ICON_CACHE.get(key);
+                } else {
+                    configured = Material.matchMaterial(raw);
+                    if (configured != null) ICON_CACHE.put(key, configured);
+                }
+            }
         } catch (Throwable ignored) {
         }
         if (configured != null) return configured;
@@ -527,8 +538,9 @@ public final class HideoutPanel implements Listener {
             String kind;
             String value;
             try {
-                kind = hit.getPersistentDataContainer().get(PANEL_KEY, PersistentDataType.STRING);
-                value = hit.getPersistentDataContainer().get(VALUE_KEY, PersistentDataType.STRING);
+                PersistentDataContainer pdc = hit.getPersistentDataContainer();
+                kind = pdc.get(PANEL_KEY, PersistentDataType.STRING);
+                value = pdc.get(VALUE_KEY, PersistentDataType.STRING);
             } catch (Throwable t) {
                 return;
             }

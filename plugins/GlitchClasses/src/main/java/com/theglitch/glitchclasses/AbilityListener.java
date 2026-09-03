@@ -2,7 +2,6 @@ package com.theglitch.glitchclasses;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -38,7 +37,6 @@ import java.util.*;
  */
 public class AbilityListener implements Listener {
 
-    private static final MiniMessage MM = MiniMessage.miniMessage();
     /** Scoreboard tag that marks a Specter with Scavenge active — read by GlitchItems containers. */
     public static final String SCAVENGE_TAG = "specter_scavenge";
 
@@ -701,12 +699,13 @@ public class AbilityListener implements Listener {
 
             // Find nearest hostile mob
             Mob target = null;
-            double closestDist = 15; // 15 block range
+            double closestDistSq = 15 * 15; // 15 block range (squared — avoids sqrt per candidate)
+            org.bukkit.Location turretLoc = turret.getLocation();
             for (Entity entity : turret.getNearbyEntities(15, 15, 15)) {
                 if (entity instanceof Mob mob && isHostile(mob)) {
-                    double dist = mob.getLocation().distance(turret.getLocation());
-                    if (dist < closestDist) {
-                        closestDist = dist;
+                    double distSq = mob.getLocation().distanceSquared(turretLoc);
+                    if (distSq < closestDistSq) {
+                        closestDistSq = distSq;
                         target = mob;
                     }
                 }

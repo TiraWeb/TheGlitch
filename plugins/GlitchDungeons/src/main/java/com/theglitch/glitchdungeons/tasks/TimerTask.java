@@ -1,5 +1,6 @@
 package com.theglitch.glitchdungeons.tasks;
 
+import com.theglitch.glitchdungeons.ColorUtil;
 import com.theglitch.glitchdungeons.GlitchDungeons;
 import com.theglitch.glitchdungeons.models.DungeonRun;
 import org.bukkit.Bukkit;
@@ -27,13 +28,13 @@ public class TimerTask {
     public void start() {
         // Create boss bar for the active phase
         bossBar = Bukkit.createBossBar(
-            colorize("&cFIGHT!"),
+            ColorUtil.colorize("&cFIGHT!"),
             BarColor.RED,
             org.bukkit.boss.BarStyle.SOLID
         );
         for (java.util.UUID member : run.getParty().getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player != null && player.isOnline()) {
+            if (player != null) {
                 bossBar.addPlayer(player);
             }
         }
@@ -57,7 +58,7 @@ public class TimerTask {
             int minutes = time / 60;
             int seconds = time % 60;
             String timeStr = String.format("%d:%02d", minutes, seconds);
-            bossBar.setTitle(colorize("&c" + timeStr + " remaining"));
+            bossBar.setTitle(ColorUtil.colorize("&c" + timeStr + " remaining"));
             bossBar.setProgress((double) time / run.getMaxTime());
 
             // Color changes based on time
@@ -71,8 +72,8 @@ public class TimerTask {
             if (time == 60 || time == 30 || time == 10) {
                 for (UUID member : run.getParty().getMembers()) {
                     Player player = Bukkit.getPlayer(member);
-                    if (player != null && player.isOnline()) {
-                        player.sendMessage(colorize("&c&l" + time + " seconds remaining!"));
+                    if (player != null) {
+                        player.sendMessage(ColorUtil.colorize("&c&l" + time + " seconds remaining!"));
                     }
                 }
             }
@@ -90,7 +91,4 @@ public class TimerTask {
         }
     }
 
-    private String colorize(String msg) {
-        return msg.replaceAll("&([0-9a-fk-or])", "\u00A7$1");
-    }
 }

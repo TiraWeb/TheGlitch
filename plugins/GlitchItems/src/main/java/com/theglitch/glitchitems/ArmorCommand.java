@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -79,18 +80,26 @@ public final class ArmorCommand implements CommandExecutor {
         }
 
         Map<String, Integer> materials = gearManager.materialsForLevel(rolls.level + 1);
+        // Single inventory pass: resolve every stack id once, tally totals by id.
+        // (Previously each material re-scanned the whole inventory, calling idOf N*M times.)
+        org.bukkit.inventory.PlayerInventory inv = target.getInventory();
+        int size = inv.getSize();
+        String[] slotIds = new String[size];
+        Map<String, Integer> haveById = new HashMap<>();
+        for (int i = 0; i < size; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack == null) continue;
+            String stackId = OraxenUtil.idOf(stack);
+            slotIds[i] = stackId;
+            if (stackId != null) {
+                haveById.merge(stackId, stack.getAmount(), Integer::sum);
+            }
+        }
         List<String> missing = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : materials.entrySet()) {
             String id = entry.getKey();
             int needed = entry.getValue();
-            int have = 0;
-            for (ItemStack stack : target.getInventory().getContents()) {
-                if (stack == null) continue;
-                String stackId = OraxenUtil.idOf(stack);
-                if (id.equals(stackId)) {
-                    have += stack.getAmount();
-                }
-            }
+            int have = haveById.getOrDefault(id, 0);
             if (have < needed) {
                 missing.add("<gold>" + id + " x" + needed + "</gold> <gray>(have " + have + ")</gray>");
             }
@@ -109,15 +118,15 @@ public final class ArmorCommand implements CommandExecutor {
             String id = entry.getKey();
             int needed = entry.getValue();
             int remaining = needed;
-            for (int i = 0; i < target.getInventory().getSize() && remaining > 0; i++) {
-                ItemStack stack = target.getInventory().getItem(i);
+            // Reuses the ids resolved in the single scan above — no second idOf pass.
+            for (int i = 0; i < size && remaining > 0; i++) {
+                if (!id.equals(slotIds[i])) continue;
+                ItemStack stack = inv.getItem(i);
                 if (stack == null) continue;
-                String stackId = OraxenUtil.idOf(stack);
-                if (!id.equals(stackId)) continue;
                 int take = Math.min(remaining, stack.getAmount());
                 int left = stack.getAmount() - take;
                 if (left <= 0) {
-                    target.getInventory().setItem(i, null);
+                    inv.setItem(i, null);
                 } else {
                     stack.setAmount(left);
                 }

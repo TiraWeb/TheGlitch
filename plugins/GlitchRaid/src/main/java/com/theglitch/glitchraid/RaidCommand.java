@@ -162,7 +162,7 @@ public final class RaidCommand implements CommandExecutor {
                             // Teleport to a party member in glitch_red if possible
                             for (java.util.UUID other : session.getMembers()) {
                                 Player otherP = Bukkit.getPlayer(other);
-                                if (otherP != null && otherP.isOnline() && otherP.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
+                                if (otherP != null && otherP.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
                                     try {
                                         FoliaScheduler.teleportEntity(player, plugin, otherP.getLocation());
                                         player.showBossBar(manager.getBossBarForSession(session));

@@ -1,5 +1,6 @@
 package com.theglitch.glitchdungeons.tasks;
 
+import com.theglitch.glitchdungeons.ColorUtil;
 import com.theglitch.glitchdungeons.GlitchDungeons;
 import com.theglitch.glitchdungeons.models.DungeonRun;
 import org.bukkit.Bukkit;
@@ -26,15 +27,15 @@ public class PrepTask {
 
         // Create boss bar
         bossBar = Bukkit.createBossBar(
-            colorize("&ePreparing... " + prepTime + "s"),
+            ColorUtil.colorize("&ePreparing... " + prepTime + "s"),
             BarColor.YELLOW,
             BarStyle.SOLID
         );
         for (UUID member : run.getParty().getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player != null && player.isOnline()) {
+            if (player != null) {
                 bossBar.addPlayer(player);
-                player.sendMessage(colorize("&eDungeon prep phase! Get ready in " + prepTime + "s!"));
+                player.sendMessage(ColorUtil.colorize("&eDungeon prep phase! Get ready in " + prepTime + "s!"));
             }
         }
 
@@ -47,7 +48,7 @@ public class PrepTask {
             }
 
             remaining[0]--;
-            bossBar.setTitle(colorize("&ePreparing... " + remaining[0] + "s"));
+            bossBar.setTitle(ColorUtil.colorize("&ePreparing... " + remaining[0] + "s"));
             bossBar.setProgress((double) remaining[0] / prepTime);
 
             if (remaining[0] <= 0) {
@@ -72,7 +73,4 @@ public class PrepTask {
         }
     }
 
-    private String colorize(String msg) {
-        return msg.replaceAll("&([0-9a-fk-or])", "\u00A7$1");
-    }
 }

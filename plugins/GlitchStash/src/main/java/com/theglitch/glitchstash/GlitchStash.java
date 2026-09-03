@@ -48,9 +48,10 @@ public final class GlitchStash extends JavaPlugin {
         stashManager = new StashManager(this);
         variantManager = new ExtractionVariantManager(this);
 
-        Bukkit.getPluginManager().registerEvents(new ExtractionListener(this, stashManager), this);
-        Bukkit.getPluginManager().registerEvents(new StashGUI(), this);
-        Bukkit.getPluginManager().registerEvents(new ExtractionVariantListener(this, variantManager), this);
+        org.bukkit.plugin.PluginManager pm = Bukkit.getPluginManager();
+        pm.registerEvents(new ExtractionListener(this, stashManager), this);
+        pm.registerEvents(new StashGUI(), this);
+        pm.registerEvents(new ExtractionVariantListener(this, variantManager), this);
 
         getCommand("stash").setExecutor(new StashCommand(this, stashManager));
         getCommand("stashtp").setExecutor(new StashCommand(this, stashManager));

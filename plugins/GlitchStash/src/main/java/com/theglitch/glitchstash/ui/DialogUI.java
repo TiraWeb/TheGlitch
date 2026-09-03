@@ -10,7 +10,6 @@ import java.util.List;
 
 public final class DialogUI {
 
-    private static final String REMOTE_PERM_DEFAULT = "theglitch.remoteui";
     private static final int MAX_ITEM_BUTTONS = 20;
     private static final int NAME_MAX = 24;
 
@@ -18,17 +17,8 @@ public final class DialogUI {
     }
 
     public static boolean canRemote(Player player) {
-        String node = REMOTE_PERM_DEFAULT;
         GlitchStash plugin = GlitchStash.getInstance();
-        if (plugin != null) {
-            try {
-                node = plugin.getConfig().getString("modern-ui.remote-perm", REMOTE_PERM_DEFAULT);
-            } catch (Throwable ignored) {
-            }
-        }
-        if (node == null || node.isBlank()) {
-            node = REMOTE_PERM_DEFAULT;
-        }
+        String node = PanelConfig.remotePermNode(plugin);
         return player.isOp() || player.hasPermission(node);
     }
 

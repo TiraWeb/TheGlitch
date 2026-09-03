@@ -1,5 +1,6 @@
 package com.theglitch.glitchdungeons.managers;
 
+import com.theglitch.glitchdungeons.ColorUtil;
 import com.theglitch.glitchdungeons.GlitchDungeons;
 import com.theglitch.glitchdungeons.config.DungeonConfig;
 import com.theglitch.glitchdungeons.models.DungeonRun;
@@ -98,7 +99,7 @@ public class DungeonManager {
         Location loc = new Location(world, config.getStagingX(), config.getStagingY(), config.getStagingZ());
         for (UUID member : party.getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player != null && player.isOnline()) {
+            if (player != null) {
                 player.teleport(loc);
             }
         }
@@ -114,7 +115,7 @@ public class DungeonManager {
         Location loc = new Location(world, slot.getCenterX() + 0.5, world.getHighestBlockYAt(slot.getCenterX(), slot.getCenterZ()) + 2, slot.getCenterZ() + 0.5);
         for (UUID member : party.getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player != null && player.isOnline()) {
+            if (player != null) {
                 player.teleport(loc);
             }
         }
@@ -133,7 +134,7 @@ public class DungeonManager {
         );
         for (UUID member : party.getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player != null && player.isOnline()) {
+            if (player != null) {
                 player.teleport(loc);
             }
         }
@@ -151,7 +152,7 @@ public class DungeonManager {
             config.getHubX(), config.getHubY(), config.getHubZ()
         );
         Player player = Bukkit.getPlayer(playerUuid);
-        if (player != null && player.isOnline()) {
+        if (player != null) {
             player.teleport(loc);
         }
     }
@@ -167,10 +168,10 @@ public class DungeonManager {
         // Give rewards to each player
         for (UUID member : run.getParty().getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player != null && player.isOnline()) {
+            if (player != null) {
                 plugin.getRewardManager().giveRewards(player, run.getTier(),
                     run.getTotalWaves(), run.getParty().getSize());
-                player.sendMessage(colorize("&aDungeon complete! Rewards sent to your stash."));
+                player.sendMessage(ColorUtil.colorize("&aDungeon complete! Rewards sent to your stash."));
             }
             // Set cooldown
             plugin.getCooldownManager().setCooldown(member, run.getTier());
@@ -192,8 +193,8 @@ public class DungeonManager {
 
         for (UUID member : run.getParty().getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player != null && player.isOnline()) {
-                player.sendMessage(colorize("&cDungeon failed. You were teleported to hub."));
+            if (player != null) {
+                player.sendMessage(ColorUtil.colorize("&cDungeon failed. You were teleported to hub."));
             }
         }
 
@@ -237,9 +238,5 @@ public class DungeonManager {
             if (!slot.isOccupied()) count++;
         }
         return count;
-    }
-
-    private String colorize(String msg) {
-        return msg.replaceAll("&([0-9a-fk-or])", "\u00A7$1");
     }
 }

@@ -74,7 +74,7 @@ public final class RaidListener implements Listener {
                     // Never re-abduct members who already extracted during this raid cycle
                     if (!manager.isInRaid(mid) && manager.hasExtractedThisRaid(mid)) continue;
                     Player other = Bukkit.getPlayer(mid);
-                    if (other != null && other.isOnline() && !other.getWorld().getName().equalsIgnoreCase(raidWorld)) {
+                    if (other != null && !other.getWorld().getName().equalsIgnoreCase(raidWorld)) {
                         // Don't pull if other is recently dead (avoid death loop)
                         if (manager.isRecentlyDead(mid, 5000L)) continue;
                         try {
@@ -83,10 +83,10 @@ public final class RaidListener implements Listener {
                             plugin.getLogger().info("Party pull: " + other.getName() + " -> " + player.getName() + " in " + raidWorld);
                         } catch (Exception ignored) {}
                         // Ensure pulled member shares the same timer (remaining time) — crucial for global-remaining
-                        if (other != null && other.isOnline() && !manager.isInRaid(mid) && mySession != null) {
+                        if (other != null && !manager.isInRaid(mid) && mySession != null) {
                             try { manager.handlePartyMemberAddedToActiveRaid(other, mySession); } catch (Exception ignored) {}
                         }
-                    } else if (other != null && other.isOnline() && !manager.isInRaid(mid) && mySession != null) {
+                    } else if (other != null && !manager.isInRaid(mid) && mySession != null) {
                         // Member online but not yet in raid and not in RED — if global, add to global with remaining time
                         try { manager.handlePartyMemberAddedToActiveRaid(other, mySession); } catch (Exception ignored) {}
                     }
@@ -143,7 +143,7 @@ public final class RaidListener implements Listener {
                     for (UUID mid : s.getMembers()) {
                         if (mid.equals(player.getUniqueId())) continue;
                         Player other = Bukkit.getPlayer(mid);
-                        if (other != null && other.isOnline() && other.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
+                        if (other != null && other.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
                             try {
                                 FoliaScheduler.teleportEntity(player, plugin, other.getLocation());
                                 player.sendMessage(MM.deserialize("<gray>Rejoined raid — pulled to party in <white>" + manager.getAutoStartWorld() + "</white>.</gray>"));

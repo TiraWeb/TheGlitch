@@ -35,6 +35,9 @@ public final class SpotPicker {
 
     private final GlitchStash plugin;
     private volatile boolean wgWarned = false;
+    // Cached WorldGuard plugin — isProtectedRegion runs per placement attempt
+    // (up to 250/point), so avoid repeated PluginManager map lookups.
+    private volatile Plugin cachedWg;
 
     public SpotPicker(GlitchStash plugin) {
         this.plugin = plugin;
@@ -239,7 +242,11 @@ public final class SpotPicker {
 
     private boolean isProtectedRegion(Location loc) {
         if (loc == null || loc.getWorld() == null) return false;
-        Plugin wg = org.bukkit.Bukkit.getPluginManager().getPlugin("WorldGuard");
+        Plugin wg = cachedWg;
+        if (wg == null || !wg.isEnabled()) {
+            wg = org.bukkit.Bukkit.getPluginManager().getPlugin("WorldGuard");
+            cachedWg = wg;
+        }
         if (wg == null || !wg.isEnabled()) return false;
         try {
             return isProtectedReflective(loc);

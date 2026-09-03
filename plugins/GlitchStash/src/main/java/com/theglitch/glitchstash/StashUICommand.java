@@ -1,6 +1,7 @@
 package com.theglitch.glitchstash;
 
 import com.theglitch.glitchstash.ui.DialogUI;
+import com.theglitch.glitchstash.ui.PanelConfig;
 import com.theglitch.glitchstash.ui.StashPanel;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -100,15 +101,15 @@ public final class StashUICommand implements CommandExecutor {
         switch (action) {
             case "here": {
                 if (!player.getWorld().getName()
-                        .equals(plugin.getConfig().getString("modern-ui.world-panel.world", "hub"))) {
-                    plugin.getConfig().set("modern-ui.world-panel.world", player.getWorld().getName());
+                        .equals(plugin.getConfig().getString(PanelConfig.WORLD_KEY, PanelConfig.WORLD_DEFAULT))) {
+                    plugin.getConfig().set(PanelConfig.WORLD_KEY, player.getWorld().getName());
                 }
                 undoState = snapshotFromConfig();
-                plugin.getConfig().set("modern-ui.world-panel.enabled", true);
-                plugin.getConfig().set("modern-ui.world-panel.x", player.getLocation().getX());
-                plugin.getConfig().set("modern-ui.world-panel.y", player.getLocation().getY());
-                plugin.getConfig().set("modern-ui.world-panel.z", player.getLocation().getZ());
-                plugin.getConfig().set("modern-ui.world-panel.facing", facingFromYaw(player));
+                plugin.getConfig().set(PanelConfig.ENABLED_KEY, true);
+                plugin.getConfig().set(PanelConfig.X_KEY, player.getLocation().getX());
+                plugin.getConfig().set(PanelConfig.Y_KEY, player.getLocation().getY());
+                plugin.getConfig().set(PanelConfig.Z_KEY, player.getLocation().getZ());
+                plugin.getConfig().set(PanelConfig.FACING_KEY, facingFromYaw(player));
                 plugin.saveConfig();
                 StashPanel.reconfigureAndRebuild();
                 player.sendMessage(MM.deserialize("<green>Stash kiosk moved to your position ("
@@ -124,13 +125,13 @@ public final class StashUICommand implements CommandExecutor {
                     return;
                 }
                 undoState = null;
-                plugin.getConfig().set("modern-ui.world-panel.enabled", true);
-                plugin.getConfig().set("modern-ui.world-panel.world", snap.world());
-                plugin.getConfig().set("modern-ui.world-panel.x", snap.x());
-                plugin.getConfig().set("modern-ui.world-panel.y", snap.y());
-                plugin.getConfig().set("modern-ui.world-panel.z", snap.z());
-                plugin.getConfig().set("modern-ui.world-panel.facing", snap.facing());
-                plugin.getConfig().set("modern-ui.world-panel.spacing", snap.spacing());
+                plugin.getConfig().set(PanelConfig.ENABLED_KEY, true);
+                plugin.getConfig().set(PanelConfig.WORLD_KEY, snap.world());
+                plugin.getConfig().set(PanelConfig.X_KEY, snap.x());
+                plugin.getConfig().set(PanelConfig.Y_KEY, snap.y());
+                plugin.getConfig().set(PanelConfig.Z_KEY, snap.z());
+                plugin.getConfig().set(PanelConfig.FACING_KEY, snap.facing());
+                plugin.getConfig().set(PanelConfig.SPACING_KEY, snap.spacing());
                 plugin.saveConfig();
                 StashPanel.reconfigureAndRebuild();
                 player.sendMessage(MM.deserialize("<green>Stash kiosk position restored.</green>"));
@@ -147,13 +148,8 @@ public final class StashUICommand implements CommandExecutor {
 
     private PanelSnapshot snapshotFromConfig() {
         try {
-            return new PanelSnapshot(
-                    plugin.getConfig().getString("modern-ui.world-panel.world", "hub"),
-                    plugin.getConfig().getDouble("modern-ui.world-panel.x", 67.5D),
-                    plugin.getConfig().getDouble("modern-ui.world-panel.y", -43.5D),
-                    plugin.getConfig().getDouble("modern-ui.world-panel.z", -5.5D),
-                    plugin.getConfig().getString("modern-ui.world-panel.facing", "west"),
-                    plugin.getConfig().getDouble("modern-ui.world-panel.spacing", 1.35D));
+            PanelConfig.Snapshot snap = PanelConfig.load(plugin);
+            return new PanelSnapshot(snap.world(), snap.x(), snap.y(), snap.z(), snap.facing(), snap.spacing());
         } catch (Throwable t) {
             return new PanelSnapshot("hub", 67.5D, -43.5D, -5.5D, "west", 1.35D);
         }

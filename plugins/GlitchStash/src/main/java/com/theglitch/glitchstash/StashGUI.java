@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Chest GUI for stash retrieval. 6 rows (54 slots), paginated.
@@ -42,7 +43,7 @@ public class StashGUI implements Listener {
         }
     }
 
-    private static final Map<UUID, openSession> openSessions = new HashMap<>();
+    private static final Map<UUID, openSession> openSessions = new ConcurrentHashMap<>();
 
     // Cached border — themed to match void-purple window (subtle, readable)
     private static final ItemStack CACHED_BORDER;

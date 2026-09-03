@@ -25,6 +25,9 @@ public final class GearManager {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
+    /** Shared empty stat range — callers get a copy so the constant is never mutated. */
+    private static final int[] EMPTY_RANGE = new int[]{0, 0};
+
     private final GlitchItems plugin;
     private final NamespacedKey gearKey;
 
@@ -176,9 +179,9 @@ public final class GearManager {
 
     public int[] statRange(Rarity rarity, String stat) {
         Map<Rarity, int[]> perRarity = statRanges.get(stat);
-        if (perRarity == null) return new int[]{0, 0};
+        if (perRarity == null) return EMPTY_RANGE.clone();
         int[] range = perRarity.get(rarity);
-        return range != null ? range : new int[]{0, 0};
+        return range != null ? range : EMPTY_RANGE.clone();
     }
 
     public int identifyFee(Rarity rarity) {
@@ -262,9 +265,10 @@ public final class GearManager {
         rolls.resonance = Resonance.values()[ThreadLocalRandom.current().nextInt(Resonance.values().length)];
         rolls.boost = resonanceBoost(rarity);
 
-        rolls.starsPrimary = statRange(rarity, "stars")[1];
-        rolls.starsSpeed = statRange(rarity, "stars")[1];
-        rolls.starsHp = statRange(rarity, "stars")[1];
+        int maxStars = statRange(rarity, "stars")[1];
+        rolls.starsPrimary = maxStars;
+        rolls.starsSpeed = maxStars;
+        rolls.starsHp = maxStars;
 
         if (type.isWeapon()) {
             rolls.damage = statRange(rarity, "damage")[1];
@@ -278,10 +282,7 @@ public final class GearManager {
         rolls.speed = statRange(rarity, "speed")[1];
         rolls.maxhp = statRange(rarity, "maxhp")[1];
 
-        // Per-slot identity multipliers (armor pieces; weapons have no entry → 1.0)
-        rolls.armor = (int) Math.max(0, Math.round(rolls.armor * pieceIdentityMultiplier(type, "armor")));
-        rolls.speed = (int) Math.max(0, Math.round(rolls.speed * pieceIdentityMultiplier(type, "speed")));
-        rolls.maxhp = (int) Math.max(0, Math.round(rolls.maxhp * pieceIdentityMultiplier(type, "maxhp")));
+        applyIdentity(rolls);
 
         return buildItem(rolls);
     }
@@ -314,15 +315,22 @@ public final class GearManager {
         int[] hpRange = statRange(rarity, "maxhp");
         rolls.maxhp = rand.nextInt(hpRange[0], hpRange[1] + 1);
 
-        // Per-slot identity multipliers (armor pieces; weapons have no entry → 1.0)
-        rolls.armor = (int) Math.max(0, Math.round(rolls.armor * pieceIdentityMultiplier(type, "armor")));
-        rolls.speed = (int) Math.max(0, Math.round(rolls.speed * pieceIdentityMultiplier(type, "speed")));
-        rolls.maxhp = (int) Math.max(0, Math.round(rolls.maxhp * pieceIdentityMultiplier(type, "maxhp")));
+        applyIdentity(rolls);
 
         rolls.attributes = type.isWeapon()
                 ? rollWeaponAttribute(rarity, rand)
                 : rollArmorAttribute(rarity, rand);
         return buildItem(rolls);
+    }
+
+    /**
+     * Per-slot identity multipliers (armor pieces; weapons have no entry → 1.0).
+     * Extracted so godroll and random-roll generation share one implementation.
+     */
+    private void applyIdentity(GearRolls rolls) {
+        rolls.armor = (int) Math.max(0, Math.round(rolls.armor * pieceIdentityMultiplier(rolls.type, "armor")));
+        rolls.speed = (int) Math.max(0, Math.round(rolls.speed * pieceIdentityMultiplier(rolls.type, "speed")));
+        rolls.maxhp = (int) Math.max(0, Math.round(rolls.maxhp * pieceIdentityMultiplier(rolls.type, "maxhp")));
     }
 
     private int rollStars(int[] range, int luck, ThreadLocalRandom rand) {
@@ -502,13 +510,21 @@ public final class GearManager {
                     + trimNum(greatbladeKnockbackBonus[tier] * 10) + "% knockback</gray></dark_gray>"));
         }
 
-        // --- special attributes
+        // --- special attributes (indexOf iteration — no regex split per segment)
         if (!rolls.attributes.isEmpty()) {
-            for (String attr : rolls.attributes.split(";")) {
-                String line = attributeLore(attr);
-                if (line != null) {
-                    lore.add(MM.deserialize("<dark_gray>» </dark_gray><aqua>" + line + "</aqua>"));
+            String attrs = rolls.attributes;
+            int start = 0;
+            while (start <= attrs.length()) {
+                int sep = attrs.indexOf(';', start);
+                int end = sep < 0 ? attrs.length() : sep;
+                if (end > start) {
+                    String line = attributeLore(attrs.substring(start, end));
+                    if (line != null) {
+                        lore.add(MM.deserialize("<dark_gray>» </dark_gray><aqua>" + line + "</aqua>"));
+                    }
                 }
+                if (sep < 0) break;
+                start = sep + 1;
             }
         }
 
@@ -567,10 +583,16 @@ public final class GearManager {
     }
 
     private String attributeLore(String attr) {
-        if (attr == null || !attr.contains(":")) return null;
-        String[] parts = attr.split(":");
-        String value = parts[1];
-        switch (parts[0]) {
+        if (attr == null) return null;
+        int colon = attr.indexOf(':');
+        if (colon < 0) return null;
+        String key = attr.substring(0, colon);
+        String rest = attr.substring(colon + 1);
+        // Match previous split(":")[1] semantics: value is up to the next colon.
+        int second = rest.indexOf(':');
+        String value = second < 0 ? rest : rest.substring(0, second);
+        if (value.isEmpty()) return null;
+        switch (key) {
             case "lifesteal":
                 return "Lifesteal " + value + "%";
             case "fire-aspect":
@@ -630,16 +652,29 @@ public final class GearManager {
     }
 
     public static Map<String, Integer> parseAttributes(String attributes) {
-        Map<String, Integer> result = new java.util.LinkedHashMap<>();
+        Map<String, Integer> result = new LinkedHashMap<>();
         if (attributes == null || attributes.isEmpty()) return result;
-        for (String attr : attributes.split(";")) {
-            String[] parts = attr.split(":");
-            if (parts.length == 2) {
-                try {
-                    result.put(parts[0], Integer.parseInt(parts[1]));
-                } catch (NumberFormatException ignored) {
+        // IndexOf iteration — identical to the old split(";")/split(":") logic
+        // (empty segments ignored; entries with anything but exactly key:value ignored).
+        int start = 0;
+        while (start <= attributes.length()) {
+            int sep = attributes.indexOf(';', start);
+            int end = sep < 0 ? attributes.length() : sep;
+            if (end > start) {
+                String segment = attributes.substring(start, end);
+                int colon = segment.indexOf(':');
+                if (colon >= 0) {
+                    String rest = segment.substring(colon + 1);
+                    if (rest.indexOf(':') < 0) {
+                        try {
+                            result.put(segment.substring(0, colon), Integer.parseInt(rest));
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
                 }
             }
+            if (sep < 0) break;
+            start = sep + 1;
         }
         return result;
     }

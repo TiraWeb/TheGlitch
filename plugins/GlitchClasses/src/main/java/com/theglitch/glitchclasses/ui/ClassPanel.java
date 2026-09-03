@@ -36,11 +36,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class ClassPanel implements Listener {
 
     private static final NamespacedKey PANEL_KEY = new NamespacedKey("glitchclasses", "panel");
     private static final NamespacedKey VALUE_KEY = new NamespacedKey("glitchclasses", "value");
+    // Successful Material.valueOf results — failures fall back to SHIELD, never cached
+    private static final Map<String, Material> ICON_CACHE = new ConcurrentHashMap<>();
 
     private static final double HEADER_Y = 4.3D;
     private static final float HEADER_SCALE = 1.1F;
@@ -443,8 +446,14 @@ public final class ClassPanel implements Listener {
     private Material iconOf(String className) {
         ConfigurationSection cls = plugin.getConfig().getConfigurationSection("classes." + className);
         String raw = cls != null ? cls.getString("icon", "") : "";
+        String key = raw == null ? "" : raw.toUpperCase(Locale.ROOT);
+        if (key.isEmpty()) return Material.SHIELD;
+        Material cached = ICON_CACHE.get(key);
+        if (cached != null) return cached;
         try {
-            return Material.valueOf(raw == null ? "" : raw.toUpperCase(Locale.ROOT));
+            Material resolved = Material.valueOf(key);
+            ICON_CACHE.put(key, resolved);
+            return resolved;
         } catch (Throwable t) {
             return Material.SHIELD;
         }
@@ -483,8 +492,9 @@ public final class ClassPanel implements Listener {
             String kind;
             String value;
             try {
-                kind = hit.getPersistentDataContainer().get(PANEL_KEY, PersistentDataType.STRING);
-                value = hit.getPersistentDataContainer().get(VALUE_KEY, PersistentDataType.STRING);
+                PersistentDataContainer pdc = hit.getPersistentDataContainer();
+                kind = pdc.get(PANEL_KEY, PersistentDataType.STRING);
+                value = pdc.get(VALUE_KEY, PersistentDataType.STRING);
             } catch (Throwable t) {
                 return;
             }

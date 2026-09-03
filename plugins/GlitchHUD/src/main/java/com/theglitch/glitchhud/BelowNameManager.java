@@ -12,9 +12,9 @@ import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Shows a compact value under nametag in glitch_red.
@@ -29,7 +29,7 @@ public final class BelowNameManager {
     private final GlitchHUD plugin;
     private final PlaceholderResolver placeholders;
     private final HudManager hudManager;
-    private final Map<UUID, Integer> lastValue = new HashMap<>();
+    private final Map<UUID, Integer> lastValue = new ConcurrentHashMap<>();
     private volatile boolean enabled = true;
     private volatile String world = "glitch_red";
     private volatile String mode = "stacks"; // stacks | payout | level

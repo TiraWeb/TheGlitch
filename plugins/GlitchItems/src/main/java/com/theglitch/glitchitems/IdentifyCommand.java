@@ -8,6 +8,8 @@ import org.bukkit.entity.Player;
 
 public final class IdentifyCommand implements CommandExecutor {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
     private final IdentifyManager identifyManager;
 
     public IdentifyCommand(IdentifyManager identifyManager) {
@@ -17,7 +19,7 @@ public final class IdentifyCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>Only players can identify.</red>"));
+            sender.sendMessage(MM.deserialize("<red>Only players can identify.</red>"));
             return true;
         }
         boolean force = args.length > 0 && args[0].equalsIgnoreCase("force")

@@ -14,16 +14,37 @@ import org.bukkit.persistence.PersistentDataType;
  * lines come from the resource pack config) and detects item ids the same way
  * ShopManager does (PDC scan — Oraxen's own PDC key name varies, so scanning
  * every string value for a lowercase id shape is the reliable route).
+ * <p>
+ * Deprecated: new code should use {@code com.theglitch.common.OraxenUtil} from
+ * GlitchCommon (same {@code available()}/{@code build()}/{@code isIdShaped()}/
+ * {@code idOf()} contract). This class is kept as a thin delegate so existing
+ * imports keep compiling and behaving identically; it intentionally stays
+ * dependency-free (direct Oraxen API, no cross-plugin class reference) because
+ * Bukkit isolates plugin classloaders at runtime.
+ * </p>
  */
+@Deprecated
 public final class OraxenUtil {
 
     private static final NamespacedKey ORAXEN_ID_KEY = new NamespacedKey("oraxen", "custom_item_id");
+
+    /** How long an {@link #available()} lookup is cached (ms). Short TTL keeps late-enable correct. */
+    private static final long AVAILABLE_CACHE_MS = 5000L;
+    private static volatile long availableCacheTime;
+    private static volatile boolean availableCache;
 
     private OraxenUtil() {
     }
 
     public static boolean available() {
-        return Bukkit.getPluginManager().getPlugin("Oraxen") != null;
+        long now = System.currentTimeMillis();
+        if (now - availableCacheTime < AVAILABLE_CACHE_MS && availableCacheTime != 0L) {
+            return availableCache;
+        }
+        boolean present = Bukkit.getPluginManager().getPlugin("Oraxen") != null;
+        availableCache = present;
+        availableCacheTime = now;
+        return present;
     }
 
     /**

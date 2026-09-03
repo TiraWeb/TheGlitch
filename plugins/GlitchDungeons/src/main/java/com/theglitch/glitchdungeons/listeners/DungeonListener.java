@@ -1,5 +1,6 @@
 package com.theglitch.glitchdungeons.listeners;
 
+import com.theglitch.glitchdungeons.ColorUtil;
 import com.theglitch.glitchdungeons.GlitchDungeons;
 import com.theglitch.glitchdungeons.models.DungeonRun;
 import org.bukkit.entity.Player;
@@ -31,8 +32,8 @@ public class DungeonListener implements Listener {
         String msg = "&c" + player.getName() + " has fallen!";
         for (java.util.UUID member : run.getParty().getMembers()) {
             Player p = org.bukkit.Bukkit.getPlayer(member);
-            if (p != null && p.isOnline()) {
-                p.sendMessage(msg.replaceAll("&([0-9a-fk-or])", "\u00A7$1"));
+            if (p != null) {
+                p.sendMessage(ColorUtil.colorize(msg));
             }
         }
     }
@@ -51,7 +52,7 @@ public class DungeonListener implements Listener {
                 for (java.util.UUID member : run.getParty().getMembers()) {
                     if (!member.equals(player.getUniqueId())) {
                         Player p = org.bukkit.Bukkit.getPlayer(member);
-                        if (p != null && p.isOnline()) {
+                        if (p != null) {
                             anyoneOnline = true;
                             break;
                         }

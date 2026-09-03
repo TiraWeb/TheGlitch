@@ -28,12 +28,11 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class StashPanel implements Listener {
 
@@ -52,8 +51,8 @@ public final class StashPanel implements Listener {
     private static StashPanel instance;
     private static BukkitTask buildTask;
 
-    private final Map<UUID, Long> lastClick = new HashMap<>();
-    private final Set<UUID> trackedEntities = new HashSet<>();
+    private final Map<UUID, Long> lastClick = new ConcurrentHashMap<>();
+    private final Set<UUID> trackedEntities = ConcurrentHashMap.newKeySet();
 
     private World world;
     private double wx;
@@ -100,11 +99,7 @@ public final class StashPanel implements Listener {
     }
 
     private static boolean enabled(GlitchStash pl) {
-        try {
-            return pl.getConfig().getBoolean("modern-ui.world-panel.enabled", true);
-        } catch (Throwable t) {
-            return true;
-        }
+        return PanelConfig.enabled(pl);
     }
 
     private static synchronized void arm(GlitchStash pl) {
@@ -151,19 +146,20 @@ public final class StashPanel implements Listener {
 
     private boolean loadConfig() {
         try {
-            String name = plugin.getConfig().getString("modern-ui.world-panel.world", "hub");
+            PanelConfig.Snapshot snap = PanelConfig.load(plugin);
+            String name = snap.world();
             World w = name == null ? null : Bukkit.getWorld(name);
             if (w == null) {
                 plugin.getLogger().warning("world-panel world '" + name + "' not found — stash kiosk dormant.");
                 return false;
             }
             world = w;
-            wx = plugin.getConfig().getDouble("modern-ui.world-panel.x", 67.5D);
-            wy = plugin.getConfig().getDouble("modern-ui.world-panel.y", -43.5D);
-            wz = plugin.getConfig().getDouble("modern-ui.world-panel.z", -5.5D);
-            String f = plugin.getConfig().getString("modern-ui.world-panel.facing", "west");
+            wx = snap.x();
+            wy = snap.y();
+            wz = snap.z();
+            String f = snap.facing();
             facing = f == null ? "west" : f.toLowerCase();
-            spacing = plugin.getConfig().getDouble("modern-ui.world-panel.spacing", 1.35D);
+            spacing = snap.spacing();
             if (spacing < 0.5D) {
                 spacing = 0.5D;
             }

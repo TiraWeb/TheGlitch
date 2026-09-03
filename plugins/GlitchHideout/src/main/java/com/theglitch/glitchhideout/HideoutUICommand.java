@@ -1,6 +1,5 @@
 package com.theglitch.glitchhideout;
 
-import com.theglitch.glitchhideout.ui.DialogBridge;
 import com.theglitch.glitchhideout.ui.DialogUI;
 import com.theglitch.glitchhideout.ui.HideoutPanel;
 import net.kyori.adventure.text.Component;

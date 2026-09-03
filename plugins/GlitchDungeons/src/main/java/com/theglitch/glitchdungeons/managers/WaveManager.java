@@ -1,5 +1,6 @@
 package com.theglitch.glitchdungeons.managers;
 
+import com.theglitch.glitchdungeons.ColorUtil;
 import com.theglitch.glitchdungeons.GlitchDungeons;
 import com.theglitch.glitchdungeons.models.DungeonRun;
 import com.theglitch.glitchdungeons.models.DungeonSlot;
@@ -169,6 +170,7 @@ public class WaveManager {
         // MythicMobs sets "MythicMob" metadata on spawned mobs
         boolean mmAvailable = Bukkit.getPluginManager().getPlugin("MythicMobs") != null;
         int checkRadius = 32;
+        double checkRadiusSq = (double) checkRadius * (double) checkRadius;
         for (org.bukkit.entity.Entity entity : world.getNearbyEntities(
                 origin, checkRadius, checkRadius, checkRadius)) {
             if (!(entity instanceof org.bukkit.entity.LivingEntity living)) continue;
@@ -179,20 +181,22 @@ public class WaveManager {
                 if (entity.hasMetadata("MythicMob")) return false;
                 continue;
             }
-            // Fallback: only hostile monsters spawned inside the slot radius
-            if (entity instanceof org.bukkit.entity.Monster
-                    && entity.getLocation().distanceSquared(origin) < (double) checkRadius * checkRadius) {
-                return false;
+            // Fallback: only hostile monsters spawned inside the slot radius (cached Location)
+            if (entity instanceof org.bukkit.entity.Monster) {
+                Location entityLoc = entity.getLocation();
+                if (entityLoc.distanceSquared(origin) < checkRadiusSq) {
+                    return false;
+                }
             }
         }
         return true;
     }
 
     public void broadcastToParty(DungeonRun run, String message) {
-        String colored = message.replaceAll("&([0-9a-fk-or])", "\u00A7$1");
+        String colored = ColorUtil.colorize(message);
         for (UUID member : run.getParty().getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player != null && player.isOnline()) {
+            if (player != null) {
                 player.sendMessage(colored);
             }
         }

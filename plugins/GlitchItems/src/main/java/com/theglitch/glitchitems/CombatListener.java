@@ -10,10 +10,23 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class CombatListener implements Listener {
+
+    /** Prebuilt scoreboard tags per resonance — avoids per-hit concat/lower. */
+    private static final Map<Resonance, String> RESONANCE_TAG_COLON = new EnumMap<>(Resonance.class);
+    private static final Map<Resonance, String> RESONANCE_TAG_UNDERSCORE = new EnumMap<>(Resonance.class);
+
+    static {
+        for (Resonance resonance : Resonance.values()) {
+            String lower = resonance.name().toLowerCase(java.util.Locale.ROOT);
+            RESONANCE_TAG_COLON.put(resonance, "res:" + lower);
+            RESONANCE_TAG_UNDERSCORE.put(resonance, "res_" + lower);
+        }
+    }
 
     private record PendingSideEffects(Player attacker, LivingEntity victim, double healed, double maxHealth, int fireTicks) {}
     private record PendingReflect(Player defender, LivingEntity attacker, double amount) {}
@@ -80,8 +93,7 @@ public final class CombatListener implements Listener {
         double healed = 0.0;
         double maxHp = 0.0;
         if (lifesteal != null && lifesteal > 0) {
-            maxHp = attacker.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) == null
-                    ? 20.0 : attacker.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
+            maxHp = maxHealthOf(attacker);
             healed = out * lifesteal / 100.0;
         }
         Integer fire = attributes.get("fire-aspect");
@@ -92,8 +104,7 @@ public final class CombatListener implements Listener {
         // Execute: +% damage vs targets below 30% max HP
         Integer execute = attributes.get("execute");
         if (execute != null && execute > 0) {
-            double victimMax = victim.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) == null
-                    ? 20.0 : victim.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
+            double victimMax = maxHealthOf(victim);
             if (victimMax > 0 && victim.getHealth() < victimMax * 0.3) {
                 out *= 1.0 + execute / 100.0;
             }
@@ -122,11 +133,18 @@ public final class CombatListener implements Listener {
                 inventory.getLeggings(), inventory.getBoots()
         };
 
+        // Hoisted per-hit config so the loop does no repeated lookups.
+        int perPiece = armorReductionPerPiece();
+        int pointsPerPoint = armorPointsReductionPerPoint();
+        LivingEntity livingDamager = damager instanceof LivingEntity le ? le : null;
+
         for (ItemStack piece : armor) {
             GearRolls rolls = gearManager.parse(piece);
             if (rolls == null) continue;
-            if (damager instanceof LivingEntity le && resonanceMatches(le, rolls.resonance)) {
-                resonanceReduction += armorReductionPerPiece();
+            // Single resonance check per piece — reused by both reduction buckets.
+            boolean matches = livingDamager != null && resonanceMatches(livingDamager, rolls.resonance);
+            if (matches) {
+                resonanceReduction += perPiece;
             }
             armorPoints += rolls.armor;
             Map<String, Integer> attributes = gearManager.parseAttributes(rolls.attributes);
@@ -136,7 +154,7 @@ public final class CombatListener implements Listener {
             }
             // Glitch Ward: extra Resonance-damage reduction (same capped bucket)
             Integer ward = attributes.get("glitch-ward");
-            if (ward != null && damager instanceof LivingEntity le && resonanceMatches(le, rolls.resonance)) {
+            if (ward != null && matches) {
                 resonanceReduction += ward;
             }
             Integer thorns = attributes.get("thorns");
@@ -148,7 +166,7 @@ public final class CombatListener implements Listener {
         resonanceReduction = Math.min(resonanceReduction, armorReductionCap());
         attributeReduction = Math.min(attributeReduction, armorAttributeReductionCap());
 
-        double armorReduction = Math.min(armorPoints * armorPointsReductionPerPoint(), armorPointsCap());
+        double armorReduction = Math.min(armorPoints * pointsPerPoint, armorPointsCap());
         out *= (1.0 - resonanceReduction / 100.0)
                 * (1.0 - armorReduction / 100.0)
                 * (1.0 - attributeReduction / 100.0);
@@ -166,16 +184,20 @@ public final class CombatListener implements Listener {
 
     private boolean resonanceMatches(LivingEntity entity, Resonance resonance) {
         if (resonance == null) return false;
-        String lower = resonance.name().toLowerCase();
-        String tagColon = "res:" + lower;
-        String tagUnderscore = "res_" + lower;
+        String tagColon = RESONANCE_TAG_COLON.get(resonance);
+        String tagUnderscore = RESONANCE_TAG_UNDERSCORE.get(resonance);
         for (String t : entity.getScoreboardTags()) {
-            String tl = t.toLowerCase();
-            if (tl.equals(tagColon) || tl.equals(tagUnderscore)) {
+            if (t.equalsIgnoreCase(tagColon) || t.equalsIgnoreCase(tagUnderscore)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static double maxHealthOf(LivingEntity entity) {
+        org.bukkit.attribute.AttributeInstance attr =
+                entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+        return attr == null ? 20.0 : attr.getValue();
     }
 
     @EventHandler

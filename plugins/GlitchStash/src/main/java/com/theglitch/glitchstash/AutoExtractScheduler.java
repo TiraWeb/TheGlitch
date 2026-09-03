@@ -12,6 +12,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,6 +60,9 @@ public final class AutoExtractScheduler {
 
     private final GlitchStash plugin;
     private final DynamicExtractionManager dynamicManager; // nullable — null = legacy path only
+    // Cached PluginManager — Bukkit returns the same instance for server lifetime,
+    // so one lookup avoids repeated Bukkit.getPluginManager() on hot paths.
+    private final org.bukkit.plugin.PluginManager pluginManager;
 
     // Cached config — volatile for safe cross-thread reads (Folia may call from global region)
     private volatile boolean enabled = true;
@@ -69,7 +73,7 @@ public final class AutoExtractScheduler {
     private volatile String redWorld = "glitch_red";
 
     private volatile FoliaScheduler.Cancellable fixedRateTask;
-    private final List<FoliaScheduler.Cancellable> pendingBufferTasks = new ArrayList<>();
+    private final List<FoliaScheduler.Cancellable> pendingBufferTasks = Collections.synchronizedList(new ArrayList<>());
     private final AtomicInteger cycleCounter = new AtomicInteger(0);
     private volatile long lastCycleStartMillis = 0L;
 
@@ -80,6 +84,7 @@ public final class AutoExtractScheduler {
     public AutoExtractScheduler(GlitchStash plugin, DynamicExtractionManager dynamicManager) {
         this.plugin = plugin;
         this.dynamicManager = dynamicManager;
+        this.pluginManager = Bukkit.getPluginManager();
         reload();
     }
 
@@ -259,7 +264,7 @@ public final class AutoExtractScheduler {
             }
 
             if (arenas == null || arenas.isEmpty()) {
-                plugin.getLogger().warning("[AutoExtract] No arenas discovered — cycle #" + cycle + " will not start any extraction. Check VelKoth arenas.yml or set auto-extract.arenas in GlitchStash config. VelKoth loaded: " + (Bukkit.getPluginManager().getPlugin(VELKOTH_PLUGIN_NAME) != null));
+                plugin.getLogger().warning("[AutoExtract] No arenas discovered — cycle #" + cycle + " will not start any extraction. Check VelKoth arenas.yml or set auto-extract.arenas in GlitchStash config. VelKoth loaded: " + (pluginManager.getPlugin(VELKOTH_PLUGIN_NAME) != null));
                 // Still schedule buffer hooks so the 1-minute spacing stays consistent
             } else {
                 plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — starting " + arenas.size() + " arena(s): " + arenas);
@@ -385,7 +390,7 @@ public final class AutoExtractScheduler {
         // Primary hook — loot team listens for this
         try {
             AutoExtractCycleEndEvent event = new AutoExtractCycleEndEvent(cycleStartMillis, cycle);
-            Bukkit.getPluginManager().callEvent(event);
+            pluginManager.callEvent(event);
             int listeners = AutoExtractCycleEndEvent.getHandlerList().getRegisteredListeners().length;
             plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — AutoExtractCycleEndEvent fired (" + listeners + " listener(s) registered).");
         } catch (Exception e) {
@@ -410,7 +415,7 @@ public final class AutoExtractScheduler {
      * Returns true if we successfully invoked startGlobalRaid reflectively.
      */
     private boolean tryNotifyRaidStart() {
-        Plugin raidPlugin = Bukkit.getPluginManager().getPlugin("GlitchRaid");
+        Plugin raidPlugin = pluginManager.getPlugin("GlitchRaid");
         if (raidPlugin == null) return false;
         try {
             Object raidInstance = raidPlugin;
@@ -456,7 +461,7 @@ public final class AutoExtractScheduler {
      * true if we successfully invoked a handler reflectively.
      */
     private boolean tryNotifyRaidTimeout(int cycle) {
-        Plugin raidPlugin = Bukkit.getPluginManager().getPlugin("GlitchRaid");
+        Plugin raidPlugin = pluginManager.getPlugin("GlitchRaid");
         if (raidPlugin == null) return false;
         try {
             Object raidInstance = raidPlugin;
@@ -517,7 +522,7 @@ public final class AutoExtractScheduler {
      */
     private boolean tryDirectScatter(int cycle) {
         // Try GlitchLoot
-        Plugin lootPlugin = Bukkit.getPluginManager().getPlugin("GlitchLoot");
+        Plugin lootPlugin = pluginManager.getPlugin("GlitchLoot");
         if (lootPlugin != null) {
             try {
                 for (String m : new String[]{"getScatterManager", "getLootEngine", "getManager", "getContainerManager"}) {
@@ -544,7 +549,7 @@ public final class AutoExtractScheduler {
             }
         }
         // Try GlitchItems containers
-        Plugin itemsPlugin = Bukkit.getPluginManager().getPlugin("GlitchItems");
+        Plugin itemsPlugin = pluginManager.getPlugin("GlitchItems");
         if (itemsPlugin != null) {
             try {
                 for (String m : new String[]{"getContainerManager", "getLootManager", "getManager"}) {
@@ -646,7 +651,7 @@ public final class AutoExtractScheduler {
      * possibly-empty list if probing succeeded but no arenas exist.
      */
     private List<String> discoverViaReflection() {
-        Plugin velKoth = Bukkit.getPluginManager().getPlugin(VELKOTH_PLUGIN_NAME);
+        Plugin velKoth = pluginManager.getPlugin(VELKOTH_PLUGIN_NAME);
         if (velKoth == null) {
             plugin.getLogger().fine("[AutoExtract] VelKoth plugin not found — reflection discovery skipped.");
             return null;
@@ -935,7 +940,7 @@ public final class AutoExtractScheduler {
             if (dispatched) {
                 plugin.getLogger().info("[AutoExtract] Dispatched 'koth start " + name + "' (cycle #" + cycle + ") — dispatched=true");
             } else {
-                plugin.getLogger().warning("[AutoExtract] Dispatched 'koth start " + name + "' but Bukkit returned false — command may be unknown. VelKoth loaded: " + (Bukkit.getPluginManager().getPlugin(VELKOTH_PLUGIN_NAME) != null));
+                plugin.getLogger().warning("[AutoExtract] Dispatched 'koth start " + name + "' but Bukkit returned false — command may be unknown. VelKoth loaded: " + (pluginManager.getPlugin(VELKOTH_PLUGIN_NAME) != null));
             }
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "[AutoExtract] dispatchCommand 'koth start " + name + "' failed (cycle #" + cycle + ")", e);
@@ -949,7 +954,7 @@ public final class AutoExtractScheduler {
      * unless it explicitly returns Boolean.FALSE).
      */
     private boolean tryStartViaApi(String arena, int cycle) {
-        Plugin velKoth = Bukkit.getPluginManager().getPlugin(VELKOTH_PLUGIN_NAME);
+        Plugin velKoth = pluginManager.getPlugin(VELKOTH_PLUGIN_NAME);
         if (velKoth == null) return false;
 
         // Probe plugin instance methods like startArena/startKoth/activate/forceStart

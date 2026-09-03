@@ -6,6 +6,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Single canonical Oraxen bridge for The Glitch.
  * <p>
@@ -20,14 +24,33 @@ public final class OraxenUtil {
     /** PDC key Oraxen uses for custom_item_id (legacy). */
     public static final NamespacedKey ORAXEN_ID_KEY = new NamespacedKey("oraxen", "custom_item_id");
 
+    /** How long an {@link #available()} lookup is cached (ms). Short TTL keeps late-enable correct. */
+    private static final long AVAILABLE_CACHE_MS = 5000L;
+    private static volatile long availableCacheTime;
+    private static volatile boolean availableCache;
+
+    /** Cached reflection for {@code OraxenItems#getItemById(String)} — avoids per-build lookup. */
+    private static volatile Class<?> oraxenItemsClass;
+    private static volatile Method getItemByIdMethod;
+    /** Cached {@code ItemBuilder#build()} methods per builder class. */
+    private static final Map<Class<?>, Method> BUILD_METHODS = new ConcurrentHashMap<>();
+
     private OraxenUtil() {
     }
 
     /**
      * Whether Oraxen is present on the server.
+     * Result is cached briefly to avoid a plugin-manager scan per item build.
      */
     public static boolean available() {
-        return Bukkit.getPluginManager().getPlugin("Oraxen") != null;
+        long now = System.currentTimeMillis();
+        if (now - availableCacheTime < AVAILABLE_CACHE_MS && availableCacheTime != 0L) {
+            return availableCache;
+        }
+        boolean present = Bukkit.getPluginManager().getPlugin("Oraxen") != null;
+        availableCache = present;
+        availableCacheTime = now;
+        return present;
     }
 
     /**
@@ -42,15 +65,37 @@ public final class OraxenUtil {
     public static ItemStack build(String id) {
         if (!available()) return null;
         try {
-            Class<?> oraxenItems = Class.forName("io.th0rgal.oraxen.api.OraxenItems");
-            java.lang.reflect.Method getById = oraxenItems.getMethod("getItemById", String.class);
+            Method getById = getItemByIdMethod();
+            if (getById == null) return null;
             Object builder = getById.invoke(null, id);
             if (builder == null) return null;
-            java.lang.reflect.Method buildMethod = builder.getClass().getMethod("build");
+            Method buildMethod = BUILD_METHODS.computeIfAbsent(builder.getClass(), clazz -> {
+                try {
+                    return clazz.getMethod("build");
+                } catch (NoSuchMethodException e) {
+                    return null;
+                }
+            });
+            if (buildMethod == null) return null;
             Object result = buildMethod.invoke(builder);
             return result instanceof ItemStack ? (ItemStack) result : null;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private static Method getItemByIdMethod() {
+        Method cached = getItemByIdMethod;
+        if (cached != null) return cached;
+        synchronized (OraxenUtil.class) {
+            if (getItemByIdMethod != null) return getItemByIdMethod;
+            try {
+                oraxenItemsClass = Class.forName("io.th0rgal.oraxen.api.OraxenItems");
+                getItemByIdMethod = oraxenItemsClass.getMethod("getItemById", String.class);
+            } catch (Exception e) {
+                getItemByIdMethod = null;
+            }
+            return getItemByIdMethod;
         }
     }
 

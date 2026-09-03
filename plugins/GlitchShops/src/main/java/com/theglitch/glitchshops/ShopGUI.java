@@ -86,6 +86,13 @@ public final class ShopGUI implements Listener {
         }
     }
 
+    // Centralized cached economy access — same semantics as before (plugin cache, no TTL change)
+    private Economy economy() {
+        Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
+        if (cachedEconomy == null) cachedEconomy = economy;
+        return economy;
+    }
+
     public void open(Player player, String category) {
         open(player, category, false);
     }
@@ -227,8 +234,7 @@ public final class ShopGUI implements Listener {
 
     private ItemStack balanceItem(Player player) {
         // Use cached economy — no provider lookup per open
-        Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
-        if (cachedEconomy == null) cachedEconomy = economy;
+        Economy economy = economy();
         int balance = economy == null ? 0 : (int) economy.getBalance(player);
         return guiIcon("gui_coin", Material.ECHO_SHARD,
                 "<aqua><bold>" + balance + " Shards</bold></aqua>",
@@ -324,8 +330,10 @@ public final class ShopGUI implements Listener {
         ItemStack clicked = player.getOpenInventory().getTopInventory().getItem(rawSlot);
         if (clicked == null || !clicked.hasItemMeta()) return;
 
-        String action = clicked.getItemMeta().getPersistentDataContainer()
-                .get(ACTION_KEY, PersistentDataType.STRING);
+        // Single PDC fetch — identical lookups, one getItemMeta() call
+        org.bukkit.persistence.PersistentDataContainer pdc =
+                clicked.getItemMeta().getPersistentDataContainer();
+        String action = pdc.get(ACTION_KEY, PersistentDataType.STRING);
         if (action == null) return;
 
         switch (action) {
@@ -339,16 +347,14 @@ public final class ShopGUI implements Listener {
                 player.closeInventory();
                 break;
             case "tab":
-                String category = clicked.getItemMeta().getPersistentDataContainer()
-                        .get(CATEGORY_KEY, PersistentDataType.STRING);
+                String category = pdc.get(CATEGORY_KEY, PersistentDataType.STRING);
                 if (category != null) {
                     open(player, category, session.sellMode());
                 }
                 break;
             case "buy": {
                 if (session.sellMode()) return;
-                String itemId = clicked.getItemMeta().getPersistentDataContainer()
-                        .get(ITEM_KEY, PersistentDataType.STRING);
+                String itemId = pdc.get(ITEM_KEY, PersistentDataType.STRING);
                 Integer price = shopManager.buyPrice(session.category(), itemId);
                 if (itemId != null && price != null && price > 0) {
                     buyItem(player, itemId, price, click.isShiftClick() ? buyStackSize() : 1, null);
@@ -357,8 +363,7 @@ public final class ShopGUI implements Listener {
             }
             case "buygear": {
                 if (session.sellMode()) return;
-                String gearId = clicked.getItemMeta().getPersistentDataContainer()
-                        .get(GEAR_SLOT_KEY, PersistentDataType.STRING);
+                String gearId = pdc.get(GEAR_SLOT_KEY, PersistentDataType.STRING);
                 if (gearId == null) return;
                 ShopManager.GearStockEntry entry = shopManager.gearStockById(gearId);
                 if (entry == null || entry.item() == null || entry.price() <= 0) {
@@ -376,8 +381,7 @@ public final class ShopGUI implements Listener {
 
     private void handleSellClick(Player player, int slot, ItemStack item, ClickType click) {
         if (item == null || item.getType().isAir()) return;
-        Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
-        if (cachedEconomy == null) cachedEconomy = economy;
+        Economy economy = economy();
         if (economy == null) {
             message(player, "denied");
             sound(player, false);
@@ -436,8 +440,7 @@ public final class ShopGUI implements Listener {
     }
 
     private void buyItem(Player player, String itemId, int price, int amount, ShopManager.GearStockEntry gearEntry) {
-        Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
-        if (cachedEconomy == null) cachedEconomy = economy;
+        Economy economy = economy();
         if (economy == null) {
             message(player, "denied");
             sound(player, false);
@@ -584,8 +587,9 @@ public final class ShopGUI implements Listener {
     }
 
     private String plainName(ItemStack item) {
-        if (item.hasItemMeta() && item.getItemMeta().hasCustomName()) {
-            Component name = item.getItemMeta().customName();
+        var meta = item.getItemMeta();
+        if (meta != null && meta.hasCustomName()) {
+            Component name = meta.customName();
             if (name != null) {
                 String plain = PlainTextComponentSerializer.plainText().serialize(name);
                 if (!plain.isEmpty()) {
@@ -649,8 +653,9 @@ public final class ShopGUI implements Listener {
             ItemBuilder builder = OraxenItems.getItemById(itemId);
             if (builder != null) {
                 ItemStack built = builder.build();
-                if (built.hasItemMeta() && built.getItemMeta().hasCustomName()) {
-                    Component custom = built.getItemMeta().customName();
+                var builtMeta = built == null ? null : built.getItemMeta();
+                if (builtMeta != null && builtMeta.hasCustomName()) {
+                    Component custom = builtMeta.customName();
                     if (custom != null) {
                         String plain = PlainTextComponentSerializer.plainText().serialize(custom);
                         if (!plain.isEmpty()) {

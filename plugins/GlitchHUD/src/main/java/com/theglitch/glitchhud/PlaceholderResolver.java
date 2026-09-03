@@ -3,6 +3,8 @@ package com.theglitch.glitchhud;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.lang.reflect.Method;
+
 /**
  * Resolves dynamic HUD values via PlaceholderAPI when available,
  * with direct Vault/Economy fallback. All methods are null-safe
@@ -14,6 +16,16 @@ public final class PlaceholderResolver {
     private volatile Object economy; // reflective Vault Economy, if present
     private volatile boolean hasPapi;
 
+    // Cached reflection — papi()/resolve()/getTps() run per HUD tick per player,
+    // so avoid Class.forName + getMethod on every call. Volatile + benign races:
+    // multiple threads may resolve concurrently with the same result.
+    private static volatile Method CACHED_PAPI_PLAYER;
+    private static volatile Method CACHED_PAPI_OFFLINE;
+    private static volatile Method CACHED_PING;
+    private static volatile Method CACHED_TPS;
+    private volatile Method cachedEconPlayer;
+    private volatile Method cachedEconOffline;
+
     public PlaceholderResolver(GlitchHUD plugin) {
         this.plugin = plugin;
         refresh();
@@ -21,20 +33,78 @@ public final class PlaceholderResolver {
 
     public void refresh() {
         hasPapi = Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null;
+        if (hasPapi) {
+            resolvePapiMethods();
+        } else {
+            CACHED_PAPI_PLAYER = null;
+            CACHED_PAPI_OFFLINE = null;
+        }
         // Try to grab Vault Economy via reflection — avoids compile-time VaultAPI dep
         economy = null;
+        cachedEconPlayer = null;
+        cachedEconOffline = null;
         try {
             Class<?> econClass = Class.forName("net.milkbowl.vault.economy.Economy");
             Object rsp = Bukkit.getServicesManager().getRegistration(econClass);
             if (rsp != null) {
                 try {
-                    java.lang.reflect.Method getProvider = rsp.getClass().getMethod("getProvider");
+                    Method getProvider = rsp.getClass().getMethod("getProvider");
                     economy = getProvider.invoke(rsp);
                 } catch (Exception ignored) {}
             }
         } catch (ClassNotFoundException ignored) {
             // Vault not present
         } catch (Exception ignored) {}
+        if (economy != null) {
+            resolveEconMethods(economy);
+        }
+    }
+
+    private static void resolvePapiMethods() {
+        try {
+            Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
+            try {
+                CACHED_PAPI_PLAYER = papiClass.getMethod("setPlaceholders", Player.class, String.class);
+            } catch (Exception ignored) {}
+            try {
+                CACHED_PAPI_OFFLINE = papiClass.getMethod("setPlaceholders", org.bukkit.OfflinePlayer.class, String.class);
+            } catch (Exception ignored) {}
+        } catch (Exception ignored) {}
+    }
+
+    private void resolveEconMethods(Object econ) {
+        try {
+            cachedEconPlayer = econ.getClass().getMethod("getBalance", Player.class);
+        } catch (Exception ignored) {}
+        try {
+            cachedEconOffline = econ.getClass().getMethod("getBalance", org.bukkit.OfflinePlayer.class);
+        } catch (Exception ignored) {}
+    }
+
+    private static Method papiPlayerMethod() {
+        Method m = CACHED_PAPI_PLAYER;
+        if (m != null) return m;
+        try {
+            Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
+            m = papiClass.getMethod("setPlaceholders", Player.class, String.class);
+            CACHED_PAPI_PLAYER = m;
+            return m;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static Method papiOfflineMethod() {
+        Method m = CACHED_PAPI_OFFLINE;
+        if (m != null) return m;
+        try {
+            Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
+            m = papiClass.getMethod("setPlaceholders", org.bukkit.OfflinePlayer.class, String.class);
+            CACHED_PAPI_OFFLINE = m;
+            return m;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     public boolean hasPapi() { return hasPapi; }
@@ -44,8 +114,8 @@ public final class PlaceholderResolver {
         if (raw == null) return "";
         if (!hasPapi || player == null) return raw;
         try {
-            Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
-            java.lang.reflect.Method m = papiClass.getMethod("setPlaceholders", Player.class, String.class);
+            Method m = papiPlayerMethod();
+            if (m == null) return raw;
             Object out = m.invoke(null, player, raw);
             return out == null ? raw : (String) out;
         } catch (Exception e) {
@@ -58,8 +128,8 @@ public final class PlaceholderResolver {
         if (placeholderWithPercents == null) return "";
         if (!hasPapi || player == null) return placeholderWithPercents;
         try {
-            Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
-            java.lang.reflect.Method m = papiClass.getMethod("setPlaceholders", Player.class, String.class);
+            Method m = papiPlayerMethod();
+            if (m == null) return "";
             Object out = m.invoke(null, player, placeholderWithPercents);
             String s = out == null ? "" : (String) out;
             if (s.equals(placeholderWithPercents)) return "";
@@ -77,15 +147,33 @@ public final class PlaceholderResolver {
                 try { return Math.round(Double.parseDouble(v.replace(",", ""))); } catch (NumberFormatException ignored) {}
             }
         }
-        if (economy != null) {
+        Object econ = economy;
+        if (econ != null) {
             try {
-                java.lang.reflect.Method m = economy.getClass().getMethod("getBalance", Player.class);
-                Object bal = m.invoke(economy, player);
-                if (bal instanceof Number n) return Math.round(n.doubleValue());
+                Method m = cachedEconPlayer;
+                if (m == null || !m.getDeclaringClass().isInstance(econ)) {
+                    try {
+                        m = econ.getClass().getMethod("getBalance", Player.class);
+                        cachedEconPlayer = m;
+                    } catch (Exception ignored) { m = null; }
+                }
+                if (m != null) {
+                    Object bal = m.invoke(econ, player);
+                    if (bal instanceof Number n) return Math.round(n.doubleValue());
+                } else {
+                    throw new NoSuchMethodException("getBalance(Player)");
+                }
             } catch (Exception ignored) {
                 try {
-                    java.lang.reflect.Method m2 = economy.getClass().getMethod("getBalance", org.bukkit.OfflinePlayer.class);
-                    Object bal = m2.invoke(economy, (org.bukkit.OfflinePlayer) player);
+                    Method m2 = cachedEconOffline;
+                    if (m2 == null || !m2.getDeclaringClass().isInstance(econ)) {
+                        try {
+                            m2 = econ.getClass().getMethod("getBalance", org.bukkit.OfflinePlayer.class);
+                            cachedEconOffline = m2;
+                        } catch (Exception ignored2) { m2 = null; }
+                    }
+                    if (m2 == null) return 0;
+                    Object bal = m2.invoke(econ, (org.bukkit.OfflinePlayer) player);
                     if (bal instanceof Number n) return Math.round(n.doubleValue());
                 } catch (Exception ignored2) {}
             }
@@ -181,9 +269,16 @@ public final class PlaceholderResolver {
         }
         // Direct Paper API (1.19.4+)
         try { return player.getPing(); } catch (Exception ignored) {}
-        // Reflective fallback (older / Purpur)
+        // Reflective fallback (older / Purpur) — cached
         try {
-            java.lang.reflect.Method m = player.getClass().getMethod("getPing");
+            Method m = CACHED_PING;
+            if (m == null || !m.getDeclaringClass().isInstance(player)) {
+                try {
+                    m = player.getClass().getMethod("getPing");
+                    CACHED_PING = m;
+                } catch (Exception ignored) { m = null; }
+            }
+            if (m == null) return -1;
             Object r = m.invoke(player);
             if (r instanceof Number n) return n.intValue();
         } catch (Exception ignored) {}
@@ -195,16 +290,17 @@ public final class PlaceholderResolver {
         if (hasPapi) {
             // Use dummy offline player for server placeholders; PAPI can handle null
             try {
-                Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
-                java.lang.reflect.Method m = papiClass.getMethod("setPlaceholders", org.bukkit.OfflinePlayer.class, String.class);
-                String[] candidates = {"%server_tps_1%", "%server_tps%", "%tps%"};
-                for (String ph : candidates) {
-                    try {
-                        Object out = m.invoke(null, (org.bukkit.OfflinePlayer) null, ph);
-                        if (out instanceof String s && !s.contains("%") && !s.isBlank()) {
-                            try { return Double.parseDouble(s.trim()); } catch (NumberFormatException ignored) {}
-                        }
-                    } catch (Exception ignored) {}
+                Method m = papiOfflineMethod();
+                if (m != null) {
+                    String[] candidates = {"%server_tps_1%", "%server_tps%", "%tps%"};
+                    for (String ph : candidates) {
+                        try {
+                            Object out = m.invoke(null, (org.bukkit.OfflinePlayer) null, ph);
+                            if (out instanceof String s && !s.contains("%") && !s.isBlank()) {
+                                try { return Double.parseDouble(s.trim()); } catch (NumberFormatException ignored) {}
+                            }
+                        } catch (Exception ignored) {}
+                    }
                 }
             } catch (Exception ignored) {}
         }
@@ -217,9 +313,16 @@ public final class PlaceholderResolver {
             double[] tps = Bukkit.getServer().getTPS();
             if (tps != null && tps.length > 0 && tps[0] > 0) return tps[0];
         } catch (Exception ignored) {}
-        // Reflective last resort
+        // Reflective last resort — cached
         try {
-            java.lang.reflect.Method m = Bukkit.class.getMethod("getTPS");
+            Method m = CACHED_TPS;
+            if (m == null) {
+                try {
+                    m = Bukkit.class.getMethod("getTPS");
+                    CACHED_TPS = m;
+                } catch (Exception ignored) { m = null; }
+            }
+            if (m == null) return -1;
             Object r = m.invoke(null);
             if (r instanceof double[] arr && arr.length > 0) return arr[0];
         } catch (Exception ignored) {}

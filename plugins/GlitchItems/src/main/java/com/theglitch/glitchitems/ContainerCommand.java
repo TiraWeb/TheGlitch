@@ -23,6 +23,8 @@ import java.util.List;
  */
 public record ContainerCommand(GlitchItems plugin, ContainerManager manager, ScatterManager scatterManager) implements CommandExecutor {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
     /** Legacy ctor for tests / callers that don't have a ScatterManager. */
     public ContainerCommand(GlitchItems plugin, ContainerManager manager) {
         this(plugin, manager, null);
@@ -88,7 +90,7 @@ public record ContainerCommand(GlitchItems plugin, ContainerManager manager, Sca
                     player.sendMessage(Component.text("That block cannot store container data.", NamedTextColor.RED));
                     return true;
                 }
-                player.sendMessage(MiniMessage.miniMessage().deserialize(
+                player.sendMessage(MM.deserialize(
                         "<green>Set <white>" + type.display() + "</white> on "
                                 + block.getType() + " at " + block.getX() + "," + block.getY() + "," + block.getZ()));
             }

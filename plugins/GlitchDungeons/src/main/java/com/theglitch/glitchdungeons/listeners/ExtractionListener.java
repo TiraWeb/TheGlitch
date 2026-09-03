@@ -1,5 +1,6 @@
 package com.theglitch.glitchdungeons.listeners;
 
+import com.theglitch.glitchdungeons.ColorUtil;
 import com.theglitch.glitchdungeons.GlitchDungeons;
 import com.theglitch.glitchdungeons.models.DungeonRun;
 import com.theglitch.glitchdungeons.models.DungeonSlot;
@@ -63,7 +64,7 @@ public class ExtractionListener implements Listener {
             // Reset progress
             if (extractProgress.containsKey(player.getUniqueId())) {
                 extractProgress.remove(player.getUniqueId());
-                player.sendMessage(colorize("&cYou moved! Extraction reset."));
+                player.sendMessage(ColorUtil.colorize("&cYou moved! Extraction reset."));
             }
             return;
         }
@@ -73,7 +74,7 @@ public class ExtractionListener implements Listener {
         if (last != null && last.distanceSquared(to) > 0.01) {
             // Player moved, reset
             extractProgress.remove(player.getUniqueId());
-            player.sendMessage(colorize("&cYou moved! Extraction reset."));
+            player.sendMessage(ColorUtil.colorize("&cYou moved! Extraction reset."));
         }
         lastLocation.put(player.getUniqueId(), to.clone());
     }
@@ -85,7 +86,7 @@ public class ExtractionListener implements Listener {
 
         for (UUID member : run.getParty().getMembers()) {
             Player player = Bukkit.getPlayer(member);
-            if (player == null || !player.isOnline()) continue;
+            if (player == null) continue;
 
             DungeonSlot slot = run.getSlot();
             Location loc = player.getLocation();
@@ -112,7 +113,7 @@ public class ExtractionListener implements Listener {
 
                 // Update boss bar or action bar
                 int percent = (int)((progress / (double)(extractionTime * 20)) * 100);
-                player.sendActionBar(colorize("&aExtracting... " + percent + "%"));
+                player.sendActionBar(ColorUtil.colorize("&aExtracting... " + percent + "%"));
 
                 if (progress >= extractionTime * 20) {
                     // Extraction complete! (cleanupRun clears this run's progress)
@@ -122,7 +123,7 @@ public class ExtractionListener implements Listener {
             } else {
                 extractProgress.put(member, 0);
             }
-            lastLocation.put(member, loc.clone());
+            lastLocation.put(member, loc);
         }
     }
 
@@ -133,7 +134,4 @@ public class ExtractionListener implements Listener {
         }
     }
 
-    private String colorize(String msg) {
-        return msg.replaceAll("&([0-9a-fk-or])", "\u00A7$1");
-    }
 }

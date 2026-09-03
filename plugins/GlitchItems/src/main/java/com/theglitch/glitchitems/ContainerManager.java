@@ -36,6 +36,61 @@ public final class ContainerManager {
     /** Must match AbilityListener.SCAVENGE_TAG — scoreboard tag that grants bonus rolls. */
     public static final String SCAVENGE_TAG = "specter_scavenge";
 
+    // Cached GlitchRaid bridge reflection — avoids per-open getMethod scans on the loot path.
+    // Keyed by runtime class so plugin reloads (new classloaders) re-resolve instead of reusing stale Methods.
+    private static final Map<Class<?>, java.lang.reflect.Method> RAID_GET_MANAGER_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<Class<?>, java.lang.reflect.Method> RAID_IS_IN_RAID_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<Class<?>, java.lang.reflect.Method> RAID_ADD_LOOT_FROM_ITEMS_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Set<Class<?>> RAID_ADD_LOOT_FROM_ITEMS_MISSING = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private static final Map<Class<?>, java.lang.reflect.Method> RAID_ADD_LOOT_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static java.lang.reflect.Method cachedRaidMethod(Object target, String name, int slot)
+            throws NoSuchMethodException {
+        Class<?> clazz = target.getClass();
+        switch (slot) {
+            case 0: {
+                java.lang.reflect.Method cached = RAID_GET_MANAGER_CACHE.get(clazz);
+                if (cached == null) {
+                    cached = clazz.getMethod(name);
+                    RAID_GET_MANAGER_CACHE.put(clazz, cached);
+                }
+                return cached;
+            }
+            case 1: {
+                java.lang.reflect.Method cached = RAID_IS_IN_RAID_CACHE.get(clazz);
+                if (cached == null) {
+                    cached = clazz.getMethod(name, java.util.UUID.class);
+                    RAID_IS_IN_RAID_CACHE.put(clazz, cached);
+                }
+                return cached;
+            }
+            case 2: {
+                if (RAID_ADD_LOOT_FROM_ITEMS_MISSING.contains(clazz)) {
+                    throw new NoSuchMethodException(name);
+                }
+                java.lang.reflect.Method cached = RAID_ADD_LOOT_FROM_ITEMS_CACHE.get(clazz);
+                if (cached == null) {
+                    try {
+                        cached = clazz.getMethod(name, Player.class, java.util.Collection.class);
+                    } catch (NoSuchMethodException e) {
+                        RAID_ADD_LOOT_FROM_ITEMS_MISSING.add(clazz);
+                        throw e;
+                    }
+                    RAID_ADD_LOOT_FROM_ITEMS_CACHE.put(clazz, cached);
+                }
+                return cached;
+            }
+            default: {
+                java.lang.reflect.Method cached = RAID_ADD_LOOT_CACHE.get(clazz);
+                if (cached == null) {
+                    cached = clazz.getMethod(name, java.util.UUID.class, int.class);
+                    RAID_ADD_LOOT_CACHE.put(clazz, cached);
+                }
+                return cached;
+            }
+        }
+    }
+
     private static final Map<String, Material> MATERIAL_MATERIALS = Map.of(
             "rune_fragment", Material.PAPER,
             "aether_shard", Material.GLOWSTONE_DUST,
@@ -283,16 +338,19 @@ public final class ContainerManager {
             try {
                 org.bukkit.plugin.Plugin raidPlugin = Bukkit.getPluginManager().getPlugin("GlitchRaid");
                 if (raidPlugin != null && raidPlugin.isEnabled()) {
-                    Object raidMgr = raidPlugin.getClass().getMethod("getRaidManager").invoke(raidPlugin);
+                    Object raidMgr = cachedRaidMethod(raidPlugin, "getRaidManager", 0).invoke(raidPlugin);
                     if (raidMgr != null) {
                         java.util.UUID pid = player.getUniqueId();
-                        Boolean inRaid = (Boolean) raidMgr.getClass().getMethod("isInRaid", java.util.UUID.class).invoke(raidMgr, pid);
+                        Boolean inRaid = (Boolean) cachedRaidMethod(raidMgr, "isInRaid", 1).invoke(raidMgr, pid);
                         if (Boolean.TRUE.equals(inRaid)) {
                             try {
-                                raidMgr.getClass().getMethod("addLootFromItems", Player.class, java.util.Collection.class).invoke(raidMgr, player, loot);
+                                cachedRaidMethod(raidMgr, "addLootFromItems", 2).invoke(raidMgr, player, loot);
                             } catch (NoSuchMethodException nsme) {
-                                int est = loot.stream().filter(s -> s != null && !s.getType().isAir()).mapToInt(s -> s.getAmount() * 10).sum();
-                                raidMgr.getClass().getMethod("addLoot", java.util.UUID.class, int.class).invoke(raidMgr, pid, est);
+                                int est = 0;
+                                for (ItemStack s : loot) {
+                                    if (s != null && !s.getType().isAir()) est += s.getAmount() * 10;
+                                }
+                                cachedRaidMethod(raidMgr, "addLoot", 3).invoke(raidMgr, pid, est);
                             }
                         }
                     }
@@ -348,25 +406,27 @@ public final class ContainerManager {
     }
 
     private boolean hasKey(Player player, ContainerType type) {
-        for (ItemStack stack : player.getInventory().getContents()) {
+        org.bukkit.inventory.PlayerInventory inv = player.getInventory();
+        for (ItemStack stack : inv.getContents()) {
             if (stack != null && isKey(stack, type)) return true;
         }
-        return isKey(player.getInventory().getItemInOffHand(), type);
+        return isKey(inv.getItemInOffHand(), type);
     }
 
     private void consumeKey(Player player, ContainerType type) {
-        for (int i = 0; i < player.getInventory().getSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
+        org.bukkit.inventory.PlayerInventory inv = player.getInventory();
+        for (int i = 0; i < inv.getSize(); i++) {
+            ItemStack stack = inv.getItem(i);
             if (stack != null && isKey(stack, type)) {
                 if (stack.getAmount() > 1) stack.setAmount(stack.getAmount() - 1);
-                else player.getInventory().setItem(i, null);
+                else inv.setItem(i, null);
                 return;
             }
         }
-        ItemStack offhand = player.getInventory().getItemInOffHand();
+        ItemStack offhand = inv.getItemInOffHand();
         if (offhand != null && isKey(offhand, type)) {
             if (offhand.getAmount() > 1) offhand.setAmount(offhand.getAmount() - 1);
-            else player.getInventory().setItemInOffHand(null);
+            else inv.setItemInOffHand(null);
         }
     }
 
@@ -398,7 +458,8 @@ public final class ContainerManager {
     }
 
     private ItemStack buildRift(Rarity rarity) {
-        ItemStack item = OraxenUtil.build("unstable_rift_" + rarity.getId());
+        String riftId = "unstable_rift_" + rarity.getId();
+        ItemStack item = OraxenUtil.build(riftId);
         if (item != null) return item;
         ItemStack fallback = new ItemStack(Material.AMETHYST_SHARD);
         ItemMeta meta = fallback.getItemMeta();
@@ -406,8 +467,7 @@ public final class ContainerManager {
         meta.lore(List.of(
                 MM.deserialize("<gray>An unstable piece of the Glitch.</gray>"),
                 MM.deserialize("<gray>Identify it at the hub.</gray>")));
-        meta.getPersistentDataContainer().set(ORAXEN_KEY, PersistentDataType.STRING,
-                "unstable_rift_" + rarity.getId());
+        meta.getPersistentDataContainer().set(ORAXEN_KEY, PersistentDataType.STRING, riftId);
         fallback.setItemMeta(meta);
         return fallback;
     }
@@ -447,17 +507,19 @@ public final class ContainerManager {
     }
 
     private Component msg(String key) {
-        String raw = messagesRaw.getOrDefault(key, "<gray>" + key + "</gray>");
-        try { return MM.deserialize(raw); } catch (Exception e) { return Component.text(key); }
+        return deserializeMsg(messagesRaw.getOrDefault(key, "<gray>" + key + "</gray>"), key);
     }
 
     private Component msg(String key, String ph1, String v1) {
-        String raw = messagesRaw.getOrDefault(key, "<gray>" + key + "</gray>").replace(ph1, v1);
-        try { return MM.deserialize(raw); } catch (Exception e) { return Component.text(key); }
+        return deserializeMsg(messagesRaw.getOrDefault(key, "<gray>" + key + "</gray>").replace(ph1, v1), key);
     }
 
     private Component msg(String key, String ph1, String v1, String ph2, String v2) {
-        String raw = messagesRaw.getOrDefault(key, "<gray>" + key + "</gray>").replace(ph1, v1).replace(ph2, v2);
+        return deserializeMsg(
+                messagesRaw.getOrDefault(key, "<gray>" + key + "</gray>").replace(ph1, v1).replace(ph2, v2), key);
+    }
+
+    private static Component deserializeMsg(String raw, String key) {
         try { return MM.deserialize(raw); } catch (Exception e) { return Component.text(key); }
     }
 }

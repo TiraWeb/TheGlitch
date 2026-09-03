@@ -290,11 +290,6 @@ public final class ShopManager {
         return com.theglitch.glitchitems.Rarity.COMMON;
     }
 
-    private com.theglitch.glitchitems.Rarity gearRarity(ItemStack item) {
-        GearRolls rolls = gearRolls(item);
-        return rolls == null ? null : rolls.rarity;
-    }
-
     private com.theglitch.glitchitems.GearManager gearManager() {
         GlitchItems glitchItems = GlitchItems.getInstance();
         return glitchItems == null ? null : glitchItems.getGearManager();
@@ -349,20 +344,21 @@ public final class ShopManager {
     public String oraxenId(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-        try {
-            String id = pdc.get(ORAXEN_ID_KEY, PersistentDataType.STRING);
-            if (id != null && !id.isEmpty()) return id;
-        } catch (Exception ignored) {}
+        // Single-pass scan: direct Oraxen key wins immediately, otherwise first id-shaped fallback.
+        // Identical priority to the previous direct-get-then-loop (empty direct ids are ignored).
+        String fallback = null;
         for (NamespacedKey key : pdc.getKeys()) {
             try {
                 if (!pdc.has(key, PersistentDataType.STRING)) continue;
                 String value = pdc.get(key, PersistentDataType.STRING);
-                if (isIdShaped(value)) {
-                    return value;
+                if (value == null || value.isEmpty()) continue;
+                if (key.equals(ORAXEN_ID_KEY)) return value;
+                if (fallback == null && isIdShaped(value)) {
+                    fallback = value;
                 }
             } catch (Exception ignored) {}
         }
-        return null;
+        return fallback;
     }
 
     public GearRolls gearRolls(ItemStack item) {

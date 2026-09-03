@@ -10,7 +10,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -424,18 +423,19 @@ public final class HideoutManager {
         if (stack == null || !stack.hasItemMeta()) return null;
         org.bukkit.persistence.PersistentDataContainer pdc =
                 stack.getItemMeta().getPersistentDataContainer();
-        try {
-            String pdcId = pdc.get(ORAXEN_KEY, PersistentDataType.STRING);
-            if (pdcId != null && !pdcId.isEmpty()) return pdcId;
-        } catch (Exception ignored) {}
+        // Single-pass scan: direct Oraxen key wins immediately, otherwise first id-shaped fallback.
+        // Identical priority to the previous direct-get-then-loop (empty direct ids are ignored).
+        String fallback = null;
         for (NamespacedKey key : pdc.getKeys()) {
             try {
                 if (!pdc.has(key, PersistentDataType.STRING)) continue;
                 String value = pdc.get(key, PersistentDataType.STRING);
-                if (isIdShaped(value)) return value;
+                if (value == null || value.isEmpty()) continue;
+                if (key.equals(ORAXEN_KEY)) return value;
+                if (fallback == null && isIdShaped(value)) fallback = value;
             } catch (Exception ignored) {}
         }
-        return null;
+        return fallback;
     }
 
     private boolean isItem(ItemStack stack, String id) {

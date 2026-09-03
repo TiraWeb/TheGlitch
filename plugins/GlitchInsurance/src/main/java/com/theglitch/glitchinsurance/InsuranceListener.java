@@ -8,12 +8,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class InsuranceListener implements Listener {
 
@@ -21,7 +20,7 @@ public final class InsuranceListener implements Listener {
     private final InsuranceManager manager;
 
     // Track players who had items protected on death to show hint on respawn
-    private final Map<UUID, Integer> pendingClaimNotice = new HashMap<>();
+    private final Map<UUID, Integer> pendingClaimNotice = new ConcurrentHashMap<>();
 
     public InsuranceListener(GlitchInsurance plugin, InsuranceManager manager) {
         this.plugin = plugin;

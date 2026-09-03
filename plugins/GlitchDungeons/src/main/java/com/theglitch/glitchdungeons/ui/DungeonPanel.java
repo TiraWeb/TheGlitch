@@ -29,13 +29,12 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class DungeonPanel implements Listener {
 
@@ -52,8 +51,8 @@ public final class DungeonPanel implements Listener {
     private static DungeonPanel instance;
     private static BukkitTask buildTask;
 
-    private final Map<UUID, Long> lastClick = new HashMap<>();
-    private final Set<UUID> trackedEntities = new HashSet<>();
+    private final Map<UUID, Long> lastClick = new ConcurrentHashMap<>();
+    private final Set<UUID> trackedEntities = ConcurrentHashMap.newKeySet();
 
     private World world;
     private double wx;

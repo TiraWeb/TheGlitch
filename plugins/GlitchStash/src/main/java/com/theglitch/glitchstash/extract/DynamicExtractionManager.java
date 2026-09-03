@@ -236,7 +236,8 @@ public final class DynamicExtractionManager {
     }
 
     public List<ExtractionPoint> getCurrentPoints() {
-        return currentPoints;
+        List<ExtractionPoint> pts = currentPoints;
+        return pts == null ? List.of() : List.copyOf(pts);
     }
 
     public boolean isDynamicEnabled() {

@@ -64,6 +64,21 @@ public final class RaidManager {
     private volatile String autoStartWorld = "glitch_red";
     private volatile String joinMode = "global-remaining";
 
+    // Cached message templates (reloaded in cacheConfig) — avoids getConfig on hot tick paths
+    private volatile String msgRaidTimeLeft = "<aqua>Time left: <white><time></white></aqua>";
+    private volatile String msgRaidExtracted = "<green><bold>Extracted!</bold> <gray>Loot secured.</gray></green>";
+    private volatile String msgRaidEnded = "<red>Raid ended <gray>(<reason>)</gray> — returning to hub...</red>";
+    private volatile String msgRaidAutoStarted = "<green><bold>Raid started!</bold> <gray>You entered the Glitch — 30:00 to extract!</gray>";
+    private volatile String msgRaidStarted = "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>";
+    private volatile String msgRaidSummaryTitle = "<gold><bold>Raid Summary</bold></gold>";
+    private volatile String msgRaidWarn60 = "<red><bold>WARNING:</bold> <gray>60 seconds left — extract now or the Glitch will consume you!</gray></red>";
+    private volatile String msgRaidWarn30 = "<red><bold>30 seconds left — get to an extraction beacon!</bold></red>";
+    private volatile String msgRaidWarn10 = "<red><bold>10 seconds!</bold> <gray>The Glitch closes — extract or die!</gray></red>";
+    private volatile String msgRaidScatterStart = "<gray>Loot from the consumed scatters across <white><world></white> — 60s to scavenge before next extraction!</gray>";
+    private volatile String msgLootAdded = "<gold>+<amount> loot value</gold>";
+    // Raw timeout-killed template (null when missing) — call sites keep their own fallbacks
+    private volatile String msgRaidTimeoutKilledRaw = null;
+
     public RaidManager(GlitchRaid plugin) {
         this.plugin = plugin;
         this.lootCountedKey = new NamespacedKey(plugin, "raid_loot_counted");
@@ -117,6 +132,19 @@ public final class RaidManager {
             } else {
                 joinMode = "global-remaining";
             }
+
+            msgRaidTimeLeft = plugin.getConfig().getString("messages.raid-time-left", msgRaidTimeLeft);
+            msgRaidExtracted = plugin.getConfig().getString("messages.raid-extracted", msgRaidExtracted);
+            msgRaidEnded = plugin.getConfig().getString("messages.raid-ended", msgRaidEnded);
+            msgRaidAutoStarted = plugin.getConfig().getString("messages.raid-auto-started", msgRaidAutoStarted);
+            msgRaidStarted = plugin.getConfig().getString("messages.raid-started", msgRaidStarted);
+            msgRaidSummaryTitle = plugin.getConfig().getString("messages.raid-summary-title", msgRaidSummaryTitle);
+            msgRaidWarn60 = plugin.getConfig().getString("messages.raid-warn-60", msgRaidWarn60);
+            msgRaidWarn30 = plugin.getConfig().getString("messages.raid-warn-30", msgRaidWarn30);
+            msgRaidWarn10 = plugin.getConfig().getString("messages.raid-warn-10", msgRaidWarn10);
+            msgRaidScatterStart = plugin.getConfig().getString("messages.raid-scatter-start", msgRaidScatterStart);
+            msgLootAdded = plugin.getConfig().getString("messages.loot-added", msgLootAdded);
+            msgRaidTimeoutKilledRaw = plugin.getConfig().getString("messages.raid-timeout-killed", null);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to cache GlitchRaid config: " + e.getMessage());
         }
@@ -329,7 +357,7 @@ public final class RaidManager {
         RaidSession session = new RaidSession(leaderId, members, now, end);
         globalSessions.put(key, session);
 
-        String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
+        String timeLeftRaw = msgRaidTimeLeft;
         String formatted = formatTime(initialSeconds);
         Component initialName = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
         BossBar bar = BossBar.bossBar(initialName, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
@@ -490,7 +518,7 @@ public final class RaidManager {
             for (UUID mid : session.getMembers()) {
                 if (mid.equals(uuid)) continue;
                 Player member = Bukkit.getPlayer(mid);
-                if (member != null && member.isOnline()) {
+                if (member != null) {
                     try { member.showBossBar(bar); } catch (Exception ignored) {}
                 }
             }
@@ -555,13 +583,13 @@ public final class RaidManager {
         boolean lost = (reason == RaidEndReason.TIMEOUT || reason == RaidEndReason.TIMEOUT_DEATH);
         Component endedComp;
         if (reason == RaidEndReason.EXTRACTED) {
-            String raw = plugin.getConfig().getString("messages.raid-extracted", "<green><bold>Extracted!</bold> <gray>Loot secured.</gray></green>");
+            String raw = msgRaidExtracted;
             endedComp = MM.deserialize(raw);
         } else if (lost) {
-            String raw = plugin.getConfig().getString("messages.raid-timeout-killed", "<dark_red><bold>The Glitch consumed you.</bold> <gray>Loot lost.</gray></dark_red>");
+            String raw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw :  "<dark_red><bold>The Glitch consumed you.</bold> <gray>Loot lost.</gray></dark_red>");
             endedComp = MM.deserialize(raw);
         } else {
-            String endedRaw = plugin.getConfig().getString("messages.raid-ended", "<red>Raid ended <gray>(<reason>)</gray> — returning to hub...</red>");
+            String endedRaw = msgRaidEnded;
             endedComp = MM.deserialize(endedRaw.replace("<reason>", reason.name().toLowerCase()));
         }
         for (UUID memberId : membersSnapshot) {
@@ -648,7 +676,7 @@ public final class RaidManager {
                             newGlobal.getMembers().add(mid);
                             activeRaids.put(mid, newGlobal);
                             Player mp = Bukkit.getPlayer(mid);
-                            if (mp != null && mp.isOnline()) {
+                            if (mp != null) {
                                 BossBar gBar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
                                 if (gBar != null) try { mp.showBossBar(gBar); } catch (Exception ignored) {}
                             }
@@ -660,17 +688,14 @@ public final class RaidManager {
                         for (UUID mid : newGlobal.getMembers()) {
                             if (mid.equals(uuid)) continue;
                             Player mp = Bukkit.getPlayer(mid);
-                            if (mp != null && mp.isOnline()) try { mp.showBossBar(gBar); } catch (Exception ignored) {}
+                            if (mp != null) try { mp.showBossBar(gBar); } catch (Exception ignored) {}
                         }
                     }
-                    String key = auto ? "messages.raid-auto-started" : "messages.raid-started";
-                    String fallback = auto ? "<green><bold>Raid started!</bold> <gray>You entered the Glitch — 30:00 to extract!</gray>" : "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>";
-                    String startedRaw = plugin.getConfig().getString(key, fallback);
-                    if (startedRaw == null) startedRaw = fallback;
+                    String startedRaw = auto ? msgRaidAutoStarted : msgRaidStarted;
                     String formatted = formatTime(durationSeconds);
                     for (UUID mid : newGlobal.getMembers()) {
                         Player pl = Bukkit.getPlayer(mid);
-                        if (pl != null && pl.isOnline()) {
+                        if (pl != null) {
                             try {
                                 pl.sendMessage(MM.deserialize(startedRaw));
                                 pl.sendActionBar(MM.deserialize("<gray>Extract before <white>" + formatted + "</white> or lose everything!</gray>"));
@@ -704,7 +729,7 @@ public final class RaidManager {
             activeRaids.put(mid, session);
         }
 
-        String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
+        String timeLeftRaw = msgRaidTimeLeft;
         String formatted = formatTime(durationSeconds);
         Component initialName = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
         BossBar bar = BossBar.bossBar(initialName, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
@@ -714,18 +739,15 @@ public final class RaidManager {
         for (UUID mid : members) {
             if (mid.equals(uuid)) continue;
             Player p = Bukkit.getPlayer(mid);
-            if (p != null && p.isOnline()) {
+            if (p != null) {
                 p.showBossBar(bar);
             }
         }
 
-        String key = auto ? "messages.raid-auto-started" : "messages.raid-started";
-        String fallback = auto ? "<green><bold>Raid started!</bold> <gray>You entered the Glitch — 30:00 to extract!</gray>" : "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>";
-        String startedRaw = plugin.getConfig().getString(key, fallback);
-        if (startedRaw == null) startedRaw = fallback;
+        String startedRaw = auto ? msgRaidAutoStarted : msgRaidStarted;
         for (UUID mid : members) {
             Player p = Bukkit.getPlayer(mid);
-            if (p != null && p.isOnline()) {
+            if (p != null) {
                 p.sendMessage(MM.deserialize(startedRaw));
                 p.sendActionBar(MM.deserialize("<gray>Extract before <white>" + formatted + "</white> or lose everything!</gray>"));
             }
@@ -739,7 +761,7 @@ public final class RaidManager {
             for (UUID mid : members) {
                 if (mid.equals(uuid)) continue;
                 Player p = Bukkit.getPlayer(mid);
-                if (p != null && p.isOnline() && !p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                if (p != null && !p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                     try {
                         org.bukkit.Location dest = leader.getLocation();
                         FoliaScheduler.teleportEntity(p, plugin, dest);
@@ -772,7 +794,7 @@ public final class RaidManager {
         RaidSession session = new RaidSession(uuid, members, now, endMillis);
         activeRaids.put(uuid, session);
 
-        String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
+        String timeLeftRaw = msgRaidTimeLeft;
         String formatted = formatTime(remainingSeconds);
         Component initialName = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
         BossBar bar = BossBar.bossBar(initialName, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
@@ -797,7 +819,7 @@ public final class RaidManager {
         final UUID victimId = uuid;
         timeoutVictims.add(victimId);
         FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
-        String killedRaw = plugin.getConfig().getString("messages.raid-timeout-killed",
+        String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw : 
                 "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
         try { player.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
         Title.Times times = Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(500));
@@ -813,7 +835,7 @@ public final class RaidManager {
         }
         FoliaScheduler.runLaterGlobal(plugin, () -> {
             Player pp = Bukkit.getPlayer(victimId);
-            if (pp != null && pp.isOnline() && pp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+            if (pp != null && pp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                 teleportToHub(pp);
             }
         }, 60L);
@@ -867,7 +889,7 @@ public final class RaidManager {
                 final Set<UUID> extracted = new HashSet<>(toRemove);
                 final RaidSession parent = session;
                 FoliaScheduler.runLaterGlobal(plugin, () -> {
-                    String titleRaw = plugin.getConfig().getString("messages.raid-summary-title", "<gold><bold>Raid Summary</bold></gold>");
+                    String titleRaw = msgRaidSummaryTitle;
                     Component title = MM.deserialize(titleRaw);
                     int durationSec = parent.getElapsedSeconds();
                     String durationStr = formatTime(durationSec);
@@ -961,13 +983,13 @@ public final class RaidManager {
 
         Component endedComp;
         if (reason == RaidEndReason.EXTRACTED) {
-            String raw = plugin.getConfig().getString("messages.raid-extracted", "<green><bold>Extracted!</bold> <gray>Loot secured.</gray></green>");
+            String raw = msgRaidExtracted;
             endedComp = MM.deserialize(raw);
         } else if (lost) {
-            String raw = plugin.getConfig().getString("messages.raid-timeout-killed", "<dark_red><bold>The Glitch consumed you.</bold> <gray>Loot lost.</gray></dark_red>");
+            String raw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw :  "<dark_red><bold>The Glitch consumed you.</bold> <gray>Loot lost.</gray></dark_red>");
             endedComp = MM.deserialize(raw);
         } else {
-            String endedRaw = plugin.getConfig().getString("messages.raid-ended", "<red>Raid ended <gray>(<reason>)</gray> — returning to hub...</red>");
+            String endedRaw = msgRaidEnded;
             endedComp = MM.deserialize(endedRaw.replace("<reason>", reason.name().toLowerCase()));
         }
 
@@ -1013,7 +1035,7 @@ public final class RaidManager {
             }
             for (UUID mid : new HashSet<>(toStash)) {
                 Player p = Bukkit.getPlayer(mid);
-                if (p != null && p.isOnline() && p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                if (p != null && p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                     try {
                         com.theglitch.glitchstash.GlitchStash stashPlugin = com.theglitch.glitchstash.GlitchStash.getInstance();
                         if (stashPlugin != null) {
@@ -1076,7 +1098,7 @@ public final class RaidManager {
                 int payout = (int) Math.round(myLoot * payoutMultiplier);
                 if (payout <= 0) continue;
                 Player p = Bukkit.getPlayer(mid);
-                if (p != null && p.isOnline()) {
+                if (p != null) {
                     try {
                         RegisteredServiceProvider<Economy> rsp = Bukkit.getServicesManager().getRegistration(Economy.class);
                         if (rsp != null) {
@@ -1115,10 +1137,10 @@ public final class RaidManager {
         for (UUID mid : membersSnapshot) {
             if (mid.equals(player.getUniqueId())) continue; // winner already teleported by GlitchStash
             Player other = Bukkit.getPlayer(mid);
-            if (other != null && other.isOnline() && other.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+            if (other != null && other.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                 FoliaScheduler.runLaterGlobal(plugin, () -> {
                     Player p2 = Bukkit.getPlayer(mid);
-                    if (p2 != null && p2.isOnline() && p2.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                    if (p2 != null && p2.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                         teleportToHub(p2);
                         p2.sendMessage(MM.deserialize("<green>Party extraction — pulled to hub with <white>" + player.getName() + "</white>.</green>"));
                     }
@@ -1281,7 +1303,7 @@ public final class RaidManager {
         // Unsellable items contribute 0 — no flat fallback (prevents junk farms inflating loot)
         if (value > 0) {
             session.addLoot(player.getUniqueId(), value);
-            String lootRaw = plugin.getConfig().getString("messages.loot-added", "<gold>+<amount> loot value</gold>");
+            String lootRaw = msgLootAdded;
             try {
                 player.sendActionBar(MM.deserialize(lootRaw.replace("<amount>", String.valueOf(value))));
             } catch (Exception ignored) {
@@ -1331,7 +1353,7 @@ public final class RaidManager {
 
         BossBar bar = bossBars.get(leaderId);
         if (bar != null) {
-            String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
+            String timeLeftRaw = msgRaidTimeLeft;
             String formatted = formatTime(remainingSeconds);
             Component name = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
             bar.name(name);
@@ -1380,7 +1402,10 @@ public final class RaidManager {
         }
         Component msg;
         if (key != null) {
-            String raw = plugin.getConfig().getString(key, fallback);
+            String raw = fallback;
+            if ("messages.raid-warn-60".equals(key)) raw = msgRaidWarn60;
+            else if ("messages.raid-warn-30".equals(key)) raw = msgRaidWarn30;
+            else if ("messages.raid-warn-10".equals(key)) raw = msgRaidWarn10;
             try { msg = MM.deserialize(raw); } catch (Exception e) { msg = Component.text(remainingSeconds + "s left"); }
         } else {
             msg = MM.deserialize(fallback);
@@ -1389,7 +1414,7 @@ public final class RaidManager {
         Component title = MM.deserialize("<red><bold>" + remainingSeconds + "</bold></red>");
         for (UUID memberId : session.getMembers()) {
             Player p = Bukkit.getPlayer(memberId);
-            if (p == null || !p.isOnline()) continue;
+            if (p == null) continue;
             if (!p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) continue;
             p.sendMessage(msg);
             if (remainingSeconds <= 10) {
@@ -1402,7 +1427,7 @@ public final class RaidManager {
         }
         if (!session.getMembers().contains(session.getLeader())) {
             Player lp = Bukkit.getPlayer(session.getLeader());
-            if (lp != null && lp.isOnline() && lp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+            if (lp != null && lp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                 lp.sendMessage(msg);
             }
         }
@@ -1425,7 +1450,7 @@ public final class RaidManager {
         membersSnapshot.add(leaderId);
         for (UUID memberId : membersSnapshot) {
             Player p = Bukkit.getPlayer(memberId);
-            if (p == null || !p.isOnline()) continue;
+            if (p == null) continue;
             // STRICT: kill only RED world — never hub/pve (spec: timeout kills RED only)
             String w = p.getWorld().getName();
             if (!w.equalsIgnoreCase(autoStartWorld)) continue;
@@ -1437,7 +1462,7 @@ public final class RaidManager {
             final UUID victimId = memberId;
             timeoutVictims.add(victimId);
             FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
-            String killedRaw = plugin.getConfig().getString("messages.raid-timeout-killed",
+            String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw : 
                     "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
             try { p.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
             Title.Times times = Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(500));
@@ -1454,7 +1479,7 @@ public final class RaidManager {
             }
             FoliaScheduler.runLaterGlobal(plugin, () -> {
                 Player pp = Bukkit.getPlayer(victimId);
-                if (pp != null && pp.isOnline() && pp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                if (pp != null && pp.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
                     teleportToHub(pp);
                 }
             }, 60L);
@@ -1490,7 +1515,7 @@ public final class RaidManager {
 
         BossBar bar = globalBossBars.get(worldKey);
         if (bar != null) {
-            String timeLeftRaw = plugin.getConfig().getString("messages.raid-time-left", "<aqua>Time left: <white><time></white></aqua>");
+            String timeLeftRaw = msgRaidTimeLeft;
             String formatted = formatTime(remainingSeconds);
             Component name = MM.deserialize(timeLeftRaw.replace("<time>", formatted));
             bar.name(name);
@@ -1502,14 +1527,14 @@ public final class RaidManager {
             // Ensure every global member sees the bar if they're still in RED
             for (UUID memberId : session.getMembers()) {
                 Player member = Bukkit.getPlayer(memberId);
-                if (member != null && member.isOnline() && member.getWorld().getName().equalsIgnoreCase(worldKey)) {
+                if (member != null && member.getWorld().getName().equalsIgnoreCase(worldKey)) {
                     try { member.showBossBar(bar); } catch (Exception ignored) {}
                 }
             }
             // Auto-add late joiners who are physically in RED but not yet in the global map
             // (e.g., /mv tp, portal, or race between listener and tick). Keeps remaining time consistent.
             for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p == null || !p.isOnline()) continue;
+                if (p == null) continue;
                 if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
                 if (isInRaid(p.getUniqueId())) continue;
                 if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
@@ -1552,7 +1577,10 @@ public final class RaidManager {
         }
         Component msg;
         if (key != null) {
-            String raw = plugin.getConfig().getString(key, fallback);
+            String raw = fallback;
+            if ("messages.raid-warn-60".equals(key)) raw = msgRaidWarn60;
+            else if ("messages.raid-warn-30".equals(key)) raw = msgRaidWarn30;
+            else if ("messages.raid-warn-10".equals(key)) raw = msgRaidWarn10;
             try { msg = MM.deserialize(raw); } catch (Exception e) { msg = Component.text(remainingSeconds + "s left"); }
         } else {
             msg = MM.deserialize(fallback);
@@ -1562,7 +1590,7 @@ public final class RaidManager {
         // Send to all global members in RED
         for (UUID memberId : session.getMembers()) {
             Player p = Bukkit.getPlayer(memberId);
-            if (p == null || !p.isOnline()) continue;
+            if (p == null) continue;
             if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
             try {
                 p.sendMessage(msg);
@@ -1577,7 +1605,7 @@ public final class RaidManager {
         }
         // Also warn any other player physically in RED but not yet mapped (should have been auto-added above, but be safe)
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p == null || !p.isOnline()) continue;
+            if (p == null) continue;
             if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
             if (session.getMembers().contains(p.getUniqueId())) continue;
             try {
@@ -1602,7 +1630,7 @@ public final class RaidManager {
         // Include synthetic leader? It's not a real player, so ignore health kill, but add for completeness
         victims.add(session.getLeader());
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p == null || !p.isOnline()) continue;
+            if (p == null) continue;
             // STRICT world filter: only RED
             if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
             if (p.getWorld().getName().equalsIgnoreCase(hubWorld)) continue;
@@ -1617,7 +1645,7 @@ public final class RaidManager {
             // Skip synthetic global leader UUID (not a real online player)
             if (memberId.equals(session.getLeader()) && Bukkit.getPlayer(memberId) == null) continue;
             Player p = Bukkit.getPlayer(memberId);
-            if (p == null || !p.isOnline()) continue;
+            if (p == null) continue;
             // STRICT: only if still in RED at kill moment — skip if they escaped to hub/pve during iteration
             String w = p.getWorld().getName();
             if (!w.equalsIgnoreCase(worldKey)) continue;
@@ -1629,7 +1657,7 @@ public final class RaidManager {
             final UUID victimId = memberId;
             timeoutVictims.add(victimId);
             FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
-            String killedRaw = plugin.getConfig().getString("messages.raid-timeout-killed",
+            String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw : 
                     "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
             try { p.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
             Title.Times times = Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(500));
@@ -1646,7 +1674,7 @@ public final class RaidManager {
             }
             FoliaScheduler.runLaterGlobal(plugin, () -> {
                 Player pp = Bukkit.getPlayer(victimId);
-                if (pp != null && pp.isOnline() && pp.getWorld().getName().equalsIgnoreCase(worldKey)) {
+                if (pp != null && pp.getWorld().getName().equalsIgnoreCase(worldKey)) {
                     teleportToHub(pp);
                 }
             }, 60L);
@@ -1675,8 +1703,7 @@ public final class RaidManager {
                 // For now we avoid spawning to prevent duplicate drops and Folia region issues.
             }
             // Broadcast scatter start
-            String scatterRaw = plugin.getConfig().getString("messages.raid-scatter-start",
-                    "<gray>Loot from the consumed scatters across <white><world></white> — 60s to scavenge before next extraction!</gray>");
+            String scatterRaw = msgRaidScatterStart;
             Component msg = MM.deserialize(scatterRaw.replace("<world>", worldKey));
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.getWorld().getName().equalsIgnoreCase(hubWorld) || p.getWorld().getName().equalsIgnoreCase(worldKey)) {
@@ -1702,7 +1729,7 @@ public final class RaidManager {
     }
 
     private void sendSummary(RaidSession session, RaidEndReason reason) {
-        String titleRaw = plugin.getConfig().getString("messages.raid-summary-title", "<gold><bold>Raid Summary</bold></gold>");
+        String titleRaw = msgRaidSummaryTitle;
         Component title = MM.deserialize(titleRaw);
         long durationMs = System.currentTimeMillis() - session.getStartTime();
         int durationSec = (int) Math.min(durationMs / 1000, durationSeconds);

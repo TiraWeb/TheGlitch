@@ -1,5 +1,6 @@
 package com.theglitch.glitchdungeons.commands;
 
+import com.theglitch.glitchdungeons.ColorUtil;
 import com.theglitch.glitchdungeons.GlitchDungeons;
 import com.theglitch.glitchdungeons.models.DungeonRun;
 import com.theglitch.glitchdungeons.models.DungeonSlot;
@@ -18,7 +19,7 @@ public class DungeonAdminCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(colorize("&cUsage: /dungeonadmin <reload|force-start|cancel|slots|reset-cooldowns>"));
+            sender.sendMessage(ColorUtil.colorize("&cUsage: /dungeonadmin <reload|force-start|cancel|slots|reset-cooldowns>"));
             return true;
         }
 
@@ -30,7 +31,7 @@ public class DungeonAdminCommand implements CommandExecutor {
             case "slots" -> handleSlots(sender);
             case "reset-cooldowns" -> handleResetCooldowns(sender);
             default -> {
-                sender.sendMessage(colorize("&cUnknown subcommand."));
+                sender.sendMessage(ColorUtil.colorize("&cUnknown subcommand."));
                 yield true;
             }
         };
@@ -39,7 +40,7 @@ public class DungeonAdminCommand implements CommandExecutor {
     private boolean handleReload(CommandSender sender) {
         plugin.reloadConfig();
         plugin.getDungeonConfig().reload(plugin.getConfig());
-        sender.sendMessage(colorize("&aConfig reloaded."));
+        sender.sendMessage(ColorUtil.colorize("&aConfig reloaded."));
         return true;
     }
 
@@ -53,7 +54,7 @@ public class DungeonAdminCommand implements CommandExecutor {
             try {
                 tier = Integer.parseInt(args[1]);
             } catch (NumberFormatException e) {
-                player.sendMessage(colorize("&cInvalid tier."));
+                player.sendMessage(ColorUtil.colorize("&cInvalid tier."));
                 return true;
             }
         }
@@ -63,9 +64,9 @@ public class DungeonAdminCommand implements CommandExecutor {
         }
         DungeonRun run = plugin.getDungeonManager().startDungeon(party, tier);
         if (run != null) {
-            player.sendMessage(colorize("&aForce-started dungeon tier " + tier + "."));
+            player.sendMessage(ColorUtil.colorize("&aForce-started dungeon tier " + tier + "."));
         } else {
-            player.sendMessage(colorize("&cFailed to start."));
+            player.sendMessage(ColorUtil.colorize("&cFailed to start."));
         }
         return true;
     }
@@ -77,33 +78,30 @@ public class DungeonAdminCommand implements CommandExecutor {
         }
         DungeonRun run = plugin.getDungeonManager().getPlayerRun(player.getUniqueId());
         if (run == null) {
-            sender.sendMessage(colorize("&cNo active run."));
+            sender.sendMessage(ColorUtil.colorize("&cNo active run."));
             return true;
         }
         plugin.getDungeonManager().failDungeon(run, DungeonRun.FailReason.WIPE);
-        sender.sendMessage(colorize("&aDungeon cancelled."));
+        sender.sendMessage(ColorUtil.colorize("&aDungeon cancelled."));
         return true;
     }
 
     private boolean handleSlots(CommandSender sender) {
-        sender.sendMessage(colorize("&6=== Dungeon Slots ==="));
+        sender.sendMessage(ColorUtil.colorize("&6=== Dungeon Slots ==="));
         for (DungeonSlot slot : plugin.getDungeonConfig().getSlots().values()) {
             String status = slot.isOccupied() ? "&cOCCUPIED" : "&aFREE";
-            sender.sendMessage(colorize("  Slot " + slot.getId() + ": (" +
+            sender.sendMessage(ColorUtil.colorize("  Slot " + slot.getId() + ": (" +
                 slot.getCenterX() + ", " + slot.getCenterZ() + ") " + status));
         }
-        sender.sendMessage(colorize("&eFree slots: " + plugin.getDungeonManager().getFreeSlotCount() + "/" +
+        sender.sendMessage(ColorUtil.colorize("&eFree slots: " + plugin.getDungeonManager().getFreeSlotCount() + "/" +
             plugin.getDungeonConfig().getSlots().size()));
         return true;
     }
 
     private boolean handleResetCooldowns(CommandSender sender) {
         plugin.getCooldownManager().resetAll();
-        sender.sendMessage(colorize("&aAll cooldowns reset."));
+        sender.sendMessage(ColorUtil.colorize("&aAll cooldowns reset."));
         return true;
     }
 
-    private String colorize(String msg) {
-        return msg.replaceAll("&([0-9a-fk-or])", "\u00A7$1");
-    }
 }

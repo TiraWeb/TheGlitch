@@ -104,16 +104,17 @@ public final class HealthBarManager {
             BarEntry entry = it.next().getValue();
             LivingEntity target = entry.target;
             try {
+                Location targetLoc = target.getLocation();
                 if (!target.isValid() || target.isDead()
                         || !target.getWorld().isChunkLoaded(
-                                target.getLocation().getBlockX() >> 4,
-                                target.getLocation().getBlockZ() >> 4)) {
+                                targetLoc.getBlockX() >> 4,
+                                targetLoc.getBlockZ() >> 4)) {
                     entry.display.remove();
                     it.remove();
                     continue;
                 }
-                // Only teleport if moved — saves packets for stationary mobs
-                Location curLoc = barLocation(target);
+                // Only teleport if moved — saves packets for stationary mobs (reuse cached Location)
+                Location curLoc = targetLoc.add(0, target.getHeight() + plugin.offsetExtra(), 0);
                 if (entry.lastLoc == null || curLoc.distanceSquared(entry.lastLoc) > MOVE_THRESHOLD_SQ) {
                     entry.display.teleport(curLoc);
                     entry.lastLoc = curLoc;

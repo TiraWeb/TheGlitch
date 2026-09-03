@@ -174,8 +174,15 @@ public final class ExtractionMarkers {
     }
 
     private void spawnParticles() {
+        // Cache World lookups per tick — multiple points share the same world.
+        java.util.Map<String, World> worldCache = new java.util.HashMap<>(4);
         for (ActivePoint entry : active) {
-            World world = Bukkit.getWorld(entry.point().world());
+            String worldName = entry.point().world();
+            World world = worldCache.get(worldName);
+            if (world == null && !worldCache.containsKey(worldName)) {
+                world = Bukkit.getWorld(worldName);
+                worldCache.put(worldName, world);
+            }
             if (world == null || world.getPlayers().isEmpty()) continue;
             double x = entry.point().x() + 0.5;
             double z = entry.point().z() + 0.5;
