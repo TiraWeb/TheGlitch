@@ -120,6 +120,19 @@ public final class RaidListener implements Listener {
         Player player = event.getPlayer();
         FoliaScheduler.runLaterGlobal(plugin, () -> {
             if (!player.isOnline()) return;
+            // Disconnect-cancelled raid (or raid lost while away, e.g. restart):
+            // never wake up in the Red Zone — reroute to hub with an explanation.
+            boolean cancelled = manager.takeDisconnectCancelled(player);
+            String spawnWorld = player.getWorld().getName();
+            if (spawnWorld.equalsIgnoreCase(manager.getAutoStartWorld())
+                    && (cancelled || !manager.isInRaid(player.getUniqueId()))) {
+                manager.teleportToHub(player);
+                String raw = cancelled ? manager.getDisconnectCancelledMessage() : manager.getInterruptedMessage();
+                try { player.sendMessage(MM.deserialize(raw)); } catch (Exception ignored) {}
+                plugin.getLogger().info("Join reroute to hub for " + player.getName()
+                        + " (cancelled=" + cancelled + ")");
+                return;
+            }
             String world = player.getWorld().getName();
             if (world.equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
                 RaidSession global = manager.findActiveGlobalSession(world);
@@ -268,15 +281,36 @@ public final class RaidListener implements Listener {
         if (session == null) {
             return;
         }
-        // Persist the remaining solo timer (solo-new mode) so relogging cannot reset it
-        if (!manager.isSessionGlobal(session)) {
-            manager.storeSoloRaidEnd(player.getUniqueId(), session.getEndTime());
+        String raidWorld = manager.getAutoStartWorld();
+        if (!player.getWorld().getName().equalsIgnoreCase(raidWorld)) {
+            // Quit outside the raid world (e.g. hub) — keep the old resume behavior
+            if (!manager.isSessionGlobal(session)) {
+                manager.storeSoloRaidEnd(player.getUniqueId(), session.getEndTime());
+            }
+            if (session.getLeader().equals(player.getUniqueId())) {
+                manager.endRaid(player.getUniqueId(), RaidEndReason.LEADER_QUIT);
+            } else {
+                manager.removeMember(player.getUniqueId());
+            }
+            return;
         }
-        if (session.getLeader().equals(player.getUniqueId())) {
-            manager.endRaid(player.getUniqueId(), RaidEndReason.LEADER_QUIT);
+        // Disconnect INSIDE the raid world = combat-log protection: the raid is
+        // cancelled outright (loot lost, no payout) and can never be resumed.
+        // The PDC flag reroutes the player to the hub with an explanation on join.
+        manager.takeSoloRaidEnd(player.getUniqueId()); // drop any stored timer
+        manager.markDisconnectCancelled(player);
+        if (manager.isSessionGlobal(session) || !session.getLeader().equals(player.getUniqueId())) {
+            // Global sessions persist for everyone else; solo non-leaders just leave.
+            // endRaid(DISCONNECT) detaches a single player from a global session.
+            if (manager.isSessionGlobal(session)) {
+                manager.endRaid(player.getUniqueId(), RaidEndReason.DISCONNECT);
+            } else {
+                manager.removeMember(player.getUniqueId());
+            }
         } else {
-            manager.removeMember(player.getUniqueId());
+            manager.endRaid(player.getUniqueId(), RaidEndReason.DISCONNECT);
         }
+        plugin.getLogger().info("Raid cancelled for " + player.getName() + " (disconnected in " + raidWorld + ")");
     }
 
     // ---- Loot accounting ----

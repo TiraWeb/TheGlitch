@@ -15,5 +15,7 @@ public enum RaidEndReason {
     /** Admin-forced end (via /raidadmin). */
     ADMIN,
     /** Leader quit the server. */
-    LEADER_QUIT
+    LEADER_QUIT,
+    /** Player disconnected while inside the raid world — raid cancelled, loot lost. */
+    DISCONNECT
 }

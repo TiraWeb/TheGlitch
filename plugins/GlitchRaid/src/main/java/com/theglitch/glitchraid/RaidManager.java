@@ -11,6 +11,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
@@ -45,6 +46,8 @@ public final class RaidManager {
     private final Map<UUID, Long> soloRaidEnds = new ConcurrentHashMap<>();
     // PDC tag marking item entities/stacks already counted for loot (anti drop/re-pickup farming)
     private final NamespacedKey lootCountedKey;
+    // PDC flag marking a player whose raid was cancelled by disconnecting in the raid world
+    private final NamespacedKey disconnectFlagKey;
 
     // --- Global session support: ONE shared 30m extraction per world (not per player) ---
     // Global auto-cycle is 31m (30m extraction + 1m scatter buffer). All players who
@@ -76,12 +79,17 @@ public final class RaidManager {
     private volatile String msgRaidWarn10 = "<red><bold>10 seconds!</bold> <gray>The Glitch closes — extract or die!</gray></red>";
     private volatile String msgRaidScatterStart = "<gray>Loot from the consumed scatters across <white><world></white> — 60s to scavenge before next extraction!</gray>";
     private volatile String msgLootAdded = "<gold>+<amount> loot value</gold>";
+    // Shown on join after a disconnect-cancelled raid (hub reroute)
+    private volatile String msgRaidCancelledDisconnect = "<red><bold>Raid cancelled.</bold> <gray>You disconnected in the Red Zone — raid loot was lost. Waking up back in the Hub.</gray></red>";
+    // Shown on join when spawning in the raid world with no live raid (e.g. server restarted mid-raid)
+    private volatile String msgRaidInterrupted = "<yellow><bold>Raid interrupted.</bold> <gray>The raid ended while you were away — waking up back in the Hub.</gray></yellow>";
     // Raw timeout-killed template (null when missing) — call sites keep their own fallbacks
     private volatile String msgRaidTimeoutKilledRaw = null;
 
     public RaidManager(GlitchRaid plugin) {
         this.plugin = plugin;
         this.lootCountedKey = new NamespacedKey(plugin, "raid_loot_counted");
+        this.disconnectFlagKey = new NamespacedKey(plugin, "raid_disconnect_cancelled");
         cacheConfig();
         this.partyManager = new PartyManager(plugin);
     }
@@ -144,6 +152,8 @@ public final class RaidManager {
             msgRaidWarn10 = plugin.getConfig().getString("messages.raid-warn-10", msgRaidWarn10);
             msgRaidScatterStart = plugin.getConfig().getString("messages.raid-scatter-start", msgRaidScatterStart);
             msgLootAdded = plugin.getConfig().getString("messages.loot-added", msgLootAdded);
+            msgRaidCancelledDisconnect = plugin.getConfig().getString("messages.raid-cancelled-disconnect", msgRaidCancelledDisconnect);
+            msgRaidInterrupted = plugin.getConfig().getString("messages.raid-interrupted", msgRaidInterrupted);
             msgRaidTimeoutKilledRaw = plugin.getConfig().getString("messages.raid-timeout-killed", null);
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to cache GlitchRaid config: " + e.getMessage());
@@ -218,6 +228,28 @@ public final class RaidManager {
     /** PDC key used to tag item entities/stacks already counted toward raid loot. */
     public NamespacedKey getLootCountedKey() {
         return lootCountedKey;
+    }
+
+    public String getDisconnectCancelledMessage() { return msgRaidCancelledDisconnect; }
+
+    public String getInterruptedMessage() { return msgRaidInterrupted; }
+
+    /** Marks the player as raid-cancelled-by-disconnect (PDC flag, survives restarts). */
+    public void markDisconnectCancelled(Player player) {
+        try {
+            player.getPersistentDataContainer().set(disconnectFlagKey, PersistentDataType.BYTE, (byte) 1);
+        } catch (Exception ignored) {}
+    }
+
+    /** Consumes the disconnect-cancelled flag. Returns true if it was set. */
+    public boolean takeDisconnectCancelled(Player player) {
+        try {
+            if (player.getPersistentDataContainer().has(disconnectFlagKey, PersistentDataType.BYTE)) {
+                player.getPersistentDataContainer().remove(disconnectFlagKey);
+                return true;
+            }
+        } catch (Exception ignored) {}
+        return false;
     }
 
     // ---- Extraction markers (prevents party pull re-abducting extracted players) ----
@@ -924,8 +956,8 @@ public final class RaidManager {
                 endGlobalRaid(worldKey, reason);
                 return;
             }
-            // Manual/leader_quit/admin in global: just detach single player, don't collapse global
-            if (reason == RaidEndReason.LEADER_QUIT || reason == RaidEndReason.MANUAL || reason == RaidEndReason.ADMIN) {
+            // Manual/leader_quit/admin/disconnect in global: just detach single player, don't collapse global
+            if (reason == RaidEndReason.LEADER_QUIT || reason == RaidEndReason.MANUAL || reason == RaidEndReason.ADMIN || reason == RaidEndReason.DISCONNECT) {
                 session.getMembers().remove(playerUuid);
                 activeRaids.remove(playerUuid);
                 BossBar gBar = globalBossBars.get(normalizeWorldKey(autoStartWorld));
