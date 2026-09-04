@@ -187,6 +187,119 @@ def glyph_title_rune():
     return img
 
 
+# ------------------------------------------------------- rank badge icons ---
+# 16x16, used as font glyphs in front of LuckPerms rank prefixes (E050-E058).
+PALE_ICE = (190, 242, 255, 255)
+DARK_VOID = (20, 10, 30, 255)
+GRAY_BADGE = (105, 105, 116, 255)
+
+
+def rank_member():
+    """Gray rounded badge (default rank, no frills)."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((3, 4, 12, 13), radius=3, fill=GRAY_BADGE)
+    d.line([(5, 5), (10, 5)], fill=lighter(GRAY_BADGE, 60))
+    return img
+
+
+def rank_wisp():
+    """Pale wisp-flame."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    d.polygon([(8, 1), (11, 6), (12, 9), (11, 12), (8, 14), (5, 12),
+               (4, 9), (5, 6)], fill=AQUA)
+    d.polygon([(8, 5), (10, 8), (9, 11), (8, 12), (7, 11), (6, 8)],
+              fill=PALE_ICE)
+    return img
+
+
+def rank_stalker():
+    """Violet watcher eye."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    d.ellipse((2, 5, 13, 10), fill=VIOLET)
+    d.ellipse((5, 5, 10, 10), fill=DARK_VOID)
+    d.rectangle((7, 6, 8, 9), fill=FUCHSIA)
+    px(d, 6, 6, (255, 255, 255, 255))
+    return img
+
+
+def rank_sentinel():
+    """Amber radiant diamond."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    d.polygon([(8, 1), (13, 6), (8, 15), (3, 6)], fill=AMBER)
+    d.line([(8, 1), (8, 15)], fill=lighter(AMBER, 70))
+    d.line([(3, 6), (13, 6)], fill=lighter(AMBER, 40))
+    for sx, sy in [(4, 3), (12, 3)]:
+        px(d, sx, sy, (255, 250, 235, 255))
+    return img
+
+
+def rank_helper():
+    """Blue kite shield with a pale cross."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    d.polygon([(4, 2), (11, 2), (12, 3), (12, 8), (11, 11), (8, 13), (7, 13),
+               (4, 11), (3, 8), (3, 3)], fill=BLUE)
+    d.line([(4, 2), (11, 2)], fill=lighter(BLUE, 70))
+    d.line([(7, 4), (7, 11)], fill=(225, 240, 255, 255))
+    d.line([(5, 7), (10, 7)], fill=(225, 240, 255, 255))
+    return img
+
+
+def rank_dev():
+    """Magenta cog."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    d.rectangle((5, 5, 10, 10), fill=FUCHSIA)
+    for x0, y0, x1, y1 in [(6, 2, 9, 4), (6, 11, 9, 13), (2, 6, 4, 9),
+                           (11, 6, 13, 9)]:
+        d.rectangle((x0, y0, x1, y1), fill=FUCHSIA)
+    d.rectangle((6, 6, 9, 9), fill=DARK_VOID)
+    px(d, 7, 7, (255, 255, 255, 255))
+    return img
+
+
+def rank_moderator():
+    """Emerald shield with a check."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    d.polygon([(4, 2), (11, 2), (12, 3), (12, 8), (11, 11), (8, 13), (7, 13),
+               (4, 11), (3, 8), (3, 3)], fill=EMERALD)
+    d.line([(4, 2), (11, 2)], fill=lighter(EMERALD, 70))
+    d.line([(5, 8), (7, 10), (11, 4)], fill=(240, 255, 245, 255), width=2)
+    return img
+
+
+def rank_admin():
+    """Crimson five-point star."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    pts = []
+    for i in range(10):
+        r = 7 if i % 2 == 0 else 3
+        a = -math.pi / 2 + i * math.pi / 5
+        pts.append((8 + r * math.cos(a), 8 + r * math.sin(a)))
+    d.polygon(pts, fill=CRIMSON)
+    px(d, 8, 8, lighter(CRIMSON, 90))
+    return img
+
+
+def rank_owner():
+    """Gold crown with crimson gems."""
+    img = canvas()
+    d = ImageDraw.Draw(img)
+    d.polygon([(2, 12), (2, 5), (5, 8), (8, 3), (11, 8), (14, 5), (14, 12)],
+              fill=GOLD)
+    d.rectangle((2, 12, 14, 14), fill=AMBER)
+    for gx in (4, 8, 12):
+        px(d, gx, 13, CRIMSON)
+    px(d, 8, 6, (255, 250, 235, 255))
+    return img
+
+
 # --------------------------------------------------- vanilla chest window ---
 def chest_generic_54():
     """Themed override for container/generic_54.png (256x256).
@@ -298,6 +411,15 @@ def main():
     save(glyph_spark_empty(), f"{g}/star_empty.png")
     save(glyph_divider(), f"{g}/divider.png")
     save(glyph_title_rune(), f"{g}/title_rune.png")
+    save(rank_member(), f"{g}/rank_member.png")
+    save(rank_wisp(), f"{g}/rank_wisp.png")
+    save(rank_stalker(), f"{g}/rank_stalker.png")
+    save(rank_sentinel(), f"{g}/rank_sentinel.png")
+    save(rank_helper(), f"{g}/rank_helper.png")
+    save(rank_dev(), f"{g}/rank_dev.png")
+    save(rank_moderator(), f"{g}/rank_moderator.png")
+    save(rank_admin(), f"{g}/rank_admin.png")
+    save(rank_owner(), f"{g}/rank_owner.png")
     chest = chest_generic_54()
     save(chest, "gui/sprites/container/generic_54.png")
     save(chest.copy(), "gui/container/generic_54.png")  # legacy path fallback

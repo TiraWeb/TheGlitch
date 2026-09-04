@@ -25,6 +25,17 @@ die()  { echo -e "\033[1;31m[ranks]\033[0m $*" >&2; exit 1; }
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 
+# Badge icons (PUA chars, decoded by bash at runtime)
+I_MEMBER=$'\uE050'
+I_WISP=$'\uE051'
+I_STALKER=$'\uE052'
+I_SENTINEL=$'\uE053'
+I_HELPER=$'\uE054'
+I_DEV=$'\uE055'
+I_MODERATOR=$'\uE056'
+I_ADMIN=$'\uE057'
+I_OWNER=$'\uE058'
+
 # --- preflight -------------------------------------------------------------
 log "Waiting for the server console (RCON)..."
 for i in {1..30}; do
@@ -63,12 +74,15 @@ mc "lp group owner parent add admin"
 
 # --- prefixes (priority = weight; &l = bold glow look) ---------------------
 log "Setting prefixes"
-mc "lp group wisp meta setprefix 20 \"&f&l[Wisp] \""
-mc "lp group stalker meta setprefix 30 \"&5&l[Stalker] \""
-mc "lp group sentinel meta setprefix 40 \"&6&l[Sentinel] \""
-mc "lp group helper meta setprefix 400 \"&9&l[Helper] \""
-mc "lp group dev meta setprefix 600 \"&d&l[Dev] \""
-mc "lp group owner meta setprefix 1100 \"&4&l[Owner] \""
+mc "lp group wisp meta setprefix 20 \"$I_WISP &f&l[WISP] \""
+mc "lp group stalker meta setprefix 30 \"$I_STALKER &5&l[STALKER] \""
+mc "lp group sentinel meta setprefix 40 \"$I_SENTINEL &6&l[SENTINEL] \""
+mc "lp group helper meta setprefix 400 \"$I_HELPER &9&l[HELPER] \""
+mc "lp group dev meta setprefix 600 \"$I_DEV &d&l[DEV] \""
+mc "lp group owner meta setprefix 1100 \"$I_OWNER &e&l[OWNER] \""
+mc "lp group default meta setprefix 1 \"$I_MEMBER &7[Member] \""
+mc "lp group moderator meta setprefix 500 \"$I_MODERATOR &a&l[MOD] \""
+mc "lp group admin meta setprefix 1000 \"$I_ADMIN &c&l[ADMIN] \""
 
 # --- TAB sorting membership (TAB groups.yml GROUPS list matches these) -----
 log "Setting TAB group membership flags"
