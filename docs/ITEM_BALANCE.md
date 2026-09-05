@@ -46,9 +46,10 @@ deaths, and the 31m extraction cycle):
 
 Vault was the weakest keyed container per shard spent; adding a 5% legendary
 rift roll makes it the best keys-per-risk below Rift Vault. Scatter density
-changes shift global supply: rift_vault scatter count 10 → 6 per cycle
-(epic/legendary influx slowed ~40%), debris/cache/vault counts unchanged
-(145 → 141 total per cycle, keeps the 2026-08-24 density feel).
+2026-09-05: 416/cycle (debris 240, cache 120, vault 48, rift_vault 8) —
+cheap-heavy with stratified grid spread, ~1 per 37 chunks (~95 blocks apart
+on average). Red world should feel alive; epic/legendary influx still gated
+by keys (cache/vault/rift_vault need keys, debris is free).
 
 ### Identify economics (fee vs sell)
 

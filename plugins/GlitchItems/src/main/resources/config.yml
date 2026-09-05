@@ -258,12 +258,17 @@ containers:
 # Fixed-rate timer is disabled when GlitchStash is present (single 31m source of truth) —
 # interval-minutes is fallback only if Stash is absent.
 #
-# Density 2026-08-24: increased per operator request "2/3 per 5-10 chunks" —
-# previous 36 total (~1/430 chunks) was too sparse. New 145 total (~1/107 chunks)
-# is ~4x denser, playable without TPS collapse (naive 2 per 5 chunks would be 6250).
+# Density 2026-09-05: operator reports red world feels empty — 141 total
+# (~1/111 chunks) clumps with pure-random picks. New 416 total (~1/37 chunks,
+# ~95 blocks apart on average): cheap-heavy (debris 58%, cache 29%, vault 11%,
+# rift 2%) + stratified grid spread (even-spread) so coverage is uniform.
 # Config-driven — edit counts to retune without code change.
 scatter:
   enabled: true
+  # Stratified placement: the square is dealt into grid cells without replacement
+  # (one container per cell, jittered inside) instead of pure-random x,z which
+  # clumps. Set false to restore legacy pure-random picks.
+  even-spread: true
   enabled-worlds: [glitch_red]
   interval-minutes: 31
   clear-previous: true
@@ -277,10 +282,10 @@ scatter:
   max-attempts-per-container: 50
   persist-file: "scattered.json"
   counts:
-    debris: 70
-    cache: 40
-    vault: 25
-    rift_vault: 6
+    debris: 240
+    cache: 120
+    vault: 48
+    rift_vault: 8
   messages:
     scatter-broadcast: "<gray>Glitch energy coalesces — <white>{total}</white> caches scattered across the Red World."
     broadcast-enabled: true

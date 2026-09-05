@@ -49,10 +49,10 @@ import java.util.logging.Level;
  *       entry: if the block is still a Glitch container ({@link ContainerManager#typeOf(Block)}),
  *       clear its PDC and set to {@link Material#AIR}. Removal is scheduled on
  *       the owning region on Folia.</li>
- *   <li>Place new loot sparse — {@code 1 per 5-10 chunks} interpreted as
- *       {@code ~36 total} (debris 18, cache 10, vault 6, rift_vault 2) to avoid
- *       flooding a 2000x2000 border (15625 chunks). Counts are config-driven;
- *       falls back to {@code chunks-per-container} density if counts empty.</li>
+  *   <li>Place new loot sparse — counts are config-driven (2026-09-05: 416 total,
+  *       cheap-heavy); placement is stratified (shuffled queue dealt into grid
+  *       cells without replacement) for uniform coverage. Falls back to
+  *       {@code chunks-per-container} density if counts empty.</li>
  *   <li>Only on top of solid ground — target block must be {@code AIR}, block
  *       above must be {@code AIR}, ground must be {@code isSolid()}, not
  *       {@code LEAVES}/{@code LOGS}, not liquid, not already a container, and
@@ -118,13 +118,14 @@ public final class ScatterManager {
     private static final Map<String, Integer> DEFAULT_COUNTS;
     static {
         Map<String, Integer> m = new LinkedHashMap<>();
-        // 2026-08-24: increased density per operator request "2/3 per 5-10 chunks" —
-        // previous 36 total (~1/430 chunks) was too sparse. New 145 total (~1/107 chunks)
-        // is ~4x denser, playable without TPS collapse (2 per 5 chunks naive would be 6250).
-        m.put("debris", 70);
-        m.put("cache", 40);
-        m.put("vault", 25);
-        m.put("rift_vault", 10);
+        // 2026-09-05: red world felt empty — 141 total (~1/111 chunks) clumps with
+        // pure-random picks. New 416 total (~1/37 chunks, ~95 blocks apart avg):
+        // cheap-heavy (debris 58%, cache 29%, vault 11%, rift 2%) + stratified
+        // grid spread (see placeNew) for uniform coverage.
+        m.put("debris", 240);
+        m.put("cache", 120);
+        m.put("vault", 48);
+        m.put("rift_vault", 8);
         DEFAULT_COUNTS = Collections.unmodifiableMap(m);
     }
 
@@ -142,6 +143,7 @@ public final class ScatterManager {
     private volatile int centerZ = 0;
     private volatile int chunksPerContainer = DEFAULT_CHUNKS_PER_CONTAINER;
     private volatile int maxAttemptsPerContainer = DEFAULT_MAX_ATTEMPTS;
+    private volatile boolean evenSpread = true;
     private volatile Map<String, Integer> counts = new LinkedHashMap<>(DEFAULT_COUNTS);
     private volatile String broadcastMessage = "<gray>Glitch energy coalesces — <white>{total}</white> caches scattered across the Red World.";
     private volatile boolean broadcastEnabled = true;
@@ -225,6 +227,7 @@ public final class ScatterManager {
 
         clearPrevious = sec.getBoolean("clear-previous", DEFAULT_CLEAR_PREVIOUS);
         onTopOnly = sec.getBoolean("on-top-only", DEFAULT_ON_TOP_ONLY);
+        evenSpread = sec.getBoolean("even-spread", true);
 
         int radius = sec.getInt("border-radius", DEFAULT_BORDER_RADIUS);
         if (radius < 100 || radius > 10000) {
@@ -296,7 +299,7 @@ public final class ScatterManager {
                 + " interval=" + intervalMinutes + "m worlds=" + enabledWorlds
                 + " center=(" + centerX + "," + centerZ + ") borderRadius=" + borderRadius
                 + " clearPrevious=" + clearPrevious
-                + " onTopOnly=" + onTopOnly + " counts=" + counts
+                + " onTopOnly=" + onTopOnly + " evenSpread=" + evenSpread + " counts=" + counts
                 + " maxAttempts=" + maxAttemptsPerContainer + ".");
     }
 
@@ -306,6 +309,7 @@ public final class ScatterManager {
         enabledWorlds = Set.of("glitch_red");
         clearPrevious = DEFAULT_CLEAR_PREVIOUS;
         onTopOnly = DEFAULT_ON_TOP_ONLY;
+        evenSpread = true;
         borderRadius = DEFAULT_BORDER_RADIUS;
         centerX = 0;
         centerZ = 0;
@@ -746,29 +750,59 @@ public final class ScatterManager {
 
         ThreadLocalRandom rand = ThreadLocalRandom.current();
 
+        // One shuffled queue so tiers intermix across the map instead of each
+        // type filling its own corner. Unknown types are skipped up front.
+        List<String> queue = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : toPlace.entrySet()) {
             String typeId = entry.getKey();
             int needed = entry.getValue();
             if (needed <= 0) continue;
-            ContainerManager.ContainerType type = containers.getType(typeId);
-            if (type == null) {
+            if (containers.getType(typeId) == null) {
                 plugin.getLogger().warning("[Scatter] Skipping unknown container type '" + typeId + "' — no ContainerType found.");
                 continue;
             }
-            int placedForType = 0;
-            int attempts = 0;
-            int maxAttempts = needed * Math.max(1, maxAttemptsPerContainer);
-            // Also cap total attempts to avoid infinite loop on bad terrain
-            while (placedForType < needed && attempts < maxAttempts) {
-                attempts++;
-                // Pick random x,z within border square
-                int x = centerX + rand.nextInt(-borderRadius, borderRadius + 1);
-                int z = centerZ + rand.nextInt(-borderRadius, borderRadius + 1);
+            for (int i = 0; i < needed; i++) queue.add(typeId);
+        }
+        Collections.shuffle(queue, rand);
 
-                // Optional: enforce sparse stride? The spec "every 5-10 chunks" suggests
-                // we could quantize to chunk centers every N chunks, but random within
-                // border already yields sparse (≈36 over 4000x4000 area).
-                // We keep pure random for simplicity + natural spread.
+        // Stratified grid: the square is dealt into cells without replacement
+        // (one container per cell, jittered inside) so coverage is uniform.
+        // Pure-random x,z clumps — several finds in one spot, deserts elsewhere.
+        int grid = Math.max(1, (int) Math.ceil(Math.sqrt(Math.max(1, queue.size()))));
+        int cellSize = Math.max(1, (borderRadius * 2) / grid);
+        List<Integer> cells = new ArrayList<>(grid * grid);
+        for (int i = 0; i < grid * grid; i++) cells.add(i);
+        Collections.shuffle(cells, rand);
+        int cursor = 0;
+
+        Map<String, int[]> placedByType = new LinkedHashMap<>(); // type -> [placed, needed]
+        for (String typeId : toPlace.keySet()) {
+            Integer need = toPlace.get(typeId);
+            if (need != null && need > 0 && containers.getType(typeId) != null) {
+                placedByType.put(typeId, new int[]{0, need});
+            }
+        }
+
+        for (String typeId : queue) {
+            ContainerManager.ContainerType type = containers.getType(typeId);
+            if (type == null) continue;
+            int maxAttempts = Math.max(1, maxAttemptsPerContainer);
+            // Cap total attempts to avoid infinite loop on bad terrain
+            boolean done = false;
+            for (int attempt = 0; attempt < maxAttempts && !done; attempt++) {
+                // Pick x,z: distinct grid cell per attempt, or legacy pure-random
+                int x;
+                int z;
+                if (evenSpread) {
+                    int cellIdx = cells.get(cursor++ % cells.size());
+                    int cellX = cellIdx % grid;
+                    int cellZ = cellIdx / grid;
+                    x = centerX - borderRadius + cellX * cellSize + rand.nextInt(cellSize);
+                    z = centerZ - borderRadius + cellZ * cellSize + rand.nextInt(cellSize);
+                } else {
+                    x = centerX + rand.nextInt(-borderRadius, borderRadius + 1);
+                    z = centerZ + rand.nextInt(-borderRadius, borderRadius + 1);
+                }
 
                 // Chunk handling: ensure chunk is at least considered loaded or loadable
                 int cx = x >> 4;
@@ -876,16 +910,22 @@ public final class ScatterManager {
                 }
 
                 if (placed) {
-                    placedForType++;
+                    done = true;
                     totalPlaced++;
+                    int[] tally = placedByType.get(typeId);
+                    if (tally != null) tally[0]++;
                     newlyPlaced.add(new ScatteredPos(world.getName(), x, targetY, z, type.name(), System.currentTimeMillis()));
                 }
             }
+        }
 
-            if (placedForType < needed) {
-                plugin.getLogger().warning("[Scatter] Could only place " + placedForType + "/" + needed + " of type '" + type.name() + "' after " + attempts + " attempts (terrain/worldguard may be dense).");
+        for (Map.Entry<String, int[]> tally : placedByType.entrySet()) {
+            int got = tally.getValue()[0];
+            int want = tally.getValue()[1];
+            if (got < want) {
+                plugin.getLogger().warning("[Scatter] Could only place " + got + "/" + want + " of type '" + tally.getKey() + "' (terrain/worldguard may be dense).");
             } else {
-                plugin.getLogger().info("[Scatter] Placed " + placedForType + " x '" + type.name() + "' in " + attempts + " attempts.");
+                plugin.getLogger().info("[Scatter] Placed " + got + " x '" + tally.getKey() + "'.");
             }
         }
 
