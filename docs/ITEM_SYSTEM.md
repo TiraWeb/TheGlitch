@@ -62,13 +62,16 @@ item for the endgame economy.
 
 ### Gear archetypes & attributes
 
-**Weapons — 3 archetypes** (arcane flavor, no guns):
+**Weapons — 6 archetypes** (arcane flavor, no guns):
 
 | Archetype | Vanilla base | Role |
 |---|---|---|
 | **Blade** | sword | balanced, standard DPS |
 | **Greatblade** | axe | slow, heavy, knockback |
 | **Arcane Staff** | wand/trident | ranged arcane bolt |
+| **Miser's Maw** | hoe | greed cleaver — +7%/stack Residual Glitch damage (lingering pays) |
+| **Veil Tether** | rod→crossbow→bow→trident→mace | control whip — yanks victims in, +20% beyond 6 blocks |
+| **The Glitch That Dreams** | mace (always) | hollow relic — 30-45% dmg, lifesteal 10 + execute 30 + frost 3, blood price 1 HP/hit, 12% reality tear (levitate+wither), 25% kill-spits-rift; craft-only ritual, never rolls from rifts |
 
 Base material scales with rarity (wood/stone/iron/diamond/netherite). **Attributes** (special
 effects — the "boredom killer" vs Ravengard's 2-stat weapons). Pool expanded
@@ -247,6 +250,8 @@ it draws more of the anomaly (better loot) while eroding your grip on reality (m
 | Ward Salve (2026-09-02) | 3 Rune Fragment + 1 Aether Shard | Ward Salve (Resistance I + Absorption I, 20s) |
 | Aether Tonic (2026-09-02) | 2 Aether Shard + 1 Rift Crystal | Aether Tonic (Speed II + Absorption II, 30s) |
 | Base Weapon (Uncommon) | 3 Rune Fragment + 1 Rift Crystal | Uncommon weapon (random Resonance) |
+| Base Maw / Tether (Uncommon) | 3 Rune Fragment + 1 Rift Crystal | Uncommon Miser's Maw or Veil Tether (random Resonance) |
+| The Glitch That Dreams (Legendary) | 3 Legendary Relic + 8 Void Essence + 16 Rift Crystal + 1 Void Infusion | Legendary Hollow relic (Hollow-locked, max stars, triple attribute) — never from rifts |
 | Targeted Resonance Weapon | base + 1 Aether Shard of chosen Resonance | Weapon locked to chosen Resonance |
 | Rift Attunement Pack | 5 Rift Crystal + 2 Aether Shard | Free identify of ONE rift, any rarity |
 | Vault Key | 3 Rift Crystal + 1 Void Essence | Vault Key |
@@ -302,7 +307,7 @@ Rough order:
 
 1. **Item base plugin + resource pack** — ✅ Oraxen built from source + deployed (setup-oraxen.sh)
 2. **Material + key + consumable items** — ✅ 20 items (5+4+5+6) as Oraxen configs (server/plugins/Oraxen/): 5 materials, 4 keys, 5 Unstable Rifts, 6 alchemy — deploy via setup-oraxen-items.sh
-3. **Source V1:** rarity tiers + stat-roll engine, 3 weapon archetypes, 4 armor pieces, attributes, `/identify`, Resonance math, and Residual Glitch source exist. Build and runtime testing are pending.
+3. **Source V1:** rarity tiers + stat-roll engine, 6 weapon archetypes, 4 armor pieces, attributes, `/identify`, Resonance math, and Residual Glitch source exist. Build and runtime testing are pending.
 4. Rift drops (mob loot tables emit rifts) — DONE in repo (2026-08-03, all T2-T4 tables); Identifier NPC flow — not complete.
 5. Resonance tags (MythicMobs metadata) + complete gear integration — DONE in repo (2026-08-03, ten mobs); live test pending.
 6. Residual Glitch timer/effects + extraction multiplier — source and payout hook exist; consumers DONE (2026-08-06 → 2026-08-10): identify loot luck (star-luck per roll, rarity surge per stack), elite hunt at 5+ stacks (console `mm spawn`, configurable), container loot luck (per-roll rarity surge + surge drop). Aggro-scaling consumer still open.

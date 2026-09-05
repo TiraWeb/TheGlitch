@@ -44,6 +44,18 @@ public final class GearManager {
     private final Map<String, Map<Rarity, Integer>> armorAttrPool = new LinkedHashMap<>();
     private double[] arcaneStaffAttackBonus = new double[0];
     private double[] greatbladeKnockbackBonus = new double[0];
+    private int misersMawGreedPerStack = 7;
+    private int tetherFarBonus = 20;
+    private int tetherFarDistance = 6;
+    private int tetherCooldownSeconds = 3;
+    private double tetherPullStrength = 0.9;
+    private int dreamDamageMin = 30;
+    private int dreamDamageMax = 45;
+    private int dreamTearChance = 12;
+    private int dreamRiftChance = 25;
+    private double dreamSelfDamage = 1.0;
+    private int dreamSellBase = 6500;
+    private int dreamSellStar = 500;
     private int voidInfusionMaxBoost = 4;
     private int weaponResonanceBase = 25;
     private int armorReductionPerPiece = 10;
@@ -120,6 +132,21 @@ public final class GearManager {
         loadAttrPool("attributes.armor", armorAttrPool);
         arcaneStaffAttackBonus = toDoubleArray(plugin.getConfig().getDoubleList("archetype.arcane-staff-attack-bonus"));
         greatbladeKnockbackBonus = toDoubleArray(plugin.getConfig().getDoubleList("archetype.greatblade-knockback-bonus"));
+        misersMawGreedPerStack = plugin.getConfig().getInt("archetype.misers-maw-greed-per-stack", 7);
+        tetherFarBonus = plugin.getConfig().getInt("archetype.veil-tether-far-bonus", 20);
+        tetherFarDistance = plugin.getConfig().getInt("archetype.veil-tether-far-distance", 6);
+        tetherCooldownSeconds = plugin.getConfig().getInt("archetype.veil-tether-cooldown-seconds", 3);
+        tetherPullStrength = plugin.getConfig().getDouble("archetype.veil-tether-pull-strength", 0.9);
+        java.util.List<Integer> dreamDmg = plugin.getConfig().getIntegerList("archetype.dream-eater-damage");
+        if (dreamDmg.size() >= 2) {
+            dreamDamageMin = dreamDmg.get(0);
+            dreamDamageMax = dreamDmg.get(1);
+        }
+        dreamTearChance = plugin.getConfig().getInt("archetype.dream-eater-tear-chance", 12);
+        dreamRiftChance = plugin.getConfig().getInt("archetype.dream-eater-rift-chance", 25);
+        dreamSelfDamage = plugin.getConfig().getDouble("archetype.dream-eater-self-damage", 1.0);
+        dreamSellBase = plugin.getConfig().getInt("dream-eater-sell.base", 6500);
+        dreamSellStar = plugin.getConfig().getInt("dream-eater-sell.star-bonus", 500);
         voidInfusionMaxBoost = plugin.getConfig().getInt("void-infusion.max-boost", 4);
         weaponResonanceBase = plugin.getConfig().getInt("resonance.weapon-damage-vs-matching", 25);
         armorReductionPerPiece = plugin.getConfig().getInt("resonance.armor-reduction-per-piece", 10);
@@ -199,6 +226,11 @@ public final class GearManager {
      */
     public int sellValue(GearRolls rolls) {
         if (rolls == null || rolls.rarity == null) return 0;
+        // Hollow relic prices itself — always the most expensive item by design.
+        if (rolls.type == GearType.DREAM_EATER) {
+            int stars = Math.max(0, rolls.starsPrimary) + Math.max(0, rolls.starsSpeed) + Math.max(0, rolls.starsHp);
+            return dreamSellBase + stars * dreamSellStar;
+        }
         int base = sellValues.getOrDefault(rolls.rarity, 0);
         int perStar = starSellBonus.getOrDefault(rolls.rarity, 0);
         int stars = Math.max(0, rolls.starsPrimary) + Math.max(0, rolls.starsSpeed) + Math.max(0, rolls.starsHp);
@@ -218,6 +250,17 @@ public final class GearManager {
     public int getArmorPointsReductionPerPoint() { return armorPointsReductionPerPoint; }
     public int getArmorPointsCap() { return armorPointsCap; }
     public int getArmorAttributeReductionCap() { return armorAttributeReductionCap; }
+
+    public int miserGreedPerStack() { return misersMawGreedPerStack; }
+    public int tetherFarBonus() { return tetherFarBonus; }
+    public int tetherFarDistance() { return tetherFarDistance; }
+    public int tetherCooldownSeconds() { return tetherCooldownSeconds; }
+    public double tetherPullStrength() { return tetherPullStrength; }
+    public int dreamDamageMin() { return dreamDamageMin; }
+    public int dreamDamageMax() { return dreamDamageMax; }
+    public int dreamTearChance() { return dreamTearChance; }
+    public int dreamRiftChance() { return dreamRiftChance; }
+    public double dreamSelfDamage() { return dreamSelfDamage; }
 
     // Armor upgrade accessors (used by ArmorCommand + buildItem lore)
     public int armorUpgradeMaxLevel() { return armorUpgradeMaxLevel; }
@@ -272,8 +315,14 @@ public final class GearManager {
 
         if (type.isWeapon()) {
             rolls.damage = statRange(rarity, "damage")[1];
-            String attrs = pickAttributes(weaponAttrPool, Rarity.LEGENDARY, 2, null);
-            rolls.attributes = attrs.isEmpty() ? defaultLegendaryWeaponAttributes() : attrs;
+            if (type == GearType.DREAM_EATER) {
+                rolls.damage = Math.max(dreamDamageMax, statRange(rarity, "damage")[1]);
+                rolls.boost = voidInfusionMaxBoost;
+                rolls.attributes = "lifesteal:10;execute:30;frost-touch:3";
+            } else {
+                String attrs = pickAttributes(weaponAttrPool, Rarity.LEGENDARY, 2, null);
+                rolls.attributes = attrs.isEmpty() ? defaultLegendaryWeaponAttributes() : attrs;
+            }
         } else {
             rolls.armor = statRange(rarity, "armor")[1];
             String attrs = pickAttributes(armorAttrPool, Rarity.LEGENDARY, 1, null);
@@ -315,7 +364,24 @@ public final class GearManager {
         int[] hpRange = statRange(rarity, "maxhp");
         rolls.maxhp = rand.nextInt(hpRange[0], hpRange[1] + 1);
 
+        // Hollow relic: fixed crazy damage band, always max stars, max boost.
+        // (Attributes are set below — triple instead of the normal 1-2.)
+        if (type == GearType.DREAM_EATER) {
+            int lo = Math.min(dreamDamageMin, dreamDamageMax);
+            int hi = Math.max(dreamDamageMin, dreamDamageMax);
+            rolls.damage = lo + (hi <= lo ? 0 : rand.nextInt(hi - lo + 1));
+            rolls.starsPrimary = 5;
+            rolls.starsSpeed = 5;
+            rolls.starsHp = 5;
+            rolls.boost = voidInfusionMaxBoost;
+        }
+
         applyIdentity(rolls);
+
+        if (type == GearType.DREAM_EATER) {
+            rolls.attributes = "lifesteal:10;execute:30;frost-touch:3";
+            return buildItem(rolls);
+        }
 
         rolls.attributes = type.isWeapon()
                 ? rollWeaponAttribute(rarity, rand)
@@ -509,6 +575,22 @@ public final class GearManager {
             lore.add(MM.deserialize("<dark_gray>» <aqua>Heavy head</aqua> <gray>+"
                     + trimNum(greatbladeKnockbackBonus[tier] * 10) + "% knockback</gray></dark_gray>"));
         }
+        if (rolls.type == GearType.MISERS_MAW) {
+            lore.add(MM.deserialize("<dark_gray>» <gold>Hunger</gold> <gray>+"
+                    + misersMawGreedPerStack + "% dmg per Residual stack</gray></dark_gray>"));
+        }
+        if (rolls.type == GearType.VEIL_TETHER) {
+            lore.add(MM.deserialize("<dark_gray>» <aqua>Long hook</aqua> <gray>yanks victims, +"
+                    + tetherFarBonus + "% beyond " + tetherFarDistance + " blocks</gray></dark_gray>"));
+        }
+        if (rolls.type == GearType.DREAM_EATER) {
+            lore.add(MM.deserialize("<dark_gray>» <red>Blood price</red> <gray>hits cost "
+                    + trimNum(dreamSelfDamage) + " HP</gray></dark_gray>"));
+            lore.add(MM.deserialize("<dark_gray>» <light_purple>Reality tear</light_purple> <gray>"
+                    + dreamTearChance + "% to lift + wither</gray></dark_gray>"));
+            lore.add(MM.deserialize("<dark_gray>» <gold>Devours kills</gold> <gray>"
+                    + dreamRiftChance + "% to spit out a rift</gray></dark_gray>"));
+        }
 
         // --- special attributes (indexOf iteration — no regex split per segment)
         if (!rolls.attributes.isEmpty()) {
@@ -574,6 +656,9 @@ public final class GearManager {
             case BLADE -> "Melee Weapon";
             case GREATBLADE -> "Heavy Weapon";
             case ARCANE_STAFF -> "Arcane Focus";
+            case MISERS_MAW -> "Greed Cleaver";
+            case VEIL_TETHER -> "Tether Whip";
+            case DREAM_EATER -> "Hollow Relic";
             default -> "Armor · " + type.getLabel();
         };
     }

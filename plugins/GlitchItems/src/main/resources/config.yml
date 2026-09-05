@@ -70,6 +70,24 @@ archetype:
   arcane-staff-attack-bonus: [2, 3, 5, 7, 9]
   # Greatblade ATTACK_KNOCKBACK per rarity tier
   greatblade-knockback-bonus: [0.1, 0.15, 0.2, 0.25, 0.3]
+  # Miser's Maw: +% damage per Residual Glitch stack on the attacker (greed cleaver)
+  misers-maw-greed-per-stack: 7
+  # Veil Tether: yank victims toward you + bonus when the hook travels far
+  veil-tether-far-bonus: 20
+  veil-tether-far-distance: 6
+  veil-tether-cooldown-seconds: 3
+  veil-tether-pull-strength: 0.9
+  # The Glitch That Dreams (chase): fixed crazy damage range, always max stars
+  dream-eater-damage: [30, 45]
+  dream-eater-tear-chance: 12
+  dream-eater-rift-chance: 25
+  dream-eater-self-damage: 1.0
+
+# Dream Eater sell value (most expensive item by design — base + stars x bonus).
+# Normal gear uses sell-values/star-sell-bonus above; the Maw prices itself here.
+dream-eater-sell:
+  base: 6500
+  star-bonus: 500
 
 # Armor upgrade levels (+0..+5) — shards + materials per level, applied at the
 # Workbench ("Upgrade Held Armor" button) or /armor upgrade. Each level grants
@@ -120,6 +138,12 @@ materials:
   blade: [WOODEN_SWORD, STONE_SWORD, IRON_SWORD, DIAMOND_SWORD, NETHERITE_SWORD]
   greatblade: [WOODEN_AXE, STONE_AXE, IRON_AXE, DIAMOND_AXE, NETHERITE_AXE]
   arcane_staff: [STICK, BLAZE_ROD, BONE, END_ROD, NETHER_STAR]
+  # Greed cleaver — a farming tool turned hungry (distinct hoe silhouette)
+  misers_maw: [WOODEN_HOE, STONE_HOE, IRON_HOE, DIAMOND_HOE, NETHERITE_HOE]
+  # Tether whip — the hook evolves from string to heavy anchor
+  veil_tether: [FISHING_ROD, CROSSBOW, BOW, TRIDENT, MACE]
+  # Hollow relic — always the heavy slam silhouette (MACE, trial-chamber rare)
+  dream_eater: [MACE, MACE, MACE, MACE, MACE]
   helmet: [LEATHER_HELMET, CHAINMAIL_HELMET, IRON_HELMET, DIAMOND_HELMET, NETHERITE_HELMET]
   chestplate: [LEATHER_CHESTPLATE, CHAINMAIL_CHESTPLATE, IRON_CHESTPLATE, DIAMOND_CHESTPLATE, NETHERITE_CHESTPLATE]
   leggings: [LEATHER_LEGGINGS, CHAINMAIL_LEGGINGS, IRON_LEGGINGS, DIAMOND_LEGGINGS, NETHERITE_LEGGINGS]

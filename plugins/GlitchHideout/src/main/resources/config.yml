@@ -74,6 +74,21 @@ recipes:
     icon: STONE_SWORD
     output: "glitchitems give uncommon blade random <player>"
     materials: { rune_fragment: 3, rift_crystal: 1 }
+  base_maw:
+    display: "<green>Miser's Maw (Uncommon)"
+    icon: STONE_HOE
+    output: "glitchitems give uncommon misers_maw random <player>"
+    materials: { rune_fragment: 3, rift_crystal: 1 }
+  base_tether:
+    display: "<green>Veil Tether (Uncommon)"
+    icon: FISHING_ROD
+    output: "glitchitems give uncommon veil_tether random <player>"
+    materials: { rune_fragment: 3, rift_crystal: 1 }
+  dream_eater:
+    display: "<light_purple>The Glitch That Dreams (Legendary)"
+    icon: MACE
+    output: "glitchitems give legendary dream_eater hollow <player>"
+    materials: { legendary_relic: 3, void_essence: 8, rift_crystal: 16, void_infusion: 1 }
   targeted_weapon_aegis:
     display: "<gold>Aegis Blade (Uncommon)"
     icon: GOLD_SWORD
