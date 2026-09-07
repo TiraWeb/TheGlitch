@@ -37,6 +37,21 @@ for i in {1..60}; do
 done
 log "FancyNpcs confirmed loaded."
 
+# --- visibility distance -----------------------------------------------------
+# Default 20 blocks hides NPCs beyond ~1 chunk (2026-09-05 report). 64 blocks
+# keeps hub NPCs visible across the plaza; client render distance caps it.
+FANCY_CFG="/opt/theglitch/server/plugins/FancyNpcs/config.yml"
+if [[ -f "${FANCY_CFG}" ]]; then
+  if grep -qE '^visibility_distance:' "${FANCY_CFG}"; then
+    sed -i -E 's/^visibility_distance:.*/visibility_distance: 64/' "${FANCY_CFG}"
+  else
+    echo 'visibility_distance: 64' >> "${FANCY_CFG}"
+  fi
+  log "visibility_distance set to 64 in FancyNpcs config."
+else
+  warn "FancyNpcs config not found at ${FANCY_CFG} — skipping visibility fix."
+fi
+
 # --- reload ----------------------------------------------------------------
 log "Reloading FancyNpcs..."
 mc "fancynpcs reload"

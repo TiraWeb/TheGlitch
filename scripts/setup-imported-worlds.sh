@@ -15,12 +15,14 @@ mc "mv import glitch_red normal"
 mc "mv import glitch_pve normal"
 
 log "Setting modes and difficulty..."
-mc "mv modify set gamemode survival glitch_pve"
-mc "mv modify set gamemode survival glitch_red"
-mc "mv modify set difficulty hard glitch_pve"
-mc "mv modify set difficulty hard glitch_red"
-mc "mv modify set pvp false glitch_pve"
-mc "mv modify set pvp true glitch_red"
+# NOTE (2026-09-05): mv modify takes the WORLD first — "mv modify set ... <world>"
+# is rejected with "not a multiverse world" and silently does nothing.
+mc "mv modify glitch_pve set gamemode survival"
+mc "mv modify glitch_red set gamemode survival"
+mc "mv modify glitch_pve set difficulty hard"
+mc "mv modify glitch_red set difficulty hard"
+mc "mv modify glitch_pve set pvp false"
+mc "mv modify glitch_red set pvp true"
 
 log "Setting spawns..."
 # Multiverse 5.x syntax: mv setspawn <world>:<x>,<y>,<z>

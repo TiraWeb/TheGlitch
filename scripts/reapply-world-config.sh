@@ -12,6 +12,14 @@ mc() { sudo "${SCRIPT_DIR}/mc-cmd.py" "$@"; }
 log()  { echo -e "\033[1;36m[config]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[config]\033[0m $*"; }
 
+# ---- difficulty (Multiverse per-world, persisted in worlds.yml) ----
+# Re-imports reset this to peaceful, which silently kills ALL red-world mobs
+# (2026-09-05: glitch_red + glitch_pve drifted to peaceful). mv modify persists
+# immediately — no restart needed, survives reboots until the next re-import.
+log "Setting world difficulties..."
+mc "mv modify glitch_red set difficulty hard" >/dev/null
+mc "mv modify glitch_pve set difficulty hard" >/dev/null
+
 # ---- gamerules (canonical 26.x snake_case — see scripts/lib/gamerules.sh) ----
 # Source the shared gamerule tables so reapply-world-config.sh can never drift
 # from setup-worlds.sh (previously used stale camelCase which is rejected as
