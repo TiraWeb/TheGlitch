@@ -86,6 +86,11 @@ public final class RedPortalCommand implements CommandExecutor {
                 sender.sendMessage(MM.deserialize("<gray>pos2: <white>" + (p2 == null ? "—" : RedPortalManager.describe(p2)) + "</white></gray>"));
                 sender.sendMessage(MM.deserialize("<gray>portal: <white>"
                         + (portals.getRegion() == null ? "not set" : RedPortalManager.describe(portals.getRegion())) + "</white></gray>"));
+                if (sender instanceof Player self) {
+                    org.bukkit.block.Block feet = self.getLocation().getBlock();
+                    sender.sendMessage(MM.deserialize("<gray>your feet: <white>" + feet.getType()
+                            + "</white> inside portal: <white>" + portals.contains(self.getLocation()) + "</white></gray>"));
+                }
             }
             default -> {
                 sender.sendMessage(MM.deserialize("<red>Unknown subcommand.</red>"));
