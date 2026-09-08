@@ -21,6 +21,10 @@ commands:
     description: Admin commands for GlitchRaid — reload, list, end
     usage: /raidadmin <reload|list|end <player>>
     permission: glitchraid.admin
+  redportal:
+    description: Mark and place the hub-to-Red walk-in portal (pos1, pos2, set, remove, info)
+    usage: /redportal <pos1|pos2|set|remove|info>
+    permission: glitchraid.admin
 permissions:
   glitchraid.raid:
     description: Use raid commands

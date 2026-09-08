@@ -24,6 +24,20 @@ raid:
   hub-world: "hub"
   auto-start-world: "glitch_red"
 
+# Hub-to-Red walk-in portal (replaces the old red NPC).
+# Mark corners in-game with /redportal pos1|pos2, then /redportal set fills
+# only AIR with END_PORTAL (existing blocks untouched). Stepping in teleports
+# to the raid world spawn, which auto-starts/joins the raid + pulls the party.
+portal:
+  enabled: true
+  # Per-player re-entry guard after a redirect
+  cooldown-seconds: 3
+  # Largest placeable cuboid (blocks) — protects against marking a whole city
+  max-volume: 2500
+  # Written by /redportal set — empty world = no portal yet
+  region:
+    world: ""
+
 messages:
   raid-started: "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>"
   raid-auto-started: "<green><bold>Raid started!</bold> <gray>You entered the Glitch — 30:00 to extract!</gray>"

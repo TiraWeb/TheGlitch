@@ -14,6 +14,7 @@ public final class GlitchRaid extends JavaPlugin {
 
     private static GlitchRaid instance;
     private RaidManager raidManager;
+    private RedPortalManager portalManager;
 
     @Override
     public void onEnable() {
@@ -21,9 +22,11 @@ public final class GlitchRaid extends JavaPlugin {
         saveDefaultConfig();
 
         raidManager = new RaidManager(this);
+        portalManager = new RedPortalManager(this);
 
         // Register listeners
         Bukkit.getPluginManager().registerEvents(new RaidListener(this, raidManager), this);
+        Bukkit.getPluginManager().registerEvents(new RedPortalListener(this, raidManager, portalManager), this);
         // VelKoth bridge — only if VelKoth present, to avoid NoClassDefFoundError when hard import missing
         if (Bukkit.getPluginManager().getPlugin("VelKoth") != null) {
             try {
@@ -50,6 +53,11 @@ public final class GlitchRaid extends JavaPlugin {
             getCommand("raidadmin").setExecutor(new RaidAdminCommand(this, raidManager));
         } else {
             getLogger().warning("Command 'raidadmin' not found in plugin.yml — check registration.");
+        }
+        if (getCommand("redportal") != null) {
+            getCommand("redportal").setExecutor(new RedPortalCommand(this, portalManager));
+        } else {
+            getLogger().warning("Command 'redportal' not found in plugin.yml — check registration.");
         }
 
         // PlaceholderAPI expansion
@@ -94,11 +102,18 @@ public final class GlitchRaid extends JavaPlugin {
         if (raidManager != null) {
             raidManager.reload();
         }
+        if (portalManager != null) {
+            portalManager.reload();
+        }
         getLogger().info("GlitchRaid configuration reloaded.");
     }
 
     public RaidManager getRaidManager() {
         return raidManager;
+    }
+
+    public RedPortalManager getPortalManager() {
+        return portalManager;
     }
 
     public static GlitchRaid getInstance() {
