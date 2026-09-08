@@ -53,6 +53,9 @@ public final class RedPortalManager {
         maxVolume = Math.max(1, plugin.getConfig().getInt("portal.max-volume", 2500));
         String world = plugin.getConfig().getString("portal.region.world", "");
         if (world == null || world.isBlank()) {
+            if (plugin.getConfig().contains("portal.region.min-x")) {
+                plugin.getLogger().warning("RedPortal has saved coords but a blank world — the save was interrupted. Re-run /redportal pos1|pos2|set to restore it.");
+            }
             region = null;
         } else {
             int minX = plugin.getConfig().getInt("portal.region.min-x");
@@ -209,6 +212,8 @@ public final class RedPortalManager {
     private void saveRegion() {
         Region r = region;
         if (r == null) {
+            // Drop the whole section so no stale coords linger to confuse reloads.
+            plugin.getConfig().set("portal.region", null);
             plugin.getConfig().set("portal.region.world", "");
         } else {
             plugin.getConfig().set("portal.region.world", r.world());
