@@ -62,9 +62,10 @@ Optional external map sources (not included in this repository):
   `deny-spawn` blocking every hostile type — so the city can't be griefed or
   its visitors hurt even if a mob slips in. NPCs (villagers/armor stands) are
   not in the deny-spawn list, so Phase 5 shops/class selectors are unaffected.
-- **Red portal:** walk-in END_PORTAL floor placed by op (`/redportal pos1|pos2|set`
-  — air-only fill, existing blocks untouched). Stepping in teleports to the
-  `glitch_red` spawn, which auto-starts/joins the raid + pulls the party
+- **Red portal:** walk-in floor placed by op (`/redportal pos1|pos2|set [floor]`
+  — air-only fill, existing blocks untouched; floor defaults to end portal,
+  or `crying`/`magma`/`obsidian`/`blackstone` for clients that cull portal
+  shaders). Stepping in teleports to the `glitch_red` spawn, which auto-starts/joins the raid + pulls the party
   (`RedPortalListener` redirects the vanilla teleport, so no End dimension or
   world link is needed). Replaces the old red NPC.
 

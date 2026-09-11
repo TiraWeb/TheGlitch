@@ -24,13 +24,53 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class RedPortalManager {
 
     public record Mark(String world, int x, int y, int z) {}
-    public record Region(String world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+    public record Region(String world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ, Material material) {
         public long volume() {
             return (long) (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
         }
     }
     public record FillResult(FillStatus status, int filled, int skipped, long volume) {}
     public enum FillStatus { OK, NO_MARKS, WORLD_MISMATCH, WORLD_MISSING, TOO_BIG }
+
+    /**
+     * Floor blocks that render reliably at any distance on any client
+     * (vanilla portal shaders get culled by performance mods). Full solid
+     * cubes only — no utility blocks, no light-level surprises beyond glow.
+     */
+    private static final java.util.Set<Material> ALLOWED_FLOORS = java.util.EnumSet.of(
+            Material.END_PORTAL,
+            Material.CRYING_OBSIDIAN,
+            Material.MAGMA_BLOCK,
+            Material.OBSIDIAN,
+            Material.BLACKSTONE);
+
+    /**
+     * Resolves friendly names (end, crying, magma, obsidian, blackstone) or
+     * full Material names to an allowed floor, or null when disallowed.
+     */
+    public static Material resolveFloor(String input) {
+        if (input == null || input.isBlank()) return null;
+        String key = input.trim().toUpperCase(java.util.Locale.ROOT).replace('-', '_').replace(' ', '_');
+        Material matched = switch (key) {
+            case "END", "END_PORTAL", "PORTAL", "STARFIELD" -> Material.END_PORTAL;
+            case "CRYING", "CRYING_OBSIDIAN", "WEEPING" -> Material.CRYING_OBSIDIAN;
+            case "MAGMA", "MAGMA_BLOCK", "LAVA" -> Material.MAGMA_BLOCK;
+            case "OBSIDIAN" -> Material.OBSIDIAN;
+            case "BLACKSTONE" -> Material.BLACKSTONE;
+            default -> null;
+        };
+        if (matched != null) return matched;
+        try {
+            Material m = Material.valueOf(key);
+            return ALLOWED_FLOORS.contains(m) ? m : null;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public static String floorOptions() {
+        return "end, crying, magma, obsidian, blackstone";
+    }
 
     private final GlitchRaid plugin;
 
@@ -64,8 +104,14 @@ public final class RedPortalManager {
             int maxX = plugin.getConfig().getInt("portal.region.max-x");
             int maxY = plugin.getConfig().getInt("portal.region.max-y");
             int maxZ = plugin.getConfig().getInt("portal.region.max-z");
+            Material mat = Material.END_PORTAL;
+            try {
+                String saved = plugin.getConfig().getString("portal.region.material", "END_PORTAL");
+                Material parsed = saved == null ? null : Material.valueOf(saved);
+                if (parsed != null && ALLOWED_FLOORS.contains(parsed)) mat = parsed;
+            } catch (IllegalArgumentException ignored) {}
             region = new Region(world, Math.min(minX, maxX), Math.min(minY, maxY), Math.min(minZ, maxZ),
-                    Math.max(minX, maxX), Math.max(minY, maxY), Math.max(minZ, maxZ));
+                    Math.max(minX, maxX), Math.max(minY, maxY), Math.max(minZ, maxZ), mat);
         }
         plugin.getLogger().info("RedPortal reloaded (enabled=" + enabled
                 + " cooldown=" + cooldownSeconds + "s maxVolume=" + maxVolume
@@ -80,7 +126,7 @@ public final class RedPortalManager {
 
     public static String describe(Region r) {
         return r.world() + ":(" + r.minX() + "," + r.minY() + "," + r.minZ()
-                + ")-(" + r.maxX() + "," + r.maxY() + "," + r.maxZ() + ")";
+                + ")-(" + r.maxX() + "," + r.maxY() + "," + r.maxZ() + ") [" + r.material() + "]";
     }
 
     public boolean contains(Location loc) {
@@ -115,18 +161,25 @@ public final class RedPortalManager {
     }
 
     /**
-     * Fills AIR-only in the player's marked cuboid with END_PORTAL.
-     * Solid blocks are skipped, never replaced. Persists the region.
+     * Fills the player's marked cuboid with the floor material.
+     * Only AIR is filled, plus any blocks of a previous portal floor being
+     * replaced (same cuboid, new look). Every other existing block is skipped,
+     * never replaced. Persists the region.
      *
-     * @return fill counts, or null when the marks are missing/mismatched/oversize
+     * @param requested null/blank keeps the current floor (or END_PORTAL default)
+     * @return fill counts with a status explaining any refusal
      */
-    public FillResult fill(Player player) {
+    public FillResult fill(Player player, Material requested) {
         Mark a = pos1.get(player.getUniqueId());
         Mark b = pos2.get(player.getUniqueId());
         if (a == null || b == null) return new FillResult(FillStatus.NO_MARKS, 0, 0, 0);
         if (!a.world().equalsIgnoreCase(b.world())) return new FillResult(FillStatus.WORLD_MISMATCH, 0, 0, 0);
         World world = Bukkit.getWorld(a.world());
         if (world == null) return new FillResult(FillStatus.WORLD_MISSING, 0, 0, 0);
+
+        Material mat = requested != null ? requested
+                : (region != null ? region.material() : Material.END_PORTAL);
+        Material convertFrom = (region != null && region.material() != mat) ? region.material() : null;
 
         int minX = Math.min(a.x(), b.x());
         int minY = Math.min(a.y(), b.y());
@@ -149,13 +202,15 @@ public final class RedPortalManager {
                         skipped++;
                         continue;
                     }
-                    // Air-only: existing builds, frames, floors are never touched.
-                    if (!block.getType().isAir()) {
+                    // Air-only, plus previous-floor conversion: existing builds
+                    // and floors are never touched.
+                    boolean convertible = convertFrom != null && block.getType() == convertFrom;
+                    if (!block.getType().isAir() && !convertible) {
                         skipped++;
                         continue;
                     }
                     try {
-                        block.setType(Material.END_PORTAL, false);
+                        block.setType(mat, false);
                         filled++;
                     } catch (Exception e) {
                         skipped++;
@@ -164,7 +219,7 @@ public final class RedPortalManager {
             }
         }
 
-        region = new Region(a.world(), minX, minY, minZ, maxX, maxY, maxZ);
+        region = new Region(a.world(), minX, minY, minZ, maxX, maxY, maxZ, mat);
         saveRegion();
         plugin.getLogger().info("RedPortal set by " + player.getName() + " at "
                 + describe(region) + " (filled=" + filled + " skipped=" + skipped + ").");
@@ -172,8 +227,9 @@ public final class RedPortalManager {
     }
 
     /**
-     * Removes only END_PORTAL blocks inside the saved region (safe: player
-     * builds are never END_PORTAL) and clears the region.
+     * Removes only the saved portal floor blocks inside the region (safe:
+     * player builds are never the floor material unless the op chose a common
+     * one — the fill only ever placed into air) and clears the region.
      */
     public int clear() {
         Region r = region;
@@ -194,7 +250,7 @@ public final class RedPortalManager {
                     } catch (Exception e) {
                         continue;
                     }
-                    if (block.getType() == Material.END_PORTAL) {
+                    if (block.getType() == r.material()) {
                         try {
                             block.setType(Material.AIR, false);
                             cleared++;
@@ -217,6 +273,7 @@ public final class RedPortalManager {
             plugin.getConfig().set("portal.region.world", "");
         } else {
             plugin.getConfig().set("portal.region.world", r.world());
+            plugin.getConfig().set("portal.region.material", r.material().name());
             plugin.getConfig().set("portal.region.min-x", r.minX());
             plugin.getConfig().set("portal.region.min-y", r.minY());
             plugin.getConfig().set("portal.region.min-z", r.minZ());

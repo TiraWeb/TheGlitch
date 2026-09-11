@@ -55,11 +55,20 @@ public final class RedPortalCommand implements CommandExecutor {
             case "set" -> {
                 Player player = requirePlayer(sender);
                 if (player == null) return true;
-                RedPortalManager.FillResult result = portals.fill(player);
+                org.bukkit.Material requested = null;
+                if (args.length >= 2) {
+                    requested = RedPortalManager.resolveFloor(args[1]);
+                    if (requested == null) {
+                        sender.sendMessage(MM.deserialize("<red>Unknown floor: <white>" + args[1]
+                                + "</white> <gray>— use: " + RedPortalManager.floorOptions() + "</gray></red>"));
+                        return true;
+                    }
+                }
+                RedPortalManager.FillResult result = portals.fill(player, requested);
                 switch (result.status()) {
                     case OK -> sender.sendMessage(MM.deserialize(
                             "<green><bold>Portal set.</bold></green> <gray>Filled <white>" + result.filled()
-                                    + "</white> air blocks with portal, left <white>" + result.skipped()
+                                    + "</white> blocks, left <white>" + result.skipped()
                                     + "</white> existing blocks untouched.</gray>"));
                     case NO_MARKS -> sender.sendMessage(MM.deserialize(
                             "<red>Mark both corners first: <white>/redportal pos1</white> and <white>/redportal pos2</white>.</red>"));
@@ -110,7 +119,7 @@ public final class RedPortalCommand implements CommandExecutor {
         sender.sendMessage(MM.deserialize("<gold><bold>Red Portal</bold></gold>"));
         sender.sendMessage(MM.deserialize("<yellow>/redportal pos1</yellow> <gray>— mark corner 1 at your feet</gray>"));
         sender.sendMessage(MM.deserialize("<yellow>/redportal pos2</yellow> <gray>— mark corner 2 at your feet</gray>"));
-        sender.sendMessage(MM.deserialize("<yellow>/redportal set</yellow> <gray>— fill air in the area with portal (blocks untouched)</gray>"));
+        sender.sendMessage(MM.deserialize("<yellow>/redportal set [floor]</yellow> <gray>— fill air in the area (" + RedPortalManager.floorOptions() + ", default keeps current)</gray>"));
         sender.sendMessage(MM.deserialize("<yellow>/redportal remove</yellow> <gray>— turn the portal back to air</gray>"));
         sender.sendMessage(MM.deserialize("<yellow>/redportal info</yellow> <gray>— show marks + portal area</gray>"));
     }

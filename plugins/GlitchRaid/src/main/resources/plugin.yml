@@ -22,8 +22,8 @@ commands:
     usage: /raidadmin <reload|list|end <player>>
     permission: glitchraid.admin
   redportal:
-    description: Mark and place the hub-to-Red walk-in portal (pos1, pos2, set, remove, info)
-    usage: /redportal <pos1|pos2|set|remove|info>
+    description: Mark and place the hub-to-Red walk-in portal (pos1, pos2, set [floor], remove, info)
+    usage: /redportal <pos1|pos2|set [floor]|remove|info>
     permission: glitchraid.admin
 permissions:
   glitchraid.raid:
