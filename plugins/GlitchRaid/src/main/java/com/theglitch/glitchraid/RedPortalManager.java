@@ -39,7 +39,7 @@ public final class RedPortalManager {
 
     private volatile boolean enabled = true;
     private volatile int cooldownSeconds = 3;
-    private volatile int maxVolume = 2500;
+    private volatile int maxVolume = 28000;
     private volatile Region region;
 
     public RedPortalManager(GlitchRaid plugin) {
@@ -50,7 +50,7 @@ public final class RedPortalManager {
     public void reload() {
         enabled = plugin.getConfig().getBoolean("portal.enabled", true);
         cooldownSeconds = Math.max(0, plugin.getConfig().getInt("portal.cooldown-seconds", 3));
-        maxVolume = Math.max(1, plugin.getConfig().getInt("portal.max-volume", 2500));
+        maxVolume = Math.max(1, plugin.getConfig().getInt("portal.max-volume", 28000));
         String world = plugin.getConfig().getString("portal.region.world", "");
         if (world == null || world.isBlank()) {
             if (plugin.getConfig().contains("portal.region.min-x")) {

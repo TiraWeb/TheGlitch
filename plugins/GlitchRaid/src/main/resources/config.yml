@@ -32,8 +32,8 @@ portal:
   enabled: true
   # Per-player re-entry guard after a redirect
   cooldown-seconds: 3
-  # Largest placeable cuboid (blocks) — protects against marking a whole city
-  max-volume: 2500
+  # Largest placeable cuboid (blocks) — covers the whole lava pit floor (~28k)
+  max-volume: 28000
   # Written by /redportal set — empty world = no portal yet
   region:
     world: ""
