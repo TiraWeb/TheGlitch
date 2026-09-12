@@ -20,15 +20,6 @@ public final class UiConstants {
     public static final String DIVIDER     = "\uE048";
     public static final String TITLE_RUNE  = "\uE049";
 
-    // Negative-space font (minecraft:negative_space) — advance shims.
-    // Generates pixel-precise shifts without mods. Add via
-    // server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json
-    public static final String NEG_1  = "\uF801"; // advance -2 (tuned by font json)
-    public static final String NEG_2  = "\uF802";
-    public static final String NEG_4  = "\uF803";
-    public static final String NEG_8  = "\uF804";
-    public static final String NEG_16 = "\uF805";
-
     private UiConstants() {}
 
     public static String resIcon(String className) {
@@ -41,13 +32,5 @@ public final class UiConstants {
             case "hollow", "hollows" -> RES_HOLLOW;
             default -> STAR_FULL;
         };
-    }
-
-    public static String stars(int filled, int total) {
-        StringBuilder sb = new StringBuilder(total * 4);
-        for (int i = 0; i < total; i++) {
-            sb.append(i < filled ? STAR_FULL : STAR_EMPTY);
-        }
-        return sb.toString();
     }
 }

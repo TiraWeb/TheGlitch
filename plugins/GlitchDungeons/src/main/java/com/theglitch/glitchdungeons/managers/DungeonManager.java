@@ -37,17 +37,6 @@ public class DungeonManager {
         return null;
     }
 
-    public boolean canJoin(Player player, int tier) {
-        if (!plugin.getDungeonConfig().getDungeons().containsKey(tier)) return false;
-        if (!player.hasPermission("glitchdungeons.dungeon.tier" + tier)) return false;
-        if (plugin.getCooldownManager().isOnCooldown(player.getUniqueId(), tier)) return false;
-        if (findFreeSlot() == null) return false;
-        Party party = plugin.getPartyManager().getParty(player.getUniqueId());
-        if (party == null) return false;
-        if (!party.isLeader(player.getUniqueId())) return false;
-        return true;
-    }
-
     public DungeonRun startDungeon(Party party, int tier) {
         DungeonSlot slot = findFreeSlot();
         if (slot == null) return null;
@@ -222,14 +211,6 @@ public class DungeonManager {
 
     public DungeonRun getPlayerRun(UUID playerUuid) {
         return playerRuns.get(playerUuid);
-    }
-
-    public DungeonRun getRun(int runId) {
-        return activeRuns.get(runId);
-    }
-
-    public Map<Integer, DungeonRun> getActiveRuns() {
-        return activeRuns;
     }
 
     public int getFreeSlotCount() {

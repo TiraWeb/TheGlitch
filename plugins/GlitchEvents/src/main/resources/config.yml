@@ -41,5 +41,4 @@ messages:
   supply-drop-end: "<gray>The supply drop at <white><x>, <y>, <z></white> in <white><world></white> has destabilized.</gray>"
   boss-spawned: "<dark_red><bold>Roaming Boss</bold></dark_red> <gray><white><mob></white> prowls near <white><world> <x>, <y>, <z></white>!</gray>"
   boss-despawned: "<gray>The roaming <white><mob></white> has slunk back into the Glitch.</gray>"
-  event-none: "<red>No active world events.</red>"
   reloaded: "<green>GlitchEvents configuration reloaded.</green>"

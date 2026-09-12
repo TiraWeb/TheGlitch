@@ -2,7 +2,6 @@ package com.theglitch.glitchshops;
 
 import com.theglitch.glitchitems.GearRolls;
 import com.theglitch.glitchitems.GlitchItems;
-import net.milkbowl.vault.economy.Economy;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -53,7 +52,6 @@ public final class ShopManager {
     private volatile String defaultTab = "materials";
     private volatile int buyStackSize = 64;
     private volatile Map<String, String> messageTemplates = new HashMap<>();
-    private volatile Economy cachedEconomy;
 
     public ShopManager(GlitchShops plugin) {
         this.plugin = plugin;
@@ -64,9 +62,6 @@ public final class ShopManager {
             plugin.getServer().getScheduler().cancelTask(restockTaskId);
             restockTaskId = -1;
         }
-        // Invalidate cached economy so reload picks up new provider if changed
-        cachedEconomy = null;
-
         File file = new File(plugin.getDataFolder(), "shops.yml");
         if (!file.exists()) {
             plugin.saveResource("shops.yml", false);

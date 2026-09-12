@@ -21,7 +21,6 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public final class VaultHook {
 
-    // Canonical spec: private static Economy economy; private static long cacheTime;
     // Implemented as Object to keep GlitchCommon compileable with paper-api only.
     // The runtime type is net.milkbowl.vault.economy.Economy when Vault is present.
     private static Object economy;

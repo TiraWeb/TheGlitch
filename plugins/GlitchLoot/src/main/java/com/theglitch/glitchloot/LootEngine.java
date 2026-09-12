@@ -107,12 +107,7 @@ public final class LootEngine {
         return Math.min(streak * bonusPercentPerRoll, maxBonusPercent);
     }
 
-    /** Records a failed roll — increments the dry streak (respecting the staleness window). */
-    public void recordDryRoll(Player p) {
-        recordDryRoll(p, System.currentTimeMillis());
-    }
-
-    /** Same as {@link #recordDryRoll(Player)} but reuses a captured timestamp. */
+    /** Same as below but reuses a captured timestamp. */
     public void recordDryRoll(Player p, long now) {
         UUID id = p.getUniqueId();
         Long last = lastRollTime.get(id);
@@ -130,11 +125,7 @@ public final class LootEngine {
      * @return false if the power budget is enabled and exhausted for this hour
      *         (nothing was spent and no cooldown applied); true when loot is allowed.
      */
-    public boolean recordLoot(Player p, String rarityId) {
-        return recordLoot(p, rarityId, System.currentTimeMillis());
-    }
-
-    /** Same as {@link #recordLoot(Player, String)} but reuses a captured timestamp. */
+    /** Same as below but reuses a captured timestamp. */
     public boolean recordLoot(Player p, String rarityId, long now) {
         UUID id = p.getUniqueId();
 
@@ -155,12 +146,7 @@ public final class LootEngine {
         return true;
     }
 
-    /** True while the player is inside their anti-funnel cooldown window. */
-    public boolean withinAntiFunnel(Player p) {
-        return withinAntiFunnel(p, System.currentTimeMillis());
-    }
-
-    /** Same as {@link #withinAntiFunnel(Player)} but reuses a captured timestamp. */
+    /** Same as below but reuses a captured timestamp. */
     public boolean withinAntiFunnel(Player p, long now) {
         if (cooldownSeconds <= 0) {
             return false;

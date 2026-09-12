@@ -107,10 +107,6 @@ public final class GlitchInsurance extends JavaPlugin {
         return MM.deserialize(getMessage(key).replace(ph1, v1).replace(ph2, v2));
     }
 
-    public Component getComponent(String key, String ph1, String v1, String ph2, String v2, String ph3, String v3) {
-        return MM.deserialize(getMessage(key).replace(ph1, v1).replace(ph2, v2).replace(ph3, v3));
-    }
-
     public Component getComponent(String key, String ph1, String v1, String ph2, String v2, String ph3, String v3, String ph4, String v4) {
         return MM.deserialize(getMessage(key).replace(ph1, v1).replace(ph2, v2).replace(ph3, v3).replace(ph4, v4));
     }

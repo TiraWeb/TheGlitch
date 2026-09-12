@@ -107,8 +107,6 @@ public final class PlaceholderResolver {
         }
     }
 
-    public boolean hasPapi() { return hasPapi; }
-
     /** Resolve a raw placeholder string through PAPI if available (reflective). */
     public String resolve(Player player, String raw) {
         if (raw == null) return "";
@@ -247,14 +245,6 @@ public final class PlaceholderResolver {
         return false;
     }
 
-    public String getTimeLeftFormatted(Player player) {
-        if (hasPapi) {
-            String v = papi(player, "%glitchraid_time_left_formatted%");
-            if (v != null && !v.isBlank() && !v.contains("%")) return v;
-        }
-        return null;
-    }
-
     public int getPing(Player player) {
         if (player == null) return -1;
         if (hasPapi) {
@@ -328,8 +318,6 @@ public final class PlaceholderResolver {
         } catch (Exception ignored) {}
         return -1;
     }
-
-    public String getWorldShardPlaceholder(Player p) { return "%vault_eco_balance%"; }
 
     private static String capitalize(String s) {
         if (s == null || s.isEmpty()) return s;

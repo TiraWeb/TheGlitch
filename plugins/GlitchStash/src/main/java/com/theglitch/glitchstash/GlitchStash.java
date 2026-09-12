@@ -216,10 +216,6 @@ public final class GlitchStash extends JavaPlugin {
         return cachedEconomy;
     }
 
-    public void invalidateEconomy() {
-        this.cachedEconomy = null;
-    }
-
     public boolean isPayoutEnabled() {
         return payoutEnabledCache;
     }

@@ -58,7 +58,6 @@ public final class BazaarPanel implements Listener {
     private final Set<UUID> gridEntities = new HashSet<>();
 
     private String activeCategory;
-    private long lastFlip;
 
     private World world;
     private double wx;
@@ -296,7 +295,6 @@ public final class BazaarPanel implements Listener {
             if (category != null && !category.isBlank()) {
                 activeCategory = category;
             }
-            lastFlip = System.currentTimeMillis();
         } catch (Throwable ignored) {
         }
         build();

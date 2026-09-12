@@ -2,14 +2,6 @@
 # GlitchStash â€” The Glitch Extraction Vault
 # Items saved automatically on successful extraction
 
-# Maximum number of items a player can store (full inventory = 41 slots)
-# VIP players get extra_slots added to this
-max-items: 41
-extra-slots: 9
-
-# Stash expiry in hours (0 = never expires)
-stash-expiry-hours: 0
-
 # Residual Glitch payout: on extraction, pay bonus shards =
 # sell value of saved loot x (payout multiplier - 1) from GlitchItems stacks.
 payout-enabled: true
@@ -98,21 +90,4 @@ modern-ui:
 
 # Display settings
 display-name: "<font:minecraft:default>\ue049</font> <gradient:#C084FC:#F0ABFC><bold>YOUR STASH</bold></gradient>"
-lore:
-  - "<gray>Items saved from your last extraction"
-  - "<gray>Click to retrieve"
-
-# Messages (MiniMessage format)
-messages:
-  extracted: "<green>Extraction complete! Your gear has been stored safely."
-  glitch-payout: "<dark_red>Residual Glitch payout: <gold>+<amount> Shards</gold> <gray>(x<multiplier>)</gray>"
-  stash-saved: "<gray>Your inventory has been saved to your stash."
-  stash-opened: "<gold>Stash opened</gold> <dark_gray>|</dark_gray> <gray>Click items to retrieve"
-  stash-full: "<red>Your stash is full! Retrieve items before extracting again."
-  stash-empty: "<red>Your stash is empty."
-  item-retrieved: "<green>+ <item></green>"
-  all-retrieved: "<green>All items retrieved!"
-  teleporting: "<dark_purple>Teleporting to stash..."
-  admin-cleared: "<red>Stash cleared for <gold><player></gold>."
-  admin-reloaded: "<green>GlitchStash configuration reloaded."
 

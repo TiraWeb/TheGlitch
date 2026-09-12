@@ -51,12 +51,11 @@ public class DungeonConfig {
             int maxTime = tierSection.getInt("max-time", 600);
             int waveCount = tierSection.getConfigurationSection("waves") != null
                 ? tierSection.getConfigurationSection("waves").getKeys(false).size() : 0;
-            dungeons.put(tier, new DungeonTierConfig(tier, name, maxTime, waveCount, tierSection));
+            dungeons.put(tier, new DungeonTierConfig(name, maxTime, waveCount, tierSection));
         }
     }
 
     public Map<Integer, DungeonSlot> getSlots() { return slots; }
-    public DungeonSlot getSlot(int id) { return slots.get(id); }
     public Map<Integer, DungeonTierConfig> getDungeons() { return dungeons; }
     public DungeonTierConfig getDungeon(int tier) { return dungeons.get(tier); }
     public int getPrepTime() { return config.getInt("prep-time", 30); }
@@ -64,8 +63,6 @@ public class DungeonConfig {
     public int getWaveDelay() { return config.getInt("wave-delay", 10); }
     public int getMaxPartySize() { return config.getInt("max-party-size", 4); }
     public int getCooldownPerDungeon() { return config.getInt("cooldown-per-dungeon", 600); }
-    public boolean isCooldownPerPlayer() { return config.getBoolean("cooldown-per-player", true); }
-    public String getMessage(String key) { return config.getString("messages." + key, "&cMessage not found: " + key); }
     public String getStagingWorld() { return config.getString("staging-world", "glitch_pve"); }
     public String getHubWorld() { return config.getString("hub-world", "hub"); }
 
@@ -86,21 +83,18 @@ public class DungeonConfig {
     }
 
     public static class DungeonTierConfig {
-        private final int tier;
         private final String name;
         private final int maxTime;
         private final int waveCount;
         private final ConfigurationSection section;
 
-        public DungeonTierConfig(int tier, String name, int maxTime, int waveCount, ConfigurationSection section) {
-            this.tier = tier;
+        public DungeonTierConfig(String name, int maxTime, int waveCount, ConfigurationSection section) {
             this.name = name;
             this.maxTime = maxTime;
             this.waveCount = waveCount;
             this.section = section;
         }
 
-        public int getTier() { return tier; }
         public String getName() { return name; }
         public int getMaxTime() { return maxTime; }
         public int getWaveCount() { return waveCount; }

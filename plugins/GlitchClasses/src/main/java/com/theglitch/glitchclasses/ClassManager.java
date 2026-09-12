@@ -35,7 +35,6 @@ public final class ClassManager {
     private final Path playerDir;
     private volatile int cachedMaxLevel = 10;
     private volatile int cachedResetCost = 500;
-    private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
     // Async write coalescing: one in-flight write per player, draining the
     // latest snapshot, so independent mutations can never land out of order.
     private final Set<UUID> writePending = ConcurrentHashMap.newKeySet();
@@ -178,11 +177,6 @@ public final class ClassManager {
         if (attr != null) attr.setBaseValue(getMaxHealthForLevel(level));
     }
 
-    public void applyMaxHealth(Player player) {
-        ClassData data = getClassData(player.getUniqueId());
-        applyMaxHealth(player, data.level());
-    }
-
     /**
      * Get upgrade cost for a specific level.
      */
@@ -247,7 +241,6 @@ public final class ClassManager {
         yaml.set("level", data.level());
         yaml.set("xp", data.xp());
 
-        dirty.add(uuid);
         latestSnapshot.put(uuid, yaml);
         // Only one write in flight per player; it drains the latest snapshot
         // so the last scheduled write always persists the newest state.
@@ -355,7 +348,6 @@ public final class ClassManager {
         for (Map.Entry<UUID, ClassData> entry : players.entrySet()) {
             saveToFileSync(entry.getKey(), entry.getValue());
         }
-        dirty.clear();
     }
 
     public void shutdown() {

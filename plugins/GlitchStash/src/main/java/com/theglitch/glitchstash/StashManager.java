@@ -35,7 +35,6 @@ public final class StashManager {
     private final GlitchStash plugin;
     private final Map<UUID, StashData> stashes = new ConcurrentHashMap<>();
     private final Path stashDir;
-    private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
     // Per-UUID save generation: each scheduled write captures its generation and
     // skips itself if a newer save (or a clearStash tombstone) superseded it —
     // prevents out-of-order async writes resurrecting stale/retrieved items.
@@ -321,35 +320,22 @@ public final class StashManager {
         Path file = stashDir.resolve(uuid.toString() + ".yml");
         YamlConfiguration yaml = buildYaml(data);
 
-        dirty.add(uuid);
         final long gen = saveGens.merge(uuid, 1L, Long::sum);
         try {
             Bukkit.getAsyncScheduler().runNow(plugin, task -> {
-                try {
-                    if (saveGens.get(uuid) == gen) {
-                        atomicSave(yaml, file);
-                    }
-                } finally {
-                    dirty.remove(uuid);
+                if (saveGens.get(uuid) == gen) {
+                    atomicSave(yaml, file);
                 }
             });
         } catch (Throwable t) {
             try {
                 plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-                    try {
-                        if (saveGens.get(uuid) == gen) {
-                            atomicSave(yaml, file);
-                        }
-                    } finally {
-                        dirty.remove(uuid);
+                    if (saveGens.get(uuid) == gen) {
+                        atomicSave(yaml, file);
                     }
                 });
             } catch (Throwable t2) {
-                try {
-                    atomicSave(yaml, file);
-                } finally {
-                    dirty.remove(uuid);
-                }
+                atomicSave(yaml, file);
                 plugin.getLogger().log(Level.WARNING, "Async scheduler unavailable, saved synchronously for " + uuid, t2);
             }
         }
@@ -451,7 +437,6 @@ public final class StashManager {
         for (Map.Entry<UUID, StashData> entry : stashes.entrySet()) {
             saveToFileSync(entry.getKey(), entry.getValue());
         }
-        dirty.clear();
     }
 
     public void shutdown() {

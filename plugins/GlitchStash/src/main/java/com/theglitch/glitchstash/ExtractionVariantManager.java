@@ -131,14 +131,6 @@ public final class ExtractionVariantManager {
         return cachedEnabled;
     }
 
-    public boolean isEnforceKeyCached() {
-        return cachedEnforceKey;
-    }
-
-    public int getArmDurationCached() {
-        return cachedArmDuration;
-    }
-
     public Variant variantAt(Location location) {
         if (location == null || location.getWorld() == null) return null;
         // Fast path: lookup by world

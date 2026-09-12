@@ -18,12 +18,10 @@ public final class ConsumableListener implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
-    private final GlitchItems plugin;
     private final GearManager gearManager;
     private final IdentifyManager identifyManager;
 
-    public ConsumableListener(GlitchItems plugin, GearManager gearManager, IdentifyManager identifyManager) {
-        this.plugin = plugin;
+    public ConsumableListener(GearManager gearManager, IdentifyManager identifyManager) {
         this.gearManager = gearManager;
         this.identifyManager = identifyManager;
     }

@@ -120,11 +120,4 @@ public final class RaidExpansion extends PlaceholderExpansion {
                 return null;
         }
     }
-
-    /**
-     * Direct helper for non-PAPI contexts.
-     */
-    public String getPlaceholder(Player player, String identifier) {
-        return onPlaceholderRequest(player, identifier);
-    }
 }

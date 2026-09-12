@@ -173,7 +173,7 @@ public class WaveManager {
         double checkRadiusSq = (double) checkRadius * (double) checkRadius;
         for (org.bukkit.entity.Entity entity : world.getNearbyEntities(
                 origin, checkRadius, checkRadius, checkRadius)) {
-            if (!(entity instanceof org.bukkit.entity.LivingEntity living)) continue;
+            if (!(entity instanceof LivingEntity living)) continue;
             if (entity instanceof Player) continue;
             if (living.isDead()) continue;
             // If MythicMobs is available, only count its tagged mobs

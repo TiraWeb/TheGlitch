@@ -21,12 +21,6 @@ public class RewardManager {
         return (int) ((baseShards + perWaveBonus * totalWaves) * tierMultiplier * partyBonus);
     }
 
-    public double getLootChance(int tier) {
-        var config = plugin.getDungeonConfig().getDungeon(tier);
-        if (config == null) return 0.0;
-        return config.getSection().getDouble("rewards.loot-chance", 0.3);
-    }
-
     private double getPartySizeBonus(int partySize) {
         return switch (partySize) {
             case 1 -> 1.0;

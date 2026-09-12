@@ -152,10 +152,6 @@ public final class InsuranceManager {
         return enabledWorlds.contains(world);
     }
 
-    public Set<String> getEnabledWorlds() {
-        return enabledWorlds;
-    }
-
     public int getPremiumPerItem() {
         return premiumPerItem;
     }
@@ -257,28 +253,15 @@ public final class InsuranceManager {
     public List<ItemStack> claim(UUID uuid) {
         List<InsuredItem> list = insured.remove(uuid);
         if (list == null || list.isEmpty()) return List.of();
-        // Filter expired — only return non-expired? Or return all? Claim window means expired shouldn't be claimable.
+        // Expired items are dropped (still removed); only valid ones are returned.
         long now = System.currentTimeMillis();
         List<ItemStack> result = new ArrayList<>();
-        List<InsuredItem> remaining = new ArrayList<>();
         for (InsuredItem it : list) {
             if (now <= it.expiresAt()) {
                 result.add(it.item());
-            } else {
-                // expired — don't return, but still removed
             }
         }
-        // If there were expired items mixed with valid, we already removed all; if some were not claimable we don't re-store.
-        // If caller wants to keep non-expired that weren't claimed due to filter, they'd be in result already.
-        // Save deletion
         deleteFile(uuid);
-        // Also purge any expired leftover not returned — already cleared.
-        // If there were items that are still valid but we filtered? No, all valid returned.
-        // No need to re-store remaining (should be empty).
-        if (!remaining.isEmpty()) {
-            insured.put(uuid, remaining);
-            saveInsurance(uuid);
-        }
         return result;
     }
 

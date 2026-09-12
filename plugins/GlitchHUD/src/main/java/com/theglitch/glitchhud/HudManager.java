@@ -211,8 +211,6 @@ public final class HudManager {
 
     public Scoreboard getBoard(UUID id) { return boards.get(id); }
 
-    public Map<UUID, Scoreboard> getBoards() { return Map.copyOf(boards); }
-
     void ensureBelowObjective(Scoreboard board) {
         if (board == null) return;
         try {
@@ -258,8 +256,6 @@ public final class HudManager {
         } catch (Exception ignored) {}
         return !nowHidden;
     }
-
-    public void clearTransient(UUID id) { hiddenTransient.remove(id); }
 
     public void refresh(Player player) {
         if (!enabled || isHidden(player)) return;

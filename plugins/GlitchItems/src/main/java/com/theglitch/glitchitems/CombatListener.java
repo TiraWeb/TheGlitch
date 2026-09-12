@@ -31,7 +31,6 @@ public final class CombatListener implements Listener {
     private record PendingSideEffects(Player attacker, LivingEntity victim, double healed, double maxHealth, int fireTicks, double selfDamage) {}
     private record PendingReflect(Player defender, LivingEntity attacker, double amount) {}
 
-    private final GlitchItems plugin;
     private final GearManager gearManager;
     private final ResidualGlitchManager glitchManager;
     private final Map<EntityDamageByEntityEvent, PendingSideEffects> pendingSideEffects = new ConcurrentHashMap<>();
@@ -39,8 +38,7 @@ public final class CombatListener implements Listener {
     // Veil Tether yank spam guard: attacker UUID -> last pull epoch-ms
     private final Map<java.util.UUID, Long> tetherCooldown = new ConcurrentHashMap<>();
 
-    public CombatListener(GlitchItems plugin, GearManager gearManager, ResidualGlitchManager glitchManager) {
-        this.plugin = plugin;
+    public CombatListener(GearManager gearManager, ResidualGlitchManager glitchManager) {
         this.gearManager = gearManager;
         this.glitchManager = glitchManager;
     }
@@ -291,7 +289,8 @@ public final class CombatListener implements Listener {
     }
 
     @EventHandler
-    public void onDeath(PlayerDeathEvent event) {        Player player = event.getEntity();
+    public void onDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
         if (glitchManager.isEnabledWorld(player.getWorld().getName())) {
             glitchManager.clear(player);
         }

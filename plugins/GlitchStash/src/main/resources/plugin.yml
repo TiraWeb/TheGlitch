@@ -41,6 +41,3 @@ permissions:
   glitchstash.admin:
     description: Admin stash commands
     default: op
-  glitchstash.vip:
-    description: Extra stash slots
-    default: false

@@ -44,10 +44,6 @@ public final class ExtractionMarkers {
         this.bridge = new WaypointBridge(plugin);
     }
 
-    public boolean locatorWaypointsAvailable() {
-        return bridge.locatorWaypointsAvailable();
-    }
-
     /** Idempotent: clears any previous batch (and stale leftovers) first. */
     public void show(Collection<ExtractionPoint> points) {
         clear();

@@ -61,23 +61,6 @@ public final class RaidSession {
         lootByPlayer.merge(playerId, amount, Integer::sum);
     }
 
-    /** @deprecated use {@link #addLoot(UUID,int)} */
-    @Deprecated
-    public void addLoot(int amount) {
-        // Fallback: credit to leader if no player specified (legacy)
-        addLoot(leader, amount);
-    }
-
-    public void setLootValue(UUID playerId, int value) {
-        if (playerId == null) return;
-        lootByPlayer.put(playerId, Math.max(0, value));
-    }
-
-    @Deprecated
-    public void setLootValue(int lootValue) {
-        setLootValue(leader, lootValue);
-    }
-
     // ---- Per-player deaths ----
 
     public int getDeaths(UUID playerId) {
@@ -94,21 +77,6 @@ public final class RaidSession {
     public void incrementDeaths(UUID playerId) {
         if (playerId == null) return;
         deathsByPlayer.merge(playerId, 1, Integer::sum);
-    }
-
-    @Deprecated
-    public void incrementDeaths() {
-        incrementDeaths(leader);
-    }
-
-    public void setDeaths(UUID playerId, int deaths) {
-        if (playerId == null) return;
-        deathsByPlayer.put(playerId, Math.max(0, deaths));
-    }
-
-    @Deprecated
-    public void setDeaths(int deaths) {
-        setDeaths(leader, deaths);
     }
 
     /**

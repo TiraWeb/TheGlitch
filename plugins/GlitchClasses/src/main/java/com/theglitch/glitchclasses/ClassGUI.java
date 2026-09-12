@@ -313,9 +313,9 @@ public class ClassGUI implements Listener {
         int unlockLevel = ultimate ? cachedUltimateLevel : ABILITY_UNLOCKS[Math.min(idx, ABILITY_UNLOCKS.length - 1)];
         boolean unlocked = selected && data.level() >= unlockLevel;
 
-        Material icon = ultimate
-                ? Material.NETHER_STAR
-                : material(ability.getString("icon", ""), ABILITY_FALLBACK_ICONS[Math.min(idx, ABILITY_FALLBACK_ICONS.length - 1)]);
+        Material fallback = ultimate ? Material.NETHER_STAR
+                : ABILITY_FALLBACK_ICONS[Math.min(idx, ABILITY_FALLBACK_ICONS.length - 1)];
+        Material icon = material(ability.getString("icon", ""), fallback);
 
         ItemStack item = new ItemStack(icon);
         ItemMeta meta = item.getItemMeta();
@@ -504,10 +504,6 @@ public class ClassGUI implements Listener {
 
     public String[] classOrder() {
         return CLASS_ORDER.clone();
-    }
-
-    public int ultimateLevelPublic() {
-        return cachedUltimateLevel;
     }
 
     // ==================== ACTIONS ====================

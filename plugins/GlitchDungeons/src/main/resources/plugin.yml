@@ -34,12 +34,6 @@ commands:
     usage: /dungeonui <noop|open <tier>|panel <here|undo|show>>
 
 permissions:
-  glitchdungeons.party:
-    description: Use party commands
-    default: true
-  glitchdungeons.dungeon:
-    description: Use dungeon commands
-    default: true
   glitchdungeons.dungeon.tier1:
     description: Enter Tier 1 dungeons
     default: true

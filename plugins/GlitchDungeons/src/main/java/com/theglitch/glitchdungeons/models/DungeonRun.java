@@ -50,10 +50,6 @@ public class DungeonRun {
     public int getTotalWaves() { return totalWaves; }
     public int getRemainingTime() { return remainingTime; }
     public int getMaxTime() { return maxTime; }
-    public List<UUID> getAlivePlayers() { return new ArrayList<>(alivePlayers); }
-    public List<UUID> getDeadPlayers() { return new ArrayList<>(deadPlayers); }
-    public FailReason getFailReason() { return failReason; }
-    public long getExtractionStartTime() { return extractionStartTime; }
 
     public void setState(State state) { this.state = state; }
     public void setCurrentWave(int wave) { this.currentWave = wave; }
@@ -68,10 +64,6 @@ public class DungeonRun {
         }
     }
 
-    public boolean isTimedOut() {
-        return remainingTime <= 0;
-    }
-
     public void playerDied(UUID uuid) {
         alivePlayers.remove(uuid);
         if (!deadPlayers.contains(uuid)) {
@@ -81,9 +73,5 @@ public class DungeonRun {
 
     public boolean isWiped() {
         return alivePlayers.isEmpty();
-    }
-
-    public boolean isAllWavesComplete() {
-        return currentWave >= totalWaves;
     }
 }

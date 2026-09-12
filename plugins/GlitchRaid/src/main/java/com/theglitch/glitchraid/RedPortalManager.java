@@ -24,11 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class RedPortalManager {
 
     public record Mark(String world, int x, int y, int z) {}
-    public record Region(String world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ, Material material) {
-        public long volume() {
-            return (long) (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
-        }
-    }
+    public record Region(String world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ, Material material) {}
     public record FillResult(FillStatus status, int filled, int skipped, long volume) {}
     public enum FillStatus { OK, NO_MARKS, WORLD_MISMATCH, WORLD_MISSING, TOO_BIG }
 

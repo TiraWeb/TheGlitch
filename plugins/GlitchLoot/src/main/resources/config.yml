@@ -35,9 +35,9 @@ anti-funnel:
   enabled: true
   # Seconds a player must wait before another bonus drop from the same kill chain
   per-player-rarity-cooldown-seconds: 120
-  cooldown-message: "<gray>Loot surge cooling down here.</gray>"
 
 messages:
+  cooldown-message: "<gray>Loot surge cooling down here.</gray>"
   bonus-applied: "<dark_purple><bold>GLITCH</bold> <gray>surge! The Glitch rewards your persistence.</gray>"
   power-capped: "<red>The Glitch is exhausted here — try again later.</red>"
   reload: "<green>GlitchLoot configuration reloaded.</green>"

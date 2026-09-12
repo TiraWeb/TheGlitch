@@ -37,9 +37,9 @@ public final class GlitchItems extends JavaPlugin {
         // Automatic loot scatter — RED WORLD only, sparse, on solid ground (see ScatterManager.java:1)
         scatterManager = new ScatterManager(this, containerManager);
 
-        Bukkit.getPluginManager().registerEvents(new CombatListener(this, gearManager, glitchManager), this);
+        Bukkit.getPluginManager().registerEvents(new CombatListener(gearManager, glitchManager), this);
         Bukkit.getPluginManager().registerEvents(new ContainerListener(containerManager), this);
-        Bukkit.getPluginManager().registerEvents(new ConsumableListener(this, gearManager, identifyManager), this);
+        Bukkit.getPluginManager().registerEvents(new ConsumableListener(gearManager, identifyManager), this);
         glitchManager.start();
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {

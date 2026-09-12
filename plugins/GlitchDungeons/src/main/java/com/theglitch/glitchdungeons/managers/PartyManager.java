@@ -26,18 +26,8 @@ public class PartyManager {
         return parties.get(leaderUuid);
     }
 
-    public Party getPartyAsLeader(UUID leaderUuid) {
-        return parties.get(leaderUuid);
-    }
-
     public boolean hasParty(UUID playerUuid) {
         return playerToParty.containsKey(playerUuid);
-    }
-
-    public boolean isLeader(UUID playerUuid) {
-        UUID leaderUuid = playerToParty.get(playerUuid);
-        if (leaderUuid == null) return false;
-        return leaderUuid.equals(playerUuid);
     }
 
     public Party createParty(Player leader) {
@@ -120,15 +110,6 @@ public class PartyManager {
             playerToParty.remove(member);
         }
         parties.remove(party.getLeaderUuid());
-    }
-
-    public void disbandParty(UUID leaderUuid) {
-        Party party = parties.remove(leaderUuid);
-        if (party != null) {
-            for (UUID member : party.getMembers()) {
-                playerToParty.remove(member);
-            }
-        }
     }
 
     public void setInDungeon(UUID playerUuid, boolean inDungeon) {

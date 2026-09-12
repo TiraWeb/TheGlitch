@@ -150,10 +150,6 @@ public final class GlitchHealthBar extends JavaPlugin {
         return enabledWorlds.contains(world);
     }
 
-    public Set<String> getEnabledWorlds() {
-        return enabledWorlds;
-    }
-
     public HealthBarManager getManager() {
         return manager;
     }
@@ -184,17 +180,5 @@ public final class GlitchHealthBar extends JavaPlugin {
 
     public TextColor colorEmpty() {
         return colorEmpty;
-    }
-
-    public int tickPeriod() {
-        return tickPeriod;
-    }
-
-    public int rescanPeriod() {
-        return rescanPeriod;
-    }
-
-    public String trackMode() {
-        return trackMode;
     }
 }

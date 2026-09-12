@@ -1,6 +1,5 @@
 package com.theglitch.glitchstash.extract;
 
-import com.theglitch.glitchstash.AutoExtractScheduler;
 import com.theglitch.glitchstash.ExtractionVariantManager;
 import com.theglitch.glitchstash.GlitchStash;
 import dev.velmax.velkoth.VelKothPlugin;
@@ -20,7 +19,7 @@ import java.util.logging.Level;
  * create/move the VelKoth arenas there, start them via the console path,
  * point the variant-key zones at them and show markers.
  *
- * Cycle flow lives in {@link AutoExtractScheduler}; the scheduler skips its
+ * Cycle flow lives in {@link com.theglitch.glitchstash.AutoExtractScheduler}; the scheduler skips its
  * legacy arena discovery whenever {@link #runCycle(int)} returns true.
  */
 public final class DynamicExtractionManager {
@@ -233,15 +232,6 @@ public final class DynamicExtractionManager {
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "[DynamicExtract] Failed to update variant zones: " + e.getMessage(), e);
         }
-    }
-
-    public List<ExtractionPoint> getCurrentPoints() {
-        List<ExtractionPoint> pts = currentPoints;
-        return pts == null ? List.of() : List.copyOf(pts);
-    }
-
-    public boolean isDynamicEnabled() {
-        return dynEnabled;
     }
 
     private static int clamp(int value, int min, int max) {

@@ -24,14 +24,9 @@ public class Party {
     public List<UUID> getMembers() { return new ArrayList<>(members); }
     public int getSize() { return members.size(); }
     public State getState() { return state; }
-    public UUID getPendingInvite() { return pendingInvite; }
 
     public boolean isLeader(UUID uuid) {
         return leaderUuid.equals(uuid);
-    }
-
-    public boolean isMember(UUID uuid) {
-        return members.contains(uuid);
     }
 
     public void addMember(UUID uuid) {

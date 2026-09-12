@@ -108,8 +108,6 @@ public final class GlitchClasses extends JavaPlugin {
         return MM.deserialize(getMessage(key).replace(ph1, v1).replace(ph2, v2).replace(ph3, v3));
     }
 
-    public MiniMessage mm() { return MM; }
-
     public static GlitchClasses getInstance() {
         return instance;
     }

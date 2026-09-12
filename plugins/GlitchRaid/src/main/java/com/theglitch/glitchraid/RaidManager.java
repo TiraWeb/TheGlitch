@@ -258,10 +258,6 @@ public final class RaidManager {
         return extractedThisRaid.contains(uuid);
     }
 
-    public void clearAllExtracted() {
-        extractedThisRaid.clear();
-    }
-
     // ---- Solo raid end persistence (solo-new quit/relog timer restore) ----
 
     /** Stores the player's solo raid end-timestamp so a relog cannot reset the timer. */
@@ -310,15 +306,6 @@ public final class RaidManager {
         // Treat expired (remaining <=0) as inactive for joiners — timeout will handle cleanup
         if (session.getRemainingSeconds() <= 0) return null;
         return session;
-    }
-
-    /** Raw getter (may be expired) — use {@link #findActiveGlobalSession(String)} to check liveness. */
-    public RaidSession getGlobalSession(String world) {
-        return globalSessions.get(normalizeWorldKey(world));
-    }
-
-    public boolean isGlobalRaidActive(String world) {
-        return findActiveGlobalSession(world) != null;
     }
 
     /**
@@ -435,12 +422,6 @@ public final class RaidManager {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    /** Public accessor for remaining seconds of global in world, or -1 if none. */
-    public int getGlobalRemainingSeconds(String world) {
-        RaidSession s = findActiveGlobalSession(world);
-        return s == null ? -1 : s.getRemainingSeconds();
     }
 
     /** Whether we are inside the 1m buffer between raid end and next cycle. */
@@ -851,7 +832,7 @@ public final class RaidManager {
         final UUID victimId = uuid;
         timeoutVictims.add(victimId);
         FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
-        String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw : 
+        String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw :
                 "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
         try { player.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
         Title.Times times = Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(500));
@@ -1218,13 +1199,6 @@ public final class RaidManager {
     }
 
     /**
-     * Gets the global BossBar for world (used for joiners to see remaining time instantly).
-     */
-    public BossBar getGlobalBossBar(String world) {
-        return globalBossBars.get(normalizeWorldKey(world));
-    }
-
-    /**
      * Handles a non-leader quit: remove single player from raid without ending entire raid.
      * If leader quits, this is not used — use endRaid with LEADER_QUIT instead.
      * Global sessions are never disbanded on quit — the 31m cycle owns the global lifecycle.
@@ -1494,7 +1468,7 @@ public final class RaidManager {
             final UUID victimId = memberId;
             timeoutVictims.add(victimId);
             FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
-            String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw : 
+            String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw :
                     "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
             try { p.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
             Title.Times times = Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(500));
@@ -1689,7 +1663,7 @@ public final class RaidManager {
             final UUID victimId = memberId;
             timeoutVictims.add(victimId);
             FoliaScheduler.runLaterGlobal(plugin, () -> timeoutVictims.remove(victimId), 600L);
-            String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw : 
+            String killedRaw = (msgRaidTimeoutKilledRaw != null ? msgRaidTimeoutKilledRaw :
                     "<dark_red><bold>The Glitch consumed you.</bold> <gray>You failed to extract — raid loot lost. Stash is safe.</gray></dark_red>");
             try { p.sendMessage(MM.deserialize(killedRaw)); } catch (Exception ignored) {}
             Title.Times times = Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(500));

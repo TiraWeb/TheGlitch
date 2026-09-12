@@ -71,8 +71,4 @@ public final class Party {
     public void clearInvite(UUID target) {
         pendingInvites.remove(target);
     }
-
-    public void clearAllInvites() {
-        pendingInvites.clear();
-    }
 }

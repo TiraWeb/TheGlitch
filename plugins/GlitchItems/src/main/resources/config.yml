@@ -280,7 +280,6 @@ scatter:
   center-z: 1000
   chunks-per-container: 8
   max-attempts-per-container: 50
-  persist-file: "scattered.json"
   counts:
     debris: 240
     cache: 120

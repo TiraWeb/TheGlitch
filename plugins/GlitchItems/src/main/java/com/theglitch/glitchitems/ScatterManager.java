@@ -1213,9 +1213,7 @@ public final class ScatterManager {
     public Set<String> getEnabledWorlds() { return enabledWorlds; }
     public Map<String, Integer> getCounts() { return Collections.unmodifiableMap(counts); }
     public int getTrackedCount() { synchronized (scattered) { return scattered.size(); } }
-    public List<ScatteredPos> getScatteredSnapshot() { synchronized (scattered) { return List.copyOf(scattered); } }
     public File getDataFile() { return dataFile; }
     public int getBorderRadius() { return borderRadius; }
     public boolean isClearPrevious() { return clearPrevious; }
-    public boolean isOnTopOnly() { return onTopOnly; }
 }

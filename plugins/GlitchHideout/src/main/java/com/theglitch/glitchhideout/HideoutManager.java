@@ -1,7 +1,6 @@
 package com.theglitch.glitchhideout;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -42,7 +41,6 @@ import java.util.logging.Level;
 public final class HideoutManager {
 
     private static final NamespacedKey ORAXEN_KEY = new NamespacedKey("oraxen", "custom_item_id");
-    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     public record Station(String id, String display, String icon, String description,
                           int[] costs, Map<Integer, String> requires) {
@@ -682,10 +680,6 @@ public final class HideoutManager {
             savePlayerSync(uuid);
         }
         dirty.clear();
-    }
-
-    public void shutdown() {
-        saveAll();
     }
 
     private Economy economy() {

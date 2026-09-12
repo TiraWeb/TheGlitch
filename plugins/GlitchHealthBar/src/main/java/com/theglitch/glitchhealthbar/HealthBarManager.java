@@ -56,8 +56,6 @@ public final class HealthBarManager {
             entry.lastLoc = barLocation(mob);
             entry.lastHp = Math.max(0, mob.getHealth());
             bars.put(mob.getUniqueId(), entry);
-            // Reduced log spam: only log at fine level or every N? Keep info but not per mob flood
-            // plugin.getLogger().info("Bar attached to " + mob.getType() + " in " + mob.getWorld().getName());
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to attach bar to " + mob.getType() + ": " + e.getMessage());
         }

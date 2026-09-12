@@ -51,18 +51,4 @@ public final class Messages {
             return Component.text(key);
         }
     }
-
-    /** Deserialized component with placeholder pairs (ph1, v1, ph2, v2, ...). */
-    public Component comp(String key, String def, String... replacements) {
-        String value = raw(key, def);
-        for (int i = 0; i + 1 < replacements.length; i += 2) {
-            value = value.replace(replacements[i], replacements[i + 1]);
-        }
-        try {
-            return MM.deserialize(value);
-        } catch (Exception e) {
-            plugin.getLogger().warning("Bad MiniMessage for '" + key + "': " + e.getMessage());
-            return Component.text(key);
-        }
-    }
 }

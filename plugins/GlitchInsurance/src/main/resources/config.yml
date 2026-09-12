@@ -17,7 +17,6 @@ messages:
   max-reached: "<red>You have reached the maximum insured items (<max>).</red>"
   not-enough-shards: "<red>Not enough Shards — you need <premium> Shards to insure this item.</red>"
   claim: "<green>Your insured gear was protected on death! Use <white>/insurance claim</white> to retrieve if needed.</green>"
-  expired: "<red>Your insurance for <item> has expired.</red>"
   no-insurance: "<red>You have no insured items.</red>"
   cooldown: "<red>Insurance is on cooldown — try again in <seconds>s.</red>"
   reload: "<green>GlitchInsurance configuration reloaded.</green>"
@@ -34,7 +33,6 @@ messages:
   inventory-full: "<yellow>Inventory full — item dropped at your feet.</yellow>"
 
 modern-ui:
-  remote-perm: theglitch.remoteui
   world-panel:
     enabled: true
     world: hub

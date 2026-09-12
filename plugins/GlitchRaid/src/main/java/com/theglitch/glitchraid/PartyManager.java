@@ -147,21 +147,6 @@ public final class PartyManager {
         }
     }
 
-    public void disbandParty(UUID leaderUuid) {
-        Party party = parties.remove(leaderUuid);
-        if (party == null) return;
-        for (UUID member : party.rawMembers()) {
-            playerToLeader.remove(member);
-        }
-        plugin.getLogger().info("Raid party disbanded by leader: " + leaderUuid);
-    }
-
-    public void handleQuit(Player player) {
-        // Keep party on quit (rejoin), just log — don't dissolve immediately
-        // If you want auto-leave on quit, uncomment:
-        // leaveParty(player.getUniqueId());
-    }
-
     /**
      * Returns the party members including leader, or empty set if no party.
      */

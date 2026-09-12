@@ -21,7 +21,6 @@ public class DungeonSlot {
     public int getCenterX() { return centerX; }
     public int getCenterZ() { return centerZ; }
     public boolean isOccupied() { return occupied; }
-    public UUID getAssignedParty() { return assignedParty; }
 
     public void setOccupied(boolean occupied) {
         this.occupied = occupied;

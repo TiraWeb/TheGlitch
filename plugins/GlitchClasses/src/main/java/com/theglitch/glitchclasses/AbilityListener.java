@@ -54,9 +54,7 @@ public class AbilityListener implements Listener {
     private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
 
     // Active effects tracking
-    private final Map<UUID, Boolean> shieldWallActive = new HashMap<>();
     private final Map<UUID, Boolean> cloakActive = new HashMap<>();
-    private final Map<UUID, Boolean> tauntActive = new HashMap<>();
     private final Map<UUID, List<Block>> turretBlocks = new HashMap<>();
 
     // Turret lifecycle (owned armor stands) — used by Engineer repair + Cataclysm
@@ -186,9 +184,7 @@ public class AbilityListener implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         cooldowns.remove(uuid);
-        shieldWallActive.remove(uuid);
         cloakActive.remove(uuid);
-        tauntActive.remove(uuid);
         turretBlocks.remove(uuid);
         turretExpiry.remove(uuid);
         turretRepairs.remove(uuid);
@@ -266,7 +262,6 @@ public class AbilityListener implements Listener {
         }
 
         turretBlocks.put(player.getUniqueId(), wallBlocks);
-        shieldWallActive.put(player.getUniqueId(), true);
 
         // Visual effects
         player.getWorld().spawnParticle(Particle.CRIT, player.getLocation().add(direction.clone().multiply(2)), 50, 1, 1, 1, 0.1);
@@ -274,7 +269,6 @@ public class AbilityListener implements Listener {
 
         // Remove wall after duration
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            shieldWallActive.remove(player.getUniqueId());
             List<Block> blocks = turretBlocks.remove(player.getUniqueId());
             if (blocks != null) {
                 for (Block block : blocks) {
@@ -312,8 +306,6 @@ public class AbilityListener implements Listener {
         int duration = 100; // 5 seconds
         int range = 10 + (data.level() >= 4 ? 5 : 0); // 10 base, +5 at level 4
 
-        tauntActive.put(player.getUniqueId(), true);
-
         // Apply effects to player
         player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 0)); // 20% DR
 
@@ -340,7 +332,6 @@ public class AbilityListener implements Listener {
 
         // Remove taunt effect
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            tauntActive.remove(player.getUniqueId());
             player.sendActionBar(Component.empty());
         }, duration);
     }
