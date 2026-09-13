@@ -140,6 +140,9 @@ public final class GlitchHealthBar extends JavaPlugin {
     public boolean shouldTrack(Mob mob) {
         if (mob instanceof Player) return false;
         if (!isEnabledWorld(mob.getWorld().getName())) return false;
+        // Named mobs (MythicMobs elites/bosses of any entity type) always get a bar —
+        // e.g. the ModelEngine Glitch Warden is an IRON_GOLEM, not a Monster.
+        if (mob.getCustomName() != null) return true;
         // Cached mobs mode — no getConfig() per spawn/tick
         if ("all".equals(trackMode)) return true;
         // default: only Monster (hostile) — covers MythicMobs that are monsters too

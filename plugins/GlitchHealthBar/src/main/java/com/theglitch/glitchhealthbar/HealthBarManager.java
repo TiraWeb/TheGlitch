@@ -2,6 +2,7 @@ package com.theglitch.glitchhealthbar;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
@@ -219,6 +220,18 @@ public final class HealthBarManager {
                 .append(Component.text("░".repeat(length - filled), plugin.colorEmpty()));
         if (plugin.showNumbers()) {
             bar = bar.append(Component.text(" " + (int) hp + "/" + (int) max, TextColor.color(0xFFFFFF)));
+        }
+        // Named elites/bosses (e.g. ModelEngine mobs whose vanilla nametag is hidden)
+        // get a name line above the bar, preserving their original colors.
+        String rawName = mob.getCustomName();
+        if (rawName != null && !rawName.isBlank()) {
+            Component name;
+            try {
+                name = LegacyComponentSerializer.legacySection().deserialize(rawName);
+            } catch (Exception e) {
+                name = Component.text(org.bukkit.ChatColor.stripColor(rawName), TextColor.color(0xFFFFFF));
+            }
+            return name.append(Component.newline()).append(bar);
         }
         return bar;
     }
