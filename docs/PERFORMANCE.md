@@ -52,6 +52,11 @@ Every later phase (MythicMobs, dungeons, classes) gets measured against these
 numbers. If median MSPT doubles after installing something, we found the
 problem *that day*, not at launch.
 
+**2026-09-14 note:** ModelEngine display-entity rigs (warden + wisp) are mostly
+client-side cost, but re-profile once mobs fight in the Red Zone — entity count
++ model packets + Geyser translation all land in the same tick. Bedrock clients
+don't render the rigs (base entity only), so profile Java and Bedrock separately.
+
 ## What was tuned and why (summary)
 
 | Lever | File | Effect |

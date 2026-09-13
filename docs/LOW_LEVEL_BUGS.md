@@ -1,6 +1,6 @@
 # Low-Level Bug Tracker - Custom Plugins
 
-Updated: 2026-09-02 — armor rework + balance pass deployed (GlitchItems v3, Oraxen itemname, Vault +5%, scatter rift_vault=6, alchemy 6)
+Updated: 2026-09-14 — custom ModelEngine rigs (warden walk + feet, winged wisp)
 
 This tracker lists known implementation issues. It is not a substitute for
 runtime testing. Source-only plugins must be built and tested on the target
@@ -140,6 +140,16 @@ Resolved:
 - **Divider too wide:** `HudManager` hub/pve/red built `DIVIDER + " ────────"` overflow — trimmed to `<dark_gray>DIVIDER</dark_gray>` only (`9d8f05a`).
 - **Ping/TPS always `—`:** `PlaceholderResolver` `%ping%`/`%player_ping%`/`%server_tps_1%` via `PlaceholderAPI.setPlaceholders` could stay literal — added reflective `Player.getPing()` + `Bukkit.getTPS()[0]` fallback; `HudManager.buildHub` now guards `pingVal>=0`/`tpsVal>=0` (`c9a229e`).
 - **Locator-bar chunk unload:** `DynamicExtractionManager` waypoints vanished at distance — added force-load of marker chunks for cycle duration + stale sweep (`a0edffa`).
+
+## ModelEngine rigs (new, 2026-09-14)
+
+| ID | Severity | Location | Status / Description |
+|---|---|---|---|
+| M1 | Critical | blueprint anim tracks | Animation `position` tracks are RELATIVE offsets — shifting them with geometry buries/floats the model. Burned twice on the warden (idle carried y −4). **Rule:** ground static geometry only; regenerate anims from source clips (docs/MODELS.md §conversion). Resolved via regenerated idle + minY +0.5. |
+| M2 | Warning | blueprint facing | Source rigs face +Z; MEG forward is −Z. Warden: positions mirrored only (approved look, geometric nose reads forward). All new rigs: full-rigid Ry(180) bake so art follows geometry (wisp). |
+| M3 | Warning | `GlitchWarden.yml` walk state | Walk cycled silently until the clip was named exactly `walk` (MEG `Default-Animations`) AND mapped via `defaultstate`. Dual-path rule documented (docs/MODELS.md); verify in-game per docs/TESTING.md. |
+| M4 | Warning | hitbox | Hitbox stays vanilla base (golem/vex) regardless of visual size. Wisp (~4 blocks on a vex hitbox) needs an explicit keep/shrink call — open with operator. |
+| M5 | Info | Bedrock | Geyser shows the invisible base entity, not the display-entity rig. Java-only eye candy until proven otherwise. |
 
 ## Cross-plugin PDC crash (2026-09-01 `c9a229e`)
 

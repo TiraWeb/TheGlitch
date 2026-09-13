@@ -69,6 +69,7 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 - Keep YAML `indent_size: 2` (see `.editorconfig`)
 - Pin Java/Paper once in root `pom.xml` (`<java.version>21</java.version>`, `<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`) — applies to all 14 modules (GlitchItems v3 still 21; verify scatter rift_vault=6 and itemname count=20)
 - `shellcheck` must also cover `scripts/deploy-balance-2026-09-02.sh` and `scripts/deploy-armor-2026-09-02.sh`; CI must assert `itemname:` count=20 and fail on `displayname:` in `server/plugins/Oraxen/items/*.yml` and `config-version == 3`
+- Blueprints must stay valid JSON matching the proven shape: `python3 -c "import json,glob; [json.load(open(p)) for p in glob.glob('server/plugins/ModelEngine/blueprints/*.bbmodel')]"` + eyeball `model_identifier`/`name` = filename stem (docs/MODELS.md)
 - If CI fails on `package` due to network (`Could not transfer artifact`), `validate` green is still a passing signal — `package` is `continue-on-error: true`.
 
 ## Files

@@ -198,6 +198,7 @@ Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or vi
 | EssentialsX | **INCOMPATIBLE** with MC 26.x | N/A — not functional |
 | Eli's Coins | Glitch Shards currency | `server/plugins/Coins/config.yml` |
 | MythicMobs | Custom mobs + loot | `server/plugins/MythicMobs/` |
+| ModelEngine | Custom mob rigs (warden + wisp, 2/12 free-tier slots; jar live-only, gitignored) | `server/plugins/ModelEngine/blueprints/` — pipeline: `docs/MODELS.md` |
 | FancyNpcs | Packet-based NPCs | `server/plugins/FancyNpcs/` |
 | DeluxeMenus | GUI menus | `server/plugins/DeluxeMenus/gui_configs/` |
 | TAB | Tab list + header/footer (sidebar owned by GlitchHUD) | `server/plugins/TAB/config.yml` (`scoreboard.enabled: false`) |
@@ -327,6 +328,8 @@ plugins/GlitchLoot/       GlitchLoot source (reactor-only build)
 plugins/GlitchHUD/        GlitchHUD source (reactor-only; per-world sidebar + TAB takeover + negative_space sync)
 plugins/GlitchDungeons/   GlitchDungeons source (deferred — not deployed by default)
 server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
+server/plugins/ModelEngine/blueprints/  MEG rig blueprints (generated, tracked — source zips at repo root)
+GlitchWardenV2.zip / GlitchWisp.zip  custom-model source packages (myrlin bundles, see docs/MODELS.md)
 server/plugins/TAB/config.yml  TAB config (scoreboard.enabled: false — HUD owns sidebar)
 server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json  HUD shift glyphs
 console.sh                attach to the live server console
@@ -336,6 +339,7 @@ server/*.yml              performance tuning configs (synced every bootstrap)
 docs/ZONES.md             zone architecture blueprint
 docs/PERFORMANCE.md       tuning rationale + baseline
 docs/ITEM_SYSTEM.md       Arcane Ruins item system design (rarities, resonance, rifts, prices §11)
+docs/MODELS.md              custom mob-model pipeline (ModelEngine rigs, conversion rules, deploy)
 docs/GLITCH_SHOPS_DESIGN.md  merchant NPC plugin design (Phase 5.12)
 docs/GAME_DESIGN.md       core gameplay numbers (mobs, loot, economy, extraction, anti-grief)
 docs/STATUS.md            authoritative implementation and verification status

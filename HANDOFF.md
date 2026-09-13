@@ -1,6 +1,6 @@
 # The Glitch - Session Handoff
 
-Updated: 2026-09-02
+Updated: 2026-09-14
 
 This document is a concise handoff. The authoritative status is
 [docs/STATUS.md](docs/STATUS.md); this file must not contradict it.
@@ -37,6 +37,8 @@ player data, or deployed third-party jars.
 - Economy fix 2026-08-23: `server/plugins/Coins/config.yml:85,114` `player-drop:false` `lose-on-death:false` `drop-on-death:false` (account-bound) + live `coins reload`; GlitchShops buy/sell now atomic (`ShopGUI.java:375` deposit-first / `transactionSuccess` / refund). COINS retuned 2026-09-02 T1 1-2 / T2 Stalker 2-6 / Phantom 3-8 / Brute 5-10 / T3 10-16 / boss 40-80 (docs/ITEM_BALANCE.md, 4d8c554).
 - Custom UI theming 2026-08-23: Oraxen font glyphs `E040-E049` (`server/plugins/Oraxen/glyphs/theglitch.yml`, textures via `scripts/gen-ui-textures.py`), global themed chest override `pack/textures/gui/**/generic_54.png`, Wynncraft-style gear detail pages (`GlitchUI.java` + `GearManager.buildItem`), glyph titles in Shops/Hideout Java + Stash/Classes configs. Bedrock intentionally sees plain text. Live config patch needed once: stash display-name + classes gui.title (seeded-once files). Oraxen `itemname:` migration 2026-09-02 (20 items, displayname:→itemname: in 6e2fba7, config-version 3).
 - MythicMobs: ten mob definitions with per-tier drop tables (rifts on T2-T4) and Red Zone spawn areas (T1 everywhere, T2 mid cross-ring, T3 at Core + extraction beacons) are in repo; scatter corrected to land (`cd74932`). Live test pending.
+- **Custom models (2026-09-14 `c32baa0`/`4d73404`, docs/MODELS.md):** ModelEngine R4.1.0 free — warden rig (user `walk` clip, dual-path usm trigger, feet planted) + winged wisp rig (static glide). Blueprints tracked, pack merged via `10_modelengine.zip`, `3 models loaded` clean. Visual sign-off + wisp-scale decision pending.
+- **Pre-alpha hardening (2026-09-14 `64ed02a`):** raid-buffer red-entry block, dialogs removed repo-wide (chest GUIs), floating Bazaar/Dungeon panels. Rank ladder live (Member←Wisp←Stalker←Sentinel; Helper←Moderator←Admin←Owner + Dev; badges E050-E058).
 - GlitchShops is deployed and live-tested: `/shop` buy/sell works. Grand Bazaar NPC placement and balance tuning remain.
 - GlitchHealthBar is deployed and live-tested: floating HP bars above hostiles.
 - GlitchDungeons has a source prototype and is **deferred by operator decision**; config parsing, extraction startup, stash integration, and cleanup still require work. It is excluded from `build-all.sh` defaults (opt-in via argument). Do not describe it as deployed-by-default.
@@ -62,6 +64,11 @@ sudo ./scripts/build-all.sh           # builds/deploys all 12 plugins + syncs TA
 # Or: sudo ./scripts/build-all.sh --clean   # full clean
 # Or: sudo ./scripts/build-all.sh --no-deploy  # validate only
 
+# Custom models (runtime, no restart — see docs/MODELS.md):
+# sudo cp server/plugins/ModelEngine/blueprints/<mid>.bbmodel /opt/theglitch/server/plugins/ModelEngine/blueprints/
+# + `meg reload models` + `mm reload` + merge resource pack.zip → Oraxen/pack/uploads/10_modelengine.zip
+# + `oraxen reload all` (players must RELOG for pack changes)
+
 # Legacy per-plugin (still works, use for first-time lib seeding or single-plugin debug):
 # Topological order MUST be: Items → Shops → Stash → Classes → Hideout → DeathRules → HealthBar
 # (Stash depends on Items+Shops; Shops depends on Items; Hideout needs Vault from Classes)
@@ -85,7 +92,7 @@ not build them automatically.
 
 ## Immediate Work
 
-1. In-game playtests per docs/TESTING.md — verified 2026-09-01: dynamic capture + ring particles (3/3), hub divider, hub `Ping`/`TPS`, container keys. Still open: variant-key arming bonus, locator-bar waypoints at distance, `/sb` toggle, `BELOW_NAME` stacks, `NOTCHED_10`, GlitchRaid (`%glitchraid_*%`+Folia teleport)/GlitchInsurance/GlitchEvents/GlitchLoot, abilities/ultimates, GlitchHideout, spawn areas. + verify 2026-09-02: armor upgrade slot40 + /armor upgrade, tonic/salve, Attunement Pack, Void Infusion, roll-based sell, Vault 5%, scatter counts.
+1. In-game playtests per docs/TESTING.md — verified 2026-09-01: dynamic capture + ring particles (3/3), hub divider, hub `Ping`/`TPS`, container keys. Still open: variant-key arming bonus, locator-bar waypoints at distance, `/sb` toggle, `BELOW_NAME` stacks, `NOTCHED_10`, GlitchRaid (`%glitchraid_*%`+Folia teleport)/GlitchInsurance/GlitchEvents/GlitchLoot, abilities/ultimates, GlitchHideout, spawn areas. + verify 2026-09-02: armor upgrade slot40 + /armor upgrade, tonic/salve, Attunement Pack, Void Infusion, roll-based sell, Vault 5%, scatter counts. + verify 2026-09-14 (relog for pack first): warden feet/facing/user walk cycle/name+bar, wisp wings/glide/name+bar; decide wisp scale (~4 blocks on a vex hitbox).
 2. Static Fast/Silent arenas (`extract_fast` 15s / `extract_silent` 10s) remain creatable via `/koth create|set time` and mirrored into `extraction-variants.zones` for non-dynamic tests; verify `/extractadmin zones|armed`.
 3. Finish the item loop: Identifier NPC flow (FancyNpcs + name binding).
 4. Anti-grief remainder: friendly-fire off everywhere, 2-min AFK kick (shards now account-bound `player-drop:false` etc — verify in-game no shard loss on death).

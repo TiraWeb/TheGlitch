@@ -14,6 +14,17 @@
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./setup-mythicmobs.sh` (`mm reload` + verify mobs list)
 - [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD (+ `TAB scoreboard.enabled: false` + `Oraxen negative_space` sync lines)
+- [ ] Model deploys (docs/MODELS.md): blueprint + mob yml copied live → `meg reload models` (`Importing <mid>.bbmodel` → `N models loaded`) → `mm reload` → pack merged to `10_modelengine.zip` → `oraxen reload all` → **relog** (pack changes need re-download)
+
+## Custom mob models (ModelEngine, 2026-09-14)
+
+- [ ] `sudo grep -iE 'mporting (asset_c895|glitchwisp)|models loaded' logs/latest.log` shows both imports + `3 models loaded`, no ModelEngine/MythicMobs errors
+- [ ] Warden: `/spawnmythicmob GlitchWarden` → furnace golem faces you (geometric nose forward), feet on grass in idle AND mid-stride (no sinking, no floating)
+- [ ] Warden walks toward you playing the user's 2.4s walk cycle (legs/arms swing, body bob) — not gliding in idle pose
+- [ ] Wisp: `/spawnmythicmob GlitchWisp` → winged rig sweeps up behind it (no twisted/clipped wing slabs), glides while the vex base flies, hovers ~1 unit (no ground clip when it dips)
+- [ ] Both show name + HP bar above the model (GlitchHealthBar named-mob tracking)
+- [ ] Note hitbox feel: warden hits like a golem, wisp like a vex — visuals are bigger than hitboxes by design; wisp scale (~4 blocks) gets an explicit keep/shrink call
+- [ ] Bedrock client check: base entity visible, rig not rendered (known MEG/Geyser limit — Java-only eye candy)
 
 ## GlitchDeathRules (mercy rule + entry protection)
 

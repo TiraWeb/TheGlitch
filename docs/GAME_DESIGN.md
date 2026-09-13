@@ -14,7 +14,7 @@
 > GlitchHideout, and **GlitchHUD** (per-world sidebar, below-name, TAB takeover)
 > exist in source and are deployed 2026-09-01 (Folia-safe, real PAPI `2.12.3`,
 > Coins account-bound, `ByteTag` PDC crash + ping/TPS fixed, `SpotPicker` flatness tightened,
-> scatter land-corrected `[0..2000]²`); **economy+armor rework deployed 2026-09-02** (`4d8c554+b638e45` via `scripts/deploy-balance-2026-09-02.sh` + `f1da4d0` via `scripts/deploy-armor-2026-09-02.sh`, `rift_vault=6` scatter confirmed, RCON armor verified, service active); most world content, the Identifier NPC,
+> scatter land-corrected `[0..2000]²`); **economy+armor rework deployed 2026-09-02** (`4d8c554+b638e45` via `scripts/deploy-balance-2026-09-02.sh` + `f1da4d0` via `scripts/deploy-armor-2026-09-02.sh`, `rift_vault=6` scatter confirmed, RCON armor verified, service active); **custom ModelEngine rigs live 2026-09-14** (warden + wisp, docs/MODELS.md — visual sign-off pending); most world content, the Identifier NPC,
 > dungeon content, and anti-grief remainder (friendly-fire/AFK) are still incomplete. See
 > [`docs/STATUS.md`](STATUS.md).
 
@@ -129,6 +129,12 @@ Four classes, each with a unique identity. Classes are chosen once and can be re
 10 mobs across 4 tiers. Resonance tags (docs/ITEM_SYSTEM.md §5) are matched by gear:
 a Hollow weapon deals +25% damage to Hollow mobs. `Resonance:` column is a MythicMobs
 metadata field.
+
+**Custom models (live 2026-09-14, docs/MODELS.md):** Glitch Wisp wears the
+winged `glitchwisp` rig (static glide, vex base) and Glitch Warden the furnace-golem
+rig (idle + user walk cycle, golem base) — visual sign-off pending, hitboxes stay
+vanilla. Live stats differ from the original table: Wisp **12 HP / 2 dmg**, Warden
+**180 HP / 5 dmg** (mob yml is authoritative; retune here when combat data lands).
 
 **Zone distribution:**
 - **glitch_pve (dungeons):** wave-based spawning scaled per dungeon tier (§5). T1 dungeons = T1 mobs, T2 = T1+T2, ..., T5 = everything incl. bosses.
