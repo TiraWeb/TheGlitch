@@ -284,9 +284,9 @@ public final class MobModels {
         }
     }
 
-    /** Drops dead/invalid pairs and removes orphaned model displays. */
+    /** Drops dead/invalid pairs, removes orphans, and picks up unattached matches. */
     private void sweep() {
-        if (attached.isEmpty()) return;
+        if (attached.isEmpty() && !enabled) return;
         for (Map.Entry<UUID, UUID> pair : new ArrayList<>(attached.entrySet())) {
             Entity mob = null;
             try {
@@ -299,6 +299,43 @@ public final class MobModels {
                 Entity display = Bukkit.getEntity(pair.getValue());
                 if (display != null) display.remove();
             } catch (Exception ignored) {
+            }
+        }
+        if (enabled) {
+            scanForCandidates();
+        }
+    }
+
+    /**
+     * Retro-scan: attaches models to matching mobs the spawn listener missed
+     * (name applied after the event, plugin reload with mobs already out,
+     * spawners that bypass Bukkit events). Cheap — only entity types we match on.
+     */
+    private void scanForCandidates() {
+        if (entries.isEmpty()) return;
+        java.util.EnumSet<EntityType> types = java.util.EnumSet.noneOf(EntityType.class);
+        for (Entry entry : entries) {
+            types.add(entry.type());
+        }
+        for (World world : Bukkit.getWorlds()) {
+            for (EntityType type : types) {
+                List<Entity> found;
+                try {
+                    found = new ArrayList<>(world.getEntitiesByClass(
+                            (Class<? extends Entity>) type.getEntityClass()));
+                } catch (Exception e) {
+                    continue;
+                }
+                for (Entity entity : found) {
+                    if (!(entity instanceof LivingEntity mob)) continue;
+                    if (!mob.isValid() || mob.isDead()) continue;
+                    if (attached.containsKey(mob.getUniqueId())) continue;
+                    try {
+                        tryAttach(mob);
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("[MobModels] scan attach failed: " + e.getMessage());
+                    }
+                }
             }
         }
     }
