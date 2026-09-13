@@ -49,7 +49,7 @@ mob-models:
       item-material: PAPER
       item-model: "myrlin:asset_c89517720db045279ea8fb46f3d93d5b"
       # Model is ~1 block tall; scale up to golem size, shift down onto the torso.
-      scale: 2.3
+      scale: 3.8
       y-offset: -0.8
       hide-base: true
 
