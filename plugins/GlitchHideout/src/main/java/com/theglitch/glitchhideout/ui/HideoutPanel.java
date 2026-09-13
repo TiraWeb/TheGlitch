@@ -574,7 +574,10 @@ public final class HideoutPanel implements Listener {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.4F);
         } catch (Throwable ignored) {
         }
-        enqueue(() -> DialogUI.openStation(plugin, player, stationId, "hideoutui noop"));
+        enqueue(() -> {
+            var gui = plugin.getGui();
+            if (gui != null) gui.openMain(player);
+        });
     }
 
     private void enqueue(Runnable action) {

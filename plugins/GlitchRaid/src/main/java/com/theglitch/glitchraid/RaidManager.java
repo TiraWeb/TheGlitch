@@ -449,6 +449,44 @@ public final class RaidManager {
         return Math.max(0, remain);
     }
 
+    /**
+     * Fix 1: hard block on ENTERING glitch_red during the 1m scatter buffer.
+     * If we are in the buffer and the player lacks {@code glitchraid.admin},
+     * message them with the remaining buffer time and bounce them to hub.
+     *
+     * <p>Safe to call from both teleport (portal) and world-change contexts:
+     * the hub teleport is deferred by 1 tick on the entity scheduler so it
+     * never runs inside the triggering teleport/world-change event.</p>
+     *
+     * @return true when the player was bounced (caller must abort red entry)
+     */
+    public boolean denyRedEntryDuringBuffer(Player player) {
+        if (player == null || !player.isOnline()) return false;
+        try {
+            if (player.hasPermission("glitchraid.admin")) return false;
+        } catch (Exception ignored) {}
+        if (!isInBufferPeriod()) return false;
+        long remainMs = getMillisUntilNextCycle();
+        String remain = formatTime((int) Math.max(0, remainMs / 1000));
+        try {
+            player.sendMessage(MM.deserialize("<red>The Glitch is scattering — <gray>next extraction in <white>" + remain + "</white>. Returning to hub...</gray></red>"));
+            player.sendActionBar(MM.deserialize("<gray>Next extraction: <white>" + remain + "</white></gray>"));
+        } catch (Exception ignored) {}
+        final UUID id = player.getUniqueId();
+        final String name = player.getName();
+        FoliaScheduler.runDelayedEntity(player, plugin, () -> {
+            Player p = Bukkit.getPlayer(id);
+            if (p == null || !p.isOnline()) return;
+            try {
+                teleportToHub(p);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to bounce " + name + " to hub during buffer: " + e.getMessage());
+            }
+        }, 1L);
+        plugin.getLogger().info("Bounced " + name + " from glitch_red entry — in 1m buffer (next in " + remain + ")");
+        return true;
+    }
+
     /** Public hook for AutoExtractScheduler to force timeout kill (t0+30m). */
     public void handleAutoExtractTimeout() {
         String key = normalizeWorldKey(autoStartWorld);
@@ -771,10 +809,21 @@ public final class RaidManager {
 
         // Teleport party members not yet in the raid world to the leader (Folia-safe)
         if (party != null) {
+            // Fix 1: never pull members toward red during the 1m scatter buffer (except bypass).
+            boolean inBuffer = isInBufferPeriod();
+            String bufferRemain = inBuffer ? formatTime((int) Math.max(0, getMillisUntilNextCycle() / 1000)) : null;
             for (UUID mid : members) {
                 if (mid.equals(uuid)) continue;
                 Player p = Bukkit.getPlayer(mid);
                 if (p != null && !p.getWorld().getName().equalsIgnoreCase(autoStartWorld)) {
+                    if (inBuffer && !p.hasPermission("glitchraid.admin")) {
+                        plugin.getLogger().info("Party pull skipped for " + p.getName() + " — in 1m buffer (next in " + bufferRemain + ")");
+                        try {
+                            leader.sendMessage(MM.deserialize("<yellow>Scatter buffer — <white>" + p.getName() + "</white> not pulled in <gray>(next extraction in <white>" + bufferRemain + "</white>).</gray></yellow>"));
+                            p.sendMessage(MM.deserialize("<yellow>The Glitch is scattering — <gray>next extraction in <white>" + bufferRemain + "</white>. Staying out of the Red Zone.</gray></yellow>"));
+                        } catch (Exception ignored) {}
+                        continue;
+                    }
                     try {
                         org.bukkit.Location dest = leader.getLocation();
                         FoliaScheduler.teleportEntity(p, plugin, dest);

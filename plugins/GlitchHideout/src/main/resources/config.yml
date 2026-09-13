@@ -5,7 +5,7 @@ config-version: 1
 med-cooldown-seconds: 30
 
 modern-ui:
-  dialogs: true
+  dialogs: false
   remote-perm: theglitch.remoteui
   # Floating wall panel rendered with display entities (build via /hideoutui panel here)
   world-panel:

@@ -530,13 +530,10 @@ public final class ClassPanel implements Listener {
             try {
                 plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                     try {
-                        DialogUI.openClass(plugin, plugin.getClassGUI(), player, arg,
-                                () -> {
-                                    var g = plugin.getClassGUI();
-                                    if (g != null) g.openClassMenu(player, arg);
-                                });
+                        var g = plugin.getClassGUI();
+                        if (g != null) g.openClassMenu(player, arg);
                     } catch (Throwable t) {
-                        plugin.getLogger().fine("panel class dialog failed: " + t.getClass().getSimpleName());
+                        plugin.getLogger().fine("panel class open failed: " + t.getClass().getSimpleName());
                     }
                 }, 1L);
             } catch (Throwable t) {
@@ -548,7 +545,7 @@ public final class ClassPanel implements Listener {
             if ("resetask".equals(arg)) {
                 if (gui == null) return;
                 playClick(player);
-                DialogUI.openResetConfirm(plugin, gui, player, () -> gui.openMainMenu(player));
+                gui.openMainMenu(player);
             } else if ("keys".equals(arg)) {
                 playClick(player);
                 openKeys(player);
@@ -557,18 +554,12 @@ public final class ClassPanel implements Listener {
     }
 
     private void openKeys(Player player) {
-        if (!DialogUI.supported()) {
-            ClassGUI g = plugin.getClassGUI();
-            if (g != null) g.openMainMenu(player);
-            return;
-        }
         try {
             FloatingBanner.show(plugin, player, UiKit.title("ABILITY KEYS"), 60L);
-            DialogUI.show(plugin, player, DialogUI.multiAction("ABILITY KEYS", "gold",
-                    "F = Prime\nSneak+F = Tactical\nSneak+Q = Ultimate",
-                    DialogUI.button("OK", "yellow", null, "classui noop"), 1, null));
+            player.sendMessage(UiKit.deserialized(
+                    "<gold><bold>ABILITY KEYS</bold></gold> <gray>F = Prime, Sneak+F = Tactical, Sneak+Q = Ultimate</gray>"));
         } catch (Throwable t) {
-            plugin.getLogger().fine("keys dialog failed: " + t.getClass().getSimpleName());
+            plugin.getLogger().fine("keys display failed: " + t.getClass().getSimpleName());
         }
     }
 

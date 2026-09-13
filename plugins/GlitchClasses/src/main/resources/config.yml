@@ -211,7 +211,7 @@ upgrades:
 modern-ui:
   enabled: true
   hologram-banner: true
-  dialogs: true
+  dialogs: false
   # Permission required for remote/dialog UI commands
   remote-perm: theglitch.remoteui
   # Wall-mounted holographic class panel

@@ -93,11 +93,8 @@ public final class GlitchHideout extends JavaPlugin {
             sender.sendMessage(Component.text("Players only."));
             return true;
         }
-        if (args.length == 0
-                && getConfig().getBoolean("modern-ui.dialogs", true)
-                && com.theglitch.glitchhideout.ui.DialogBridge.dialogsRuntime()
-                && com.theglitch.glitchhideout.ui.DialogUI.canRemote(this, player)) {
-            com.theglitch.glitchhideout.ui.DialogUI.openRoot(this, player, () -> gui.openMain(player));
+        if (args.length == 0) {
+            gui.openMain(player);
             return true;
         }
         gui.openMain(player);

@@ -1,7 +1,5 @@
 package com.theglitch.glitchshops;
 
-import com.theglitch.glitchshops.ui.DialogBridge;
-import com.theglitch.glitchshops.ui.DialogUI;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -62,18 +60,10 @@ public final class ShopCommand implements CommandExecutor {
 
     private void openDefault(Player player) {
         String category = plugin.getDefaultTab();
-        if (shopGUI.dialogsEnabled() && DialogBridge.dialogsRuntime()) {
-            DialogUI.openRoot(plugin, shopGUI, player, () -> shopGUI.open(player, category));
-        } else {
-            shopGUI.open(player, category);
-        }
+        shopGUI.open(player, category);
     }
 
     private void openTab(Player player, String category) {
-        if (shopGUI.dialogsEnabled() && DialogBridge.dialogsRuntime()) {
-            DialogUI.openCategory(plugin, shopGUI, player, category, () -> shopGUI.open(player, category));
-        } else {
-            shopGUI.open(player, category);
-        }
+        shopGUI.open(player, category);
     }
 }

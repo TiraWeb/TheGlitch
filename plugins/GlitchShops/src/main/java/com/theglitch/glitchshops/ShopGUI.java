@@ -76,7 +76,7 @@ public final class ShopGUI implements Listener {
         this.cachedBuyStackSize = shopManager.getBuyStackSize();
         this.cachedEconomy = plugin.getEconomy(); // invalidated already in plugin
         this.holoEnabled = plugin.getConfig().getBoolean("modern-ui.hologram-banner", true);
-        this.dialogsEnabled = plugin.getConfig().getBoolean("modern-ui.dialogs", true);
+        this.dialogsEnabled = plugin.getConfig().getBoolean("modern-ui.dialogs", false);
         if (this.cachedTabOrder == null || this.cachedTabOrder.isEmpty()) {
             plugin.getLogger().warning("ShopGUI: cached tab order empty — using fallback.");
             this.cachedTabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear");

@@ -1,6 +1,5 @@
 package com.theglitch.glitchshops;
 
-import com.theglitch.glitchshops.ui.DialogUI;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -24,20 +23,19 @@ public final class ShopUICommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) return true;
-        if (!DialogUI.supported()) return true;
         String sub = args.length == 0 ? "" : args[0].toLowerCase();
         switch (sub) {
             case "root":
             default: {
                 String category = gui.defaultTab();
-                DialogUI.openRoot(plugin, gui, player, () -> gui.open(player, category));
+                gui.open(player, category);
                 return true;
             }
             case "noop":
                 return true;
             case "open": {
                 String category = args.length > 1 ? args[1] : gui.defaultTab();
-                DialogUI.openCategory(plugin, gui, player, category, () -> gui.open(player, category));
+                gui.open(player, category);
                 return true;
             }
             case "buy": {
@@ -56,13 +54,13 @@ public final class ShopUICommand implements CommandExecutor {
                 if (found == null) {
                     player.sendMessage(MM.deserialize("<red>That item can't be traded.</red>"));
                     plugin.getServer().getScheduler().runTask(plugin, () ->
-                            DialogUI.openRoot(plugin, gui, player, () -> gui.open(player, gui.defaultTab())));
+                            gui.open(player, gui.defaultTab()));
                     return true;
                 }
                 final String category = found;
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     gui.buyFromDialog(player, category, itemId, amount);
-                    DialogUI.openCategory(plugin, gui, player, category, () -> gui.open(player, category));
+                    gui.open(player, category);
                 });
                 return true;
             }
@@ -72,7 +70,7 @@ public final class ShopUICommand implements CommandExecutor {
                 final String category = "gear";
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     gui.buyGearFromDialog(player, gearId);
-                    DialogUI.openCategory(plugin, gui, player, category, () -> gui.open(player, category));
+                    gui.open(player, category);
                 });
                 return true;
             }

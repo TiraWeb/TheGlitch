@@ -49,6 +49,11 @@ public final class RedPortalListener implements Listener {
         if (!portals.isEnabled()) return;
         // When a region is configured, only it teleports (stray end portals stay dead).
         if (portals.hasRegion() && !portals.contains(event.getFrom())) return;
+        // Fix 1: scatter buffer — swallow the portal teleport and bounce to hub; never touch red.
+        if (manager.denyRedEntryDuringBuffer(event.getPlayer())) {
+            event.setCancelled(true);
+            return;
+        }
         if (!trySend(event.getPlayer())) return;
         event.setCancelled(true);
     }
@@ -77,6 +82,11 @@ public final class RedPortalListener implements Listener {
      * @return true when the player was sent
      */
     private boolean trySend(Player player) {
+        // Fix 1: walk-in redirect is also blocked during the scatter buffer (bounce to hub instead).
+        // Checked before the cooldown gate so a bounce never consumes cooldown for post-buffer entry.
+        if (manager.denyRedEntryDuringBuffer(player)) {
+            return false;
+        }
         long now = System.currentTimeMillis();
         long last = cooldown.getOrDefault(player.getUniqueId(), 0L);
         if (now - last < portals.cooldownSeconds() * 1000L) {

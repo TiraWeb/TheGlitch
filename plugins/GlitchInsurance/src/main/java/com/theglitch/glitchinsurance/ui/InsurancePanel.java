@@ -627,12 +627,12 @@ public final class InsurancePanel implements Listener {
                 } catch (Throwable ignored) {
                 }
             });
-            case "list", "claims" -> enqueue(() -> DialogUI.openRoot(plugin, player, () -> {
+            case "list", "claims" -> enqueue(() -> {
                 try {
                     player.performCommand("insurance list");
                 } catch (Throwable ignored) {
                 }
-            }));
+            });
             default -> {
             }
         }

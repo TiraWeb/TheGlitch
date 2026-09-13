@@ -1,6 +1,5 @@
 package com.theglitch.glitchhideout;
 
-import com.theglitch.glitchhideout.ui.DialogUI;
 import com.theglitch.glitchhideout.ui.HideoutPanel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -34,15 +33,9 @@ public final class HideoutUICommand implements CommandExecutor {
                 return true;
             }
         }
-        if (!DialogUI.supported()) return true;
         HideoutGUI gui = plugin.getGui();
         if (gui == null) return true;
-        // Dialog-only subcommands — same rank gate the /hideout root path applies
-        // (ops bypass, modern-ui.remote-perm). Graceful chest-GUI fallback.
-        if (!DialogUI.canRemote(plugin, player)) {
-            gui.openMain(player);
-            return true;
-        }
+        // Dialogs removed — every path opens the chest GUI directly.
         switch (sub) {
             case "station" -> {
                 if (args.length < 2) return true;
@@ -51,9 +44,9 @@ public final class HideoutUICommand implements CommandExecutor {
                     player.sendMessage(Component.text("Unknown station.", NamedTextColor.RED));
                     return true;
                 }
-                DialogUI.openStation(plugin, player, id, "hideoutui noop");
+                gui.openMain(player);
             }
-            case "workbench" -> DialogUI.openWorkbench(plugin, player, "hideoutui root");
+            case "workbench" -> gui.openMain(player);
             case "upgrade-armor" -> plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), "armor upgrade " + player.getName());
             case "upgrade" -> {
                 if (args.length < 2) return true;
@@ -66,7 +59,7 @@ public final class HideoutUICommand implements CommandExecutor {
                     try {
                         gui.upgradeFromUi(player, id);
                     } finally {
-                        DialogUI.openStation(plugin, player, id, "hideoutui noop");
+                        gui.openMain(player);
                     }
                 });
             }
@@ -81,12 +74,12 @@ public final class HideoutUICommand implements CommandExecutor {
                     try {
                         gui.craftFromUi(player, recipeId);
                     } finally {
-                        DialogUI.openWorkbench(plugin, player, "hideoutui root");
+                        gui.openMain(player);
                     }
                 });
             }
-            case "root" -> DialogUI.openRoot(plugin, player, () -> gui.openMain(player));
-            default -> DialogUI.openRoot(plugin, player, () -> gui.openMain(player));
+            case "root" -> gui.openMain(player);
+            default -> gui.openMain(player);
         }
         return true;
     }

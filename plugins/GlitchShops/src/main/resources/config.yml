@@ -42,7 +42,7 @@ messages:
 modern-ui:
   enabled: true
   hologram-banner: true
-  dialogs: true
+  dialogs: false
   # Physical shop wall rendered with display entities near the Grand Bazaar NPC
   world-panel:
     enabled: true

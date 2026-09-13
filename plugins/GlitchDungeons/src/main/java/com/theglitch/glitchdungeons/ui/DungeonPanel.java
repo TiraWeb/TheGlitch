@@ -47,6 +47,27 @@ public final class DungeonPanel implements Listener {
     private static final int TRUNC = 14;
     private static final int MAX_CELLS = 4;
 
+    // Fix 3: single yaw source = configured `modern-ui.world-panel.facing` (south/north/east/west)
+    // mapped through wallYaw()/panelYaw(). placeHere() persists the placer's yaw snapped to the
+    // nearest cardinal into that same config key, so every TextDisplay + ItemDisplay of one build
+    // uses the SAME yaw with FIXED billboard + setRotation(yaw, 0) and item/label always agree.
+    // Interaction hitboxes cannot rotate — they stay axis-aligned, centered/sized to cover the
+    // cell at that yaw.
+    // Layout: item icon at the row anchor, label LABEL_DY below at a fixed offset; per-cell
+    // hitbox 1.2 x 0.9 covers text+item visuals plus margin for easy 3-4 block clicks
+    // (min height 0.6 satisfied; ~1.2x+ visual height), centered HITBOX_DY_OFFSET below the item.
+    // Width is clamped to spacing - dead gap so adjacent cells keep a dead gap and never overlap.
+    private static final float PANEL_PITCH = 0.0F;
+    private static final Display.Billboard PANEL_BILLBOARD = Display.Billboard.FIXED;
+    private static final float HEADER_SCALE = 1.1F;
+    private static final float SUBROW_SCALE = 0.75F;
+    private static final float CELL_TEXT_SCALE = 0.5F;
+    private static final double LABEL_DY = 0.42D;
+    private static final double HITBOX_DY_OFFSET = -0.15D;
+    private static final float CELL_HITBOX_WIDTH = 1.2F;
+    private static final float CELL_HITBOX_HEIGHT = 0.9F;
+    private static final float HITBOX_DEAD_GAP = 0.15F;
+
     private static GlitchDungeons plugin;
     private static DungeonPanel instance;
     private static BukkitTask buildTask;
@@ -381,6 +402,11 @@ public final class DungeonPanel implements Listener {
         }
     }
 
+    // Fix 3: single yaw source for the whole panel build (see constants above).
+    private float panelYaw() {
+        return wallYaw();
+    }
+
     private static String facingFromYaw(float yaw) {
         float norm = yaw % 360.0F;
         if (norm >= 180.0F) norm -= 360.0F;
@@ -392,7 +418,7 @@ public final class DungeonPanel implements Listener {
     }
 
     private void styleShared(TextDisplay t) {
-        t.setBillboard(Display.Billboard.CENTER);
+        t.setBillboard(PANEL_BILLBOARD);
         t.setShadowed(true);
         t.setSeeThrough(false);
         t.setDefaultBackground(false);
@@ -404,14 +430,16 @@ public final class DungeonPanel implements Listener {
 
     private void spawnHeader() {
         try {
+            final float yaw = panelYaw();
             TextDisplay d = world.spawn(point(0.0D, 4.3D), TextDisplay.class, t -> {
                 try {
                     t.text(GlitchDungeons.mm().deserialize(HEADER));
                     styleShared(t);
+                    t.setRotation(yaw, PANEL_PITCH);
                     t.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
                             new Quaternionf(),
-                            new Vector3f(1.1F, 1.1F, 1.1F),
+                            new Vector3f(HEADER_SCALE, HEADER_SCALE, HEADER_SCALE),
                             new Quaternionf()));
                 } catch (Throwable err) {
                     plugin.getLogger().fine("header styling incomplete: " + err.getClass().getSimpleName());
@@ -429,14 +457,16 @@ public final class DungeonPanel implements Listener {
 
     private void spawnSubRow() {
         try {
+            final float yaw = panelYaw();
             TextDisplay d = world.spawn(point(0.0D, 3.3D), TextDisplay.class, t -> {
                 try {
                     t.text(GlitchDungeons.mm().deserialize(SUBROW));
                     styleShared(t);
+                    t.setRotation(yaw, PANEL_PITCH);
                     t.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
                             new Quaternionf(),
-                            new Vector3f(0.75F, 0.75F, 0.75F),
+                            new Vector3f(SUBROW_SCALE, SUBROW_SCALE, SUBROW_SCALE),
                             new Quaternionf()));
                 } catch (Throwable err) {
                     plugin.getLogger().fine("subrow styling incomplete: " + err.getClass().getSimpleName());
@@ -450,10 +480,12 @@ public final class DungeonPanel implements Listener {
 
     private void spawnText(Location loc, String mini, float scale) {
         try {
+            final float yaw = panelYaw();
             TextDisplay d = world.spawn(loc, TextDisplay.class, t -> {
                 try {
                     t.text(GlitchDungeons.mm().deserialize(mini));
                     styleShared(t);
+                    t.setRotation(yaw, PANEL_PITCH);
                     t.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
                             new Quaternionf(),
@@ -470,19 +502,19 @@ public final class DungeonPanel implements Listener {
     }
 
     private void spawnItem(Location loc, ItemStack stack) {
-        final float yaw = wallYaw();
+        final float yaw = panelYaw();
         try {
             ItemDisplay d = world.spawn(loc, ItemDisplay.class, disp -> {
                 try {
                     disp.setItemStack(stack);
                     disp.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-                    disp.setBillboard(Display.Billboard.FIXED);
+                    disp.setBillboard(PANEL_BILLBOARD);
                     disp.setPersistent(true);
-                    disp.setRotation(yaw, 0.0F);
+                    disp.setRotation(yaw, PANEL_PITCH);
                     disp.setTeleportDuration(1);
                     disp.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
-                            new Quaternionf().rotationY(-(float) Math.toRadians(yaw)),
+                            new Quaternionf(),
                             new Vector3f(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE),
                             new Quaternionf()));
                 } catch (Throwable err) {
@@ -542,9 +574,10 @@ public final class DungeonPanel implements Listener {
                 Material mat = iconFor(tier);
                 String name = nameFor(tier);
                 spawnItem(point(off, rowY), new ItemStack(mat));
-                spawnText(point(off, rowY - 0.42D),
-                        trunc(name) + "\n<gray>TIER " + tier + "</gray>", 0.5F);
-                spawnHitbox(point(off, rowY), 0.85F, 1.0F, "dungeon|" + tier);
+                spawnText(point(off, rowY - LABEL_DY),
+                        trunc(name) + "\n<gray>TIER " + tier + "</gray>", CELL_TEXT_SCALE);
+                float cellW = (float) Math.min(CELL_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
+                spawnHitbox(point(off, rowY + HITBOX_DY_OFFSET), cellW, CELL_HITBOX_HEIGHT, "dungeon|" + tier);
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("cells spawn failed: " + t.getClass().getSimpleName());

@@ -1,6 +1,5 @@
 package com.theglitch.glitchinsurance;
 
-import com.theglitch.glitchinsurance.ui.DialogUI;
 import com.theglitch.glitchinsurance.ui.InsurancePanel;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -26,8 +25,7 @@ public final class InsuranceUICommand implements CommandExecutor {
             case "claim" -> {
                 int index = parseIndex(args);
                 plugin.uiClaim(player, index);
-                scheduleReopen(() -> DialogUI.openRoot(plugin, player, () ->
-                        safePerform(player)));
+                scheduleReopen(() -> safePerform(player));
             }
             case "panel" -> handlePanel(player, args);
             default -> { }

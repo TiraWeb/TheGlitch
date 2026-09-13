@@ -42,6 +42,12 @@ public final class RaidListener implements Listener {
         String raidWorld = manager.getAutoStartWorld();
         String hubWorld = manager.getHubWorld();
 
+        // Fix 1: hard block on physical entry during the 1m scatter buffer —
+        // bounce non-bypass players straight back to hub (no raid join/start).
+        if (to.equalsIgnoreCase(raidWorld) && manager.denyRedEntryDuringBuffer(player)) {
+            return;
+        }
+
         // Entering the raid world -> auto start if not already in raid
         // Global-remaining mode: late joiners share the remaining time of the running 30m extraction
         if (to.equalsIgnoreCase(raidWorld) && !manager.isInRaid(player.getUniqueId())) {
@@ -77,6 +83,12 @@ public final class RaidListener implements Listener {
                     if (other != null && !other.getWorld().getName().equalsIgnoreCase(raidWorld)) {
                         // Don't pull if other is recently dead (avoid death loop)
                         if (manager.isRecentlyDead(mid, 5000L)) continue;
+                        // Fix 1: never drag members into red during the scatter buffer (except bypass).
+                        if (manager.isInBufferPeriod() && !other.hasPermission("glitchraid.admin")) {
+                            try { other.sendMessage(MM.deserialize("<yellow>The Glitch is scattering — <gray>staying out of the Red Zone until the next extraction.</gray></yellow>")); } catch (Exception ignored) {}
+                            plugin.getLogger().info("Party pull skipped for " + other.getName() + " — in 1m buffer (stays out of " + raidWorld + ")");
+                            continue;
+                        }
                         try {
                             FoliaScheduler.teleportEntity(other, plugin, player.getLocation());
                             other.sendMessage(MM.deserialize("<gray>Party pulled you to <white>" + raidWorld + "</white> with <white>" + player.getName() + "</white>.</gray>"));
@@ -131,6 +143,11 @@ public final class RaidListener implements Listener {
                 try { player.sendMessage(MM.deserialize(raw)); } catch (Exception ignored) {}
                 plugin.getLogger().info("Join reroute to hub for " + player.getName()
                         + " (cancelled=" + cancelled + ")");
+                return;
+            }
+            // Fix 1: joining while standing in red during the 1m scatter buffer — bounce to hub.
+            if (spawnWorld.equalsIgnoreCase(manager.getAutoStartWorld())
+                    && manager.denyRedEntryDuringBuffer(player)) {
                 return;
             }
             String world = player.getWorld().getName();

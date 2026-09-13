@@ -1,6 +1,5 @@
 package com.theglitch.glitchclasses;
 
-import com.theglitch.glitchclasses.ui.DialogUI;
 import com.theglitch.glitchclasses.ui.FloatingBanner;
 import com.theglitch.glitchclasses.ui.UiKit;
 import net.kyori.adventure.text.Component;
@@ -622,8 +621,7 @@ public class ClassGUI implements Listener {
         if (!isConfiguredClass(className)) return false;
         applyClassSelectCore(player, className);
         Bukkit.getScheduler().runTaskLater(plugin,
-                () -> DialogUI.openClass(plugin, this, player, className,
-                        () -> openClassMenu(player, className)),
+                () -> openClassMenu(player, className),
                 5L);
         return true;
     }
@@ -633,7 +631,7 @@ public class ClassGUI implements Listener {
         String current = data.className();
         if (current.equals("none")) {
             Bukkit.getScheduler().runTaskLater(plugin,
-                    () -> DialogUI.openRoot(plugin, this, player, () -> openMainMenu(player)), 5L);
+                    () -> openMainMenu(player), 5L);
             return;
         }
         if (data.level() >= classManager.getMaxLevel()) {
@@ -642,8 +640,7 @@ public class ClassGUI implements Listener {
         }
         applyUpgradeCore(player, data);
         Bukkit.getScheduler().runTaskLater(plugin,
-                () -> DialogUI.openClass(plugin, this, player, current,
-                        () -> openClassMenu(player, current)),
+                () -> openClassMenu(player, current),
                 5L);
     }
 
@@ -653,7 +650,7 @@ public class ClassGUI implements Listener {
             done = applyResetCore(player);
         }
         Bukkit.getScheduler().runTaskLater(plugin,
-                () -> DialogUI.openRoot(plugin, this, player, () -> openMainMenu(player)), 5L);
+                () -> openMainMenu(player), 5L);
         return done;
     }
 

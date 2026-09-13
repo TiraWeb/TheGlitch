@@ -1,7 +1,6 @@
 package com.theglitch.glitchclasses;
 
 import com.theglitch.glitchclasses.ui.ClassPanel;
-import com.theglitch.glitchclasses.ui.DialogUI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
@@ -23,7 +22,6 @@ public final class ClassUICommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) return true;
-        if (!DialogUI.supported()) return true;
 
         ClassGUI gui = plugin.getClassGUI();
         if (gui == null) return true;
@@ -33,26 +31,24 @@ public final class ClassUICommand implements CommandExecutor {
             case "view" -> {
                 String className = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
                 if (isKnownClass(gui, className)) {
-                    DialogUI.openClass(plugin, gui, player, className,
-                            () -> gui.openClassMenu(player, className));
+                    gui.openClassMenu(player, className);
                 } else {
-                    DialogUI.openRoot(plugin, gui, player, () -> gui.openMainMenu(player));
+                    gui.openMainMenu(player);
                 }
             }
             case "select" -> {
                 String className = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
                 if (!gui.selectFromDialog(player, className)) {
-                    DialogUI.openRoot(plugin, gui, player, () -> gui.openMainMenu(player));
+                    gui.openMainMenu(player);
                 }
             }
             case "upgrade" -> gui.upgradeFromDialog(player);
-            case "resetask" -> DialogUI.openResetConfirm(plugin, gui, player,
-                    () -> gui.openMainMenu(player));
+            case "resetask" -> gui.openMainMenu(player);
             case "resetyes" -> gui.resetFromDialog(player);
             case "noop" -> {
             }
             case "panel" -> handlePanel(player, args);
-            default -> DialogUI.openRoot(plugin, gui, player, () -> gui.openMainMenu(player));
+            default -> gui.openMainMenu(player);
         }
         return true;
     }

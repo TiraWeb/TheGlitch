@@ -47,6 +47,30 @@ public final class BazaarPanel implements Listener {
     private static final double LABEL_DY = 0.42D;
     private static final int LABEL_MAX = 14;
 
+    // Fix 3: single yaw source = configured `modern-ui.world-panel.facing` (south/north/east/west)
+    // mapped through wallYaw()/panelYaw(). Every TextDisplay + ItemDisplay of one build uses the
+    // SAME yaw with FIXED billboard + setRotation(yaw, 0) so item and label always agree.
+    // Interaction hitboxes cannot rotate — they stay axis-aligned, centered/sized to cover the
+    // row at that yaw.
+    // Layout: ROW_PITCH 1.05 between GRID_ROW_Y entries; hitbox height 0.9 leaves a 0.15 dead gap
+    // between adjacent rows; hitbox width 1.2 (< default spacing 1.35) leaves a 0.15 dead gap
+    // between columns (clamped to spacing - dead gap when spacing is tight). Hitbox center is
+    // shifted down by HITBOX_DY_OFFSET so one box covers both the item icon (row anchor) and its
+    // label below, plus margin, for easy 3-4 block clicks.
+    private static final float PANEL_PITCH = 0.0F;
+    private static final Display.Billboard PANEL_BILLBOARD = Display.Billboard.FIXED;
+    private static final float HEADER_SCALE = 1.1F;
+    private static final float TAB_TEXT_SCALE = 0.75F;
+    private static final float ROW_TEXT_SCALE = 0.5F;
+    private static final float ROW_ITEM_SCALE = 0.85F;
+    private static final double ROW_PITCH = 1.05D;
+    private static final double HITBOX_DY_OFFSET = -0.15D;
+    private static final float ROW_HITBOX_WIDTH = 1.2F;
+    private static final float ROW_HITBOX_HEIGHT = 0.9F;
+    private static final float TAB_HITBOX_WIDTH = 1.2F;
+    private static final float TAB_HITBOX_HEIGHT = 0.7F;
+    private static final float HITBOX_DEAD_GAP = 0.15F;
+
     private static GlitchShops plugin;
     private static ShopGUI gui;
     private static BazaarPanel instance;
@@ -390,17 +414,25 @@ public final class BazaarPanel implements Listener {
         }
     }
 
+    // Fix 3: single yaw source for the whole panel build. Currently the configured facing;
+    // placer-yaw placement should persist through the same config key so all rows agree.
+    private float panelYaw() {
+        return wallYaw();
+    }
+
     private void spawnHeader() {
         try {
             Location loc = point(0.0D, 4.3D);
+            final float yaw = panelYaw();
             TextDisplay d = world.spawn(loc, TextDisplay.class, t -> {
                 try {
                     t.text(UiKit.deserialized("\uE049 <gradient:#C084FC:#F0ABFC><bold>GRAND BAZAAR</bold></gradient>"));
                     styleShared(t);
+                    t.setRotation(yaw, PANEL_PITCH);
                     t.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
                             new Quaternionf(),
-                            new Vector3f(1.1F, 1.1F, 1.1F),
+                            new Vector3f(HEADER_SCALE, HEADER_SCALE, HEADER_SCALE),
                             new Quaternionf()));
                 } catch (Throwable err) {
                     plugin.getLogger().fine("header styling incomplete: " + err.getClass().getSimpleName());
@@ -413,7 +445,7 @@ public final class BazaarPanel implements Listener {
     }
 
     private void styleShared(TextDisplay t) {
-        t.setBillboard(Display.Billboard.CENTER);
+        t.setBillboard(PANEL_BILLBOARD);
         t.setShadowed(true);
         t.setSeeThrough(false);
         t.setDefaultBackground(false);
@@ -425,10 +457,12 @@ public final class BazaarPanel implements Listener {
 
     private TextDisplay spawnText(Location loc, String mini, float scale, boolean grid) {
         try {
+            final float yaw = panelYaw();
             TextDisplay d = world.spawn(loc, TextDisplay.class, t -> {
                 try {
                     t.text(UiKit.deserialized(mini));
                     styleShared(t);
+                    t.setRotation(yaw, PANEL_PITCH);
                     t.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
                             new Quaternionf(),
@@ -487,8 +521,9 @@ public final class BazaarPanel implements Listener {
                 double off = (i - (n - 1) / 2.0D) * spacing;
                 String mini = (active ? "<gold><bold>" : "<gray><bold>")
                         + gui.categoryLabel(category) + "</bold>";
-                spawnText(point(off, 3.3D), mini, 0.75F, false);
-                spawnHitbox(point(off, 3.3D), 1.1F, 0.6F, "tab", category, false);
+                spawnText(point(off, 3.3D), mini, TAB_TEXT_SCALE, false);
+                float tabW = (float) Math.min(TAB_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
+                spawnHitbox(point(off, 3.3D), tabW, TAB_HITBOX_HEIGHT, "tab", category, false);
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("tabs spawn failed: " + t.getClass().getSimpleName());
@@ -523,8 +558,9 @@ public final class BazaarPanel implements Listener {
             final String mini = "<white>" + name + "</white>\n<aqua>"
                     + UiKit.SHARD_GLYPH + " " + price + " Shards</aqua>";
             spawnItem(point(off, dy), stack);
-            spawnText(point(off, dy - LABEL_DY), mini, 0.5F, true);
-            spawnHitbox(point(off, dy), 0.9F, 1.0F, "item", category + "|" + id, true);
+            spawnText(point(off, dy - LABEL_DY), mini, ROW_TEXT_SCALE, true);
+            float rowW = (float) Math.min(ROW_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
+            spawnHitbox(point(off, dy + HITBOX_DY_OFFSET), rowW, ROW_HITBOX_HEIGHT, "item", category + "|" + id, true);
         }
     }
 
@@ -541,8 +577,9 @@ public final class BazaarPanel implements Listener {
             final String mini = "<white>" + truncateName(plainName(stack)) + "</white>\n<aqua>"
                     + UiKit.SHARD_GLYPH + " " + entry.price() + " Shards</aqua>";
             spawnItem(point(off, dy), stack);
-            spawnText(point(off, dy - LABEL_DY), mini, 0.5F, true);
-            spawnHitbox(point(off, dy), 0.9F, 1.0F, "item", "gear|" + entry.id(), true);
+            spawnText(point(off, dy - LABEL_DY), mini, ROW_TEXT_SCALE, true);
+            float rowW = (float) Math.min(ROW_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
+            spawnHitbox(point(off, dy + HITBOX_DY_OFFSET), rowW, ROW_HITBOX_HEIGHT, "item", "gear|" + entry.id(), true);
         }
     }
 
@@ -553,20 +590,20 @@ public final class BazaarPanel implements Listener {
     }
 
     private void spawnItem(Location loc, ItemStack stack) {
-        final float yaw = wallYaw();
+        final float yaw = panelYaw();
         try {
             ItemDisplay d = world.spawn(loc, ItemDisplay.class, disp -> {
                 try {
                     disp.setItemStack(stack);
                     disp.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-                    disp.setBillboard(Display.Billboard.FIXED);
+                    disp.setBillboard(PANEL_BILLBOARD);
                     disp.setPersistent(true);
-                    disp.setRotation(yaw, 0.0F);
+                    disp.setRotation(yaw, PANEL_PITCH);
                     disp.setTeleportDuration(1);
                     disp.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
-                            new Quaternionf().rotationY(-(float) Math.toRadians(yaw)),
-                            new Vector3f(0.85F, 0.85F, 0.85F),
+                            new Quaternionf(),
+                            new Vector3f(ROW_ITEM_SCALE, ROW_ITEM_SCALE, ROW_ITEM_SCALE),
                             new Quaternionf()));
                 } catch (Throwable err) {
                     plugin.getLogger().fine("item styling incomplete: " + err.getClass().getSimpleName());
@@ -672,7 +709,10 @@ public final class BazaarPanel implements Listener {
             if (entry.price() <= instantBuyMax) {
                 enqueueBuy(() -> gui.buyGearFromDialog(player, gearId));
             } else {
-                enqueueBuy(() -> DialogUI.openGearConfirm(plugin, gui, player, gearId));
+                // Fix 3: non-dialog confirm path — open the chest GUI on the gear tab for
+                // confirmation (ShopGUI.open shows its own FloatingBanner). Same-package
+                // DialogUI class is left untouched; this panel simply no longer calls it.
+                enqueueBuy(() -> gui.open(player, "gear"));
             }
             return;
         }
@@ -685,7 +725,9 @@ public final class BazaarPanel implements Listener {
         if (price <= instantBuyMax) {
             enqueueBuy(() -> gui.buyFromDialog(player, category, itemId, 1));
         } else {
-            DialogUI.openBuyConfirm(plugin, gui, player, category, itemId, "shopui noop");
+            // Fix 3: non-dialog confirm path — open the chest GUI on this category for
+            // confirmation (ShopGUI.open shows its own FloatingBanner).
+            enqueueBuy(() -> gui.open(player, category));
         }
     }
 

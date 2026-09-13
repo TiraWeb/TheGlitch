@@ -451,17 +451,8 @@ public final class StashPanel implements Listener {
                 lastClick.clear();
             }
             lastClick.put(player.getUniqueId(), now);
-            if ("chest".equals(value)) {
+            if ("chest".equals(value) || "dialog".equals(value)) {
                 enqueue(player, () -> Bukkit.dispatchCommand(player, "stash"));
-            } else if ("dialog".equals(value)) {
-                enqueue(player, () -> {
-                    if (DialogUI.canRemote(player)) {
-                        DialogUI.openStash(plugin, player, () -> Bukkit.dispatchCommand(player, "stash"));
-                    } else {
-                        player.sendMessage(MM.deserialize(
-                                "<gray>Remote stash is a rank perk — use the chest menu.</gray>"));
-                    }
-                });
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("stash panel click failed: " + t.getClass().getSimpleName());
