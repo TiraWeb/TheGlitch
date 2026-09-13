@@ -12,7 +12,6 @@ public final class GlitchEvents extends JavaPlugin {
     private static GlitchEvents instance;
 
     private EventManager eventManager;
-    private MobModels mobModels;
 
     @Override
     public void onEnable() {
@@ -20,10 +19,8 @@ public final class GlitchEvents extends JavaPlugin {
         saveDefaultConfig();
 
         eventManager = new EventManager(this);
-        mobModels = new MobModels(this);
 
         Bukkit.getPluginManager().registerEvents(new EventListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new MobModelListener(this, mobModels), this);
 
         if (getCommand("glitchevents") != null) {
             GlitchEventsCommand command = new GlitchEventsCommand(this, eventManager);
@@ -44,9 +41,6 @@ public final class GlitchEvents extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (mobModels != null) {
-            mobModels.removeAll();
-        }
         if (eventManager != null) {
             eventManager.cancelAll();
         }
@@ -62,18 +56,11 @@ public final class GlitchEvents extends JavaPlugin {
         if (eventManager != null) {
             eventManager.reload();
         }
-        if (mobModels != null) {
-            mobModels.reload();
-        }
         getLogger().info("GlitchEvents configuration reloaded.");
     }
 
     public EventManager getEventManager() {
         return eventManager;
-    }
-
-    public MobModels getMobModels() {
-        return mobModels;
     }
 
     public static GlitchEvents getInstance() {

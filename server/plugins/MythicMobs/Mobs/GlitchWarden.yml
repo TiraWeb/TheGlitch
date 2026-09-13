@@ -24,6 +24,9 @@ GlitchWarden:
     - players
     - attacker
   Skills:
+    # ModelEngine furnace-golem rig (blueprint asset_c8951772…, idle loops, base golem hidden by MEG).
+    - model{mid=asset_c89517720db045279ea8fb46f3d93d5b;save=true} @self ~onSpawn
+    - state{mid=asset_c89517720db045279ea8fb46f3d93d5b;s=FurnaceGuardIdle;l=LOOP} @self ~onSpawn
     - effect:sound{s=entity.iron_golem.ambient;v=0.5;p=0.9} @self ~onSpawn 1
     - effect:sound{s=entity.iron_golem.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
     - effect:sound{s=entity.iron_golem.death;v=1;p=0.7} @self ~onDeath 1
