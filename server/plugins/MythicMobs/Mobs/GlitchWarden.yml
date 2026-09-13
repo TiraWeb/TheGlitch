@@ -30,6 +30,12 @@ GlitchWarden:
     - model{mid=asset_c89517720db045279ea8fb46f3d93d5b;usm=true;save=true} @self ~onSpawn
     - defaultstate{mid=asset_c89517720db045279ea8fb46f3d93d5b;type=idle;state=FurnaceGuardIdle;li=4;lo=4} @self ~onSpawn
     - defaultstate{mid=asset_c89517720db045279ea8fb46f3d93d5b;type=walk;state=walk;li=4;lo=4} @self ~onSpawn
+    # TEMP DIAGNOSTIC 2026-09-14: force-play walk 10s on spawn to prove the clip
+    # data reaches the client (marches in place, then releases to auto idle/walk).
+    # REMOVE once the auto-trigger is confirmed working.
+    - state{mid=asset_c89517720db045279ea8fb46f3d93d5b;s=walk;l=LOOP;li=4} @self ~onSpawn
+    - delay 200
+    - state{mid=asset_c89517720db045279ea8fb46f3d93d5b;s=walk;r=true} @self ~onSpawn
     - effect:sound{s=entity.iron_golem.ambient;v=0.5;p=0.9} @self ~onSpawn 1
     - effect:sound{s=entity.iron_golem.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
     - effect:sound{s=entity.iron_golem.death;v=1;p=0.7} @self ~onDeath 1

@@ -11,7 +11,7 @@
 
 | Piece | Reality |
 |---|---|
-| ModelEngine R4.1.0 | Free build from mythiccraft.io (login, no purchase). Jar is **gitignored** (`*.jar`) — uploaded to the box via `scp`, never committed. |
+| ModelEngine R4.1.0 | Free build from mythiccraft.io (login, no purchase). Jar is **gitignored** (`*.jar`) — uploaded to the box via `scp`, never committed. **Live-only:** `config.yml` `Use-State-Machine: true` (global default is `false`; per-mob `usm=true` alone does not start the auto idle/walk driver — set 2026-09-14, needs restart). |
 | MythicMobs 5.13.0 | `model{mid;usm=true;save=true}` + `defaultstate` skills attach rigs; `mm reload` applies yml changes. |
 | Oraxen 1.218.0 | Serves ONE merged pack. MEG's generated `resource pack.zip` is copied to `Oraxen/pack/uploads/10_modelengine.zip`, then `oraxen reload all`. Pack changes require clients to **relog**. |
 | GlitchHealthBar | Tracks any named `Mob`, so MEG models get name + HP bar with no extra wiring. |
@@ -35,6 +35,7 @@
 
 1. **Facing:** MEG forward is Blockbench north (−Z). Source models face +Z, so bake **Ry(180)** into positions **and** orientations; keep the face→UV assignment so painted art rotates with the geometry. (Warden legacy exception: positions mirrored only, art unrotated — approved look, geometric nose reads forward; do full-rigid for all new rigs.)
 2. **Grounding:** shift **static geometry only** (`from`/`to`/`origin` y). Animation `position` tracks are **RELATIVE offsets** — shifting them buries/floats the model (this bug cost two deploy rounds on the warden).
+2b. **Quads are NOT boxes:** membrane/glow surfaces (`shape: quad`) must become thin (1u) boxes sharing the quad UV on front+back — a converter that only reads boxes silently drops wings (wisp, 2026-09-14).
 3. **Clip conversion** (`.blockyanim` → bbmodel, validated 78/78 keyframes @ 0.0000° vs the pipeline's own idle output): keyframe time = source time **/60 s**; rotation = **negated ZYX euler of the DELTA quat** (no rest composition); position = delta verbatim; animators keyed by uuid as `{name, type: "bone"}`; animation `{loop: "loop", snapping: 60}`.
 4. **Walk trigger (dual path):** name walk-state clips exactly `walk` (matches MEG `Default-Animations: WALK: walk`, so usm auto-plays on movement) **and** map it explicitly (`defaultstate{mid=…;type=walk;state=walk;li=4;lo=4}`). Either path alone can silently fail; together they hold.
 5. **File shape:** mimic the proven warden bbmodel exactly — `meta {format_version 4.10, model_format free, box_uv false}`, `resolution`, embedded base64 texture (`namespace myrlin, folder entity`), `name` + `model_identifier` = mid, no `groups` key.
