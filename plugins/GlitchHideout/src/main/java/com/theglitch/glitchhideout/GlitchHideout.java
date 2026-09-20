@@ -8,25 +8,17 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class GlitchHideout extends JavaPlugin {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
-    private static final Set<String> GAME_WORLDS = Set.of("glitch_pve", "glitch_red");
 
     private static GlitchHideout instance;
     private HideoutManager manager;
@@ -36,11 +28,8 @@ public final class GlitchHideout extends JavaPlugin {
 
     // Cached hot-path & economy
     private volatile int medCooldownSeconds = 30;
-    private volatile int intelGlowTicks = 30;
-    private volatile int intelRange = 20;
     private volatile Economy cachedEconomy;
     private final Map<String, String> messageCache = new ConcurrentHashMap<>();
-    private BukkitTask intelTask;
 
     @Override
     public void onEnable() {
@@ -66,17 +55,11 @@ public final class GlitchHideout extends JavaPlugin {
             getLogger().warning("HideoutPanel init failed: " + t.getMessage());
         }
 
-        startIntelTicker();
-
         getLogger().info("GlitchHideout enabled.");
     }
 
     @Override
     public void onDisable() {
-        if (intelTask != null) {
-            intelTask.cancel();
-            intelTask = null;
-        }
         try {
             com.theglitch.glitchhideout.ui.HideoutPanel.shutdown();
         } catch (Throwable ignored) {
@@ -157,43 +140,6 @@ public final class GlitchHideout extends JavaPlugin {
         return true;
     }
 
-    private void startIntelTicker() {
-        if (intelTask != null) intelTask.cancel();
-        intelTask = getServer().getScheduler().runTaskTimer(this, () -> {
-            if (manager == null) return;
-            int glowTicks = intelGlowTicks; // cached — no getConfig() per tick
-            int range = intelRange; // cached — no getConfig() per tick
-            // Single-pass candidate collection — skip tick if no candidates
-            java.util.List<Player> candidates = null;
-            for (Player p : getServer().getOnlinePlayers()) {
-                if (manager.intelLevel(p.getUniqueId()) >= 1 && GAME_WORLDS.contains(p.getWorld().getName())) {
-                    if (candidates == null) candidates = new java.util.ArrayList<>(4);
-                    candidates.add(p);
-                }
-            }
-            if (candidates == null || candidates.isEmpty()) return;
-            for (Player player : candidates) {
-                // y=10 cheaper than 20x20x20 cube — intel is horizontal scouting
-                for (Entity entity : player.getNearbyEntities(range, 10, range)) {
-                    if (entity instanceof Monster || isGlitchMob(entity)) {
-                        LivingEntity living = (LivingEntity) entity;
-                        // Skip if already glowing with >10 ticks remaining — avoids re-adding effect
-                        PotionEffect existing = living.getPotionEffect(PotionEffectType.GLOWING);
-                        if (existing != null && existing.getDuration() > 10) continue;
-                        living.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, glowTicks, 0));
-                    }
-                }
-            }
-        }, 60L, 20L);
-    }
-
-    private boolean isGlitchMob(Entity entity) {
-        if (!(entity instanceof LivingEntity living)) return false;
-        if (living.getCustomName() == null) return false;
-        String name = living.getCustomName();
-        return name.contains("Glitch") || name.contains("Corrupted");
-    }
-
     private void loadMessages() {
         messagesFile = new File(getDataFolder(), "messages.yml");
         if (!messagesFile.exists()) {
@@ -222,17 +168,6 @@ public final class GlitchHideout extends JavaPlugin {
             }
             medCooldownSeconds = cd;
 
-            int glow = getConfig().getInt("intel-glow-ticks", 30);
-            if (glow < 5 || glow > 200) {
-                getLogger().warning("Invalid intel-glow-ticks " + glow + " — clamped to 30.");
-                glow = 30;
-            }
-            intelGlowTicks = glow;
-
-            int range = getConfig().getInt("intel-range", 20);
-            if (range < 5 || range > 64) range = 20;
-            intelRange = range;
-
             // Invalidate economy cache
             cachedEconomy = null;
         } catch (Exception e) {
@@ -248,8 +183,7 @@ public final class GlitchHideout extends JavaPlugin {
             manager.reload();
             manager.invalidateEconomy();
         }
-        startIntelTicker(); // restart with new cached periods
-        getLogger().info("GlitchHideout reloaded (medCooldown=" + medCooldownSeconds + "s, glow=" + intelGlowTicks + ").");
+        getLogger().info("GlitchHideout reloaded (medCooldown=" + medCooldownSeconds + "s).");
     }
 
     public String getMessage(String key) {

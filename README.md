@@ -178,7 +178,7 @@ stations upgrade with Glitch Shards and prerequisites:
 | Workbench | Crafting (ITEM_SYSTEM §7 recipes: healing potions, Ward Salve, Aether Tonic, base 3R+1C / targeted +1A resonance blades, Rift Attunement Pack 5C+2A free any rarity, vault/rift keys, Void Infusion Epic+ boost+reroll) + armor upgrade +0..+5 (ANVIL slot 40 or /armor upgrade) (retuned 2026-09-02, docs/ITEM_BALANCE.md) |
 | Med Station | Free full heal between raids (30s cooldown) |
 | Stash | Extended storage: 27 / 45 / 54 slots by level |
-| Intel Center | Hostiles glow within 20 blocks while you are in the rift |
+| Intel Center | Prerequisite chain for the Arcane Core and Workbench 3 (2026-09-20: hostile-glow effect removed, was purely cosmetic and looked out of place) |
 | Skill Trainer | Opens the class menu (upgrades / reset) |
 | Armory | Gear storage (27 / 45 slots) with auto-sort |
 

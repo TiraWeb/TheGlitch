@@ -217,10 +217,6 @@ public final class HideoutManager {
         savePlayer(uuid);
     }
 
-    public int intelLevel(UUID uuid) {
-        return getLevel(uuid, "intel");
-    }
-
     public int stashSlots(UUID uuid) {
         int level = getLevel(uuid, "stash");
         if (level >= 3) return 54;

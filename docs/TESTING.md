@@ -114,7 +114,7 @@
 - [ ] Med Station heals to full, 30s cooldown message
 - [ ] Extended Stash: 27/45/54 slots by level; items persist after close/rejoin; taking items saves immediately
 - [ ] Armory: 27/45 slots, auto-sort reorders, items persist
-- [ ] Intel Center: hostiles glow within 20 blocks while in glitch_red/pve
+- [ ] Intel Center: purchasable, unlocks Arcane Core/Workbench 3 (no in-game effect — hostile-glow removed 2026-09-20)
 - [ ] `/hideoutadmin set/reset/reload` works
 
 ## Red Zone spawn areas (MythicMobs)

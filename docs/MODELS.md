@@ -62,7 +62,7 @@ Verify in `logs/latest.log`: `Importing <mid>.bbmodel`, `N models loaded`,
 
 ## Fix log
 
-- **2026-09-20 — Warden walk animation silently no-op'd:** both `asset_c8951…` clips (`FurnaceGuardIdle`, `walk`) had every animator keyed by a freshly-minted uuid instead of the target bone's real outliner uuid (rule 6 above) — the clips imported clean and MEG "played" them on trigger, but zero bones actually moved. Remapped all 22 animator entries (6 idle + 16 walk) to the correct bone uuids by name; blueprint file otherwise byte-identical. The `state{s=walk;l=LOOP}` 10s force-play block in `GlitchWarden.yml` `~onSpawn` is kept in place one more deploy so the fix can be visually confirmed in-game before it's removed.
+- **2026-09-20 — Warden walk animation silently no-op'd:** both `asset_c8951…` clips (`FurnaceGuardIdle`, `walk`) had every animator keyed by a freshly-minted uuid instead of the target bone's real outliner uuid (rule 6 above) — the clips imported clean and MEG "played" them on trigger, but zero bones actually moved. Remapped all 22 animator entries (6 idle + 16 walk) to the correct bone uuids by name; blueprint file otherwise byte-identical. Confirmed working in-game 2026-09-20; the `state{s=walk;l=LOOP}` 10s force-play diagnostic in `GlitchWarden.yml` `~onSpawn` has been removed now that the auto-trigger is verified.
 
 ## Known limits
 

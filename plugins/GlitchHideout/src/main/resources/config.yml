@@ -45,7 +45,7 @@ stations:
   intel:
     display: "<aqua>Intel Center"
     icon: SPYGLASS
-    description: "Hostiles within 20 blocks glow while you are in the rift."
+    description: "Unlocks deeper hideout access."
     costs: [150, 600, 2500]
     requires: { 1: "", 2: "workbench:1", 3: "stash:2" }
   trainer:
