@@ -1,0 +1,19 @@
+# The Glitch — MythicCrucible example item (starter/demo, 2026-09-20)
+# Proves the Crucible install works end-to-end: custom item + a Mythic skill
+# triggered onHit. Not balance-tuned — a template to build real items from.
+# Give in-game with: /mi give GlitchTestBlade <player>
+
+GlitchTestBlade:
+  Id: IRON_SWORD
+  Display: '<light_purple>Rift-Touched Blade <gray>(Test)'
+  Lore:
+  - '<dark_gray>A MythicCrucible test weapon.'
+  - '<dark_gray>Hits leave a small burst of glitch particles.'
+  Options:
+    Unbreakable: true
+  Attributes:
+    MainHand:
+      AttackDamage: 2
+  Skills:
+  - effect:particles{particle=portal;amount=20;speed=0.15;hSpread=0.3;vSpread=0.3} @Target ~onAttack
+  - effect:sound{s=entity.enderman.teleport;v=0.6;p=1.4} @Target ~onAttack

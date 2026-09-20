@@ -197,7 +197,12 @@ Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or vi
 | VaultUnlocked | Economy bridge | Auto-detects |
 | EssentialsX | **INCOMPATIBLE** with MC 26.x | N/A — not functional |
 | Eli's Coins | Glitch Shards currency | `server/plugins/Coins/config.yml` |
-| MythicMobs | Custom mobs + loot | `server/plugins/MythicMobs/` |
+| MythicMobs | Custom mobs + loot (**Premium**, 2026-09-20; jar live-only, gitignored) | `server/plugins/MythicMobs/` |
+| MythicCrucible | Skill-driven custom items/furniture add-on for Mythic (2026-09-20; jar live-only, gitignored) | `server/plugins/MythicMobs/items/GlitchCrucibleItems.yml` |
+| MythicDungeons | Instanced party dungeons (2026-09-20; needs **ProtocolLib**; jar live-only, gitignored) | Built in-game via its own editor — no repo config |
+| MythicAchievements | Custom advancements add-on (**Premium**, 2026-09-20; jar live-only, gitignored) | `server/plugins/MythicAchievements/Achievements/GlitchHunting.yml` |
+| MythicHUD | Custom action-bar HUD bars (2026-09-20; jar live-only, gitignored) | **Currently failing to enable** — see docs/STATUS.md |
+| ProtocolLib | Packet library (dependency for MythicDungeons, 2026-09-20; jar live-only, gitignored) | N/A |
 | ModelEngine | Custom mob rigs (warden + wisp, 2/12 free-tier slots; jar live-only, gitignored) | `server/plugins/ModelEngine/blueprints/` — pipeline: `docs/MODELS.md` |
 | FancyNpcs | Packet-based NPCs | `server/plugins/FancyNpcs/` |
 | DeluxeMenus | GUI menus | `server/plugins/DeluxeMenus/gui_configs/` |

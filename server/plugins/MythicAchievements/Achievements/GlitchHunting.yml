@@ -1,0 +1,21 @@
+# The Glitch — MythicAchievements example (starter/demo, 2026-09-20)
+# Proves the install works end-to-end against a real custom mob (GlitchWarden).
+# Reuses the built-in MONSTER_HUNTING category. Not balance-tuned.
+
+WARDEN_SLAYER:
+  Display: 'Warden Slayer'
+  Description: 'Defeat 5 Glitch Wardens'
+  Category: MONSTER_HUNTING
+  Icon:
+    Material: IRON_BLOCK
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchWarden
+      Amount: 5
+      Conditions: []
+  Reward:
+    Message: 'You have slain 5 Glitch Wardens!'
+    Drops:
+    - 100 EXPERIENCE
+    Skills: []
