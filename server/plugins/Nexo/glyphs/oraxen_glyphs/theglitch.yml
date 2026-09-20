@@ -1,9 +1,15 @@
 # The Glitch — custom font glyphs (Arcane Ruins UI kit)
 #
-# Mapped into minecraft:default by Oraxen's vanilla glyph handler; usable as
-# raw unicode chars anywhere text renders (lore, titles, chat). Java side
-# mirrors these codepoints in plugins/GlitchItems/.../GlitchUI.java — keep the
-# two in sync. Textures come from pack/textures/glyphs/ (scripts/gen-ui-textures.py).
+# `font: minecraft:default` + `char:` (2026-09-20, migrated from Oraxen).
+# **Found the hard way:** without an explicit `font:`, Nexo auto-assigns
+# glyphs into its own `nexo:default` font with random internal codepoints,
+# ignoring `char:` entirely — every raw \uE0XX literal in Java rendered as a
+# tofu box. Pinning `font: minecraft:default` makes Nexo honor `char:` exactly
+# like Oraxen did (verified: all 19 codepoints below came back byte-identical
+# in the regenerated pack), so every existing Java usage keeps working as-is —
+# no code changes needed, just this config. Java side mirrors these codepoints
+# in plugins/GlitchItems/.../GlitchUI.java — keep the two in sync. Textures
+# come from pack/textures/glyphs/ (scripts/gen-ui-textures.py).
 #
 # Bedrock/Geyser clients cannot render PUA glyphs — every in-game usage must
 # pair the glyph with a plain-text label so Bedrock loses decoration only.
@@ -12,60 +18,70 @@ res_aegis:
   texture: glyphs/res_aegis
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE040"
 
 res_veil:
   texture: glyphs/res_veil
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE041"
 
 res_bloom:
   texture: glyphs/res_bloom
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE042"
 
 res_ward:
   texture: glyphs/res_ward
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE043"
 
 res_hollow:
   texture: glyphs/res_hollow
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE044"
 
 shard:
   texture: glyphs/shard
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE045"
 
 star_full:
   texture: glyphs/star_full
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE046"
 
 star_empty:
   texture: glyphs/star_empty
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE047"
 
 divider:
   texture: glyphs/divider
   ascent: 7
   height: 8
+  font: minecraft:default
   char: "\uE048"
 
 title_rune:
   texture: glyphs/title_rune
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE049"
 
 # Rank badge icons (E050-E058) — shown in front of LuckPerms rank prefixes
@@ -76,52 +92,61 @@ rank_member:
   texture: glyphs/rank_member
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE050"
 
 rank_wisp:
   texture: glyphs/rank_wisp
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE051"
 
 rank_stalker:
   texture: glyphs/rank_stalker
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE052"
 
 rank_sentinel:
   texture: glyphs/rank_sentinel
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE053"
 
 rank_helper:
   texture: glyphs/rank_helper
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE054"
 
 rank_dev:
   texture: glyphs/rank_dev
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE055"
 
 rank_moderator:
   texture: glyphs/rank_moderator
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE056"
 
 rank_admin:
   texture: glyphs/rank_admin
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE057"
 
 rank_owner:
   texture: glyphs/rank_owner
   ascent: 8
   height: 9
+  font: minecraft:default
   char: "\uE058"
