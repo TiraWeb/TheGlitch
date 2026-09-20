@@ -1,11 +1,150 @@
-# The Glitch — MythicAchievements example (starter/demo, 2026-09-20)
-# Proves the install works end-to-end against a real custom mob (GlitchWarden).
-# Reuses the built-in MONSTER_HUNTING category. Not balance-tuned.
+# The Glitch — MythicAchievements: bestiary kill achievements (2026-09-20)
+# One per mob in server/plugins/MythicMobs/Mobs/, scaled by GAME_DESIGN tier
+# (docs: T1 fodder=50 kills, T2=25, T3 elite=5, T4 boss=1), plus a capstone
+# "kill every mob type once" achievement. Reuses the built-in MONSTER_HUNTING
+# category. XP rewards only — not balance-tuned against the shard economy.
+
+# --- Tier 1 fodder ---
+CRAWLER_CULLER:
+  Display: 'Crawler Culler'
+  Description: 'Defeat 50 Corrupted Crawlers'
+  Category: MONSTER_HUNTING
+  Frame: TASK
+  Icon:
+    Material: GUNPOWDER
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: CorruptedCrawler
+      Amount: 50
+      Conditions: []
+  Reward:
+    Message: 'You have thinned the Corrupted Crawlers!'
+    Drops:
+    - 30 EXPERIENCE
+    Skills: []
+
+WISP_WARDEN:
+  Display: 'Wisp Warden'
+  Description: 'Defeat 50 Glitch Wisps'
+  Category: MONSTER_HUNTING
+  Frame: TASK
+  Icon:
+    Material: PHANTOM_MEMBRANE
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchWisp
+      Amount: 50
+      Conditions: []
+  Reward:
+    Message: 'You have scattered 50 Glitch Wisps!'
+    Drops:
+    - 30 EXPERIENCE
+    Skills: []
+
+# --- Tier 2 ---
+BRUTE_BREAKER:
+  Display: 'Brute Breaker'
+  Description: 'Defeat 25 Glitch Brutes'
+  Category: MONSTER_HUNTING
+  Frame: GOAL
+  Icon:
+    Material: ROTTEN_FLESH
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchBrute
+      Amount: 25
+      Conditions: []
+  Reward:
+    Message: 'You have broken 25 Glitch Brutes!'
+    Drops:
+    - 60 EXPERIENCE
+    Skills: []
+
+PHANTOM_HUNTER:
+  Display: 'Phantom Hunter'
+  Description: 'Defeat 25 Glitch Phantoms'
+  Category: MONSTER_HUNTING
+  Frame: GOAL
+  Icon:
+    Material: PHANTOM_SPAWN_EGG
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchPhantom
+      Amount: 25
+      Conditions: []
+  Reward:
+    Message: 'You have downed 25 Glitch Phantoms!'
+    Drops:
+    - 60 EXPERIENCE
+    Skills: []
+
+STALKER_STOPPER:
+  Display: 'Stalker Stopper'
+  Description: 'Defeat 25 Glitch Stalkers'
+  Category: MONSTER_HUNTING
+  Frame: GOAL
+  Icon:
+    Material: ZOMBIE_HEAD
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchStalker
+      Amount: 25
+      Conditions: []
+  Reward:
+    Message: 'You have stopped 25 Glitch Stalkers!'
+    Drops:
+    - 60 EXPERIENCE
+    Skills: []
+
+# --- Tier 3 elite ---
+SENTINEL_SLAYER:
+  Display: 'Sentinel Slayer'
+  Description: 'Defeat 5 Glitch Sentinels'
+  Category: MONSTER_HUNTING
+  Frame: CHALLENGE
+  Icon:
+    Material: WITHER_SKELETON_SKULL
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchSentinel
+      Amount: 5
+      Conditions: []
+  Reward:
+    Message: 'You have slain 5 Glitch Sentinels!'
+    Drops:
+    - 100 EXPERIENCE
+    Skills: []
+
+SNIPER_SILENCER:
+  Display: 'Sniper Silencer'
+  Description: 'Defeat 5 Glitch Snipers'
+  Category: MONSTER_HUNTING
+  Frame: CHALLENGE
+  Icon:
+    Material: SKELETON_SKULL
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchSniper
+      Amount: 5
+      Conditions: []
+  Reward:
+    Message: 'You have silenced 5 Glitch Snipers!'
+    Drops:
+    - 100 EXPERIENCE
+    Skills: []
 
 WARDEN_SLAYER:
   Display: 'Warden Slayer'
   Description: 'Defeat 5 Glitch Wardens'
   Category: MONSTER_HUNTING
+  Frame: CHALLENGE
   Icon:
     Material: IRON_BLOCK
   Criteria:
@@ -18,4 +157,99 @@ WARDEN_SLAYER:
     Message: 'You have slain 5 Glitch Wardens!'
     Drops:
     - 100 EXPERIENCE
+    Skills: []
+
+# --- Tier 4 boss ---
+CORE_BREAKER:
+  Display: 'Core Breaker'
+  Description: 'Defeat the Glitch Core'
+  Category: MONSTER_HUNTING
+  Frame: CHALLENGE
+  Icon:
+    Material: SCULK_CATALYST
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchCore
+      Amount: 1
+      Conditions: []
+  Reward:
+    Message: 'You have broken the Glitch Core!'
+    Drops:
+    - 250 EXPERIENCE
+    Skills: []
+
+KING_SLAYER:
+  Display: 'King Slayer'
+  Description: 'Defeat The Glitch King'
+  Category: MONSTER_HUNTING
+  Frame: CHALLENGE
+  Icon:
+    Material: DRAGON_HEAD
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: TheGlitchKing
+      Amount: 1
+      Conditions: []
+  Reward:
+    Message: 'You have defeated The Glitch King!'
+    Drops:
+    - 250 EXPERIENCE
+    Skills: []
+
+# --- Capstone: one of every mob type ---
+GLITCH_BESTIARY:
+  Display: 'Glitch Bestiary'
+  Description: 'Defeat every kind of Glitch mob at least once'
+  Category: MONSTER_HUNTING
+  Frame: GOAL
+  Parent: WARDEN_SLAYER
+  Icon:
+    Material: BOOK
+  Criteria:
+    CRAWLER:
+      Type: KILL_MYTHIC_MOB
+      MobType: CorruptedCrawler
+      Amount: 1
+    WISP:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchWisp
+      Amount: 1
+    BRUTE:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchBrute
+      Amount: 1
+    PHANTOM:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchPhantom
+      Amount: 1
+    STALKER:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchStalker
+      Amount: 1
+    SENTINEL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchSentinel
+      Amount: 1
+    SNIPER:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchSniper
+      Amount: 1
+    WARDEN:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchWarden
+      Amount: 1
+    CORE:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchCore
+      Amount: 1
+    KING:
+      Type: KILL_MYTHIC_MOB
+      MobType: TheGlitchKing
+      Amount: 1
+  Reward:
+    Message: 'You have completed the Glitch Bestiary!'
+    Drops:
+    - 300 EXPERIENCE
     Skills: []
