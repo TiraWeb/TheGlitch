@@ -39,6 +39,7 @@
 3. **Clip conversion** (`.blockyanim` → bbmodel, validated 78/78 keyframes @ 0.0000° vs the pipeline's own idle output): keyframe time = source time **/60 s**; rotation = **negated ZYX euler of the DELTA quat** (no rest composition); position = delta verbatim; animators keyed by uuid as `{name, type: "bone"}`; animation `{loop: "loop", snapping: 60}`.
 4. **Walk trigger (dual path):** name walk-state clips exactly `walk` (matches MEG `Default-Animations: WALK: walk`, so usm auto-plays on movement) **and** map it explicitly (`defaultstate{mid=…;type=walk;state=walk;li=4;lo=4}`). Either path alone can silently fail; together they hold.
 5. **File shape:** mimic the proven warden bbmodel exactly — `meta {format_version 4.10, model_format free, box_uv false}`, `resolution`, embedded base64 texture (`namespace myrlin, folder entity`), `name` + `model_identifier` = mid, no `groups` key.
+6. **Animator keys MUST be the bone's real `uuid`, not a fresh one:** each `animations[].animators` dict is keyed by the target bone's `uuid` from `outliner` — the `name`/`type` fields inside the animator object are cosmetic, ModelEngine binds by key. A converter that mints a new random uuid per animator (instead of looking up the matching bone by name) produces a clip that imports and "plays" with zero visible motion, since none of its keyframe tracks resolve to a real bone. **Found 2026-09-20:** both warden clips (`FurnaceGuardIdle` 6/6, `walk` 16/16 animators) had exactly this defect — fixed by remapping each animator's key to `name_to_uuid[animator.name]` from the model's own outliner. Verify any new clip with: animator dict keys ⊆ the set of bone uuids in `outliner`.
 
 ## Deploy (runtime, no restart)
 
@@ -58,6 +59,10 @@ oraxen reload all
 Verify in `logs/latest.log`: `Importing <mid>.bbmodel`, `N models loaded`,
 `Mythic has finished reloading!`, Oraxen `Successfully reloaded pack` — and no
 `ERROR.*(Mythic|ModelEngine)`.
+
+## Fix log
+
+- **2026-09-20 — Warden walk animation silently no-op'd:** both `asset_c8951…` clips (`FurnaceGuardIdle`, `walk`) had every animator keyed by a freshly-minted uuid instead of the target bone's real outliner uuid (rule 6 above) — the clips imported clean and MEG "played" them on trigger, but zero bones actually moved. Remapped all 22 animator entries (6 idle + 16 walk) to the correct bone uuids by name; blueprint file otherwise byte-identical. The `state{s=walk;l=LOOP}` 10s force-play block in `GlitchWarden.yml` `~onSpawn` is kept in place one more deploy so the fix can be visually confirmed in-game before it's removed.
 
 ## Known limits
 
