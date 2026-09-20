@@ -89,7 +89,6 @@ public final class BazaarPanel implements Listener {
     private double wz;
     private String facing;
     private double spacing;
-    private int instantBuyMax;
     private boolean cfgEnabled;
 
     private BazaarPanel() {
@@ -248,7 +247,6 @@ public final class BazaarPanel implements Listener {
             if (spacing < 0.5D) {
                 spacing = 0.5D;
             }
-            instantBuyMax = plugin.getConfig().getInt("modern-ui.world-panel.instant-buy-max", 50);
             return true;
         } catch (Throwable t) {
             plugin.getLogger().warning("world-panel config invalid — wall panel dormant.");
@@ -706,14 +704,9 @@ public final class BazaarPanel implements Listener {
                 refreshContents();
                 return;
             }
-            if (entry.price() <= instantBuyMax) {
-                enqueueBuy(() -> gui.buyGearFromDialog(player, gearId));
-            } else {
-                // Fix 3: non-dialog confirm path — open the chest GUI on the gear tab for
-                // confirmation (ShopGUI.open shows its own FloatingBanner). Same-package
-                // DialogUI class is left untouched; this panel simply no longer calls it.
-                enqueueBuy(() -> gui.open(player, "gear"));
-            }
+            // Always buy directly from the floating panel — no chest-GUI confirm step,
+            // regardless of price (2026-09-20).
+            enqueueBuy(() -> gui.buyGearFromDialog(player, gearId));
             return;
         }
         Integer price = gui.buyPriceFor(category, rest);
@@ -722,13 +715,7 @@ public final class BazaarPanel implements Listener {
             return;
         }
         final String itemId = rest;
-        if (price <= instantBuyMax) {
-            enqueueBuy(() -> gui.buyFromDialog(player, category, itemId, 1));
-        } else {
-            // Fix 3: non-dialog confirm path — open the chest GUI on this category for
-            // confirmation (ShopGUI.open shows its own FloatingBanner).
-            enqueueBuy(() -> gui.open(player, category));
-        }
+        enqueueBuy(() -> gui.buyFromDialog(player, category, itemId, 1));
     }
 
     private void enqueueBuy(Runnable action) {

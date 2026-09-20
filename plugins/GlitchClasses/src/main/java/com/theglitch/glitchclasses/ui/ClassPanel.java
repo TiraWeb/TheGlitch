@@ -531,9 +531,10 @@ public final class ClassPanel implements Listener {
                 plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                     try {
                         var g = plugin.getClassGUI();
-                        if (g != null) g.openClassMenu(player, arg);
+                        // Select directly from the floating panel — no chest-GUI redirect (2026-09-20).
+                        if (g != null) g.applyClassSelectCore(player, arg);
                     } catch (Throwable t) {
-                        plugin.getLogger().fine("panel class open failed: " + t.getClass().getSimpleName());
+                        plugin.getLogger().fine("panel class select failed: " + t.getClass().getSimpleName());
                     }
                 }, 1L);
             } catch (Throwable t) {

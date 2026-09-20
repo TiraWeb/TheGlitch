@@ -576,7 +576,12 @@ public final class HideoutPanel implements Listener {
         }
         enqueue(() -> {
             var gui = plugin.getGui();
-            if (gui != null) gui.openMain(player);
+            if (gui == null) return;
+            // Upgrade directly from the floating panel — no chest-GUI redirect (2026-09-20).
+            HideoutManager.UpgradeResult result = gui.upgradeFromUi(player, stationId);
+            if (result == HideoutManager.UpgradeResult.OK) {
+                rebuild();
+            }
         });
     }
 

@@ -515,7 +515,8 @@ public class ClassGUI implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> openClassMenu(player, className), 5L);
     }
 
-    private void applyClassSelectCore(Player player, String className) {
+    /** Applies a class selection with no chest-GUI follow-up — used by the floating panel. */
+    public void applyClassSelectCore(Player player, String className) {
         boolean firstSelect = !classManager.hasClass(player.getUniqueId());
         classManager.setClass(player.getUniqueId(), className);
         if (firstSelect) {
