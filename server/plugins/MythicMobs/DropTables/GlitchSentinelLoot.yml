@@ -5,9 +5,9 @@ GlitchSentinelLoot:
   TotalItems: 7
   Drops:
     - COINS 10-16 1
-    - oraxen rune_fragment 3-6 1
-    - oraxen aether_shard 1 0.3
-    - oraxen rift_crystal 1 0.15
-    - oraxen void_essence 1 0.05
-    - oraxen unstable_rift_uncommon 1 0.3
-    - oraxen unstable_rift_rare 1 0.15
+    - nexo rune_fragment 3-6 1
+    - nexo aether_shard 1 0.3
+    - nexo rift_crystal 1 0.15
+    - nexo void_essence 1 0.05
+    - nexo unstable_rift_uncommon 1 0.3
+    - nexo unstable_rift_rare 1 0.15

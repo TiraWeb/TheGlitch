@@ -141,7 +141,7 @@ seed_velkoth() {
 for plugin in "${SELECTED[@]}"; do
   case "$plugin" in
     GlitchItems)
-      for jar in VaultUnlocked PlaceholderAPI Oraxen; do
+      for jar in VaultUnlocked PlaceholderAPI; do
         if [[ ! -f "${REPO_DIR}/plugins/GlitchItems/lib/${jar}.jar" ]]; then
           seed_lib GlitchItems "$jar" || warn "Missing ${jar}.jar for GlitchItems — run sudo ./plugins/GlitchItems/build.sh once"
         fi
@@ -155,7 +155,7 @@ for plugin in "${SELECTED[@]}"; do
       done
       ;;
     GlitchShops)
-      for jar in VaultUnlocked Oraxen FancyNpcs; do
+      for jar in VaultUnlocked FancyNpcs; do
         if [[ ! -f "${REPO_DIR}/plugins/GlitchShops/lib/${jar}.jar" ]]; then
           seed_lib GlitchShops "$jar" || warn "Missing ${jar}.jar for GlitchShops"
         fi
@@ -322,7 +322,7 @@ for plugin in "${SELECTED[@]}"; do
   done
 done
 
-# --- GlitchHUD extras: TAB takeover + Oraxen negative-space font ---
+# --- GlitchHUD extras: TAB takeover + Nexo negative-space font ---
 for plugin in "${SELECTED[@]}"; do
   if [[ "$plugin" == "GlitchHUD" ]]; then
     # TAB sidebar is now owned by GlitchHUD — force repo TAB config to live so scoreboard.enabled=false takes effect.
@@ -334,12 +334,12 @@ for plugin in "${SELECTED[@]}"; do
       log "Synced TAB/config.yml (HUD takeover — scoreboard.enabled=false)"
     fi
     # Negative-space font for pixel-perfect HUD shifts (HUD uses \uF80x glyphs)
-    if [[ -f "${REPO_DIR}/server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json" ]]; then
-      mkdir -p "${LIVE_PLUGIN_DIR}/Oraxen/pack/assets/minecraft/font"
-      cp -f "${REPO_DIR}/server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json" "${LIVE_PLUGIN_DIR}/Oraxen/pack/assets/minecraft/font/negative_space.json"
-      mkdir -p "${REPO_DEPLOY}/Oraxen/pack/assets/minecraft/font"
-      cp -f "${REPO_DIR}/server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json" "${REPO_DEPLOY}/Oraxen/pack/assets/minecraft/font/negative_space.json" 2>/dev/null || true
-      log "Synced Oraxen negative_space font (HUD shifts)"
+    if [[ -f "${REPO_DIR}/server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json" ]]; then
+      mkdir -p "${LIVE_PLUGIN_DIR}/Nexo/pack/assets/minecraft/font"
+      cp -f "${REPO_DIR}/server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json" "${LIVE_PLUGIN_DIR}/Nexo/pack/assets/minecraft/font/negative_space.json"
+      mkdir -p "${REPO_DEPLOY}/Nexo/pack/assets/minecraft/font"
+      cp -f "${REPO_DIR}/server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json" "${REPO_DEPLOY}/Nexo/pack/assets/minecraft/font/negative_space.json" 2>/dev/null || true
+      log "Synced Nexo negative_space font (HUD shifts)"
     fi
     break
   fi

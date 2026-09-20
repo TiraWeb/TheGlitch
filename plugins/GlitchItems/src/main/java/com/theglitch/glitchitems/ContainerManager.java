@@ -1,6 +1,6 @@
 package com.theglitch.glitchitems;
 
-import com.theglitch.common.OraxenUtil;
+import com.theglitch.common.NexoUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -32,7 +32,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class ContainerManager {
 
-    private static final NamespacedKey ORAXEN_KEY = new NamespacedKey("oraxen", "custom_item_id");
+    private static final NamespacedKey NEXO_KEY = new NamespacedKey("nexo", "id");
     private static final MiniMessage MM = MiniMessage.miniMessage();
     /** Must match AbilityListener.SCAVENGE_TAG — scoreboard tag that grants bonus rolls. */
     public static final String SCAVENGE_TAG = "specter_scavenge";
@@ -434,7 +434,7 @@ public final class ContainerManager {
     private boolean isKey(ItemStack stack, ContainerType type) {
         if (stack == null || stack.getType().isAir()) return false;
         if (!type.keyId().isEmpty()) {
-            String id = OraxenUtil.idOf(stack);
+            String id = NexoUtil.idOf(stack);
             if (type.keyId().equalsIgnoreCase(id)) return true;
         }
         if (!type.keyMaterial().isEmpty()) {
@@ -460,7 +460,7 @@ public final class ContainerManager {
 
     private ItemStack buildRift(Rarity rarity) {
         String riftId = "unstable_rift_" + rarity.getId();
-        ItemStack item = OraxenUtil.build(riftId);
+        ItemStack item = NexoUtil.build(riftId);
         if (item != null) return item;
         ItemStack fallback = new ItemStack(Material.AMETHYST_SHARD);
         ItemMeta meta = fallback.getItemMeta();
@@ -468,20 +468,20 @@ public final class ContainerManager {
         meta.lore(List.of(
                 MM.deserialize("<gray>An unstable piece of the Glitch.</gray>"),
                 MM.deserialize("<gray>Identify it at the hub.</gray>")));
-        meta.getPersistentDataContainer().set(ORAXEN_KEY, PersistentDataType.STRING, riftId);
+        meta.getPersistentDataContainer().set(NEXO_KEY, PersistentDataType.STRING, riftId);
         fallback.setItemMeta(meta);
         return fallback;
     }
 
     private ItemStack buildMaterial(String id) {
-        ItemStack item = OraxenUtil.build(id);
+        ItemStack item = NexoUtil.build(id);
         if (item != null) return item;
         ItemStack fallback = new ItemStack(MATERIAL_MATERIALS.getOrDefault(id, Material.PAPER), 1);
         ItemMeta meta = fallback.getItemMeta();
         String label = id.replace('_', ' ');
         label = label.substring(0, 1).toUpperCase() + label.substring(1);
         meta.customName(MM.deserialize("<white>" + label + "</white>"));
-        meta.getPersistentDataContainer().set(ORAXEN_KEY, PersistentDataType.STRING, id);
+        meta.getPersistentDataContainer().set(NEXO_KEY, PersistentDataType.STRING, id);
         fallback.setItemMeta(meta);
         return fallback;
     }

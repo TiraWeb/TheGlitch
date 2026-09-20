@@ -1,0 +1,6 @@
+gui_sell:
+  itemname: <gold>SELL</gold>
+  material: GOLD_INGOT
+  Pack:
+    parent_model: item/generated
+    texture: gui_sell

@@ -1,6 +1,6 @@
 package com.theglitch.glitchitems;
 
-import com.theglitch.common.OraxenUtil;
+import com.theglitch.common.NexoUtil;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -280,7 +280,7 @@ public final class CombatListener implements Listener {
                 : roll < 90 ? "unstable_rift_rare"
                 : roll < 98 ? "unstable_rift_epic" : "unstable_rift_legendary";
         try {
-            ItemStack rift = OraxenUtil.build(riftId);
+            ItemStack rift = NexoUtil.build(riftId);
             if (rift == null) return;
             event.getEntity().getWorld().dropItemNaturally(event.getEntity().getLocation(), rift);
             killer.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(

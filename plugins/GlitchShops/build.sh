@@ -5,7 +5,8 @@
 #   sudo ./plugins/GlitchShops/build.sh
 #
 # Requires: Maven (mvn), Java 21+, and these jars in the live plugins dir:
-#   VaultUnlocked.jar, Oraxen.jar, FancyNpcs.jar, GlitchItems.jar
+#   VaultUnlocked.jar, FancyNpcs.jar, GlitchItems.jar
+# Nexo is resolved from its Maven repo (repo.nexomc.com), not copied locally.
 # IMPORTANT: build GlitchItems FIRST (sudo ./plugins/GlitchItems/build.sh)
 # so the GlitchItems.jar copied here contains the latest API (e.g. generateGodroll).
 # Output:   plugins/GlitchShops/target/GlitchShops-1.4.0.jar
@@ -29,7 +30,7 @@ command -v java >/dev/null 2>&1 || die "Java not found."
 log "Building GlitchShops..."
 
 mkdir -p "${PLUGIN_DIR}/lib"
-for jar in VaultUnlocked Oraxen FancyNpcs GlitchItems; do
+for jar in VaultUnlocked FancyNpcs GlitchItems; do
     SRC=$(ls "${LIVE_PLUGIN_DIR}/${jar}.jar" 2>/dev/null || ls "${SERVER_DIR}/plugins/${jar}.jar" 2>/dev/null || true)
     if [[ -z "${SRC}" ]]; then
         die "${jar}.jar not found in live plugins — needed for compilation."

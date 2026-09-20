@@ -54,8 +54,7 @@ Run from the repository on the server:
 sudo ./bootstrap.sh
 sudo ./scripts/setup-worlds.sh
 sudo ./scripts/setup-all-plugins.sh
-sudo ./scripts/setup-oraxen.sh
-sudo ./scripts/setup-oraxen-items.sh
+sudo ./scripts/setup-nexo-items.sh    # Nexo jar must be purchased+uploaded manually first (docs/STATUS.md)
 sudo ./scripts/deploy-balance-2026-09-02.sh  # 2026-09-02 balance: 20 items itemname, COINS retuned, roll-based sell, attrs, consumables, Vault +5%, scatter 10→6 (4d8c554/6e2fba7)
 sudo ./scripts/deploy-armor-2026-09-02.sh     # 2026-09-02 armor: +0..+5 ANVIL slot40 or /armor upgrade, per-slot identity, config v3 (f1da4d0/d847c69, RCON verified)
 
@@ -66,8 +65,8 @@ sudo ./scripts/build-all.sh           # builds/deploys all 12 plugins + syncs TA
 
 # Custom models (runtime, no restart — see docs/MODELS.md):
 # sudo cp server/plugins/ModelEngine/blueprints/<mid>.bbmodel /opt/theglitch/server/plugins/ModelEngine/blueprints/
-# + `meg reload models` + `mm reload` + merge resource pack.zip → Oraxen/pack/uploads/10_modelengine.zip
-# + `oraxen reload all` (players must RELOG for pack changes)
+# + `meg reload models` + `mm reload` + merge resource pack.zip → Nexo/pack/uploads/10_modelengine.zip
+# + `nexo reload` (players must RELOG for pack changes)
 
 # Legacy per-plugin (still works, use for first-time lib seeding or single-plugin debug):
 # Topological order MUST be: Items → Shops → Stash → Classes → Hideout → DeathRules → HealthBar
@@ -85,7 +84,7 @@ sudo ./plugins/GlitchHealthBar/build.sh
 sudo systemctl restart theglitch
 ```
 
-Paper/Java versions are pinned once in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`) and inherited by all 14 modules — bump there, not per-plugin. (GlitchDungeons is deferred — not built/deployed by default; it also pins Java 25.) `build-all.sh` also forces `server/plugins/TAB/config.yml` (`scoreboard.enabled: false`) and `server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json` for GlitchHUD.
+Paper/Java versions are pinned once in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`) and inherited by all 14 modules — bump there, not per-plugin. (GlitchDungeons is deferred — not built/deployed by default; it also pins Java 25.) `build-all.sh` also forces `server/plugins/TAB/config.yml` (`scoreboard.enabled: false`) and `server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json` for GlitchHUD.
 
 The custom plugin build scripts deploy to the live server. `bootstrap.sh` does
 not build them automatically.

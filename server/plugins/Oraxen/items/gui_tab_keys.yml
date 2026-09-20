@@ -1,8 +1,0 @@
-gui_tab_keys:
-  itemname: <gold>Keys</gold>
-  material: TRIPWIRE_HOOK
-  Pack:
-    generate_model: true
-    parent_model: "item/generated"
-    textures:
-      - gui_tab_keys

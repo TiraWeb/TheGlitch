@@ -39,11 +39,18 @@
             <systemPath>${project.basedir}/lib/GlitchItems.jar</systemPath>
         </dependency>
         <dependency>
-            <groupId>io.th0rgal.oraxen</groupId>
-            <artifactId>Oraxen</artifactId>
-            <version>${oraxen.version}</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/Oraxen.jar</systemPath>
+            <groupId>com.nexomc</groupId>
+            <artifactId>nexo</artifactId>
+            <version>${nexo.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <!-- Transitive SNAPSHOT deps with no accessible repo; we only need
+                     NexoItems/ItemBuilder at compile time, not Nexo's own GUI/etc. -->
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>de.oliver.fancynpcs</groupId>

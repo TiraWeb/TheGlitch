@@ -4,7 +4,7 @@ main: com.theglitch.glitchshops.GlitchShops
 api-version: '1.21'
 description: Merchant NPCs for The Glitch — buy/sell custom items for Glitch Shards
 softdepend:
-  - Oraxen
+  - Nexo
   - GlitchItems
   - FancyNpcs
   - Vault

@@ -13,7 +13,7 @@
 |---|---|
 | ModelEngine R4.1.0 | Free build from mythiccraft.io (login, no purchase). Jar is **gitignored** (`*.jar`) — uploaded to the box via `scp`, never committed. **Live-only:** `config.yml` `Use-State-Machine: true` (global default is `false`; per-mob `usm=true` alone does not start the auto idle/walk driver — set 2026-09-14, needs restart). |
 | MythicMobs 5.13.0 | `model{mid;usm=true;save=true}` + `defaultstate` skills attach rigs; `mm reload` applies yml changes. |
-| Oraxen 1.218.0 | Serves ONE merged pack. MEG's generated `resource pack.zip` is copied to `Oraxen/pack/uploads/10_modelengine.zip`, then `oraxen reload all`. Pack changes require clients to **relog**. |
+| Nexo | Serves ONE merged pack (migrated from Oraxen 2026-09-20). MEG's generated `resource pack.zip` is copied to `Nexo/pack/uploads/10_modelengine.zip`, then `nexo reload`. Pack changes require clients to **relog**. |
 | GlitchHealthBar | Tracks any named `Mob`, so MEG models get name + HP bar with no extra wiring. |
 
 ## Files
@@ -51,13 +51,13 @@ sudo cp <Mob>.yml /opt/theglitch/server/plugins/MythicMobs/Mobs/
 meg reload models        # expect: Importing <mid>.bbmodel → N models loaded, no errors
 mm reload
 sudo cp "/opt/theglitch/server/plugins/ModelEngine/resource pack.zip" \
-  /opt/theglitch/server/plugins/Oraxen/pack/uploads/10_modelengine.zip
-oraxen reload all
+  /opt/theglitch/server/plugins/Nexo/pack/uploads/10_modelengine.zip
+nexo reload
 # players must RELOG to fetch the changed pack
 ```
 
 Verify in `logs/latest.log`: `Importing <mid>.bbmodel`, `N models loaded`,
-`Mythic has finished reloading!`, Oraxen `Successfully reloaded pack` — and no
+`Mythic has finished reloading!`, Nexo `Successfully reloaded pack` — and no
 `ERROR.*(Mythic|ModelEngine)`.
 
 ## Fix log

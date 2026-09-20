@@ -1,0 +1,6 @@
+gui_tab_gear:
+  itemname: <gray>Gear</gray>
+  material: DIAMOND_SWORD
+  Pack:
+    parent_model: item/generated
+    texture: gui_tab_gear

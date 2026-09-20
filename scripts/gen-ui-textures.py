@@ -2,16 +2,16 @@
 """The Glitch — UI texture generator (placeholder art, replace later).
 
 Generates every custom-font glyph texture and the global vanilla-chest
-override used by the Oraxen resource pack. Pure Pillow, deterministic
-output, safe to re-run (idempotent).
+override used by the Nexo resource pack (migrated from Oraxen 2026-09-20).
+Pure Pillow, deterministic output, safe to re-run (idempotent).
 
-Outputs into server/plugins/Oraxen/pack/textures/:
+Outputs into server/plugins/Nexo/pack/external_packs/Oraxen/assets/minecraft/textures/:
   glyphs/*.png                           inline font-glyph icons
   gui/sprites/container/generic_54.png   themed 6-row chest window (256x256)
   gui/container/generic_54.png           legacy-path duplicate (pre-1.20.2)
 
-Glyph unicode mapping lives in server/plugins/Oraxen/glyphs/theglitch.yml and
-is mirrored in plugins/GlitchItems/.../GlitchUI.java — keep in sync.
+Glyph unicode mapping lives in server/plugins/Nexo/glyphs/oraxen_glyphs/theglitch.yml
+and is mirrored in plugins/GlitchItems/.../GlitchUI.java — keep in sync.
 
 Palette matches play.theglitch.gg (void purple / amethyst / aqua).
 Usage:  python scripts/gen-ui-textures.py
@@ -24,7 +24,7 @@ import math
 import random
 
 REPO = Path(__file__).resolve().parents[1]
-TEX = REPO / "server" / "plugins" / "Oraxen" / "pack" / "textures"
+TEX = REPO / "server" / "plugins" / "Nexo" / "pack" / "external_packs" / "Oraxen" / "assets" / "minecraft" / "textures"
 
 # ---------------------------------------------------------------- palette ---
 VOID_TOP = (13, 6, 22, 255)

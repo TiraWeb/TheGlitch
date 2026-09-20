@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# The Glitch — worlds+data backup (no rebuildable jars, includes Oraxen.jar)
+# The Glitch — worlds+data backup (no rebuildable jars, includes licensed marketplace jars)
 # Scope per user request 2026-08-26:
 #   - worlds+data only (reproducible jars excluded, rebuild via bootstrap.sh / build-all.sh)
-#   - includes Oraxen.jar (private, license forbids committing but OK in private backup)
+#   - includes Nexo + Mythic add-on jars (private licenses forbid committing but OK in private backup)
 #   - stored on host at /opt/theglitch/backups (PC may be offline) + manual pull to C:\opencode\MCproject\backups
 #   - retention: keep last 7 (14 days at every-2-days)
 # Usage: sudo ./scripts/backup-now.sh   OR   sudo systemctl start theglitch-backup.service
@@ -65,13 +65,13 @@ else
   echo "$LOG_PREFIX Server not active — backing up files as-is"
 fi
 
-# --- build uncompressed tar first (so we can append Oraxen.jar after --exclude) ---
+# --- build uncompressed tar first (so we can append licensed jars after --exclude) ---
 echo "$LOG_PREFIX Creating tar (excluding rebuildable jars)..."
 # Remove stale tmp tar if any
 rm -f "$TMP_TAR"
 
 # We archive from /opt/theglitch so paths are server/...  (easier to restore with -C /opt/theglitch)
-# Exclude rebuildable jars and ephemeral files; keep Oraxen.jar for later append
+# Exclude rebuildable jars and ephemeral files; keep licensed jars for later append
 TAR_RC=0
 tar -cpf "$TMP_TAR" \
   --exclude='server/logs' \
@@ -104,15 +104,11 @@ tar -cpf "$TMP_TAR" \
   server/banned-players.json \
   server/ops.json \
   server/usercache.json \
-  server/usernamecache.json \
   server/version_history.json \
   server/bukkit.yml \
   server/spigot.yml \
-  server/paper-global.yml \
-  server/paper-world-defaults.yml \
   server/purpur.yml \
   server/config \
-  server/world-overrides \
   server/plugins/GlitchStash \
   server/plugins/GlitchClasses \
   server/plugins/GlitchHideout \
@@ -125,17 +121,18 @@ tar -cpf "$TMP_TAR" \
   server/plugins/GlitchDungeons \
   server/plugins/GlitchDeathRules \
   server/plugins/GlitchHealthBar \
-  server/plugins/GlitchCommon \
   server/plugins/Coins \
   server/plugins/LuckPerms \
   server/plugins/WorldGuard \
-  server/plugins/WorldEdit \
   server/plugins/FastAsyncWorldEdit \
   server/plugins/VelKoth \
   server/plugins/MythicMobs \
-  server/plugins/Oraxen \
+  server/plugins/MythicCrucible \
+  server/plugins/MythicDungeons \
+  server/plugins/MythicAchievements \
+  server/plugins/MythicHUD \
+  server/plugins/Nexo \
   server/plugins/Multiverse-Core \
-  server/plugins/Multiverse-Core  \
   server/plugins/Geyser-Spigot \
   server/plugins/FancyNpcs \
   server/plugins/DeluxeMenus \
@@ -149,13 +146,15 @@ if [[ $TAR_RC -ne 0 ]]; then
   exit 1
 fi
 
-# Re-include Oraxen.jar (the one rebuildable jar the user explicitly wants)
-if [[ -f "${SERVER_DIR}/plugins/Oraxen.jar" ]]; then
-  echo "$LOG_PREFIX Appending Oraxen.jar (2.6M) ..."
-  tar -rpf "$TMP_TAR" -C /opt/theglitch server/plugins/Oraxen.jar
-else
-  echo "$LOG_PREFIX WARNING: Oraxen.jar not found at ${SERVER_DIR}/plugins/Oraxen.jar — skipping"
-fi
+# Re-include the licensed marketplace jars the user explicitly wants (Nexo + the
+# Mythic add-ons) — these are gitignored/live-only, so a backup is their only copy.
+for jar_glob in Nexo-*.jar nexo-*.jar MythicMobsPremium*.jar MythicCrucible*.jar MythicDungeons*.jar MythicAchievements*.jar MythicHUD*.jar; do
+  for jar_path in "${SERVER_DIR}/plugins/"${jar_glob}; do
+    [[ -f "$jar_path" ]] || continue
+    echo "$LOG_PREFIX Appending $(basename "$jar_path") ..."
+    tar -rpf "$TMP_TAR" -C /opt/theglitch "server/plugins/$(basename "$jar_path")"
+  done
+done
 
 # Also include floodgate jar if present (pair with Geyser)
 if compgen -G "${SERVER_DIR}/plugins/floodgate*.jar" > /dev/null; then

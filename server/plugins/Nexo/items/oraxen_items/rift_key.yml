@@ -1,0 +1,11 @@
+rift_key:
+  itemname: <gold>Rift Key</gold>
+  material: TRIPWIRE_HOOK
+  Pack:
+    parent_model: item/generated
+    texture: rift_key
+  lore:
+  - <gold>Unlocks Rift Vaults — the rarest loot.</gold>
+  - <gray>Crafted from Void Essence and Legendary Relics.</gray>
+  - <dark_gray>Consumed on use.</dark_gray>
+  - ' <gray>Sell price: <aqua>400 Shards</aqua></gray>'

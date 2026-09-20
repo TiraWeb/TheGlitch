@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class IdentifyManager {
 
-    private static final NamespacedKey ORAXEN_ID_KEY = new NamespacedKey("oraxen", "custom_item_id");
+    private static final NamespacedKey NEXO_ID_KEY = new NamespacedKey("nexo", "id");
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private final GlitchItems plugin;
@@ -52,7 +52,7 @@ public final class IdentifyManager {
     }
 
     public Rarity riftRarity(ItemStack item) {
-        String id = oraxenId(item);
+        String id = nexoId(item);
         if (id == null) return null;
         if (!id.startsWith("unstable_rift_")) {
             String lower = id.toLowerCase();
@@ -67,12 +67,12 @@ public final class IdentifyManager {
         return rarity;
     }
 
-    public String oraxenId(ItemStack item) {
+    public String nexoId(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
 
         try {
-            String id = pdc.get(ORAXEN_ID_KEY, PersistentDataType.STRING);
+            String id = pdc.get(NEXO_ID_KEY, PersistentDataType.STRING);
             if (id != null && !id.isEmpty()) return id;
         } catch (Exception ignored) {}
 

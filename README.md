@@ -35,7 +35,7 @@ The script prints an operator checklist at the end. **One step cannot be scripte
 - Installs all plugins: LuckPerms, EssentialsX, VaultUnlocked, Coins, MythicMobs, FancyNpcs, DeluxeMenus, TAB, PlaceholderAPI, VelKoth, GeyserMC, Floodgate, Multiverse-Core, Chunky, WorldGuard
 - Seeds plugin configs from repo (config-as-code)
 - Custom plugins are **not** built by bootstrap. Build them separately with the commands below.
-- **Oraxen (item plugin) is deliberately NOT in bootstrap.sh** — built separately via `scripts/setup-oraxen.sh` (see below), so a bootstrap failure can't silently skip custom items.
+- **Nexo (item plugin) is deliberately NOT in bootstrap.sh** — purchased/uploaded separately then synced via `scripts/setup-nexo-items.sh` (see below), so a bootstrap failure can't silently skip custom items.
 
 It is designed to be repeatable for the scripted foundation. It does not provision external world saves or replace generated live data. The update loop for scripted changes is:
 
@@ -132,7 +132,7 @@ stat rolls + the **Resonance system** (5 arcane frequencies, weapon +25% damage 
 matching mobs), not item levels. See also [Armor upgrade](#armor-upgrade-deployed-2026-09-02-rcon-verified) (deployed 2026-09-02 f1da4d0/d847c69, config-version 3).
 
 **20 custom item definitions/assets exist:** 5 materials, 4 keys, 5 Unstable Rifts,
-and 6 alchemy items (added Aether Tonic [2026-09-02] + Ward Salve [2026-09-02]) — every one ends with a `Sell price: N Shards` lore line. Oraxen key is `itemname:` (migrated from `displayname:` in 6e2fba7, config-version 3).
+and 6 alchemy items (added Aether Tonic [2026-09-02] + Ward Salve [2026-09-02]) — every one ends with a `Sell price: N Shards` lore line. Nexo key is `itemname:` (migrated from `displayname:` in 6e2fba7, config-version 3).
 GlitchShops (`/shop`) buy/sell is deployed and live-tested (2026-08-03) (retuned 2026-09-02, docs/ITEM_BALANCE.md); prices
 come from the shop config, and buy prices appear only in the merchant GUI.
 
@@ -186,7 +186,7 @@ Admin: `/hideoutadmin set <player> <station> <level> | reset <player> | reload`
 
 ## Armor upgrade (deployed 2026-09-02, RCON verified)
 
-Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or via `/armor upgrade` (hold piece). Each level grants **+1 armor point**; costs are shards `10/25/60/150/400 × [1,2,3,4,6]` + materials `2R / 3R / 4R+1A / 5R+2A / 6R+3A+1C` (R=Rune Fragment, A=Aether Shard, C=Rift Crystal). Per-slot identity (config `piece-identity`, `GlitchItems` config-version 3): helmet speed×2.0, chestplate HP×2.0, leggings armor×1.5, boots speed×1.5 — old gear deserializes as +0 and stays fully valid. Deployed via `scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` (4d8c554/f1da4d0/d847c69), service active, `rift_vault=6` and armor +5 verified via RCON (`mm reload` + `oraxen reload all` + restart, `BUILD SUCCESS`).
+Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or via `/armor upgrade` (hold piece). Each level grants **+1 armor point**; costs are shards `10/25/60/150/400 × [1,2,3,4,6]` + materials `2R / 3R / 4R+1A / 5R+2A / 6R+3A+1C` (R=Rune Fragment, A=Aether Shard, C=Rift Crystal). Per-slot identity (config `piece-identity`, `GlitchItems` config-version 3): helmet speed×2.0, chestplate HP×2.0, leggings armor×1.5, boots speed×1.5 — old gear deserializes as +0 and stays fully valid. Deployed via `scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` (4d8c554/f1da4d0/d847c69), service active, `rift_vault=6` and armor +5 verified via RCON (`mm reload` + `nexo reload` + restart, `BUILD SUCCESS`).
 
 ## Plugin stack
 
@@ -209,7 +209,7 @@ Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or vi
 | TAB | Tab list + header/footer (sidebar owned by GlitchHUD) | `server/plugins/TAB/config.yml` (`scoreboard.enabled: false`) |
 | PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
 | VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
-| Oraxen | Custom items (20 Arcane Ruins items, `itemname:` — migrated from `displayname:` in 6e2fba7, config-version 3) + UI glyphs | `server/plugins/Oraxen/` |
+| Nexo | Custom items (20 Arcane Ruins items, `itemname:` — migrated from `displayname:` in 6e2fba7, config-version 3; migrated Oraxen→Nexo 2026-09-20) + UI glyphs | `server/plugins/Nexo/` |
 | **GlitchHUD** | **Scoreboard/HUD** (custom: per-world sidebar, below-name stacks, residual boss bar) | `plugins/GlitchHUD/` |
 | **GlitchStash** | **Extraction vault + dynamic spots + Fast/Silent variants** (custom) | `plugins/GlitchStash/` |
 | **GlitchClasses** | **Class system** (custom: abilities, ultimates, starter kit) | `plugins/GlitchClasses/` |
@@ -280,22 +280,22 @@ sudo systemctl restart theglitch
 
 Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **14** modules. CI validate: `./scripts/build-all.sh --no-deploy`. GlitchItems `config-version` is now 3 (2026-09-02, was 1) — armor upgrade + per-slot identity (see `plugins/GlitchItems/src/main/resources/config.yml`).
 
-`build-all.sh` also syncs `GlitchHUD` extras on deploy: forces `server/plugins/TAB/config.yml` (`scoreboard.enabled: false` — sidebar owned by GlitchHUD) and `server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json`.
+`build-all.sh` also syncs `GlitchHUD` extras on deploy: forces `server/plugins/TAB/config.yml` (`scoreboard.enabled: false` — sidebar owned by GlitchHUD) and `server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json`.
 
 GlitchInsurance additionally needs `lib/VaultUnlocked.jar` for its compile-time Vault API (`systemPath`) — `build-all.sh` auto-seeds it from `/opt/theglitch/server/plugins/` or `server/plugins/`.
 
-## Building Oraxen (custom items)
+## Installing Nexo (custom items)
 
-The prebuilt Oraxen jar is paid (~$20) and the source license forbids
-redistribution, so **the jar is never committed** — build it on the box:
+Nexo replaced Oraxen 2026-09-20 (docs/STATUS.md). Unlike Oraxen it has no
+buildable-from-source path — it's a paid plugin (~€20): purchase it at
+nexomc.com and upload the jar to `server/plugins/` yourself (gitignored,
+live-only, same pattern as MythicMobs/ModelEngine). Then sync our item/glyph
+configs into it:
 
 ```bash
 cd ~/TheGlitch
-sudo ./scripts/setup-oraxen.sh        # clone v1.218.0, patch Iris JitPack dep, Gradle build (~5 min), deploy
-sudo ./scripts/setup-oraxen-items.sh  # deploy item configs + textures + lang, reload
+sudo ./scripts/setup-nexo-items.sh    # deploy item/glyph/pack configs, reload
 ```
-
-Requires: git, JDK 21 + JDK 25 toolchains (Gradle downloads itself).
 
 ## Repo layout
 
@@ -318,8 +318,7 @@ scripts/setup-deluxemenus.sh        Phase 5.5: GUI menus
 scripts/setup-fancynpcs.sh          Phase 5.5: NPC system
 scripts/setup-geyser.sh             Phase 3.1: Bedrock bridge
 scripts/setup-all-plugins.sh        Master runner: all setup scripts in order
-scripts/setup-oraxen.sh             Phase 5.10: build Oraxen from source (paid jars avoided)
-scripts/setup-oraxen-items.sh       Phase 5.10: deploy items/textures/lang to Oraxen, reload
+scripts/setup-nexo-items.sh         Phase 5.10: deploy items/glyphs/pack assets to Nexo, reload
 scripts/setup-dungeon-regions.sh    dungeon-slot spawner regions
 scripts/setup-ranks.sh              rank ladder seeding
 scripts/build-all.sh                reactor build + deploy all custom plugins (see Building Custom Plugins)
@@ -340,11 +339,11 @@ plugins/GlitchEvents/     GlitchEvents source (reactor-only build)
 plugins/GlitchLoot/       GlitchLoot source (reactor-only build)
 plugins/GlitchHUD/        GlitchHUD source (reactor-only; per-world sidebar + TAB takeover + negative_space sync)
 plugins/GlitchDungeons/   GlitchDungeons source (deferred — not deployed by default)
-server/plugins/Oraxen/    Oraxen item configs + pack textures/lang (seeded once)
+server/plugins/Nexo/      Nexo item/glyph configs + pack assets (migrated from Oraxen 2026-09-20)
 server/plugins/ModelEngine/blueprints/  MEG rig blueprints (generated, tracked — source zips at repo root)
 GlitchWardenV2.zip / GlitchWisp.zip  custom-model source packages (myrlin bundles, see docs/MODELS.md)
 server/plugins/TAB/config.yml  TAB config (scoreboard.enabled: false — HUD owns sidebar)
-server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json  HUD shift glyphs
+server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json  HUD shift glyphs
 server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM
 server/*.yml              performance tuning configs (synced every bootstrap)
 docs/ZONES.md             zone architecture blueprint

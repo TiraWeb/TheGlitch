@@ -9,7 +9,7 @@ softdepend:
   - Coins
   - GlitchClasses
   - GlitchItems
-  - Oraxen
+  - Nexo
   - PlaceholderAPI
 
 commands:

@@ -1,0 +1,14 @@
+unstable_rift_uncommon:
+  itemname: <green>Unstable Rift (Uncommon)</green>
+  material: AMETHYST_SHARD
+  Pack:
+    parent_model: item/generated
+    texture: unstable_rift_uncommon
+  lore:
+  - <dark_gray>It pulses gently, like a held breath.</dark_gray>
+  - ''
+  - <dark_purple>Unidentified</dark_purple> <gray>- reveal at the hub Identifier.</gray>
+  - <dark_gray>What emerges is never quite what went in.</dark_gray>
+  - '<dark_gray>Identify fee: 20 Shards</dark_gray>'
+  - ''
+  - ' <gray>Sell price: <aqua>12 Shards</aqua></gray>'

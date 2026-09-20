@@ -40,7 +40,7 @@ import java.util.logging.Level;
  */
 public final class HideoutManager {
 
-    private static final NamespacedKey ORAXEN_KEY = new NamespacedKey("oraxen", "custom_item_id");
+    private static final NamespacedKey NEXO_KEY = new NamespacedKey("nexo", "id");
 
     public record Station(String id, String display, String icon, String description,
                           int[] costs, Map<Integer, String> requires) {
@@ -401,7 +401,7 @@ public final class HideoutManager {
     }
 
     /**
-     * Local mirror of OraxenUtil.isIdShaped — avoids cross-plugin dependency
+     * Local mirror of NexoUtil.isIdShaped — avoids cross-plugin dependency
      * and the regex cost of {@code value.matches("[a-z_]+")}.
      */
     private static boolean isIdShaped(String value) {
@@ -413,11 +413,11 @@ public final class HideoutManager {
         return true;
     }
 
-    private String oraxenIdOf(ItemStack stack) {
+    private String nexoIdOf(ItemStack stack) {
         if (stack == null || !stack.hasItemMeta()) return null;
         org.bukkit.persistence.PersistentDataContainer pdc =
                 stack.getItemMeta().getPersistentDataContainer();
-        // Single-pass scan: direct Oraxen key wins immediately, otherwise first id-shaped fallback.
+        // Single-pass scan: direct Nexo key wins immediately, otherwise first id-shaped fallback.
         // Identical priority to the previous direct-get-then-loop (empty direct ids are ignored).
         String fallback = null;
         for (NamespacedKey key : pdc.getKeys()) {
@@ -425,7 +425,7 @@ public final class HideoutManager {
                 if (!pdc.has(key, PersistentDataType.STRING)) continue;
                 String value = pdc.get(key, PersistentDataType.STRING);
                 if (value == null || value.isEmpty()) continue;
-                if (key.equals(ORAXEN_KEY)) return value;
+                if (key.equals(NEXO_KEY)) return value;
                 if (fallback == null && isIdShaped(value)) fallback = value;
             } catch (Exception ignored) {}
         }
@@ -433,7 +433,7 @@ public final class HideoutManager {
     }
 
     private boolean isItem(ItemStack stack, String id) {
-        String found = oraxenIdOf(stack);
+        String found = nexoIdOf(stack);
         return found != null && id.equalsIgnoreCase(found);
     }
 

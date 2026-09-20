@@ -1,8 +1,0 @@
-gui_buy:
-  itemname: <green>BUY</green>
-  material: EMERALD
-  Pack:
-    generate_model: true
-    parent_model: "item/generated"
-    textures:
-      - gui_buy

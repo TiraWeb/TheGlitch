@@ -3,8 +3,8 @@ package com.theglitch.glitchshops.ui;
 import com.theglitch.glitchshops.GlitchShops;
 import com.theglitch.glitchshops.ShopGUI;
 import com.theglitch.glitchshops.ShopManager;
-import io.th0rgal.oraxen.api.OraxenItems;
-import io.th0rgal.oraxen.items.ItemBuilder;
+import com.nexomc.nexo.api.NexoItems;
+import com.nexomc.nexo.items.ItemBuilder;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -617,7 +617,7 @@ public final class BazaarPanel implements Listener {
 
     private ItemStack buildStack(String id) {
         try {
-            ItemBuilder builder = OraxenItems.getItemById(id);
+            ItemBuilder builder = NexoItems.itemFromId(id);
             if (builder == null) {
                 return fallbackPaper();
             }

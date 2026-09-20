@@ -3,8 +3,8 @@ package com.theglitch.glitchitems;
 /**
  * Custom font-glyph unicode constants (Arcane Ruins UI kit).
  *
- * Each codepoint is mapped to a texture by Oraxen's vanilla glyph handler —
- * source of truth: server/plugins/Oraxen/glyphs/theglitch.yml (keep in sync
+ * Each codepoint is mapped to a texture by Nexo's vanilla glyph handler —
+ * source of truth: server/plugins/Nexo/glyphs/oraxen_glyphs/theglitch.yml (keep in sync
  * with scripts/gen-ui-textures.py output). Bedrock/Geyser clients cannot
  * render these; every usage must pair a plain-text label alongside.
  */

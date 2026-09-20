@@ -1,8 +1,0 @@
-gui_close:
-  itemname: <red>CLOSE</red>
-  material: BARRIER
-  Pack:
-    generate_model: true
-    parent_model: "item/generated"
-    textures:
-      - gui_close

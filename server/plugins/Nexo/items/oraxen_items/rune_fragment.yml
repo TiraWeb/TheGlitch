@@ -1,0 +1,11 @@
+rune_fragment:
+  itemname: <white>Rune Fragment</white>
+  material: PAPER
+  Pack:
+    parent_model: item/generated
+    texture: rune_fragment
+  lore:
+  - <gray>Common arcane residue.
+  - <gray>Drops from corrupted mobs.
+  - <dark_gray>Crafting base material.</dark_gray>
+  - ' <gray>Sell price: <aqua>2 Shards</aqua></gray>'

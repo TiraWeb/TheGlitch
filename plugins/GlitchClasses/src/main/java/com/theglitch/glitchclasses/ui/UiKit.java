@@ -13,8 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Modern UI kit for GlitchClasses menus — glyphs, gradients and cached panes.
- * Glyph codepoints map to textures via Oraxen's vanilla glyph handler
- * (server/plugins/Oraxen/glyphs/theglitch.yml); bedrock clients see fallbacks.
+ * Glyph codepoints map to textures via Nexo's vanilla glyph handler
+ * (server/plugins/Nexo/glyphs/oraxen_glyphs/theglitch.yml); bedrock clients see fallbacks.
  */
 public final class UiKit {
 

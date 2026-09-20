@@ -27,13 +27,13 @@
 #   ensure_maven_java
 #   seed_lib "${PLUGIN}" "VaultUnlocked"   # searches LIVE + repo plugins
 #   seed_lib "${PLUGIN}" "PlaceholderAPI"
-#   seed_lib "${PLUGIN}" "Oraxen" --required   # dies if not found
+#   seed_lib "${PLUGIN}" "Nexo" --required   # dies if not found
 #   mvn_build "${PLUGIN}"
 #   deploy_jar "${PLUGIN}"
 #   seed_config "${PLUGIN}" "config.yml"
 #
 # Or the high-level helper:
-#   build_plugin GlitchItems --needs VaultUnlocked,Oraxen,PlaceholderAPI
+#   build_plugin GlitchItems --needs VaultUnlocked,Nexo,PlaceholderAPI
 #   build_plugin GlitchHealthBar   # no extra deps
 #
 # Idempotent: safe to source multiple times (guarded by __GLITCH_BUILD_COMMON_SOURCED).
@@ -371,14 +371,14 @@ seed_config() {
 #
 # High-level helper that does seed + mvn_build + deploy_jar + seed_config in one call.
 # Example:
-#   build_plugin GlitchItems --needs VaultUnlocked,Oraxen,PlaceholderAPI
+#   build_plugin GlitchItems --needs VaultUnlocked,Nexo,PlaceholderAPI
 #   build_plugin GlitchHealthBar
 #   build_plugin GlitchStash --needs VaultUnlocked,GlitchItems,GlitchShops --needs VelKoth
 #
 # --needs <list>  comma-separated jar names (without .jar); each is seeded via
 #                seed_lib. If jar == VelKoth, uses seed_velkoth instead.
 # --required      make all --needs jars fatal if missing (default: warn except
-#                for Oraxen/MythicMobs which are auto-required)
+#                for Nexo/MythicMobs which are auto-required)
 # ---------------------------------------------------------------------------
 build_plugin() {
   local plugin="${1:?build_plugin <plugin>}"
@@ -448,7 +448,7 @@ build_plugin() {
     else
       # Auto-require certain critical deps
       local _dep_required="${required_flag}"
-      if [[ "${dep}" == "Oraxen" || "${dep}" == "MythicMobs" || "${dep}" == "FancyNpcs" ]]; then
+      if [[ "${dep}" == "Nexo" || "${dep}" == "MythicMobs" || "${dep}" == "FancyNpcs" ]]; then
         _dep_required="--required"
       fi
       seed_lib "${plugin}" "${dep}" "${_dep_required}" || true

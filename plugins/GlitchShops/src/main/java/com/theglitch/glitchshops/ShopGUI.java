@@ -3,8 +3,8 @@ package com.theglitch.glitchshops;
 import com.theglitch.glitchshops.ui.FloatingBanner;
 import com.theglitch.glitchshops.ui.ModernLayout;
 import com.theglitch.glitchshops.ui.UiKit;
-import io.th0rgal.oraxen.api.OraxenItems;
-import io.th0rgal.oraxen.items.ItemBuilder;
+import com.nexomc.nexo.api.NexoItems;
+import com.nexomc.nexo.items.ItemBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -183,14 +183,14 @@ public final class ShopGUI implements Listener {
             if (entry.getValue().buy() <= 0) continue;
             ItemStack item;
             try {
-                ItemBuilder builder = OraxenItems.getItemById(entry.getKey());
+                ItemBuilder builder = NexoItems.itemFromId(entry.getKey());
                 if (builder == null) {
-                    plugin.getLogger().warning("Unknown Oraxen item in shop " + category + ": " + entry.getKey());
+                    plugin.getLogger().warning("Unknown Nexo item in shop " + category + ": " + entry.getKey());
                     continue;
                 }
                 item = builder.build().clone();
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to build Oraxen item " + entry.getKey() + ": " + e.getMessage());
+                plugin.getLogger().warning("Failed to build Nexo item " + entry.getKey() + ": " + e.getMessage());
                 continue;
             }
             ItemMeta meta = item.getItemMeta();
@@ -207,10 +207,10 @@ public final class ShopGUI implements Listener {
         }
     }
 
-    private ItemStack guiIcon(String oraxenId, Material fallback, String name, String... lore) {
+    private ItemStack guiIcon(String nexoId, Material fallback, String name, String... lore) {
         ItemStack item;
         try {
-            ItemBuilder builder = OraxenItems.getItemById(oraxenId);
+            ItemBuilder builder = NexoItems.itemFromId(nexoId);
             item = builder == null ? new ItemStack(fallback) : builder.build();
         } catch (Exception e) {
             item = new ItemStack(fallback);
@@ -495,9 +495,9 @@ public final class ShopGUI implements Listener {
                 return;
             }
             try {
-                ItemBuilder builder = OraxenItems.getItemById(itemId);
+                ItemBuilder builder = NexoItems.itemFromId(itemId);
                 if (builder == null) {
-                    plugin.getLogger().warning("Shop buy failed: unknown Oraxen item " + itemId + " for " + player.getName() + " — refunding " + total);
+                    plugin.getLogger().warning("Shop buy failed: unknown Nexo item " + itemId + " for " + player.getName() + " — refunding " + total);
                     refundDeposit(economy, player, total);
                     message(player, "denied");
                     sound(player, false);
@@ -506,7 +506,7 @@ public final class ShopGUI implements Listener {
                 bought = builder.build().clone();
                 bought.setAmount(amount);
             } catch (Exception e) {
-                plugin.getLogger().warning("Failed to build Oraxen item " + itemId + ": " + e.getMessage());
+                plugin.getLogger().warning("Failed to build Nexo item " + itemId + ": " + e.getMessage());
                 refundDeposit(economy, player, total);
                 message(player, "denied");
                 sound(player, false);
@@ -650,7 +650,7 @@ public final class ShopGUI implements Listener {
 
     public String displayNameOf(String itemId) {
         try {
-            ItemBuilder builder = OraxenItems.getItemById(itemId);
+            ItemBuilder builder = NexoItems.itemFromId(itemId);
             if (builder != null) {
                 ItemStack built = builder.build();
                 var builtMeta = built == null ? null : built.getItemMeta();

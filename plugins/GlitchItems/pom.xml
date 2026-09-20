@@ -39,13 +39,6 @@
             <systemPath>${project.basedir}/lib/PlaceholderAPI.jar</systemPath>
         </dependency>
         <dependency>
-            <groupId>io.th0rgal.oraxen</groupId>
-            <artifactId>Oraxen</artifactId>
-            <version>${oraxen.version}</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/Oraxen.jar</systemPath>
-        </dependency>
-        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.11.0</version>

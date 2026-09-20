@@ -1,0 +1,6 @@
+gui_coin:
+  itemname: <aqua>Shards</aqua>
+  material: ECHO_SHARD
+  Pack:
+    parent_model: item/generated
+    texture: gui_coin

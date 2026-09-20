@@ -1,0 +1,6 @@
+gui_tab_materials:
+  itemname: <light_purple>Materials</light_purple>
+  material: REDSTONE
+  Pack:
+    parent_model: item/generated
+    texture: gui_tab_materials

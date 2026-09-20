@@ -2,13 +2,13 @@ package com.theglitch.glitchhud;
 
 /**
  * Shared glyph / font constants — mirrors
- * {@code server/plugins/Oraxen/glyphs/theglitch.yml} and
+ * {@code server/plugins/Nexo/glyphs/oraxen_glyphs/theglitch.yml} and
  * {@code plugins/GlitchItems/.../GlitchUI.java}.
  * Bedrock fallback: every usage must pair glyph with plain text.
  */
 public final class UiConstants {
 
-    // Oraxen PUA glyphs (minecraft:default)
+    // Nexo PUA glyphs (minecraft:default)
     public static final String RES_AEGIS   = "\uE040";
     public static final String RES_VEIL    = "\uE041";
     public static final String RES_BLOOM   = "\uE042";

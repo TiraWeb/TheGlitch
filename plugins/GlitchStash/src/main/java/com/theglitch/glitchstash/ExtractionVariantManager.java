@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ExtractionVariantManager {
 
-    private static final NamespacedKey ORAXEN_KEY = new NamespacedKey("oraxen", "custom_item_id");
+    private static final NamespacedKey NEXO_KEY = new NamespacedKey("nexo", "id");
 
     private final GlitchStash plugin;
     private final NamespacedKey variantKey;
@@ -152,7 +152,7 @@ public final class ExtractionVariantManager {
     }
 
     /**
-     * Mirror of GlitchItems' OraxenUtil.isIdShaped — avoids a cross-plugin dependency
+     * Mirror of GlitchItems' NexoUtil.isIdShaped — avoids a cross-plugin dependency
      * while eliminating the costly regex {@code value.matches("[a-z_]+")} on the hot path.
      */
     private static boolean isIdShaped(String value) {
@@ -164,11 +164,11 @@ public final class ExtractionVariantManager {
         return true;
     }
 
-    private String oraxenId(ItemStack item) {
+    private String nexoId(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
         try {
-            String id = pdc.get(ORAXEN_KEY, PersistentDataType.STRING);
+            String id = pdc.get(NEXO_KEY, PersistentDataType.STRING);
             if (id != null && !id.isEmpty()) return id;
         } catch (Exception ignored) {}
         for (NamespacedKey key : pdc.getKeys()) {
@@ -196,7 +196,7 @@ public final class ExtractionVariantManager {
         if (stack == null || stack.getType().isAir()) return false;
 
         if (!variant.keyId().isEmpty()) {
-            String id = oraxenId(stack);
+            String id = nexoId(stack);
             if (variant.keyId().equalsIgnoreCase(id)) {
                 return true;
             }

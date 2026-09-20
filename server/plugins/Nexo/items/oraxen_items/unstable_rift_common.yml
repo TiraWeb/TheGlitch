@@ -1,0 +1,14 @@
+unstable_rift_common:
+  itemname: <white>Unstable Rift (Common)</white>
+  material: AMETHYST_SHARD
+  Pack:
+    parent_model: item/generated
+    texture: unstable_rift_common
+  lore:
+  - <dark_gray>A splinter of the anomaly. Barely stable.</dark_gray>
+  - ''
+  - <dark_purple>Unidentified</dark_purple> <gray>- reveal at the hub Identifier.</gray>
+  - <dark_gray>What emerges is never quite what went in.</dark_gray>
+  - '<dark_gray>Identify fee: 5 Shards</dark_gray>'
+  - ''
+  - ' <gray>Sell price: <aqua>3 Shards</aqua></gray>'

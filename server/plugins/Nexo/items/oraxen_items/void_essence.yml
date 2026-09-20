@@ -1,0 +1,11 @@
+void_essence:
+  itemname: <dark_purple>Void Essence</dark_purple>
+  material: PHANTOM_MEMBRANE
+  Pack:
+    parent_model: item/generated
+    texture: void_essence
+  lore:
+  - <dark_purple>The heart of the anomaly.</dark_purple>
+  - <gray>Top-tier crafting and keys.</gray>
+  - <dark_gray>Drops from elites and Rift Vaults.</dark_gray>
+  - ' <gray>Sell price: <aqua>100 Shards</aqua></gray>'

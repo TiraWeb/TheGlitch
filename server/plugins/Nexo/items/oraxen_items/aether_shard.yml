@@ -1,0 +1,11 @@
+aether_shard:
+  itemname: <aqua>Aether Shard</aqua>
+  material: PRISMARINE_SHARD
+  Pack:
+    parent_model: item/generated
+    texture: aether_shard
+  lore:
+  - <aqua>Condensed arcane light.</aqua>
+  - <gray>Used to lock crafting to a Resonance.</gray>
+  - <dark_gray>Drops from mid-tier mobs.</dark_gray>
+  - ' <gray>Sell price: <aqua>10 Shards</aqua></gray>'

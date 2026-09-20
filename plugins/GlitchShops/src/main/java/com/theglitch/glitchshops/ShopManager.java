@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class ShopManager {
 
-    private static final NamespacedKey ORAXEN_ID_KEY = new NamespacedKey("oraxen", "custom_item_id");
+    private static final NamespacedKey NEXO_ID_KEY = new NamespacedKey("nexo", "id");
     private static final NamespacedKey GEAR_KEY = new NamespacedKey("glitchitems", "gear");
 
     public record StockEntry(int buy, int sell) {
@@ -316,7 +316,7 @@ public final class ShopManager {
         if (item == null || item.getType().isAir()) {
             return null;
         }
-        String id = oraxenId(item);
+        String id = nexoId(item);
         if (id != null && sellPrices.containsKey(id)) {
             return sellPrices.get(id);
         }
@@ -336,10 +336,10 @@ public final class ShopManager {
         return true;
     }
 
-    public String oraxenId(ItemStack item) {
+    public String nexoId(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-        // Single-pass scan: direct Oraxen key wins immediately, otherwise first id-shaped fallback.
+        // Single-pass scan: direct Nexo key wins immediately, otherwise first id-shaped fallback.
         // Identical priority to the previous direct-get-then-loop (empty direct ids are ignored).
         String fallback = null;
         for (NamespacedKey key : pdc.getKeys()) {
@@ -347,7 +347,7 @@ public final class ShopManager {
                 if (!pdc.has(key, PersistentDataType.STRING)) continue;
                 String value = pdc.get(key, PersistentDataType.STRING);
                 if (value == null || value.isEmpty()) continue;
-                if (key.equals(ORAXEN_ID_KEY)) return value;
+                if (key.equals(NEXO_ID_KEY)) return value;
                 if (fallback == null && isIdShaped(value)) {
                     fallback = value;
                 }

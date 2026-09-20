@@ -6,7 +6,7 @@ Centralizes duplicated code so updates are easy — fix once, all plugins benefi
 
 | Class | Purpose | Replaces |
 |---|---|---|
-| `OraxenUtil` | `isIdShaped` (char loop), `available()`, `build(id)`, `idOf(item)` — PDC scan with `pdc.has(STRING)` + try/catch guard for `ByteTag` mismatch (2026-09-01 `c9a229e`) | `com.theglitch.glitchitems.OraxenUtil` (canonical copy) |
+| `NexoUtil` | `isIdShaped` (char loop), `available()`, `build(id)`, `idOf(item)` via Nexo's `NexoItems.itemFromId`/`idFromItem` API (migrated from Oraxen 2026-09-20) | `com.theglitch.glitchitems.OraxenUtil` (pre-migration copy) |
 | `ScavengeTag` | `TAG = "specter_scavenge"` constant | `AbilityListener.SCAVENGE_TAG` |
 | `VaultHook` | Cached Vault `Economy` (30s), `getEconomy(plugin)` / `invalidate()` via `Bukkit.getServicesManager` | Per-plugin `getEconomy()` / `cachedEconomy` |
 | `MiniMessageUtil` | `MM = MiniMessage.miniMessage()` + `deserialize(raw)` with fallback | 8+ duplicated `MM` fields |
@@ -33,10 +33,10 @@ For now other plugins are **not** wired to depend on GlitchCommon to avoid shadi
 ## Usage examples
 
 ```java
-// Oraxen
-if (OraxenUtil.isIdShaped(id)) { ... }
-ItemStack item = OraxenUtil.build("rift_crystal");
-String id = OraxenUtil.idOf(stack);
+// Nexo
+if (NexoUtil.isIdShaped(id)) { ... }
+ItemStack item = NexoUtil.build("rift_crystal");
+String id = NexoUtil.idOf(stack);
 
 // Scavenge
 player.addScoreboardTag(ScavengeTag.TAG);
@@ -62,6 +62,6 @@ if (Worlds.isGameWorld(player.getWorld().getName())) { ... }
 
 ## Notes
 
-- `OraxenUtil.build` and `VaultHook.getEconomy` use reflection so GlitchCommon compiles with only `paper-api` (no Oraxen/Vault jar required at compile). At runtime they delegate to the real plugins when present.
+- `NexoUtil.build` and `VaultHook.getEconomy` use reflection so GlitchCommon compiles with only `paper-api` (no Nexo/Vault jar required at compile). At runtime they delegate to the real plugins when present.
 - Keep this module first in root `pom.xml` `<modules>` order.
 - No `plugin.yml` — this is a library, not a plugin.

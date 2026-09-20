@@ -1,6 +1,6 @@
 package com.theglitch.glitchitems;
 
-import com.theglitch.common.OraxenUtil;
+import com.theglitch.common.NexoUtil;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -31,7 +31,7 @@ public final class ConsumableListener implements Listener {
     public void onConsume(PlayerItemConsumeEvent event) {
         ItemStack item = event.getItem();
         if (item == null) return;
-        String id = OraxenUtil.idOf(item);
+        String id = NexoUtil.idOf(item);
         if (id == null) return;
         Player player = event.getPlayer();
         switch (id) {

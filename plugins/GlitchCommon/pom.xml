@@ -16,7 +16,7 @@
     <packaging>jar</packaging>
 
     <name>GlitchCommon - Shared library</name>
-    <description>Shared utilities for all Glitch plugins — Oraxen, Vault, inventory, messages, constants</description>
+    <description>Shared utilities for all Glitch plugins — Nexo, Vault, inventory, messages, constants</description>
 
     <dependencies>
         <dependency>

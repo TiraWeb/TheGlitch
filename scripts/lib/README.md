@@ -148,8 +148,8 @@ seed_config "${PLUGIN}" "config.yml"
 Or the one-liner for plugins with deps:
 
 ```bash
-build_plugin GlitchItems --needs VaultUnlocked,Oraxen,PlaceholderAPI
-build_plugin GlitchShops --needs VaultUnlocked,Oraxen,FancyNpcs,GlitchItems
+build_plugin GlitchItems --needs VaultUnlocked,Nexo,PlaceholderAPI
+build_plugin GlitchShops --needs VaultUnlocked,Nexo,FancyNpcs,GlitchItems
 build_plugin GlitchStash --needs VaultUnlocked,GlitchItems,GlitchShops,VelKoth
 ```
 

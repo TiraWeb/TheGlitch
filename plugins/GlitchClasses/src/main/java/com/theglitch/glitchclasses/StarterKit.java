@@ -9,7 +9,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 /**
  * Starter kit granted on the player's very first class selection.
- * Items are config-driven: vanilla materials or Oraxen ids (via /o give).
+ * Items are config-driven: vanilla materials or Nexo ids (via /nexo give).
  * Design: docs/GAME_DESIGN.md §7 step 3.
  */
 public final class StarterKit {
@@ -51,9 +51,9 @@ public final class StarterKit {
 
             int amount = Math.max(1, entry.getInt("amount", 1));
 
-            String oraxen = entry.getString("oraxen");
-            if (oraxen != null && !oraxen.isEmpty()) {
-                giveOraxen(player, oraxen, amount);
+            String nexo = entry.getString("nexo");
+            if (nexo != null && !nexo.isEmpty()) {
+                giveNexo(player, nexo, amount);
                 continue;
             }
 
@@ -71,12 +71,12 @@ public final class StarterKit {
         }
     }
 
-    private void giveOraxen(Player player, String id, int amount) {
+    private void giveNexo(Player player, String id, int amount) {
         boolean dispatched = plugin.getServer().dispatchCommand(
                 plugin.getServer().getConsoleSender(),
-                "o give " + player.getName() + " " + id + " " + amount);
+                "nexo give " + id + " " + amount + " " + player.getName());
         if (!dispatched) {
-            plugin.getLogger().warning("Starter kit: Oraxen command unavailable, could not give '" + id + "'");
+            plugin.getLogger().warning("Starter kit: Nexo command unavailable, could not give '" + id + "'");
         }
     }
 }

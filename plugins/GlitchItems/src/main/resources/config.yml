@@ -103,7 +103,7 @@ armor-upgrade:
     legendary: 400
   # cost for level N = shard-costs[rarity] x multiplier[current-level (0-based)]
   shard-level-multiplier: [1, 2, 3, 4, 6]
-  # material cost keyed by NEXT level (1..max-level); oraxen item ids
+  # material cost keyed by NEXT level (1..max-level); Nexo item ids
   materials-per-level:
     1: { rune_fragment: 2 }
     2: { rune_fragment: 3 }

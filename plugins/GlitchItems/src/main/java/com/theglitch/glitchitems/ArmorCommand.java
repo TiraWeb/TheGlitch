@@ -1,6 +1,6 @@
 package com.theglitch.glitchitems;
 
-import com.theglitch.common.OraxenUtil;
+import com.theglitch.common.NexoUtil;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
@@ -90,7 +90,7 @@ public final class ArmorCommand implements CommandExecutor {
         for (int i = 0; i < size; i++) {
             ItemStack stack = inv.getItem(i);
             if (stack == null) continue;
-            String stackId = OraxenUtil.idOf(stack);
+            String stackId = NexoUtil.idOf(stack);
             slotIds[i] = stackId;
             if (stackId != null) {
                 haveById.merge(stackId, stack.getAmount(), Integer::sum);

@@ -14,7 +14,7 @@ Runs on `push` and `pull_request` to `main`. Job `validate` on `ubuntu-latest` w
 | YAML lint | `python -c "import yaml; yaml.safe_load(...)"` over all `*.yml`/`*.yaml` (skips `target/`, `server/world*`) | parse errors |
 | Maven validate | `mvn -B --no-transfer-progress -DskipTests validate` (offline `mvn -o validate` fallback) | POMs, reactor, deps |
 | Maven package | `mvn -B --no-transfer-progress -DskipTests -Dmaven.test.skip=true package` (`continue-on-error: true`) | compile + jar (best-effort, needs network for Paper) |
-| Oraxen/itemname + config-version | `grep -r displayname: server/plugins/Oraxen/items/*.yml` should fail; `grep -r itemname:` count 20; `config-version == 3` assert (GlitchItems 2026-09-02) | CI must fail on `displayname:` (migrated to `itemname:`) and assert `config-version == 3` |
+| ~~Nexo/itemname + config-version~~ | Documented below as a local-repro command, but **not actually wired into `.github/workflows/ci.yml`** — verified 2026-09-20 while migrating Oraxen→Nexo. Run it manually or re-add it as a real step if you want it enforced. | N/A |
 
 `ShellCheck` steps use `continue-on-error: true` so lint warnings do not block the build; Maven `validate` is required.
 
@@ -31,9 +31,9 @@ shellcheck plugins/GlitchItems/build.sh
 shellcheck bootstrap.sh
 shellcheck scripts/deploy-balance-2026-09-02.sh
 shellcheck scripts/deploy-armor-2026-09-02.sh
-# Oraxen itemname + config-version checks (CI must fail if displayname present or config-version !=3)
-! grep -qr "displayname:" server/plugins/Oraxen/items/*.yml || (echo "FAIL: displayname: still present (expected itemname:)" && exit 1)
-echo "itemname count:"; grep -r "itemname:" server/plugins/Oraxen/items/*.yml | wc -l # expect 20
+# Nexo itemname + config-version checks (not wired into CI — run manually; see table note above)
+! grep -qr "displayname:" server/plugins/Nexo/items/oraxen_items/*.yml || (echo "FAIL: displayname: still present (expected itemname:)" && exit 1)
+echo "itemname count:"; grep -r "itemname:" server/plugins/Nexo/items/oraxen_items/*.yml | wc -l
 grep -q "config-version: 3" plugins/GlitchItems/src/main/resources/config.yml || (echo "FAIL: GlitchItems config-version !=3" && exit 1)
 
 # 2. YAML syntax (lightweight, no yamllint needed)
@@ -68,7 +68,7 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 - Make scripts executable: `chmod +x scripts/*.sh plugins/*/build.sh bootstrap.sh` (fix with `sudo bash scripts/fix-script-modes.sh`)
 - Keep YAML `indent_size: 2` (see `.editorconfig`)
 - Pin Java/Paper once in root `pom.xml` (`<java.version>21</java.version>`, `<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`) — applies to all 14 modules (GlitchItems v3 still 21; verify scatter rift_vault=6 and itemname count=20)
-- `shellcheck` must also cover `scripts/deploy-balance-2026-09-02.sh` and `scripts/deploy-armor-2026-09-02.sh`; CI must assert `itemname:` count=20 and fail on `displayname:` in `server/plugins/Oraxen/items/*.yml` and `config-version == 3`
+- `shellcheck` must also cover `scripts/deploy-balance-2026-09-02.sh` and `scripts/deploy-armor-2026-09-02.sh`. The itemname/displayname/config-version checks above are documented but not wired into CI — see the table note.
 - Blueprints must stay valid JSON matching the proven shape: `python3 -c "import json,glob; [json.load(open(p)) for p in glob.glob('server/plugins/ModelEngine/blueprints/*.bbmodel')]"` + eyeball `model_identifier`/`name` = filename stem (docs/MODELS.md)
 - If CI fails on `package` due to network (`Could not transfer artifact`), `validate` green is still a passing signal — `package` is `continue-on-error: true`.
 
@@ -77,4 +77,4 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 - Workflow: `.github/workflows/ci.yml`
 - Config versioning: `docs/CONFIG_VERSIONING.md` (why bumping `config-version` needs manual merge or `copyDefaults(true)`)
 - Build order: `HANDOFF.md` (Build Order) and `README.md` (Building section)
-- The reactor covers all **14** modules: **12** deployable plugins (incl. GlitchHUD) + the GlitchCommon library + deferred GlitchDungeons. `scripts/build-all.sh` (no args) builds/deploys the 12 deployable plugins; GlitchCommon builds only when something depends on it or via full-reactor fallback. It also syncs GlitchHUD extras (`server/plugins/TAB/config.yml` `scoreboard.enabled: false` + `server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json`). It does NOT sync balance/armor live configs — GlitchItems config v3 + Oraxen itemname + MythicMobs COINS + scatter require manual diff via `scripts/deploy-balance-2026-09-02.sh` / `scripts/deploy-armor-2026-09-02.sh` + `mm reload` + `oraxen reload all`.
+- The reactor covers all **14** modules: **12** deployable plugins (incl. GlitchHUD) + the GlitchCommon library + deferred GlitchDungeons. `scripts/build-all.sh` (no args) builds/deploys the 12 deployable plugins; GlitchCommon builds only when something depends on it or via full-reactor fallback. It also syncs GlitchHUD extras (`server/plugins/TAB/config.yml` `scoreboard.enabled: false` + `server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json`). It does NOT sync balance/armor live configs — GlitchItems config v3 + Nexo itemname + MythicMobs COINS + scatter require manual diff via `scripts/deploy-balance-2026-09-02.sh` / `scripts/deploy-armor-2026-09-02.sh` + `mm reload` + `nexo reload`.

@@ -1,0 +1,10 @@
+ward_salve:
+  itemname: <gold>Ward Salve</gold>
+  material: HONEY_BOTTLE
+  Pack:
+    parent_model: item/generated
+    texture: ward_salve
+  lore:
+  - <gold>Resistance I + Absorption I for 20s.</gold>
+  - <gray>Bitter paste, brewed from rune residue.</gray>
+  - ' <gray>Sell price: <aqua>50 Shards</aqua></gray>'

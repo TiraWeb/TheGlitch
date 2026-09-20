@@ -287,31 +287,18 @@ public final class EventManager {
         Inventory inv = barrel.getInventory();
         for (String itemName : supplyItems) {
             ItemStack stack = null;
-            // 1) Try Oraxen (custom items like unstable_rift_common, rune_fragment)
+            // 1) Try GlitchCommon NexoUtil reflectively (custom items like unstable_rift_common, rune_fragment)
             try {
-                Class<?> oraxenItems = Class.forName("io.th0rgal.oraxen.api.OraxenItems");
-                java.lang.reflect.Method getById = oraxenItems.getMethod("getItemById", String.class);
-                Object builder = getById.invoke(null, itemName);
-                if (builder != null) {
-                    java.lang.reflect.Method build = builder.getClass().getMethod("build");
-                    Object result = build.invoke(builder);
-                    if (result instanceof ItemStack s) stack = s;
-                }
+                Class<?> util = Class.forName("com.theglitch.common.NexoUtil");
+                java.lang.reflect.Method build = util.getMethod("build", String.class);
+                Object res = build.invoke(null, itemName);
+                if (res instanceof ItemStack s) stack = s;
             } catch (Exception ignored) {}
-            // 2) Fallback: try GlitchCommon OraxenUtil reflectively
-            if (stack == null) {
-                try {
-                    Class<?> util = Class.forName("com.theglitch.common.OraxenUtil");
-                    java.lang.reflect.Method build = util.getMethod("build", String.class);
-                    Object res = build.invoke(null, itemName);
-                    if (res instanceof ItemStack s) stack = s;
-                } catch (Exception ignored2) {}
-            }
-            // 3) Fallback: vanilla material
+            // 2) Fallback: vanilla material
             if (stack == null) {
                 Material mat = Material.matchMaterial(itemName);
                 if (mat == null || !mat.isItem()) {
-                    plugin.getLogger().warning("Supply drop: unknown item '" + itemName + "' — skipping (not Oraxen nor vanilla).");
+                    plugin.getLogger().warning("Supply drop: unknown item '" + itemName + "' — skipping (not Nexo nor vanilla).");
                     continue;
                 }
                 stack = new ItemStack(mat);

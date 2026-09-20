@@ -8,13 +8,13 @@
 
 - [ ] `git pull && sudo ./bootstrap.sh` (seeds new MythicMobs SpawnAreas + Spawners subdirs)
 - [ ] Build all changed plugins:
-  - `sudo ./scripts/build-all.sh`  *(preferred: 14-module reactor, topological order — covers all 12 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents/GlitchLoot/GlitchHUD; also syncs `TAB/config.yml` + `negative_space.json`, Oraxen `itemname:` config v3)*
+  - `sudo ./scripts/build-all.sh`  *(preferred: 14-module reactor, topological order — covers all 12 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents/GlitchLoot/GlitchHUD; also syncs `TAB/config.yml` + `negative_space.json`, Nexo `itemname:` config v3)*
   - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar` (newer five are reactor-only)
-  - `sudo ./scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` for economy+armor (Oraxen `itemname:`, config v3, `rift_vault=6`, RCON verified)
+  - `sudo ./scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` for economy+armor (Nexo `itemname:`, config v3, `rift_vault=6`, RCON verified)
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./scripts/setup-mythicmobs.sh` (`mm reload` + verify mobs list)
-- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD (+ `TAB scoreboard.enabled: false` + `Oraxen negative_space` sync lines)
-- [ ] Model deploys (docs/MODELS.md): blueprint + mob yml copied live → `meg reload models` (`Importing <mid>.bbmodel` → `N models loaded`) → `mm reload` → pack merged to `10_modelengine.zip` → `oraxen reload all` → **relog** (pack changes need re-download)
+- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD (+ `TAB scoreboard.enabled: false` + `Nexo negative_space` sync lines)
+- [ ] Model deploys (docs/MODELS.md): blueprint + mob yml copied live → `meg reload models` (`Importing <mid>.bbmodel` → `N models loaded`) → `mm reload` → pack merged to `10_modelengine.zip` → `nexo reload` → **relog** (pack changes need re-download)
 
 ## Custom mob models (ModelEngine, 2026-09-14)
 
@@ -37,7 +37,7 @@
 
 ## Starter kit (GlitchClasses)
 
-- [ ] Fresh account picks a class (GUI or `/class select`) → starter kit granted once (leather set, wooden sword, 3 bread, 5 rune fragments via `/o give`)
+- [ ] Fresh account picks a class (GUI or `/class select`) → starter kit granted once (leather set, wooden sword, 3 bread, 5 rune fragments via `/nexo give`)
 - [ ] Kit items drop at feet if inventory is full
 - [ ] Reset class and pick again → **no second kit**
 
@@ -67,7 +67,7 @@
 - [ ] Mirror the arena bounds into `plugins/GlitchStash/config.yml` → `extraction-variants.zones` (fast/silent), then `/extractadmin reload`
 - [ ] `/extractadmin zones` lists both arenas with correct key/bonus
 - [ ] Stand in a key zone without a key → warning message (throttled to 10s)
-- [ ] Right-click Fast Extract Key (`/o give <you> fast_extract_key`) inside the fast zone → consumed + "armed" message + sound
+- [ ] Right-click Fast Extract Key (`/nexo give fast_extract_key <you>`) inside the fast zone → consumed + "armed" message + sound
 - [ ] Win the fast arena → stash saved + variant bonus message (+5%); verify bonus shards credited
 - [ ] Win the silent arena armed with Rift Key → +10% bonus
 - [ ] Win a key zone WITHOUT arming → warning + no variant bonus (logged)
@@ -78,7 +78,7 @@
 - [ ] `/glitchcontainers types` shows debris / cache / vault / rift_vault
 - [ ] Place a barrel → `/glitchcontainers set debris` → right-click → rolls common/uncommon rifts + rune fragments
 - [ ] Place a chest → `set cache` → open **without** a key → "sealed" message
-- [ ] `/o give <you> cache_key` → open again → key consumed, loot rolled (uncommon/rare weighted)
+- [ ] `/nexo give cache_key <you>` → open again → key consumed, loot rolled (uncommon/rare weighted)
 - [ ] Re-open before regen (600s) → "still glitching — Ns left"
 - [ ] Open after regen → fresh loot rolls again
 - [ ] Vault (Vault Key) and Rift Vault (Rift Key, decorated pot → drops at feet) behave the same
@@ -109,7 +109,7 @@
 
 - [ ] `/hideout` opens the station menu
 - [ ] Station upgrades charge shards and enforce prerequisites (e.g. Armory needs Stash 2 + Core 1); insufficient shards blocked
-- [ ] Workbench crafting: `/o give <you> rune_fragment 5` + `/o give <you> rift_crystal 1` → craft Healing Potion → 3x potions via `/o give`; materials consumed; missing materials message
+- [ ] Workbench crafting: `/nexo give rune_fragment 5 <you>` + `/nexo give rift_crystal 1 <you>` → craft Healing Potion → 3x potions via `/nexo give`; materials consumed; missing materials message
 - [ ] Targeted resonance recipes give matching-resonance blades (`/glitchitems give uncommon blade <resonance> <player>` works from console)
 - [ ] Med Station heals to full, 30s cooldown message
 - [ ] Extended Stash: 27/45/54 slots by level; items persist after close/rejoin; taking items saves immediately
@@ -167,13 +167,13 @@
 - [ ] In `hub`, `glitch_pve`, and `glitch_red`, sidebar shows no red numbers (`NumberFormat.blank`), per-world layout, dim `<dark_gray>DIVIDER</dark_gray>` only (no `────────` dashes), live `Ping: <ms> TPS: <x.x>` not `—` (hub), `◆ EXTRACTION ◆` pulses subtly (`tick%2` — not flashing), shard/class/next-cycle lines render, and `BELOW_NAME` stacks render under nametags
 - [ ] `/sb` toggle hides/shows the sidebar without needing a rejoin; below-name stacks also hide; re-join restores
 - [ ] Residual Glitch boss bar at cap is `NOTCHED_10` purple with `DARKEN_SCREEN`; otherwise level-based color
-- [ ] `/tab reload` + Oraxen pack still loads and `negative_space.json` shifts are present (no glyph overlap)
+- [ ] `/tab reload` + Nexo pack still loads and `negative_space.json` shifts are present (no glyph overlap)
 
 ## Economy & item balance (2026-09-02 — docs/ITEM_BALANCE.md)
 
-- [ ] Consumables work: `/o give <you> healing_potion` → eat → Regen II 5s; `corrupted_heal` → full HP + Regen III 10s; `aether_tonic` → Speed II + Absorption II 30s; `ward_salve` → Resistance I + Absorption I 20s (honey bottle leave is fine)
-- [ ] Rift Attunement Pack: `/o give <you> rift_reveal_pack` → eat → message "attunement stored" → `/identify` any rarity (legendary) → no fee charged, pack consumed
-- [ ] Void Infusion: hold Epic+ gear in off-hand, `/o give <you> void_infusion` → eat → off-hand gear gains +1 Resonance boost line and +1 star per pip; infusing below Epic or at boost cap → cancelled with message, infusion not consumed
+- [ ] Consumables work: `/nexo give healing_potion <you>` → eat → Regen II 5s; `corrupted_heal` → full HP + Regen III 10s; `aether_tonic` → Speed II + Absorption II 30s; `ward_salve` → Resistance I + Absorption I 20s (honey bottle leave is fine)
+- [ ] Rift Attunement Pack: `/nexo give rift_reveal_pack <you>` → eat → message "attunement stored" → `/identify` any rarity (legendary) → no fee charged, pack consumed
+- [ ] Void Infusion: hold Epic+ gear in off-hand, `/nexo give void_infusion <you>` → eat → off-hand gear gains +1 Resonance boost line and +1 star per pip; infusing below Epic or at boost cap → cancelled with message, infusion not consumed
 - [ ] Gear attributes vary: `/glitchitems give rare blade` several times → mix of lifesteal / fire-aspect / execute / frost-touch; rare armor → one of damage-reduction / thorns / glitch-ward; legendary weapon shows two distinct attributes
 - [ ] Execute procs: hit a low-HP (<30%) mob with an execute blade → visible damage jump; Frost Touch → mob gets Slowness 2s
 - [ ] Thorns procs: wear thorns armor, let a mob melee you → attacker takes reflected damage (you take reduced damage per your rolls)
@@ -199,14 +199,14 @@
 
 ## Custom UI theming (Arcane Ruins UI kit)
 
-- [ ] Java client auto-receives the updated Oraxen pack on join (accept prompt)
+- [ ] Java client auto-receives the updated Nexo pack on join (accept prompt)
 - [ ] Every chest GUI (Grand Bazaar, /class, /stash, /hideout, world chests) shows the dark void-purple panel with amethyst frame + corner diamonds (no vanilla gray)
 - [ ] Menu titles render the glitch-diamond rune glyph on both sides (Bazaar/Stash/Class/Hideout) — HUD rune `E049` is separate and should not appear here
 - [ ] `/identify` a rift → gear lore is Wynncraft-style: divider rule, colored rarity line ("Rare · Melee Weapon"), » stat lines with gold/gray star pips, resonance icon + bold label, italic dark-gray flavor, shard-glyph sell price last
 - [ ] Star pips show 5 slots total (filled gold sparkle + empty gray outline)
 - [ ] Legendary godroll (all 5-star pips) shows "Perfectly resonant." in gold
 - [ ] Unidentified rifts show tier flavor + "Unidentified — reveal at the hub" block; sell line starts with the aqua shard glyph
-- [ ] `/o give <you> rune_fragment` lore sell line renders the shard glyph (Java client) and still reads as plain text without the pack
+- [ ] `/nexo give rune_fragment <you>` lore sell line renders the shard glyph (Java client) and still reads as plain text without the pack
 - [ ] Chat/anvils unaffected by glyph codepoints (PUA E040-E049 not typeable)
 
 ## GlitchLoot (smart loot)
@@ -224,5 +224,5 @@
 > **Verified in-game 2026-09-01:** need-key message without crash; key open/consume clean.
 
 - [ ] With no key, right-clicking a marked `loot_cache`/`vault` block shows `need-key` (not a `PlayerInteractEvent` stack trace); before `c9a229e` this threw `IllegalArgumentException: The found tag instance (ByteTag) cannot store String at CraftPersistentDataTypeRegistry.extract:347 → OraxenUtil.idOf:66 → ContainerManager.isKey:376`
-- [ ] `/o give <you> cache_key` then right-click the same chest → key consumed, loot rolls (uncommon/rare weighted), no crash even on modded lore items
+- [ ] `/nexo give cache_key <you>` then right-click the same chest → key consumed, loot rolls (uncommon/rare weighted), no crash even on modded lore items
 - [ ] `vault_key`/`rift_key` vaults also open cleanly; tested in `hub` (can set) and `glitch_red` loot cycle with Residual stacks

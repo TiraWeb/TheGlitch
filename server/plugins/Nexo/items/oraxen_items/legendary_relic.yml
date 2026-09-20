@@ -1,0 +1,11 @@
+legendary_relic:
+  itemname: <gold>Legendary Relic</gold>
+  material: GOLD_NUGGET
+  Pack:
+    parent_model: item/generated
+    texture: legendary_relic
+  lore:
+  - <gold>A relic from before the Glitch.</gold>
+  - <gray>Required for Legendary recipes.</gray>
+  - <dark_gray>Drops from bosses (rare).</dark_gray>
+  - ' <gray>Sell price: <aqua>800 Shards</aqua></gray>'

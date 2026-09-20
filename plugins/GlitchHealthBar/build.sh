@@ -14,7 +14,7 @@
 #   deploy_jar "GlitchHealthBar"
 #   seed_config "GlitchHealthBar" "config.yml"
 # See scripts/build-common.sh and scripts/lib/README.md for the pattern.
-# For plugins with deps, use:  build_plugin GlitchItems --needs VaultUnlocked,Oraxen,PlaceholderAPI
+# For plugins with deps, use:  build_plugin GlitchItems --needs VaultUnlocked,Nexo,PlaceholderAPI
 #
 
 set -euo pipefail

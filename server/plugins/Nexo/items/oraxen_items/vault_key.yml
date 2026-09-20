@@ -1,0 +1,11 @@
+vault_key:
+  itemname: <blue>Vault Key</blue>
+  material: TRIPWIRE_HOOK
+  Pack:
+    parent_model: item/generated
+    texture: vault_key
+  lore:
+  - <blue>Unlocks Vaults in hard zones.</blue>
+  - <gray>Crafted from Rift Crystals and Void Essence.</gray>
+  - <dark_gray>Consumed on use.</dark_gray>
+  - ' <gray>Sell price: <aqua>60 Shards</aqua></gray>'

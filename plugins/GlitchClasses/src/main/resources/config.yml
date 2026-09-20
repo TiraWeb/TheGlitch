@@ -16,7 +16,7 @@ game-worlds:
 reset-cost: 500
 
 # Starter kit â€” granted on the player's very first class selection (once ever).
-# Entries: vanilla "material" or Oraxen "oraxen" id + amount.
+# Entries: vanilla "material" or Nexo "nexo" id + amount.
 starter-kit:
   enabled: true
   once-per-player: true
@@ -27,7 +27,7 @@ starter-kit:
     boots: { material: LEATHER_BOOTS, amount: 1 }
     blade: { material: WOODEN_SWORD, amount: 1 }
     bread: { material: BREAD, amount: 3 }
-    rune-fragments: { oraxen: rune_fragment, amount: 5 }
+    rune-fragments: { nexo: rune_fragment, amount: 5 }
 
 # Cooldown reduction per level (percentage)
 cooldown-reduction-per-level: 2
