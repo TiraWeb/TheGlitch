@@ -40,7 +40,7 @@ Check items off as they're completed. Each numbered topic is sized to roughly on
 
 Everything below is *mechanics* — worlds, gamerules, protection flags, borders,
 and config. The scripts are present, but live verification and terrain source
-depend on the provisioning path. `setup-worlds.sh` creates generated worlds;
+depend on the provisioning path. `scripts/setup-worlds.sh` creates generated worlds;
 `scripts/setup-imported-worlds.sh` expects external uploaded saves. Physical
 construction inside these worlds is a separate body of work, split out into its
 own checklist below.
@@ -63,7 +63,7 @@ documented in `docs/DUNGEON_SHELL.md` for when the operator is ready.
 
 ## Phase 5 — Core plugin stack
 
-- [x] **5.1 Foundation plugins** — LuckPerms (groups/tracks, `setup-luckperms.sh`), VaultUnlocked (modern Vault fork, auto-detects LuckPerms). _Done: plugins added to bootstrap.sh, config seeded, setup script created. Run `sudo ./setup-luckperms.sh` after first restart with LuckPerms loaded._
+- [x] **5.1 Foundation plugins** — LuckPerms (groups/tracks, `scripts/setup-luckperms.sh`), VaultUnlocked (modern Vault fork, auto-detects LuckPerms). _Done: plugins added to bootstrap.sh, config seeded, setup script created. Run `sudo ./scripts/setup-luckperms.sh` after first restart with LuckPerms loaded._
 - [x] **5.2 Glitch Shards economy** — Run-currency via Eli's Coins (Echo Shard items, enchanted glow). Disabled in hub, active in glitch_pve/glitch_red. **Account-bound** (`player-drop:false` `lose-on-death:false` `drop-on-death:false` in `server/plugins/Coins/config.yml:85,114` — shards do NOT drop on death; live reloaded 2026-08-23 via `coins reload`), MythicMobs handles loot tables via `coins` drop type. _Done: plugin added to bootstrap.sh, config seeded with Glitch Shard naming._
 - [x] **5.3 MythicMobs** — Custom mobs with Glitch Shards loot. _Done: plugin added to bootstrap.sh, 4 mob definitions (Glitch Stalker, Brute, Phantom, Core boss) with drop tables using COINS type. Configs seeded once. **2026-09-14:** ModelEngine R4.1.0 rigs attached (warden + wisp, docs/MODELS.md)._
 - [ ] **5.4 Dungeon/Party management** — _Deferred to custom plugin. Development plan documented in Phase 5.9._
@@ -111,7 +111,7 @@ _Seven custom plugins designed for Arc Raiders/Marathon-style extraction gamepla
 _Authoritative design: docs/ITEM_SYSTEM.md. Implementation order follows its
 §10 list. Custom items run on Oraxen — both Nexo and the prebuilt Oraxen jar
 are paid (~$20–22), but Oraxen's GitHub source carries a personal-use license
-(no redistribution), so we build our own via setup-oraxen.sh and never commit
+(no redistribution), so we build our own via scripts/setup-oraxen.sh and never commit
 the jar. No item levels: power comes from rarity tiers + random stat rolls +
 Resonance matching, not number inflation._
 

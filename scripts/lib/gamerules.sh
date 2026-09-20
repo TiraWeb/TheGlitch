@@ -9,7 +9,7 @@
 # Minecraft 26.x (snapshot 25w44a / MC 1.21.11+) renamed all gamerules from
 # camelCase to snake_case registry ids. The OLD names error as "unknown" and
 # silently do nothing. This file is the SINGLE source of truth for the
-# snake_case names used by setup-worlds.sh and scripts/reapply-world-config.sh.
+# snake_case names used by scripts/setup-worlds.sh and scripts/reapply-world-config.sh.
 #
 #   Old (stale)               -> New (26.x)
 #   doMobSpawning             -> spawn_mobs
@@ -85,9 +85,9 @@ if ! declare -F mc >/dev/null 2>&1; then
 fi
 
 # ---------------------------------------------------------------------------
-# Canonical snake_case gamerule tables — copied from setup-worlds.sh (26.x)
+# Canonical snake_case gamerule tables — copied from scripts/setup-worlds.sh (26.x)
 # These are the ONLY names that work on MC 26.x / Paper 1.21.11+. Keep them
-# in sync with setup-worlds.sh; reapply-world-config.sh sources this file
+# in sync with scripts/setup-worlds.sh; reapply-world-config.sh sources this file
 # directly so drift is impossible.
 # ---------------------------------------------------------------------------
 
@@ -138,7 +138,7 @@ GAMERULES_RED_SNAKE=(
 # Wraps: mc "execute in minecraft:<dim> run gamerule <rule> <value>"
 # Detects rejections via `grep -qi "unknown\|error\|incomplete\|<--"` and
 # warns (does NOT fail) so a single bad name never breaks the whole ruleset.
-# Matches setup-worlds.sh behaviour where a wrong name for this MC version
+# Matches scripts/setup-worlds.sh behaviour where a wrong name for this MC version
 # is surfaced loudly.
 # ---------------------------------------------------------------------------
 apply_rule() {
@@ -177,7 +177,7 @@ apply_rule() {
     out="$(mc "execute in minecraft:${dim} run gamerule ${rule}" 2>&1 || true)"
   fi
 
-  # Surface rejections loudly — match setup-worlds.sh's detection
+  # Surface rejections loudly — match scripts/setup-worlds.sh's detection
   if echo "${out}" | grep -qiE 'unknown|error|incomplete|<--'; then
     warn "gamerule '${rule} ${val}' REJECTED in ${dim} (wrong name for this MC version?): ${out}"
   fi

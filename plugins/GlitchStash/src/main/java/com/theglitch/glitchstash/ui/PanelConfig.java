@@ -5,7 +5,7 @@ import com.theglitch.glitchstash.GlitchStash;
 /**
  * Centralized {@code modern-ui} panel config keys + defaults.
  * Single source for world-panel geometry and remote-perm node so
- * StashPanel, StashUICommand and DialogUI share the same strings.
+ * StashPanel and StashUICommand share the same strings.
  * Keys, defaults, permissions and message text are unchanged.
  */
 public final class PanelConfig {

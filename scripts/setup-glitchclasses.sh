@@ -2,13 +2,14 @@
 #
 # The Glitch — Setup/verify GlitchClasses on the live server.
 # Run from the repo root:
-#   sudo ./setup-glitchclasses.sh
+#   sudo ./scripts/setup-glitchclasses.sh
 
 set -euo pipefail
 
 SERVER_DIR="/opt/theglitch/server"
 PLUGIN_DIR="${SERVER_DIR}/plugins/GlitchClasses"
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[setup]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[setup]\033[0m $*"; }

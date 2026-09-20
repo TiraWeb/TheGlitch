@@ -1,18 +1,26 @@
-package com.theglitch.glitchstash;
+package com.theglitch.common;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Folia-safe scheduler wrapper — prefers Paper's GlobalRegionScheduler /
- * EntityScheduler when available, falls back to Bukkit scheduler on Purpur.
+ * Folia-safe scheduler wrapper shared by all Glitch plugins.
  * <p>
- * Mirrors the pattern used in GlitchRaid (FoliaScheduler.java:1) so
- * AutoExtractScheduler can run identically on Folia and Paper/Purpur without
- * thread violations. All tasks run on the global region unless an entity-
- * specific scheduler is requested.
+ * Prefers Paper's GlobalRegionScheduler / RegionScheduler / EntityScheduler when
+ * available (Paper 1.20+ + Folia), falls back to {@link Bukkit#getScheduler()}
+ * on Purpur, so scheduling logic runs identically on both platforms without
+ * thread violations.
+ * </p>
+ * <p>
+ * Location-sensitive operations (block place/clear) use
+ * {@code RegionScheduler} when available — required on Folia where the global
+ * region does not own chunk data. Reads that may load chunks use
+ * {@link World#isChunkLoaded(int, int)} / {@link World#getChunkAtAsync(int, int, boolean)}
+ * for async-safe handling.
+ * </p>
  */
 public final class FoliaScheduler {
 
@@ -55,6 +63,8 @@ public final class FoliaScheduler {
         @Override public void cancel() { try { task.cancel(); } catch (Exception ignored) {} }
     }
 
+    // ---- Global region -----------------------------------------------------
+
     public static void runGlobal(Plugin plugin, Runnable task) {
         if (HAS_PAPER_SCHEDULER) {
             try {
@@ -78,7 +88,8 @@ public final class FoliaScheduler {
     public static Cancellable runLaterGlobalCancellable(Plugin plugin, Runnable task, long delayTicks) {
         if (HAS_PAPER_SCHEDULER) {
             try {
-                io.papermc.paper.threadedregions.scheduler.ScheduledTask t = Bukkit.getGlobalRegionScheduler().runDelayed(plugin, s -> task.run(), delayTicks);
+                io.papermc.paper.threadedregions.scheduler.ScheduledTask t =
+                        Bukkit.getGlobalRegionScheduler().runDelayed(plugin, s -> task.run(), delayTicks);
                 return new PaperCancellable(t);
             } catch (Throwable ignored) {}
         }
@@ -89,13 +100,44 @@ public final class FoliaScheduler {
     public static Cancellable runAtFixedRateGlobal(Plugin plugin, Runnable task, long delayTicks, long periodTicks) {
         if (HAS_PAPER_SCHEDULER) {
             try {
-                io.papermc.paper.threadedregions.scheduler.ScheduledTask t = Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, s -> task.run(), delayTicks, periodTicks);
+                io.papermc.paper.threadedregions.scheduler.ScheduledTask t =
+                        Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, s -> task.run(), delayTicks, periodTicks);
                 return new PaperCancellable(t);
             } catch (Throwable ignored) {}
         }
         org.bukkit.scheduler.BukkitTask t = Bukkit.getScheduler().runTaskTimer(plugin, task, delayTicks, periodTicks);
         return new BukkitCancellable(t);
     }
+
+    // ---- Region-aware (required for block edits on Folia) ------------------
+
+    /**
+     * Run a task on the region that owns {@code loc}. Falls back to global.
+     * Used for block place/clear so Folia's region ownership is respected.
+     */
+    public static void runAtLocation(Plugin plugin, Location loc, Runnable task) {
+        if (loc == null || loc.getWorld() == null) {
+            runGlobal(plugin, task);
+            return;
+        }
+        if (HAS_PAPER_SCHEDULER) {
+            try {
+                // Paper 1.20+ RegionScheduler — owning thread per chunk region
+                Bukkit.getRegionScheduler().run(plugin, loc, s -> task.run());
+                return;
+            } catch (Throwable ignored) {
+                // Fall back to global below
+            }
+            // Legacy Folia GlobalRegion fallback
+            try {
+                Bukkit.getGlobalRegionScheduler().execute(plugin, task);
+                return;
+            } catch (Throwable ignored) {}
+        }
+        Bukkit.getScheduler().runTask(plugin, task);
+    }
+
+    // ---- Entity scheduler --------------------------------------------------
 
     public static void runEntity(Player player, Plugin plugin, Runnable task) {
         if (HAS_PAPER_SCHEDULER) {

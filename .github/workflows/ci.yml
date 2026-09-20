@@ -33,8 +33,8 @@ jobs:
         continue-on-error: true
         with:
           scandir: "./scripts"
-          # Scan additional top-level and per-plugin scripts
-          additional_files: "bootstrap.sh setup-*.sh plugins/GlitchItems/build.sh plugins/GlitchShops/build.sh plugins/GlitchStash/build.sh plugins/GlitchClasses/build.sh plugins/GlitchHideout/build.sh plugins/GlitchDeathRules/build.sh plugins/GlitchHealthBar/build.sh plugins/GlitchDungeons/build.sh"
+          # Scan additional top-level and per-plugin scripts (setup-*.sh now live under scripts/, covered by scandir)
+          additional_files: "bootstrap.sh console.sh recover-worlds.sh plugins/GlitchItems/build.sh plugins/GlitchShops/build.sh plugins/GlitchStash/build.sh plugins/GlitchClasses/build.sh plugins/GlitchHideout/build.sh plugins/GlitchDeathRules/build.sh plugins/GlitchHealthBar/build.sh plugins/GlitchDungeons/build.sh"
 
       - name: ShellCheck (fallback via apt-get)
         if: always()
@@ -44,7 +44,7 @@ jobs:
             sudo apt-get update && sudo apt-get install -y shellcheck
           fi
           echo "Running shellcheck on scripts and build scripts..."
-          shellcheck -S warning -x scripts/*.sh bootstrap.sh setup-*.sh plugins/*/build.sh 2>&1 || {
+          shellcheck -S warning -x scripts/*.sh bootstrap.sh console.sh recover-worlds.sh plugins/*/build.sh 2>&1 || {
             echo "::warning::shellcheck found issues (see log above)"
             exit 0
           }

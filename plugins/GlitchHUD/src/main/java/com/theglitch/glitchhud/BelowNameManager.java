@@ -1,5 +1,6 @@
 package com.theglitch.glitchhud;
 
+import com.theglitch.common.FoliaScheduler;
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;

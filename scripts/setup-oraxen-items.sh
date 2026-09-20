@@ -9,13 +9,14 @@
 # Every item ends with a "Sell price: N Shards" lore line (docs/ITEM_SYSTEM.md
 # §11) so the hub merchants (Phase 5.12, GlitchShops) can buy them back.
 #
-# Usage:  sudo ./setup-oraxen-items.sh
+# Usage:  sudo ./scripts/setup-oraxen-items.sh
 #
 # Idempotent: safe to re-run after every `git pull`.
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SERVER_DIR="/opt/theglitch/server"
 ORAXEN_DIR="${SERVER_DIR}/plugins/Oraxen"
 ITEMS_SRC="${REPO_DIR}/server/plugins/Oraxen/items"
@@ -26,8 +27,8 @@ log()  { echo -e "\033[1;32m[oraxen-items]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[oraxen-items]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[oraxen-items]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-oraxen-items.sh"
-[[ -d "${ORAXEN_DIR}" ]] || die "Oraxen folder not found at ${ORAXEN_DIR} — run setup-oraxen.sh first"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-oraxen-items.sh"
+[[ -d "${ORAXEN_DIR}" ]] || die "Oraxen folder not found at ${ORAXEN_DIR} — run scripts/setup-oraxen.sh first"
 [[ -d "${ITEMS_SRC}" ]]  || die "Repo items folder missing: ${ITEMS_SRC} — did you git pull?"
 [[ -d "${TEX_SRC}" ]]    || die "Repo textures folder missing: ${TEX_SRC} — did you git pull?"
 

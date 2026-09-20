@@ -10,7 +10,7 @@ Runs on `push` and `pull_request` to `main`. Job `validate` on `ubuntu-latest` w
 |------|------|----------------|
 | Checkout | `actions/checkout@v4` | — |
 | Java | `actions/setup-java@v4` (21, `temurin`, `cache: maven`) | `java -version`, `mvn --version` |
-| ShellCheck | `ludeeus/action-shellcheck@master` (`scandir: ./scripts`, `additional_files: bootstrap.sh setup-*.sh plugins/*/build.sh`) + fallback `apt-get install shellcheck && shellcheck …` | `scripts/*.sh`, `bootstrap.sh`, `setup-*.sh`, `plugins/*/build.sh` |
+| ShellCheck | `ludeeus/action-shellcheck@master` (`scandir: ./scripts`, `additional_files: bootstrap.sh console.sh recover-worlds.sh plugins/*/build.sh`) + fallback `apt-get install shellcheck && shellcheck …` | `scripts/*.sh` (incl. `scripts/setup-*.sh`), `bootstrap.sh`, `console.sh`, `recover-worlds.sh`, `plugins/*/build.sh` |
 | YAML lint | `python -c "import yaml; yaml.safe_load(...)"` over all `*.yml`/`*.yaml` (skips `target/`, `server/world*`) | parse errors |
 | Maven validate | `mvn -B --no-transfer-progress -DskipTests validate` (offline `mvn -o validate` fallback) | POMs, reactor, deps |
 | Maven package | `mvn -B --no-transfer-progress -DskipTests -Dmaven.test.skip=true package` (`continue-on-error: true`) | compile + jar (best-effort, needs network for Paper) |
@@ -24,7 +24,7 @@ Prereqs: `shellcheck`, `python3 + pyyaml`, `java 21`, `maven 3.9`.
 
 ```bash
 # 1. ShellCheck — same files as CI (plus 2026-09-02 deploy scripts)
-shellcheck -S warning -x scripts/*.sh bootstrap.sh setup-*.sh plugins/*/build.sh
+shellcheck -S warning -x scripts/*.sh bootstrap.sh console.sh recover-worlds.sh plugins/*/build.sh
 # or file-by-file:
 shellcheck scripts/build-all.sh
 shellcheck plugins/GlitchItems/build.sh

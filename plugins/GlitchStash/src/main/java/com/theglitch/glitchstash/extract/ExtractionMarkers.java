@@ -1,6 +1,6 @@
 package com.theglitch.glitchstash.extract;
 
-import com.theglitch.glitchstash.FoliaScheduler;
+import com.theglitch.common.FoliaScheduler;
 import com.theglitch.glitchstash.GlitchStash;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

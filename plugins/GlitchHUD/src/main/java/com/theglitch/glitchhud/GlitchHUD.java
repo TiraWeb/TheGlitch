@@ -1,5 +1,6 @@
 package com.theglitch.glitchhud;
 
+import com.theglitch.common.FoliaScheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;

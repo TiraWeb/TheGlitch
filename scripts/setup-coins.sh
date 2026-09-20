@@ -2,20 +2,21 @@
 #
 # The Glitch — Coins (Glitch Shards) reload & verification.
 # Run AFTER `bootstrap.sh` + server restart (Coins must be loaded):
-#   sudo ./setup-coins.sh
+#   sudo ./scripts/setup-coins.sh
 #
 # Reloads the Glitch Shards economy config and verifies it's active.
 # Safe to re-run.
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[coins]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[coins]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[coins]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-coins.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-coins.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 
@@ -75,6 +76,6 @@ cat <<'EOF'
     /balance           — check shard balance
 
   Coins won't show as a sidebar placeholder until PAPI + Vault
-  expansion are installed. Run: sudo ./setup-papi.sh
+  expansion are installed. Run: sudo ./scripts/setup-papi.sh
 ============================================================
 EOF

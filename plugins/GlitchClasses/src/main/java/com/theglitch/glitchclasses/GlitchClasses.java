@@ -1,7 +1,6 @@
 package com.theglitch.glitchclasses;
 
 import com.theglitch.glitchclasses.ui.ClassPanel;
-import com.theglitch.glitchclasses.ui.DialogBridge;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -39,10 +38,6 @@ public final class GlitchClasses extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(classGUI, this);
         Bukkit.getPluginManager().registerEvents(abilityListener, this);
         abilityListener.purgeStaleTurrets();
-
-        if (getConfig().getBoolean("modern-ui.enabled", true)) {
-            getLogger().info(DialogBridge.runtimeSummary());
-        }
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new ClassExpansion(this).register();

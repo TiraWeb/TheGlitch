@@ -16,7 +16,7 @@ Shared preflight for any script that talks to the live server via RCON
 |--------|--------------|
 | `log` / `warn` / `die` | Coloured prefix helpers (no-op if caller already defined them) |
 | `require_root()` | `die` unless `EUID == 0` (`sudo` required) |
-| `wait_for_rcon [tries] [delay]` | Loop `mc "list"` 30×5s (≈150s) until RCON responds. Matches the old duplicated loops in `setup-worlds.sh`, `setup-luckperms.sh`, `setup-essentials.sh`, etc. |
+| `wait_for_rcon [tries] [delay]` | Loop `mc "list"` 30×5s (≈150s) until RCON responds. Matches the old duplicated loops in `scripts/setup-worlds.sh`, `scripts/setup-luckperms.sh`, `scripts/setup-essentials.sh`, etc. |
 | `wait_for_plugin <name> [tries] [delay]` | Loop `mc "plugins" | grep -qi <name>` 60×5s (≈300s). Also probes `lp info` for LuckPerms. Dies on timeout with a `journalctl` hint. |
 | `require_maven_java` / `ensure_maven_java` | Verify `mvn` and `java` are on `PATH`. Alias for both names. |
 
@@ -69,7 +69,7 @@ source "${REPO_DIR}/scripts/lib/gamerules.sh"
 # or: source "$(dirname "$0")/scripts/lib/gamerules.sh"
 ```
 
-**Arrays (copy of `setup-worlds.sh` 26.x tables):**
+**Arrays (copy of `scripts/setup-worlds.sh` 26.x tables):**
 
 - `GAMERULES_HUB_SNAKE` — hub (`minecraft:overworld`) — frozen, `spawn_mobs false`, `keep_inventory true`, …
 - `GAMERULES_PVE_SNAKE` — `glitch_pve` — `keep_inventory true`, `spawn_mobs false`, …
@@ -99,7 +99,7 @@ apply_world_gamerules "glitch_red" "GAMERULES_RED_SNAKE"
 apply_rule "spawn_mobs" "false" "overworld"
 ```
 
-`setup-worlds.sh` is the reference for the canonical values; `scripts/reapply-world-config.sh`
+`scripts/setup-worlds.sh` is the reference for the canonical values; `scripts/reapply-world-config.sh`
 sources this file directly so the two scripts can never drift.
 
 ## `scripts/build-common.sh` / `plugins/build-common.sh` — shared build helpers
@@ -174,14 +174,14 @@ build_plugin GlitchStash --needs VaultUnlocked,GlitchItems,GlitchShops,VelKoth
 - **Easy updates:** bumping a gamerule or RCON timeout happens once, not in 8
   files.
 - **No drift:** `reapply-world-config.sh` previously used stale camelCase
-  (`doMobSpawning`) while `setup-worlds.sh` used correct snake_case
+  (`doMobSpawning`) while `scripts/setup-worlds.sh` used correct snake_case
   (`spawn_mobs`); now both source `gamerules.sh`.
 - **Safe re-runs:** all helpers `warn` (not `die`) on unknown gamerules or
   missing optional jars, so a single bad entry never breaks the whole run.
 
 ## See also
 
-- `setup-worlds.sh` — canonical gamerule values and WorldGuard flags
+- `scripts/setup-worlds.sh` — canonical gamerule values and WorldGuard flags
 - `scripts/reapply-world-config.sh` — example consumer of `gamerules.sh`
 - `plugins/GlitchHealthBar/build.sh` — example consumer of `build-common.sh`
 - `scripts/build-all.sh` — reactor build that already deduplicates `seed_lib` logic (now shares helpers via `build-common.sh`)

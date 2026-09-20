@@ -3,17 +3,17 @@
 # The Glitch — DESTRUCTIVE world reset (rarely needed).
 #
 # Wipes glitch_pve and glitch_red completely — region data AND Multiverse
-# registry — so setup-worlds.sh rebuilds them from scratch (glitch_red then
+# registry — so scripts/setup-worlds.sh rebuilds them from scratch (glitch_red then
 # re-runs the ~18-min pre-gen). Done with the server STOPPED so nothing can
 # rewrite a folder mid-cleanup.
 #
-# You usually DON'T need this: setup-worlds.sh imports existing worlds and
+# You usually DON'T need this: scripts/setup-worlds.sh imports existing worlds and
 # only creates missing ones. Use this only to deliberately start the two game
 # worlds over (e.g. to change the Red Zone seed).
 #
 #   sudo ./recover-worlds.sh
 #   # then, once the server is back up:
-#   sudo ./setup-worlds.sh
+#   sudo ./scripts/setup-worlds.sh
 #
 # Safe for the hub: backs up worlds.yml and only removes the two game worlds.
 
@@ -73,7 +73,7 @@ cat <<EOF
 ============================================================
   Wait ~30s for the server to finish booting, then run:
 
-      sudo ./setup-worlds.sh
+      sudo ./scripts/setup-worlds.sh
 
   It will create both worlds fresh (glitch_red then re-runs
   the ~18-min pre-gen). A worlds.yml backup was saved next to

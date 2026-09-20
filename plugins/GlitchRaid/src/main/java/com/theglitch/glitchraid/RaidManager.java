@@ -1,5 +1,6 @@
 package com.theglitch.glitchraid;
 
+import com.theglitch.common.FoliaScheduler;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;

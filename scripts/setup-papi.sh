@@ -2,7 +2,7 @@
 #
 # The Glitch — PlaceholderAPI expansion installation.
 # Run AFTER `bootstrap.sh` + server restart (PAPI must be loaded):
-#   sudo ./setup-papi.sh
+#   sudo ./scripts/setup-papi.sh
 #
 # Downloads the LuckPerms and Vault expansions so scoreboard placeholders
 # like %luckperms_meta_zone% and %coins_balance% actually resolve.
@@ -10,13 +10,14 @@
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[papi]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[papi]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[papi]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-papi.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-papi.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 
@@ -55,7 +56,7 @@ if ! mc "papi ecloud list" 2>/dev/null | grep -qi "expansion\|name"; then
   warn "  Vault:     https://api.extendedclip.com/home/expansion/vault/"
   warn "  Server:    https://api.extendedclip.com/home/expansion/server/"
   warn "  Place .jar files in: server/plugins/PlaceholderAPI/expansions/"
-  warn "  Then run: sudo ./setup-papi.sh"
+  warn "  Then run: sudo ./scripts/setup-papi.sh"
   warn ""
 fi
 

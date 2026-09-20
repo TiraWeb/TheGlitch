@@ -255,7 +255,7 @@ sync_cfg config/paper-global.yml           config/paper-global.yml
 sync_cfg config/paper-world-defaults.yml   config/paper-world-defaults.yml
 # NOTE: per-world overrides (e.g. glitch_pve/paper-world.yml) are intentionally
 # NOT synced here — 'install -D' would create the world folder before the world
-# exists, producing a phantom folder that confuses Multiverse. setup-worlds.sh
+# exists, producing a phantom folder that confuses Multiverse. scripts/setup-worlds.sh
 # places those into the real world folder AFTER creating the world.
 
 # ---------------------------------------------------------------------------
@@ -470,10 +470,10 @@ cat <<EOF
     ${RESTART_HINT}
 
   After restart, set up LuckPerms groups (one-time):
-    sudo ./setup-luckperms.sh
+    sudo ./scripts/setup-luckperms.sh
 
   If this is a fresh install or worlds were changed:
-    sudo ./setup-worlds.sh
+    sudo ./scripts/setup-worlds.sh
 
   Connect (Java):     ${PUBLIC_IP}:25565
   Connect (Bedrock):  ${PUBLIC_IP} port 19132
@@ -488,8 +488,8 @@ cat <<EOF
     sudo rm -rf /opt/theglitch
     sudo ./bootstrap.sh
     (wait for restart)
-    sudo ./setup-worlds.sh
-    sudo ./setup-luckperms.sh
+    sudo ./scripts/setup-worlds.sh
+    sudo ./scripts/setup-luckperms.sh
 
   Console commands from shell:  scripts/mc-cmd.py 'say hello'
 ============================================================

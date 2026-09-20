@@ -112,8 +112,8 @@ require_root() {
 
 # ---------------------------------------------------------------------------
 # wait_for_rcon() — loop `mc "list"` 30 tries, 5s apart (≈150s)
-# Matches the duplicated preflight in setup-worlds.sh, setup-luckperms.sh,
-# setup-essentials.sh, etc. Returns 0 on success, dies on timeout.
+# Matches the duplicated preflight in scripts/setup-worlds.sh, scripts/setup-luckperms.sh,
+# scripts/setup-essentials.sh, etc. Returns 0 on success, dies on timeout.
 # ---------------------------------------------------------------------------
 wait_for_rcon() {
   local tries="${1:-30}"

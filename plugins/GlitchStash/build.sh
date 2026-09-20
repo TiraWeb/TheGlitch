@@ -110,7 +110,7 @@ cat <<'EOF'
 ============================================================
 
   Restart the server or run:
-    sudo ./setup-glitchstash.sh
+    sudo ./scripts/setup-glitchstash.sh
 
   Extraction flow:
     1. Player extracts (holds zone for 300s)

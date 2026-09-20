@@ -2,7 +2,7 @@
 #
 # The Glitch — FancyNpcs reload & verification.
 # Run AFTER `bootstrap.sh` + server restart (FancyNpcs must be loaded):
-#   sudo ./setup-fancynpcs.sh
+#   sudo ./scripts/setup-fancynpcs.sh
 #
 # Reloads FancyNpcs config and verifies the NPC system is active.
 # NPC creation itself must be done in-game (needs player session).
@@ -10,13 +10,14 @@
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[fancynpcs]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[fancynpcs]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[fancynpcs]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-fancynpcs.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-fancynpcs.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 

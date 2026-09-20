@@ -2,7 +2,7 @@
 #
 # The Glitch — Phase 5.1 LuckPerms group setup.
 # Run AFTER `bootstrap.sh` + a server restart (LuckPerms must be loaded):
-#   sudo ./setup-luckperms.sh
+#   sudo ./scripts/setup-luckperms.sh
 #
 # Creates the permission group hierarchy, prefixes, and the staff promotion
 # track. Safe to re-run: LuckPerms commands are idempotent for group creation
@@ -12,13 +12,14 @@
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[lperms]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[lperms]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[lperms]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-luckperms.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-luckperms.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 

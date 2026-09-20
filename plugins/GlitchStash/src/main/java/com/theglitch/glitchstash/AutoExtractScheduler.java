@@ -1,5 +1,6 @@
 package com.theglitch.glitchstash;
 
+import com.theglitch.common.FoliaScheduler;
 import com.theglitch.glitchstash.extract.DynamicExtractionManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;

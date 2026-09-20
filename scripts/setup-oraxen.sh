@@ -11,15 +11,16 @@
 # server and stays there. That's why this is NOT in bootstrap.sh.
 #
 # Usage:
-#   sudo ./setup-oraxen.sh                  build + deploy + restart
-#   sudo ./setup-oraxen.sh --build-only     build jar, don't deploy/restart
-#   sudo ./setup-oraxen.sh --skip-deps      skip apt JDK install
+#   sudo ./scripts/setup-oraxen.sh                  build + deploy + restart
+#   sudo ./scripts/setup-oraxen.sh --build-only     build jar, don't deploy/restart
+#   sudo ./scripts/setup-oraxen.sh --skip-deps      skip apt JDK install
 #
 # Idempotent: safe to re-run; rebuilds from the pinned tag.
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 MC_USER="minecraft"
 BASE_DIR="/opt/theglitch"
@@ -44,7 +45,7 @@ log()  { echo -e "\033[1;32m[oraxen]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[oraxen]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[oraxen]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-oraxen.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-oraxen.sh"
 
 # --- deps -------------------------------------------------------------------
 # The main project compiles with a Java 21 toolchain; the nms/java25 module

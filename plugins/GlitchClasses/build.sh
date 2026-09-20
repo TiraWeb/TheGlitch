@@ -85,7 +85,7 @@ cat <<'EOF'
 ============================================================
 
   Restart the server or run:
-    sudo ./setup-glitchclasses.sh
+    sudo ./scripts/setup-glitchclasses.sh
 
   Commands:
     /class          — open class selection GUI

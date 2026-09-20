@@ -22,7 +22,7 @@ mc "mv modify glitch_pve set difficulty hard" >/dev/null
 
 # ---- gamerules (canonical 26.x snake_case — see scripts/lib/gamerules.sh) ----
 # Source the shared gamerule tables so reapply-world-config.sh can never drift
-# from setup-worlds.sh (previously used stale camelCase which is rejected as
+# from scripts/setup-worlds.sh (previously used stale camelCase which is rejected as
 # "unknown" on 26.x; correct names are snake_case like spawn_mobs).
 # Handles both call sites: scripts/reapply-world-config.sh (SCRIPT_DIR/lib/...)
 # and repo-root callers (REPO_DIR/scripts/lib/...).

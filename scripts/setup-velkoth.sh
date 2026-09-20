@@ -2,20 +2,21 @@
 #
 # The Glitch — VelKoth reload & verification.
 # Run AFTER `bootstrap.sh` + server restart (VelKoth must be loaded):
-#   sudo ./setup-velkoth.sh
+#   sudo ./scripts/setup-velkoth.sh
 #
 # Reloads VelKoth config, verifies extraction zones.
 # Safe to re-run (configs are seeded from repo, reload is idempotent).
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[velkoth]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[velkoth]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[velkoth]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-velkoth.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-velkoth.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 

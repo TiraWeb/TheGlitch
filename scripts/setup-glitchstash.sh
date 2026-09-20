@@ -2,20 +2,21 @@
 #
 # The Glitch — GlitchStash reload & verification.
 # Run AFTER building the plugin (plugins/GlitchStash/build.sh) + server restart:
-#   sudo ./setup-glitchstash.sh
+#   sudo ./scripts/setup-glitchstash.sh
 #
 # Reloads GlitchStash config, verifies extraction stash system.
 # Safe to re-run.
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[glitchstash]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[glitchstash]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[glitchstash]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-glitchstash.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-glitchstash.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 

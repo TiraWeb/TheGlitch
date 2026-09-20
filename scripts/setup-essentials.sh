@@ -2,20 +2,21 @@
 #
 # The Glitch — Phase 5.2 EssentialsX runtime setup.
 # Run AFTER `bootstrap.sh` + server restart (EssentialsX must be loaded):
-#   sudo ./setup-essentials.sh
+#   sudo ./scripts/setup-essentials.sh
 #
 # Sets spawn point, creates zone-transition warps, and configures the
 # starter kit. Safe to re-run: spawn/warp set commands are idempotent.
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[essentials]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[essentials]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[essentials]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-essentials.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-essentials.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 
@@ -66,7 +67,7 @@ mkdir -p "${KIT_DIR}"
 if [[ ! -f "${KIT_DIR}/kits.yml" ]]; then
   cat > "${KIT_DIR}/kits.yml" <<'KITS'
 # The Glitch — starter kit for new players
-# Seeded by setup-essentials.sh
+# Seeded by scripts/setup-essentials.sh
 
 glitch-starter:
   delay: 0
@@ -146,6 +147,6 @@ cat <<'EOF'
     /warp <name>    — teleport to a zone or extraction point
     /kit glitch-starter — get starter gear
 
-  Next: setup-tab.sh or setup-mythicmobs.sh
+  Next: scripts/setup-tab.sh or scripts/setup-mythicmobs.sh
 ============================================================
 EOF

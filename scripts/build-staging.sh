@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # The Glitch — Phase 4.6: Build the staging platform at (0, 0) in glitch_pve.
-# Run AFTER bootstrap.sh + server restart + setup-worlds.sh:
+# Run AFTER bootstrap.sh + server restart + scripts/setup-worlds.sh:
 #   sudo ./scripts/build-staging.sh
 #
 # NOTE: glitch_pve uses the CaveFree cave map, not a flat world. Y=-60

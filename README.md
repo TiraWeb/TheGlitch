@@ -35,7 +35,7 @@ The script prints an operator checklist at the end. **One step cannot be scripte
 - Installs all plugins: LuckPerms, EssentialsX, VaultUnlocked, Coins, MythicMobs, FancyNpcs, DeluxeMenus, TAB, PlaceholderAPI, VelKoth, GeyserMC, Floodgate, Multiverse-Core, Chunky, WorldGuard
 - Seeds plugin configs from repo (config-as-code)
 - Custom plugins are **not** built by bootstrap. Build them separately with the commands below.
-- **Oraxen (item plugin) is deliberately NOT in bootstrap.sh** — built separately via `setup-oraxen.sh` (see below), so a bootstrap failure can't silently skip custom items.
+- **Oraxen (item plugin) is deliberately NOT in bootstrap.sh** — built separately via `scripts/setup-oraxen.sh` (see below), so a bootstrap failure can't silently skip custom items.
 
 It is designed to be repeatable for the scripted foundation. It does not provision external world saves or replace generated live data. The update loop for scripted changes is:
 
@@ -226,7 +226,7 @@ All **12** deployable custom plugins share the `com.theglitch` Maven reactor; `p
 
 ## The three zones (Phase 4)
 
-The repository supports two world provisioning paths. `setup-worlds.sh` creates generated
+The repository supports two world provisioning paths. `scripts/setup-worlds.sh` creates generated
 worlds for a fresh server. `scripts/setup-imported-worlds.sh` imports externally uploaded
 map saves. The imported saves are not stored in this repository, so the live terrain
 source must be verified on the server:
@@ -239,7 +239,7 @@ source must be verified on the server:
 
 Full blueprint with coordinates: [docs/ZONES.md](docs/ZONES.md).
 
-> **Import note:** The current `setup-worlds.sh` path expects Paper 26.x dimension
+> **Import note:** The current `scripts/setup-worlds.sh` path expects Paper 26.x dimension
 > storage under `hub/dimensions/minecraft/`. The separate imported-map script expects
 > uploaded world folders and must be validated against the live server before use.
 > Do not delete world data without a backup.
@@ -286,8 +286,8 @@ redistribution, so **the jar is never committed** — build it on the box:
 
 ```bash
 cd ~/TheGlitch
-sudo ./setup-oraxen.sh        # clone v1.218.0, patch Iris JitPack dep, Gradle build (~5 min), deploy
-sudo ./setup-oraxen-items.sh  # deploy item configs + textures + lang, reload
+sudo ./scripts/setup-oraxen.sh        # clone v1.218.0, patch Iris JitPack dep, Gradle build (~5 min), deploy
+sudo ./scripts/setup-oraxen-items.sh  # deploy item configs + textures + lang, reload
 ```
 
 Requires: git, JDK 21 + JDK 25 toolchains (Gradle downloads itself).
@@ -295,24 +295,32 @@ Requires: git, JDK 21 + JDK 25 toolchains (Gradle downloads itself).
 ## Repo layout
 
 ```
-bootstrap.sh              one-shot / re-runnable box setup (Phases 0–5.9)
-setup-worlds.sh           Phase 4: creates/imports the three zones, rules, protections
-setup-imported-worlds.sh  Phase 4: import custom maps (glitch_red + glitch_pve) via Multiverse
-reapply-world-config.sh   Phase 4: re-apply gamerules/flags/borders after world import
-setup-luckperms.sh        Phase 5.1: LuckPerms groups, hierarchy
-setup-essentials.sh       Phase 5.2: spawn, warps, starter kit (INCOMPATIBLE)
-setup-tab.sh              Phase 5.7: TAB header/footer (sidebar now owned by GlitchHUD)
-setup-papi.sh             Phase 5.7: PlaceholderAPI expansions
-setup-mythicmobs.sh       Phase 5.3: MythicMobs reload
-setup-coins.sh            Phase 5.2: Glitch Shards economy
-setup-velkoth.sh          Phase 5.8: VelKoth extraction arenas (static fallback)
-setup-glitchstash.sh      Phase 5.9: GlitchStash extraction vault
-setup-deluxemenus.sh      Phase 5.5: GUI menus
-setup-fancynpcs.sh        Phase 5.5: NPC system
-setup-geyser.sh           Phase 3.1: Bedrock bridge
-setup-all-plugins.sh      Master runner: all setup scripts in order
-setup-oraxen.sh           Phase 5.10: build Oraxen from source (paid jars avoided)
-setup-oraxen-items.sh     Phase 5.10: deploy items/textures/lang to Oraxen, reload
+bootstrap.sh                        one-shot / re-runnable box setup (Phases 0–5.9)
+console.sh                          attach to the live server console
+recover-worlds.sh                   restore worlds from a backup
+scripts/setup-worlds.sh             Phase 4: creates/imports the three zones, rules, protections
+scripts/setup-imported-worlds.sh    Phase 4: import custom maps (glitch_red + glitch_pve) via Multiverse
+scripts/reapply-world-config.sh     Phase 4: re-apply gamerules/flags/borders after world import
+scripts/setup-luckperms.sh          Phase 5.1: LuckPerms groups, hierarchy
+scripts/setup-essentials.sh         Phase 5.2: spawn, warps, starter kit (INCOMPATIBLE)
+scripts/setup-tab.sh                Phase 5.7: TAB header/footer (sidebar now owned by GlitchHUD)
+scripts/setup-papi.sh               Phase 5.7: PlaceholderAPI expansions
+scripts/setup-mythicmobs.sh         Phase 5.3: MythicMobs reload
+scripts/setup-coins.sh              Phase 5.2: Glitch Shards economy
+scripts/setup-velkoth.sh            Phase 5.8: VelKoth extraction arenas (static fallback)
+scripts/setup-glitchstash.sh        Phase 5.9: GlitchStash extraction vault
+scripts/setup-deluxemenus.sh        Phase 5.5: GUI menus
+scripts/setup-fancynpcs.sh          Phase 5.5: NPC system
+scripts/setup-geyser.sh             Phase 3.1: Bedrock bridge
+scripts/setup-all-plugins.sh        Master runner: all setup scripts in order
+scripts/setup-oraxen.sh             Phase 5.10: build Oraxen from source (paid jars avoided)
+scripts/setup-oraxen-items.sh       Phase 5.10: deploy items/textures/lang to Oraxen, reload
+scripts/setup-dungeon-regions.sh    dungeon-slot spawner regions
+scripts/setup-ranks.sh              rank ladder seeding
+scripts/build-all.sh                reactor build + deploy all custom plugins (see Building Custom Plugins)
+scripts/mc-cmd.py                   local RCON client
+scripts/backup-now.sh               worlds+data backup
+scripts/lib/                        shared shell helpers (preflight.sh, gamerules.sh — see scripts/lib/README.md)
 plugins/GlitchStash/      GlitchStash source — vault + dynamic extraction (SpotPicker/DynamicExtractionManager)
 plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
 plugins/GlitchItems/      GlitchItems source (built via build.sh) — gear, residual, containers
@@ -332,8 +340,6 @@ server/plugins/ModelEngine/blueprints/  MEG rig blueprints (generated, tracked �
 GlitchWardenV2.zip / GlitchWisp.zip  custom-model source packages (myrlin bundles, see docs/MODELS.md)
 server/plugins/TAB/config.yml  TAB config (scoreboard.enabled: false — HUD owns sidebar)
 server/plugins/Oraxen/pack/assets/minecraft/font/negative_space.json  HUD shift glyphs
-console.sh                attach to the live server console
-scripts/mc-cmd.py         local RCON client
 server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM
 server/*.yml              performance tuning configs (synced every bootstrap)
 docs/ZONES.md             zone architecture blueprint

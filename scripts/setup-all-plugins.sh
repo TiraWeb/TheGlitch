@@ -2,14 +2,14 @@
 #
 # The Glitch — Master plugin setup.
 # Run AFTER `bootstrap.sh` + server restart:
-#   sudo ./setup-all-plugins.sh
+#   sudo ./scripts/setup-all-plugins.sh
 #
 # Runs all plugin configuration scripts in dependency order.
 # Each script is safe to re-run individually. This is a convenience wrapper.
 #
 # Usage:
-#   sudo ./setup-all-plugins.sh              # run everything
-#   sudo ./setup-all-plugins.sh --skip-papi  # skip PAPI (downloads are slow)
+#   sudo ./scripts/setup-all-plugins.sh              # run everything
+#   sudo ./scripts/setup-all-plugins.sh --skip-papi  # skip PAPI (downloads are slow)
 
 set -euo pipefail
 
@@ -68,41 +68,41 @@ run_step() {
 START_TIME=$(date +%s)
 
 # 1. LuckPerms (foundation — must be first)
-run_step "1" "setup-luckperms.sh"
+run_step "1" "scripts/setup-luckperms.sh"
 
 # 2. EssentialsX (spawn, warps, kit, economy)
-run_step "2" "setup-essentials.sh"
+run_step "2" "scripts/setup-essentials.sh"
 
 # 3. PlaceholderAPI (expansions needed by TAB)
 if [[ "${SKIP_PAPI}" == "true" ]]; then
-  log "━━━ Step 3: setup-papi.sh ━━━ (skipped)"
+  log "━━━ Step 3: scripts/setup-papi.sh ━━━ (skipped)"
 else
-  run_step "3" "setup-papi.sh"
+  run_step "3" "scripts/setup-papi.sh"
 fi
 
 # 4. TAB (needs PAPI expansions to render properly)
-run_step "4" "setup-tab.sh"
+run_step "4" "scripts/setup-tab.sh"
 
 # 5. MythicMobs (reload configs)
-run_step "5" "setup-mythicmobs.sh"
+run_step "5" "scripts/setup-mythicmobs.sh"
 
 # 6. Coins (reload economy)
-run_step "6" "setup-coins.sh"
+run_step "6" "scripts/setup-coins.sh"
 
 # 7. VelKoth (reload extraction arenas)
-run_step "7" "setup-velkoth.sh"
+run_step "7" "scripts/setup-velkoth.sh"
 
 # 8. GlitchStash (reload extraction vault)
-run_step "8" "setup-glitchstash.sh"
+run_step "8" "scripts/setup-glitchstash.sh"
 
 # 9. DeluxeMenus (reload GUIs)
-run_step "9" "setup-deluxemenus.sh"
+run_step "9" "scripts/setup-deluxemenus.sh"
 
 # 10. FancyNpcs (reload NPC system)
-run_step "10" "setup-fancynpcs.sh"
+run_step "10" "scripts/setup-fancynpcs.sh"
 
 # 11. GeyserMC (verify only — don't reload)
-run_step "11" "setup-geyser.sh"
+run_step "11" "scripts/setup-geyser.sh"
 
 END_TIME=$(date +%s)
 ELAPSED=$(( END_TIME - START_TIME ))

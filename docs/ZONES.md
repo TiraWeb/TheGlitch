@@ -8,7 +8,7 @@ almost nothing; only chunks near actual players are loaded. The *instancing*
 requirement is solved by coordinate offsetting **inside** the PvE world (dungeon
 slot grid, below) — no per-run world folders, ever.
 
-**World terrain is provisioning-dependent.** The default `setup-worlds.sh` path
+**World terrain is provisioning-dependent.** The default `scripts/setup-worlds.sh` path
 creates generated worlds. The separate `scripts/setup-imported-worlds.sh` path
 expects external uploaded saves. Those saves are not committed here, so the
 live terrain source must be verified on the server.
@@ -27,7 +27,7 @@ folder is orphaned by this switch and can be deleted. The nether and end are
 disabled entirely (`allow-nether=false`, `allow-end=false`) — three fewer
 dimensions to tick.
 
-> **World storage:** `setup-worlds.sh` currently detects Paper 26.x dimension
+> **World storage:** `scripts/setup-worlds.sh` currently detects Paper 26.x dimension
 > storage under `server/hub/dimensions/minecraft/<name>/region/` and uses
 > `mv import` for existing generated data. The imported-map script expects
 > external uploaded folders and must be validated on the target server before

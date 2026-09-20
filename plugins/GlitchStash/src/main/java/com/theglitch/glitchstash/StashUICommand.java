@@ -1,5 +1,6 @@
 package com.theglitch.glitchstash;
 
+import com.theglitch.common.FoliaScheduler;
 import com.theglitch.glitchstash.ui.PanelConfig;
 import com.theglitch.glitchstash.ui.StashPanel;
 import net.kyori.adventure.text.minimessage.MiniMessage;

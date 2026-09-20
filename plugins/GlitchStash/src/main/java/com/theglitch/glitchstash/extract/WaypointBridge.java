@@ -1,6 +1,6 @@
 package com.theglitch.glitchstash.extract;
 
-import com.theglitch.glitchstash.FoliaScheduler;
+import com.theglitch.common.FoliaScheduler;
 import com.theglitch.glitchstash.GlitchStash;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.ArmorStand;

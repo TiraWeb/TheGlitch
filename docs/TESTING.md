@@ -12,7 +12,7 @@
   - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar` (newer five are reactor-only)
   - `sudo ./scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` for economy+armor (Oraxen `itemname:`, config v3, `rift_vault=6`, RCON verified)
 - [ ] `sudo systemctl restart theglitch`
-- [ ] `sudo ./setup-mythicmobs.sh` (`mm reload` + verify mobs list)
+- [ ] `sudo ./scripts/setup-mythicmobs.sh` (`mm reload` + verify mobs list)
 - [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD (+ `TAB scoreboard.enabled: false` + `Oraxen negative_space` sync lines)
 - [ ] Model deploys (docs/MODELS.md): blueprint + mob yml copied live → `meg reload models` (`Importing <mid>.bbmodel` → `N models loaded`) → `mm reload` → pack merged to `10_modelengine.zip` → `oraxen reload all` → **relog** (pack changes need re-download)
 

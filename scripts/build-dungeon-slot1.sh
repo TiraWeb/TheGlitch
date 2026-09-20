@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # The Glitch — Phase 4.6: Build dungeon shell at Slot 1 (-1024, -1024) in glitch_pve.
-# Run AFTER bootstrap.sh + server restart + setup-worlds.sh:
+# Run AFTER bootstrap.sh + server restart + scripts/setup-worlds.sh:
 #   sudo ./scripts/build-dungeon-slot1.sh
 #
 # NOTE: glitch_pve uses the CaveFree cave map, not a flat world. Y=-60

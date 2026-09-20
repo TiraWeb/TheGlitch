@@ -2,7 +2,7 @@
 #
 # The Glitch — Phase 4 world architecture setup.
 # Run AFTER `bootstrap.sh` + a server restart (plugins must be loaded):
-#   sudo ./setup-worlds.sh
+#   sudo ./scripts/setup-worlds.sh
 #
 # Creates the three zones (docs/ZONES.md), applies per-world gamerules,
 # world borders, WorldGuard protection, and kicks off Red Zone terrain
@@ -14,7 +14,8 @@
 set -euo pipefail
 
 SERVER_DIR="/opt/theglitch/server"
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RED_SEED="20260719"
 MC_USER="minecraft"
 # Paper 26.x stores custom (non-main) worlds as DIMENSIONS of the main world,
@@ -29,7 +30,7 @@ log()  { echo -e "\033[1;32m[worlds]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[worlds]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[worlds]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-worlds.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-worlds.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 

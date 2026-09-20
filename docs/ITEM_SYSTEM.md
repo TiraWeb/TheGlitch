@@ -296,7 +296,7 @@ arcane-engineer archetype once abilities are renamed.
 plugin (`GlitchItems`?) for Rift identify / Resonance / Residual Glitch logic.
 
 **Oraxen install path:** jar is ~$20 on marketplaces, but source is open (license permits personal
-use) → built from source on the box via `sudo ./setup-oraxen.sh` (clones
+use) → built from source on the box via `sudo ./scripts/setup-oraxen.sh` (clones
 `github.com/oraxen/oraxen`, pins tag v1.218.0, `./gradlew build`, deploys to `server/plugins/Oraxen.jar`).
 NOT in `bootstrap.sh` on purpose, and the built jar must never be committed to this repo (license
 forbids redistribution).
@@ -305,8 +305,8 @@ forbids redistribution).
 
 Rough order:
 
-1. **Item base plugin + resource pack** — ✅ Oraxen built from source + deployed (setup-oraxen.sh)
-2. **Material + key + consumable items** — ✅ 20 items (5+4+5+6) as Oraxen configs (server/plugins/Oraxen/): 5 materials, 4 keys, 5 Unstable Rifts, 6 alchemy — deploy via setup-oraxen-items.sh
+1. **Item base plugin + resource pack** — ✅ Oraxen built from source + deployed (scripts/setup-oraxen.sh)
+2. **Material + key + consumable items** — ✅ 20 items (5+4+5+6) as Oraxen configs (server/plugins/Oraxen/): 5 materials, 4 keys, 5 Unstable Rifts, 6 alchemy — deploy via scripts/setup-oraxen-items.sh
 3. **Source V1:** rarity tiers + stat-roll engine, 6 weapon archetypes, 4 armor pieces, attributes, `/identify`, Resonance math, and Residual Glitch source exist. Build and runtime testing are pending.
 4. Rift drops (mob loot tables emit rifts) — DONE in repo (2026-08-03, all T2-T4 tables); Identifier NPC flow — not complete.
 5. Resonance tags (MythicMobs metadata) + complete gear integration — DONE in repo (2026-08-03, ten mobs); live test pending.

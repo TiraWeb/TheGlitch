@@ -2,20 +2,21 @@
 #
 # The Glitch — TAB plugin setup.
 # Run AFTER `bootstrap.sh` + server restart (TAB must be loaded):
-#   sudo ./setup-tab.sh
+#   sudo ./scripts/setup-tab.sh
 #
 # Reloads TAB config and verifies scoreboard + tablist render correctly.
 # Safe to re-run.
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 log()  { echo -e "\033[1;32m[tab]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[tab]\033[0m $*"; }
 die()  { echo -e "\033[1;31m[tab]\033[0m $*" >&2; exit 1; }
 
-[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./setup-tab.sh"
+[[ ${EUID} -eq 0 ]] || die "Run me with sudo: sudo ./scripts/setup-tab.sh"
 
 mc() { python3 "${REPO_DIR}/scripts/mc-cmd.py" "$@"; }
 
@@ -80,6 +81,6 @@ cat <<'EOF'
     %server_max_players%    — server slot limit
 
   Scoreboard lines won't render until PAPI expansions are installed.
-  Run: sudo ./setup-papi.sh
+  Run: sudo ./scripts/setup-papi.sh
 ============================================================
 EOF
