@@ -808,6 +808,41 @@ public final class ScatterManager {
     // ------------------------------------------------------------------------
 
     /**
+     * Whether the chunk's containing 32x32-chunk region file exists on disk —
+     * a plain filesystem stat, deliberately NOT {@code World#isChunkGenerated}.
+     * <p>
+     * Confirmed live via a Watchdog thread dump (2026-09-21): for a chunk
+     * that isn't currently loaded, {@code isChunkGenerated} routes through
+     * Paper/Purpur's chunk-ticket system ({@code ChunkTaskScheduler ->
+     * ThreadedTicketLevelPropagator$UpdateQueue#acquireNextOrWait}), which can
+     * block the main thread — it did, for 55+ seconds, across the ~1200
+     * per-world calls a scatter cycle makes, tripping the watchdog and
+     * crashing the server mid-cycle (the actual mechanism behind containers
+     * piling up as orphans — see ContainerManager#sweepOrphans javadoc). A
+     * plain {@link File#isFile()} check never touches that machinery. Our red
+     * worlds are always fully Chunky-pregenerated across the whole scatter
+     * border before scatter ever runs (scripts/setup-worlds.sh), so "the
+     * region file is on disk" is an equally valid generated-check here.
+     * Cached per {@link #placeNew} call since many attempts share a region.
+     */
+    private boolean regionFileExists(World world, int chunkX, int chunkZ, Map<Long, Boolean> cache) {
+        int regionX = chunkX >> 5;
+        int regionZ = chunkZ >> 5;
+        long key = (((long) regionX) << 32) ^ (regionZ & 0xFFFFFFFFL);
+        Boolean cached = cache.get(key);
+        if (cached != null) return cached;
+        String sub = switch (world.getEnvironment()) {
+            case NETHER -> "DIM-1/region";
+            case THE_END -> "DIM1/region";
+            default -> "region";
+        };
+        File region = new File(new File(world.getWorldFolder(), sub), "r." + regionX + "." + regionZ + ".mca");
+        boolean exists = region.isFile();
+        cache.put(key, exists);
+        return exists;
+    }
+
+    /**
      * Places new containers sparsely in {@code world}. Respects
      * {@code onTopOnly}: target and above must be air, ground must be solid.
      *
@@ -815,6 +850,7 @@ public final class ScatterManager {
      */
     private int placeNew(World world, WorldBounds bounds) {
         if (world == null) return 0;
+        Map<Long, Boolean> regionCache = new java.util.HashMap<>();
 
         // Resolve counts: if explicit counts present use them, else compute from density
         Map<String, Integer> toPlace = resolveCounts(bounds);
@@ -929,8 +965,11 @@ public final class ScatterManager {
                     // (2026-09-21, see docs/STATUS.md). Same guard as GlitchStash's
                     // SpotPicker. Red worlds are meant to be fully pre-generated across
                     // the whole scatter border (scripts/setup-worlds.sh) so this should
-                    // rarely trigger — it's a safety net, not the primary fix.
-                    if (!world.isChunkGenerated(cx, cz)) {
+                    // rarely trigger — it's a safety net, not the primary fix. Uses
+                    // regionFileExists(), NOT World#isChunkGenerated() — see that
+                    // method's javadoc for why (it stalled the main thread 55s+ and
+                    // crashed the server, confirmed via Watchdog thread dump).
+                    if (!regionFileExists(world, cx, cz, regionCache)) {
                         diagAttempts++;
                         diagChunkFail++;
                         continue;
