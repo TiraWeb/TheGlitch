@@ -103,11 +103,11 @@ auto-extract:
     glitch_red_eleria:
       center-x: 350
       center-z: 200
-      radius: 400
+      radius: 650
     glitch_red_horizons:
       center-x: 150
       center-z: 100
-      radius: 400
+      radius: 650
 
 # Modern UI layer — shared stash kiosk wall + dialog-based remote stash
 modern-ui:
