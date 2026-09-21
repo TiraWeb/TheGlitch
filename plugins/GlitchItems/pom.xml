@@ -49,6 +49,20 @@
             <artifactId>GlitchCommon</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.nexomc</groupId>
+            <artifactId>nexo</artifactId>
+            <version>${nexo.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <!-- Transitive SNAPSHOT deps with no accessible repo; we only need
+                     the furniture/block API + events at compile time, not Nexo's own GUI/etc. -->
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>

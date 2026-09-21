@@ -198,6 +198,10 @@ containers:
     debris:
       display: "<gray>Debris Pile"
       material: BARREL
+      # Custom ModelEngine-free 3D crate visual (Nexo furniture item id) — if set,
+      # this container is placed/tracked as furniture instead of a real block.
+      # See docs/MODELS.md "Loot crate furniture" and ContainerManager#mark(Location,...).
+      furniture-id: "loot_crates_fire"
       key-id: ""
       key-material: ""
       key-name: ""
@@ -210,6 +214,7 @@ containers:
     cache:
       display: "<green>Loot Cache"
       material: CHEST
+      furniture-id: "loot_crates_earth"
       key-id: "cache_key"
       key-material: "TRIPWIRE_HOOK"
       key-name: "Cache Key"
@@ -234,6 +239,7 @@ containers:
     rift_vault:
       display: "<light_purple>Rift Vault"
       material: DECORATED_POT
+      furniture-id: "loot_crates_darkness"
       key-id: "rift_key"
       key-material: "TRIPWIRE_HOOK"
       key-name: "Rift Key"

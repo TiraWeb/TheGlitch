@@ -1,5 +1,8 @@
 package com.theglitch.glitchitems;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.nexomc.nexo.api.NexoFurniture;
 import com.theglitch.common.NexoUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -7,28 +10,52 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Rotation;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.io.File;
+import java.io.Reader;
+import java.io.Writer;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 
 /**
  * In-world loot containers (design GAME_DESIGN.md §3, ITEM_SYSTEM.md §9):
  * Debris Pile (free), Loot Cache (Cache Key), Vault (Vault Key),
  * Rift Vault (Rift Key).
+ * <p>
+ * Two visual backends per {@link ContainerType}, selected by whether
+ * {@code furniture-id} is configured:
+ * <ul>
+ *   <li><b>Legacy block</b> (no furniture-id, e.g. Vault): a real block
+ *       ({@code type.material()}) at the location, unchanged since 2026-08.</li>
+ *   <li><b>Nexo furniture</b> (furniture-id set, e.g. Debris/Cache/Rift Vault
+ *       as of 2026-09-21 — see docs/MODELS.md "Loot crate furniture"): a
+ *       {@link NexoFurniture#place} entity. Nexo furniture is not a tile
+ *       entity, so it cannot carry a {@code PersistentDataContainer} the way
+ *       the old block-only design did — container identity/regen state for
+ *       <b>both</b> backends now lives in {@link #byLocation}, a location-keyed
+ *       map persisted to {@code data/containers.json} (same pattern as
+ *       {@link ScatterManager}'s own {@code scattered.json}), not on the block.
+ * </ul>
  */
 public final class ContainerManager {
 
@@ -103,6 +130,7 @@ public final class ContainerManager {
             String name,
             String display,
             Material material,
+            String furnitureId,
             String keyId,
             String keyMaterial,
             Material keyMaterialResolved,
@@ -119,23 +147,57 @@ public final class ContainerManager {
         boolean requiresKey() {
             return keyId != null && !keyId.isEmpty();
         }
+
+        public boolean isFurniture() {
+            return furnitureId != null && !furnitureId.isEmpty();
+        }
     }
 
+    /** One tracked container's location + regen state. Persisted as JSON (see {@link #byLocation}). */
+    private static final class ContainerRecord {
+        String world;
+        int x;
+        int y;
+        int z;
+        String type;
+        long lastOpened;
+
+        ContainerRecord() {}
+
+        ContainerRecord(String world, int x, int y, int z, String type, long lastOpened) {
+            this.world = world;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.type = type;
+            this.lastOpened = lastOpened;
+        }
+    }
+
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Type RECORD_LIST_TYPE = new com.google.gson.reflect.TypeToken<List<ContainerRecord>>() {}.getType();
+
     private final GlitchItems plugin;
-    private final NamespacedKey typeKey;
-    private final NamespacedKey lastKey;
     private volatile Map<String, ContainerType> types = new HashMap<>();
+    private volatile Map<String, ContainerType> furnitureTypes = new HashMap<>();
 
     // Cached config
     private volatile Set<String> enabledWorlds = Set.of("glitch_red", "glitch_pve");
     private volatile int scavengeBonusRolls = 1;
     private volatile Map<String, String> messagesRaw = new HashMap<>();
 
+    // Location-keyed container state (replaces per-block PersistentDataContainer —
+    // Nexo furniture is entity-based and cannot carry block PDC; see class javadoc).
+    private final File dataFile;
+    private final Map<String, ContainerRecord> byLocation = new ConcurrentHashMap<>();
+    private final AtomicBoolean dirty = new AtomicBoolean(false);
+
     public ContainerManager(GlitchItems plugin) {
         this.plugin = plugin;
-        this.typeKey = new NamespacedKey(plugin, "glitch_container");
-        this.lastKey = new NamespacedKey(plugin, "glitch_container_last");
+        File dir = new File(plugin.getDataFolder(), "data");
+        this.dataFile = new File(dir, "containers.json");
         reload();
+        loadContainers();
     }
 
     public void reload() {
@@ -150,6 +212,7 @@ public final class ContainerManager {
                 if (t == null) continue;
                 Material material = Material.matchMaterial(t.getString("material", "CHEST"));
                 if (material == null) material = Material.CHEST;
+                String furnitureId = t.getString("furniture-id", "").trim();
 
                 Map<Rarity, Integer> rarityWeights = new LinkedHashMap<>();
                 int nothingWeight = 0;
@@ -190,6 +253,7 @@ public final class ContainerManager {
                         name,
                         t.getString("display", name),
                         material,
+                        furnitureId.isEmpty() ? null : furnitureId,
                         keyId,
                         keyMatStr,
                         keyMatResolved,
@@ -205,6 +269,11 @@ public final class ContainerManager {
             }
         }
         types = loaded;
+        Map<String, ContainerType> furnIndex = new HashMap<>();
+        for (ContainerType t : loaded.values()) {
+            if (t.isFurniture()) furnIndex.put(t.furnitureId(), t);
+        }
+        furnitureTypes = furnIndex;
         enabledWorlds = Set.copyOf(plugin.getConfig().getStringList("containers.enabled-worlds"));
         if (enabledWorlds.isEmpty()) enabledWorlds = Set.of("glitch_red", "glitch_pve");
         scavengeBonusRolls = plugin.getConfig().getInt("containers.scavenge-bonus-rolls", 1);
@@ -214,48 +283,158 @@ public final class ContainerManager {
             for (String k : msgSec.getKeys(false)) msgs.put(k, msgSec.getString(k, "<gray>" + k + "</gray>"));
         }
         messagesRaw = msgs;
-        plugin.getLogger().info("Containers loaded: " + loaded.size() + " types");
+        plugin.getLogger().info("Containers loaded: " + loaded.size() + " types (" + furnIndex.size() + " furniture-backed)");
     }
 
     public List<ContainerType> getTypes() {
         return new ArrayList<>(types.values());
     }
 
-    public ContainerType typeOf(Block block) {
-        if (block == null) return null;
-        PersistentDataContainer data = data(block);
-        if (data == null) return null;
-        String name = data.get(typeKey, PersistentDataType.STRING);
+    public ContainerType getType(String name) {
         return name == null ? null : types.get(name);
     }
 
-    public ContainerType getType(String name) {
-        return name == null ? null : types.get(name);
+    /** Reverse lookup for {@code NexoFurnitureInteractEvent} handling. */
+    public ContainerType typeForFurniture(String furnitureId) {
+        return furnitureId == null ? null : furnitureTypes.get(furnitureId);
+    }
+
+    // ---- Location-keyed state (authoritative for both backends) ----
+
+    private static String locKey(String world, int x, int y, int z) {
+        return world + ":" + x + ":" + y + ":" + z;
+    }
+
+    private static String locKey(Location loc) {
+        return locKey(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+
+    public ContainerType typeOf(Location loc) {
+        if (loc == null || loc.getWorld() == null) return null;
+        ContainerRecord record = byLocation.get(locKey(loc));
+        return record == null ? null : types.get(record.type);
+    }
+
+    public boolean isContainer(Location loc) {
+        return typeOf(loc) != null;
+    }
+
+    public ContainerType typeOf(Block block) {
+        return block == null ? null : typeOf(block.getLocation());
     }
 
     public boolean isContainer(Block block) {
         return typeOf(block) != null;
     }
 
-    public boolean mark(Block block, ContainerType type) {
-        Material previous = block.getType();
-        block.setType(type.material());
-        BlockState state = block.getState();
-        if (!(state instanceof PersistentDataHolder holder)) {
-            block.setType(previous);
-            return false;
+    /**
+     * Marks {@code loc} as a container of {@code type}. For furniture-backed
+     * types this places a Nexo furniture entity (loc must be an air block with
+     * solid ground below — same placement rule {@link ScatterManager} already
+     * enforces); for legacy types it sets the block material directly.
+     */
+    public boolean mark(Location loc, ContainerType type) {
+        if (loc == null || loc.getWorld() == null || type == null) return false;
+        if (type.isFurniture()) {
+            if (!NexoUtil.available()) {
+                plugin.getLogger().warning("[Containers] Nexo not available — cannot place furniture container " + type.furnitureId());
+                return false;
+            }
+            ItemDisplay placed;
+            try {
+                placed = NexoFurniture.place(type.furnitureId(), loc, Rotation.NONE, BlockFace.UP);
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "[Containers] Failed to place furniture '" + type.furnitureId() + "' at " + locKey(loc), e);
+                return false;
+            }
+            if (placed == null) return false;
+        } else {
+            loc.getBlock().setType(type.material());
         }
-        holder.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, type.name());
-        return state.update(true, false);
+        byLocation.put(locKey(loc), new ContainerRecord(
+                loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), type.name(), 0L));
+        dirty.set(true);
+        return true;
+    }
+
+    /** Legacy block overload — {@code block}'s own location becomes the container. */
+    public boolean mark(Block block, ContainerType type) {
+        return block != null && mark(block.getLocation(), type);
+    }
+
+    /**
+     * Clears the container record at {@code loc} and removes its visual
+     * (furniture entity, or resets the block to AIR for legacy types).
+     */
+    public void clear(Location loc) {
+        if (loc == null || loc.getWorld() == null) return;
+        String key = locKey(loc);
+        ContainerRecord record = byLocation.remove(key);
+        dirty.set(true);
+        ContainerType type = record == null ? null : types.get(record.type);
+        if (type != null && type.isFurniture()) {
+            try {
+                NexoFurniture.remove(loc);
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.FINE, "[Containers] Failed to remove furniture at " + key, e);
+            }
+        } else {
+            try {
+                loc.getBlock().setType(Material.AIR, false);
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     public void clear(Block block) {
-        BlockState state = block.getState();
-        if (!(state instanceof PersistentDataHolder holder)) return;
-        PersistentDataContainer data = holder.getPersistentDataContainer();
-        data.remove(typeKey);
-        data.remove(lastKey);
-        state.update(true, false);
+        if (block != null) clear(block.getLocation());
+    }
+
+    // ---- Persistence (mirrors ScatterManager's Gson atomic-write pattern) ----
+
+    private void loadContainers() {
+        if (!dataFile.exists()) {
+            plugin.getLogger().info("[Containers] No prior containers.json — starting fresh.");
+            return;
+        }
+        try (Reader r = Files.newBufferedReader(dataFile.toPath(), StandardCharsets.UTF_8)) {
+            List<ContainerRecord> loaded = GSON.fromJson(r, RECORD_LIST_TYPE);
+            if (loaded != null) {
+                for (ContainerRecord rec : loaded) {
+                    if (rec == null || rec.world == null || rec.world.isBlank() || rec.type == null) continue;
+                    byLocation.put(locKey(rec.world, rec.x, rec.y, rec.z), rec);
+                }
+            }
+            plugin.getLogger().info("[Containers] Loaded " + byLocation.size() + " tracked container(s) from " + dataFile.getPath());
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.WARNING, "[Containers] Failed to load " + dataFile.getPath() + " — starting fresh.", e);
+        }
+    }
+
+    /** Persists {@link #byLocation} if it has changed since the last flush. No-op otherwise. */
+    public void flush() {
+        if (!dirty.compareAndSet(true, false)) return;
+        List<ContainerRecord> snapshot = new ArrayList<>(byLocation.values());
+        try {
+            File dir = dataFile.getParentFile();
+            if (dir != null && !dir.exists() && !dir.mkdirs() && !dir.exists()) {
+                plugin.getLogger().warning("[Containers] Could not create data dir " + dir.getPath());
+                return;
+            }
+            File tmp = new File(dir, dataFile.getName() + ".tmp");
+            try (Writer w = Files.newBufferedWriter(tmp.toPath(), StandardCharsets.UTF_8)) {
+                GSON.toJson(snapshot, w);
+            }
+            try {
+                Files.move(tmp.toPath(), dataFile.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                Files.move(tmp.toPath(), dataFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.WARNING, "[Containers] Failed to save " + dataFile.getPath(), e);
+        }
     }
 
     // ---- Scatter bridge (for GlitchStash AutoExtractScheduler reflection) ----
@@ -269,24 +448,28 @@ public final class ContainerManager {
     public void doScatter() { scatter(); }
 
     public boolean open(Player player, Block block) {
-        ContainerType type = typeOf(block);
+        return block != null && open(player, block.getLocation());
+    }
+
+    public boolean open(Player player, Location loc) {
+        if (loc == null || loc.getWorld() == null) {
+            player.sendMessage(msg("not-container"));
+            return false;
+        }
+        String key = locKey(loc);
+        ContainerRecord record = byLocation.get(key);
+        ContainerType type = record == null ? null : types.get(record.type);
         if (type == null) {
             player.sendMessage(msg("not-container"));
             return false;
         }
-        if (!enabledWorlds.contains(block.getWorld().getName())) {
+        if (!enabledWorlds.contains(loc.getWorld().getName())) {
             player.sendMessage(msg("disabled-world"));
             return false;
         }
 
-        PersistentDataContainer data = data(block);
-        if (data == null) {
-            player.sendMessage(msg("not-container"));
-            return false;
-        }
-        long last = data.getOrDefault(lastKey, PersistentDataType.LONG, 0L);
         long now = System.currentTimeMillis();
-        long remaining = last + type.regenSeconds() * 1000L - now;
+        long remaining = record.lastOpened + type.regenSeconds() * 1000L - now;
         if (remaining > 0) {
             player.sendMessage(msg("not-ready", "<container>", type.display(),
                     "<time>", String.valueOf((remaining + 999L) / 1000L)));
@@ -359,7 +542,7 @@ public final class ContainerManager {
             } catch (Exception ignored) {
             }
         }
-        giveLoot(player, block, loot);
+        giveLoot(player, loc, loot);
 
         if (type.shardsMin() > 0 && type.shardsMax() >= type.shardsMin()) {
             int shards = rand.nextInt(type.shardsMin(), type.shardsMax() + 1);
@@ -368,11 +551,8 @@ public final class ContainerManager {
             }
         }
 
-        BlockState state = block.getState();
-        if (state instanceof PersistentDataHolder holder) {
-            holder.getPersistentDataContainer().set(lastKey, PersistentDataType.LONG, now);
-            state.update(true, false);
-        }
+        record.lastOpened = now;
+        dirty.set(true);
 
         if (emptied && !surged) {
             player.sendMessage(msg("emptied", "<container>", type.display()));
@@ -486,18 +666,13 @@ public final class ContainerManager {
         return fallback;
     }
 
-    private void giveLoot(Player player, Block block, List<ItemStack> loot) {
+    private void giveLoot(Player player, Location loc, List<ItemStack> loot) {
         if (loot.isEmpty()) return;
         Map<Integer, ItemStack> leftovers = player.getInventory().addItem(loot.toArray(new ItemStack[0]));
         if (!leftovers.isEmpty()) {
-            Location loc = block.getLocation().add(0.5, 0.5, 0.5);
-            leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(loc, left));
+            Location dropLoc = loc.clone().add(0.5, 0.5, 0.5);
+            leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(dropLoc, left));
         }
-    }
-
-    private PersistentDataContainer data(Block block) {
-        BlockState state = block.getState();
-        return state instanceof PersistentDataHolder holder ? holder.getPersistentDataContainer() : null;
     }
 
     private boolean depositShards(Player player, int amount) {

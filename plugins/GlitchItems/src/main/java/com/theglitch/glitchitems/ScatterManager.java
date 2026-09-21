@@ -533,6 +533,9 @@ public final class ScatterManager {
             }
 
             int placed = placeNew(world);
+            // Batch-persist ContainerManager's location-keyed container records
+            // (one flush per cycle instead of one write per mark()/clear() call).
+            containers.flush();
 
             long elapsed = System.currentTimeMillis() - start;
             plugin.getLogger().info("[Scatter] Scatter complete in " + elapsed + "ms — cleared=" + cleared + " placed=" + placed + " totalTracked=" + scattered.size() + " world=" + world.getName() + ".");
@@ -703,11 +706,11 @@ public final class ScatterManager {
     private int clearBlock(Block block) {
         if (block == null) return 0;
         try {
-            // Remove PDC first so ContainerManager doesn't think it's still valid
+            // ContainerManager#clear(Location) now owns full visual cleanup —
+            // furniture removal (NexoFurniture.remove) or block->AIR for legacy
+            // types — since container identity moved off block PDC (2026-09-21,
+            // see ContainerManager class javadoc for why).
             containers.clear(block);
-            // Then set to air. Use false to avoid physics updates where possible.
-            // On Folia we are already on the region thread.
-            block.setType(Material.AIR, false);
             return 1;
         } catch (Exception e) {
             plugin.getLogger().log(Level.FINE, "[Scatter] clearBlock failed at " + block.getX() + "," + block.getY() + "," + block.getZ(), e);
@@ -991,8 +994,12 @@ public final class ScatterManager {
             Block ground = target.getWorld().getBlockAt(target.getX(), target.getY() - 1, target.getZ());
             if (!isSolidGround(ground)) return false;
         }
-        // Delegate to ContainerManager — handles PDC typeKey and material
-        boolean ok = containers.mark(target, type);
+        // Delegate to ContainerManager — handles the type/material vs. furniture
+        // placement and location-keyed tracking. Furniture wants a block-centered
+        // location; legacy block types just use the target block's own corner.
+        boolean ok = type.isFurniture()
+                ? containers.mark(target.getLocation().add(0.5, 0, 0.5), type)
+                : containers.mark(target, type);
         if (!ok) {
             plugin.getLogger().warning("[Scatter] ContainerManager.mark failed at " + target.getX() + "," + target.getY() + "," + target.getZ() + " for " + type.name());
         }

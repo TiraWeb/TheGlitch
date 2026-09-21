@@ -40,6 +40,13 @@ public final class GlitchItems extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CombatListener(gearManager, glitchManager), this);
         Bukkit.getPluginManager().registerEvents(new ContainerListener(containerManager), this);
         Bukkit.getPluginManager().registerEvents(new ConsumableListener(gearManager, identifyManager), this);
+        if (Bukkit.getPluginManager().getPlugin("Nexo") != null) {
+            // Furniture-backed containers (Debris/Cache/Rift Vault crate models) —
+            // references Nexo's event class directly, so only register when present.
+            Bukkit.getPluginManager().registerEvents(new ContainerFurnitureListener(containerManager), this);
+        } else {
+            getLogger().warning("Nexo not found — furniture-backed containers (Debris/Cache/Rift Vault) won't be interactable until Nexo is installed.");
+        }
         glitchManager.start();
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -75,6 +82,9 @@ public final class GlitchItems extends JavaPlugin {
     public void onDisable() {
         if (scatterManager != null) {
             try { scatterManager.shutdown(); } catch (Exception e) { getLogger().warning("Error shutting down ScatterManager: " + e.getMessage()); }
+        }
+        if (containerManager != null) {
+            try { containerManager.flush(); } catch (Exception e) { getLogger().warning("Error persisting containers: " + e.getMessage()); }
         }
         if (glitchManager != null) {
             glitchManager.shutdown();

@@ -86,13 +86,22 @@ public record ContainerCommand(GlitchItems plugin, ContainerManager manager, Sca
                     player.sendMessage(Component.text("Look at a block first.", NamedTextColor.RED));
                     return true;
                 }
-                if (!manager.mark(block, type)) {
-                    player.sendMessage(Component.text("That block cannot store container data.", NamedTextColor.RED));
+                // Furniture-backed types (crate models) need an AIR location with
+                // solid ground below — place one block above the targeted (solid)
+                // block, matching how ScatterManager finds furniture spots.
+                boolean ok = type.isFurniture()
+                        ? manager.mark(block.getLocation().add(0.5, 1.0, 0.5), type)
+                        : manager.mark(block, type);
+                if (!ok) {
+                    player.sendMessage(Component.text(
+                            type.isFurniture() ? "Could not place the furniture model there." : "That block cannot store container data.",
+                            NamedTextColor.RED));
                     return true;
                 }
                 player.sendMessage(MM.deserialize(
-                        "<green>Set <white>" + type.display() + "</white> on "
-                                + block.getType() + " at " + block.getX() + "," + block.getY() + "," + block.getZ()));
+                        "<green>Set <white>" + type.display() + "</white> "
+                                + (type.isFurniture() ? "(furniture) above " : "on " + block.getType() + " at ")
+                                + block.getX() + "," + block.getY() + "," + block.getZ()));
             }
             case "clear" -> {
                 if (!(sender instanceof Player player)) {
@@ -128,7 +137,8 @@ public record ContainerCommand(GlitchItems plugin, ContainerManager manager, Sca
                 List<ContainerManager.ContainerType> types = manager.getTypes();
                 sender.sendMessage(Component.text("Container types (" + types.size() + "):", NamedTextColor.GOLD));
                 for (ContainerManager.ContainerType t : types) {
-                    sender.sendMessage(Component.text(" - " + t.name() + " (" + t.material() + ") key="
+                    String visual = t.isFurniture() ? "furniture:" + t.furnitureId() : t.material().toString();
+                    sender.sendMessage(Component.text(" - " + t.name() + " (" + visual + ") key="
                             + (t.requiresKey() ? t.keyId() : "none"), NamedTextColor.GRAY));
                 }
             }

@@ -1,0 +1,68 @@
+# The Glitch — Nexo furniture: custom loot-container crate models, ported from
+# the "Loot Models" ItemsAdder elemental-crates pack (models kept byte-identical,
+# just renamed and re-namespaced under loot_crates:). Applied to 3 of our 4
+# ContainerManager types (see GlitchItems config.yml containers.types.*.furniture-id):
+# fire_crate -> debris, earth_crate -> cache, darkness_crate -> rift_vault.
+# Vault keeps its vanilla BLUE_SHULKER_BOX block (no matching model chosen).
+#
+# These are never given to players as items — placement is exclusively via
+# NexoFurniture.place() from ContainerManager/ScatterManager, and the furniture
+# entity's right-click is intercepted by ContainerFurnitureListener (which denies
+# Nexo's own storage GUI and runs our loot-roll logic instead).
+loot_crates_fire:
+  itemname: "<gray>Debris Crate</gray>"
+  material: PAPER
+  Pack:
+    model: loot_crates:item/fire_crate
+  Mechanics:
+    furniture:
+      limited_placing:
+        roof: false
+        floor: true
+        wall: false
+      rotatable: true
+      restricted_rotation: NONE
+      block_sounds:
+        place_sound: block.wood.place
+        break_sound: block.wood.break
+      hitbox:
+        barriers:
+        - 0,0,0
+loot_crates_earth:
+  itemname: "<green>Loot Cache Crate</green>"
+  material: PAPER
+  Pack:
+    model: loot_crates:item/earth_crate
+  Mechanics:
+    furniture:
+      limited_placing:
+        roof: false
+        floor: true
+        wall: false
+      rotatable: true
+      restricted_rotation: NONE
+      block_sounds:
+        place_sound: block.wood.place
+        break_sound: block.wood.break
+      hitbox:
+        barriers:
+        - 0,0,0
+loot_crates_darkness:
+  itemname: "<light_purple>Rift Vault Crate</light_purple>"
+  material: PAPER
+  Pack:
+    model: loot_crates:item/darkness_crate
+  Mechanics:
+    furniture:
+      limited_placing:
+        roof: false
+        floor: true
+        wall: false
+      rotatable: true
+      restricted_rotation: NONE
+      block_sounds:
+        place_sound: block.wood.place
+        break_sound: block.wood.break
+      hitbox:
+        barriers:
+        - 0,0,0
