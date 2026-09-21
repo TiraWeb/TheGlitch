@@ -442,14 +442,11 @@ public final class HudManager {
             if (stacks >= 5 && tickCounter % 2 == 0) {
                 // Subtle glow flicker: slightly different shade on alternate ticks
                 String alt = stacks >= max ? "<gradient:#FF3B3B:#FF6AFF>" : "<light_purple>";
-                stacksMm = alt + "Residual:</gradient> " + starLine + " <white>" + stacks + "/" + max + "</white>";
-                // Use alt color for value part
-                stacksMm = alt + "Residual:</gradient> " + starLine + " <white>" + stacks + "/" + max + "</white>";
+                stacksMm = alt + "Residual: " + starLine + " <white>" + stacks + "/" + max + "</white>";
+            } else if (baseColor.startsWith("<gray")) {
+                stacksMm = "<gray>Residual:</gray> " + starLine + " <white>" + stacks + "/" + max + "</white>";
             } else {
-                stacksMm = baseColor + "Residual:</gradient> " + starLine + " <white>" + stacks + "/" + max + "</white>";
-                if (baseColor.startsWith("<gray")) {
-                    stacksMm = "<gray>Residual:</gray> " + starLine + " <white>" + stacks + "/" + max + "</white>";
-                }
+                stacksMm = baseColor + "Residual: " + starLine + " <white>" + stacks + "/" + max + "</white>";
             }
             out.add(stacksMm);
             out.add("<dark_gray>+" + dmg + "% dmg  +" + payout + "% payout</dark_gray>");

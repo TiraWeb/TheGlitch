@@ -3,10 +3,12 @@ package com.theglitch.glitchitems;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.nexomc.nexo.api.NexoFurniture;
+import com.nexomc.nexo.mechanics.furniture.FurnitureMechanic;
 import com.theglitch.common.NexoUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -367,6 +369,62 @@ public final class ContainerManager {
         }
         for (Location loc : toClear) clear(loc);
         return toClear.size();
+    }
+
+    /**
+     * Removes any Nexo furniture entity in {@code chunk} that matches one of
+     * our container furniture IDs but isn't in {@link #byEntity}.
+     * <p>
+     * {@link #clearAll} and {@link #clear} only remove furniture this
+     * manager still has a record of — but earlier {@code NexoFurniture.remove
+     * (Location)} calls (before containers were tracked by entity UUID) could
+     * silently fail to find their target if the entity's actual spawn
+     * Location had drifted from the one it was recorded under (see
+     * {@link ContainerRecord#entityUuid} javadoc), leaving real, untracked
+     * furniture entities behind in the world with no record pointing at them
+     * at all. This sweep finds those independently of any bookkeeping, by
+     * asking the world itself what furniture is actually there (2026-09-21
+     * bug report: "heck ton loot chests everywhere... most of them leftover
+     * from previous runs"). Called on chunk load and via
+     * {@code /glitchcontainers sweep} for an immediate pass over whatever's
+     * currently loaded.
+     *
+     * @return number of orphan entities removed
+     */
+    public int sweepOrphans(Chunk chunk) {
+        if (chunk == null || furnitureTypes.isEmpty()) return 0;
+        int removed = 0;
+        for (Entity entity : chunk.getEntities()) {
+            if (!(entity instanceof ItemDisplay) || byEntity.containsKey(entity.getUniqueId())) continue;
+            String furnitureId;
+            try {
+                FurnitureMechanic mechanic = NexoFurniture.furnitureMechanic(entity);
+                furnitureId = mechanic == null ? null : mechanic.getItemID();
+            } catch (Exception e) {
+                continue;
+            }
+            if (furnitureId == null || !furnitureTypes.containsKey(furnitureId)) continue;
+            try {
+                NexoFurniture.remove(entity);
+                removed++;
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.FINE, "[Containers] Failed to remove orphan furniture '" + furnitureId + "'", e);
+            }
+        }
+        return removed;
+    }
+
+    /** Sweeps every currently-loaded chunk in {@link #enabledWorlds} — see {@link #sweepOrphans(Chunk)}. */
+    public int sweepLoadedChunks() {
+        int removed = 0;
+        for (String worldName : enabledWorlds) {
+            World world = Bukkit.getWorld(worldName);
+            if (world == null) continue;
+            for (Chunk chunk : world.getLoadedChunks()) {
+                removed += sweepOrphans(chunk);
+            }
+        }
+        return removed;
     }
 
     public boolean isContainer(Block block) {

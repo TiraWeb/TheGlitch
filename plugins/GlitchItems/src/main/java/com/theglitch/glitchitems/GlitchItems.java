@@ -44,6 +44,7 @@ public final class GlitchItems extends JavaPlugin {
             // Furniture-backed containers (Debris/Cache/Rift Vault crate models) —
             // references Nexo's event class directly, so only register when present.
             Bukkit.getPluginManager().registerEvents(new ContainerFurnitureListener(containerManager), this);
+            Bukkit.getPluginManager().registerEvents(new ContainerOrphanSweepListener(containerManager), this);
         } else {
             getLogger().warning("Nexo not found — furniture-backed containers (Debris/Cache/Rift Vault) won't be interactable until Nexo is installed.");
         }

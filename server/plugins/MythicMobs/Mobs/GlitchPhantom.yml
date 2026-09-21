@@ -13,6 +13,7 @@ GlitchPhantom:
   Damage: 8
   Options:
     MovementSpeed: 0.35
+    Silent: true
     AlwaysShowName: true
     Persistent: false
     Despawn: true

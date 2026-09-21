@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * /glitchcontainers — mark and manage in-world loot containers.
- * Usage: /glitchcontainers set &lt;type&gt; | clear | info | types | reload | scatter | scatterinfo
+ * Usage: /glitchcontainers set &lt;type&gt; | clear | info | types | reload | scatter | scatterinfo | sweep
  * <p>
  * The {@code scatter} sub-command triggers the automatic RED-world scatter
  * ({@link ScatterManager#scatterNow()}) that normally fires every 30m and
@@ -34,7 +34,7 @@ public record ContainerCommand(GlitchItems plugin, ContainerManager manager, Sca
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             sender.sendMessage(Component.text(
-                    "Usage: /glitchcontainers <set <type>|clear|info|types|reload|scatter|scatterinfo>", NamedTextColor.RED));
+                    "Usage: /glitchcontainers <set <type>|clear|info|types|reload|scatter|scatterinfo|sweep>", NamedTextColor.RED));
             return true;
         }
 
@@ -146,8 +146,17 @@ public record ContainerCommand(GlitchItems plugin, ContainerManager manager, Sca
                 plugin.reloadPlugin();
                 sender.sendMessage(Component.text("GlitchItems reloaded.", NamedTextColor.GREEN));
             }
+            case "sweep" -> {
+                // Removes orphaned furniture (leftover from before entity-UUID
+                // tracking, or any other desync) in whatever chunks are
+                // currently loaded — i.e. wherever players actually are. See
+                // ContainerManager#sweepOrphans javadoc.
+                int removed = manager.sweepLoadedChunks();
+                sender.sendMessage(Component.text("Swept loaded chunks — removed " + removed + " orphaned container(s).",
+                        removed > 0 ? NamedTextColor.GREEN : NamedTextColor.GRAY));
+            }
             default -> sender.sendMessage(Component.text(
-                    "Usage: /glitchcontainers <set <type>|clear|info|types|reload|scatter|scatterinfo>", NamedTextColor.RED));
+                    "Usage: /glitchcontainers <set <type>|clear|info|types|reload|scatter|scatterinfo|sweep>", NamedTextColor.RED));
         }
         return true;
     }

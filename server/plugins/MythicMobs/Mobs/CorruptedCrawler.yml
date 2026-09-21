@@ -14,6 +14,7 @@ CorruptedCrawler:
     - players
   Options:
     MovementSpeed: 0.25
+    Silent: true
     AlwaysShowName: true
     Persistent: false
     Despawn: true
