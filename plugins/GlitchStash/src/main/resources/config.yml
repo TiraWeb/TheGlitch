@@ -111,11 +111,16 @@ auto-extract:
     # Eleria's validated points across several live cycles clustered tightly in
     # (~100-330, ~100-180) — a wider box pulled in more ocean/bad terrain and
     # dropped the hit rate to 0/3, so this stays narrow rather than matching
-    # Horizons' wider box.
+    # Horizons' wider box. Its flat/buildable ground is concentrated in that one
+    # small pocket rather than spread across the box (confirmed via RCON terrain
+    # scan, 2026-09-21), which makes the shared 400-block min-separation
+    # physically impossible to satisfy for a 2nd/3rd point — overridden down to
+    # fit 3 points within the pocket without them overlapping.
     glitch_red_eleria:
       center-x: 250
       center-z: 150
       radius: 300
+      min-separation: 100
     glitch_red_horizons:
       center-x: 150
       center-z: 100

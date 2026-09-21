@@ -72,7 +72,13 @@ public final class DynamicExtractionManager {
         centerX = plugin.getConfig().getInt(overridePrefix + "center-x", plugin.getConfig().getInt("auto-extract.dynamic.center-x", 1000));
         centerZ = plugin.getConfig().getInt(overridePrefix + "center-z", plugin.getConfig().getInt("auto-extract.dynamic.center-z", 1000));
         radius = clamp(plugin.getConfig().getInt(overridePrefix + "radius", plugin.getConfig().getInt("auto-extract.dynamic.radius", 1000)), 16, 100000);
-        minSeparation = clamp(plugin.getConfig().getInt("auto-extract.dynamic.min-separation", 400), 0, 100000);
+        // Per-world override — a valid map may have its flat/buildable ground
+        // concentrated in one small pocket rather than spread across the whole
+        // land box, making the shared 400-block separation physically impossible
+        // to satisfy for a 2nd/3rd point (confirmed for glitch_red_eleria via
+        // repeated cycles all landing within ~250 blocks of each other, 2026-09-21).
+        minSeparation = clamp(plugin.getConfig().getInt(overridePrefix + "min-separation",
+                plugin.getConfig().getInt("auto-extract.dynamic.min-separation", 400)), 0, 100000);
         maxSurfaceY = clamp(plugin.getConfig().getInt("auto-extract.dynamic.max-surface-y", 100), 1, 320);
         captureTimeSeconds = clamp(plugin.getConfig().getInt("auto-extract.dynamic.capture-time-seconds", 30), 1, 3600);
         radiusBlocks = clamp(plugin.getConfig().getInt("auto-extract.dynamic.radius-blocks", 5), 1, 64);
