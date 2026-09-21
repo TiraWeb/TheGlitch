@@ -90,8 +90,16 @@ public final class SpotPicker {
             int x = spec.centerX() + rand.nextInt(-spec.radius(), spec.radius() + 1);
             int z = spec.centerZ() + rand.nextInt(-spec.radius(), spec.radius() + 1);
 
-            // Sync chunk load — Purpur (no Folia region threads in this module's cycle path)
+            // Reject ungenerated chunks outright — never force generation here.
+            // isChunkGenerated() is a cheap region-file existence check; getChunkAt()
+            // on an ungenerated chunk instead SYNCHRONOUSLY GENERATES it on the main
+            // thread (carvers/biomes/etc), which is fine on glitch_red (fully
+            // Chunky-pre-generated within its play area) but froze the server for
+            // 30+ seconds per attempt on the newly-imported glitch_red_eleria/
+            // glitch_red_horizons maps, which aren't pre-generated this far from
+            // their own spawn (found via watchdog thread-dump, 2026-09-21).
             try {
+                if (!world.isChunkGenerated(x >> 4, z >> 4)) continue;
                 world.getChunkAt(x >> 4, z >> 4);
             } catch (Exception e) {
                 continue;
