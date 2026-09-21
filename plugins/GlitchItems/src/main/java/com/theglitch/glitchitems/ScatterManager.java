@@ -593,6 +593,23 @@ public final class ScatterManager {
             int totalPlaced = 0;
             for (World world : worlds) {
                 WorldBounds bounds = boundsFor(world);
+                if (clearPrevious) {
+                    // Safety net on top of clearPrevious() above: that call
+                    // only clears positions this ScatterManager instance still
+                    // remembers in scattered.json, which can desync from what
+                    // ContainerManager actually has tracked (see
+                    // ContainerManager#clearAll javadoc — this is the fix for
+                    // orphaned containers surviving a clear and piling up
+                    // cycle after cycle). Clearing straight from
+                    // ContainerManager's own records first guarantees this
+                    // world starts every cycle empty no matter how the two
+                    // ever drifted apart.
+                    int orphans = containers.clearAll(world.getName());
+                    if (orphans > 0) {
+                        cleared += orphans;
+                        plugin.getLogger().warning("[Scatter] Cleared " + orphans + " orphaned container(s) in " + world.getName() + " that scattered.json had lost track of.");
+                    }
+                }
                 int placed = placeNew(world, bounds);
                 totalPlaced += placed;
                 // Persist after every world, not once at the very end of the

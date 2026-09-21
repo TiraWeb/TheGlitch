@@ -11,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Rotation;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
@@ -337,6 +338,35 @@ public final class ContainerManager {
 
     public ContainerType typeOf(Block block) {
         return block == null ? null : typeOf(block.getLocation());
+    }
+
+    /**
+     * Clears every container currently tracked in {@code worldName}, straight
+     * from {@link #byLocation} — independent of {@link ScatterManager}'s own
+     * {@code scattered.json} position list. That list is a second, separate
+     * piece of bookkeeping that can desync from this one (observed live
+     * 2026-09-21: a scatter cycle interrupted mid-run left {@code
+     * scattered.json} empty while {@code containers.json} still held 532
+     * stale entries — {@code clearPrevious()}'s position-list clear had
+     * nothing to clear, so those 532 were never removed and just accumulated
+     * under a fresh 1248 the next cycle placed on top, i.e. the "too much
+     * loot in one place" report). {@link #byLocation} is the actual
+     * persisted state of what's placed, so clearing straight from it can't
+     * miss orphans regardless of how {@code scattered.json} drifted.
+     *
+     * @return number of containers cleared
+     */
+    public int clearAll(String worldName) {
+        if (worldName == null) return 0;
+        List<Location> toClear = new ArrayList<>();
+        for (ContainerRecord record : byLocation.values()) {
+            if (!worldName.equals(record.world)) continue;
+            World w = Bukkit.getWorld(record.world);
+            if (w == null) continue;
+            toClear.add(new Location(w, record.x, record.y, record.z));
+        }
+        for (Location loc : toClear) clear(loc);
+        return toClear.size();
     }
 
     public boolean isContainer(Block block) {
