@@ -198,14 +198,38 @@ world's `mv setspawn` coordinate is what players actually land on.
   download's edge. Fix: bounded Chunky pre-generation (square, centered on each
   world's `dynamic-overrides` box + margin — 450 for Eleria, 750 for Horizons) using
   the default vanilla generator for the gaps, run live via RCON and folded into
-  `setup-worlds.sh` for future re-provisioning. This also fixes the "no mobs / no
+  `setup-worlds.sh` for future re-provisioning. This also addresses the "no mobs / no
   chests" reports: vanilla generation includes structures (mineshafts, ruins,
   villages) with vanilla loot chests, which the original small downloaded footprint
-  mostly didn't have room for. Separately, `server/plugins/MythicMobs/randomspawns/
-  RedZone_RandomSpawns.yml` — a server-side config file, not part of the Maven
-  build — had been edited in the repo to add the two new worlds' names but was never
-  actually copied to the live server, so MythicMobs had been spawning in `glitch_red`
-  only this whole time; fixed by deploying it and running `/mm reload`.
+  mostly didn't have room for (confirmed via `/locate structure minecraft:mineshaft`
+  finding one in each world post-pregen). Separately, and more directly responsible
+  for "no mobs": `server/plugins/MythicMobs/randomspawns/RedZone_RandomSpawns.yml` —
+  a server-side config file, not part of the Maven build — had been edited in the
+  repo to add the two new worlds' names but was never actually copied to the live
+  server, so MythicMobs had been spawning in `glitch_red` only this whole time; fixed
+  by deploying it and running `/mm reload`. The same live/repo drift was found and
+  fixed in six other plugins' world-gating lists (GlitchDeathRules, GlitchEvents,
+  GlitchHealthBar, GlitchInsurance, GlitchLoot, GlitchItems×3) — their repo configs
+  had been extended to the 3 worlds but the live on-disk files, having the same key
+  present with the old list, don't benefit from the jar-bundled-default fallback that
+  saved the newly-*renamed* keys (`red-worlds` etc.) elsewhere; patched live directly.
+- **Eleria's point count specifically, after the above:** pre-generating its box did
+  *not* raise the count (still ~1/3) — ruling out ungenerated chunks as the (sole)
+  cause. Direct RCON relief measurements (9-point grid around a candidate spot) found
+  small-scale unevenness of 3+ blocks almost everywhere sampled, exceeding
+  `SpotPicker`'s hardcoded ±2 flatness tolerance — that tolerance is now configurable
+  (`auto-extract.dynamic.flatness-tolerance`, default raised 2→4, applies to all
+  worlds and is strictly more permissive) and `min-separation` is now overridable
+  per-world too (Eleria's flat spots cluster within ~250 blocks of each other, making
+  the shared 400-block separation impossible to satisfy for a 2nd/3rd point — Eleria's
+  set to 100). Even with both changes deployed, Eleria still lands ~1-2/3: its
+  generated terrain is genuinely rolling almost everywhere sampled, not sparse or
+  misconfigured. **Recommended next step, not done here:** have an op fly Eleria,
+  find one or two genuinely flat spots, place a VelKoth arena there
+  (`koth create <name> ...`), and add its name to `auto-extract.dynamic.fallback-arenas`
+  — `SpotPicker.pick()` already fills in from that list whenever random validation
+  comes up short, which is exactly this situation and needs a human's eyes on the
+  map, not more RCON coordinate guessing.
 - This was an automated RCON scan (binary-searched top solid/liquid block, no player
   client) — a full visual walkthrough by an op is still recommended before treating
   either new map as fully verified.
