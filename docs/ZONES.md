@@ -185,14 +185,27 @@ world's `mv setspawn` coordinate is what players actually land on.
   ungenerated chunks outright (`SpotPicker.pickRandom`, `isChunkGenerated` check)
   instead of forcing generation, and by adding per-world `auto-extract.dynamic-overrides`
   (GlitchStash config) so each world's land box can be centered on its own actual
-  generated terrain rather than the shared default. After tuning: `glitch_red` and
-  `glitch_red_horizons` both reliably validate 3/3 points per cycle;
-  `glitch_red_eleria` consistently lands around 1/3 regardless of the override box
-  tried (250,150 r300 / 350,200 r400 / r650) — its terrain in the explored area is
-  genuinely sparse for the flatness+400-block-separation constraints, not a config
-  bug. This degrades gracefully (fewer points, not a crash) but finding a better box
-  for Eleria likely needs an actual in-game look at the map rather than more RCON
-  guessing.
+  generated terrain rather than the shared default.
+- **Correction (2026-09-21, later same day):** the low Eleria point count (and the
+  near-total absence of MythicMobs/loot chests in both new worlds) was
+  **misdiagnosed** as terrain sparsity. The real cause: imported map saves only ship
+  the small footprint the download itself covered — everything outside it is
+  genuinely ungenerated on disk, and `SpotPicker` (correctly, post-watchdog-fix)
+  refuses to generate chunks live, so most random attempts inside the configured box
+  landed on ungenerated chunks and were silently skipped. `setup-worlds.sh`
+  deliberately skipped Chunky pre-generation for imported red worlds ("they already
+  have terrain") — that assumption was wrong for anything past the original
+  download's edge. Fix: bounded Chunky pre-generation (square, centered on each
+  world's `dynamic-overrides` box + margin — 450 for Eleria, 750 for Horizons) using
+  the default vanilla generator for the gaps, run live via RCON and folded into
+  `setup-worlds.sh` for future re-provisioning. This also fixes the "no mobs / no
+  chests" reports: vanilla generation includes structures (mineshafts, ruins,
+  villages) with vanilla loot chests, which the original small downloaded footprint
+  mostly didn't have room for. Separately, `server/plugins/MythicMobs/randomspawns/
+  RedZone_RandomSpawns.yml` — a server-side config file, not part of the Maven
+  build — had been edited in the repo to add the two new worlds' names but was never
+  actually copied to the live server, so MythicMobs had been spawning in `glitch_red`
+  only this whole time; fixed by deploying it and running `/mm reload`.
 - This was an automated RCON scan (binary-searched top solid/liquid block, no player
   client) — a full visual walkthrough by an op is still recommended before treating
   either new map as fully verified.

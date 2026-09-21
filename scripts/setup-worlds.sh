@@ -308,6 +308,49 @@ else
   chown "${MC_USER}:${MC_USER}" "${PREGEN_MARKER}" 2>/dev/null || true
 fi
 
+# --- Imported red worlds: bounded pre-generation around the extraction box ---
+# Eleria/Horizons only ship the small footprint the source map download
+# covered — everything outside it is ungenerated. SpotPicker (GlitchStash)
+# deliberately never force-generates chunks live (that's what caused the
+# 2026-09-21 watchdog freeze/crash — see docs/STATUS.md), so any ungenerated
+# chunk inside the dynamic-extraction land box is just permanently
+# unavailable to it, which is what was actually causing Eleria to validate
+# only ~1/3 extraction points per cycle (previously misdiagnosed as terrain
+# sparsity) and both new worlds to have almost no naturally-generated
+# structures (mineshafts/villages/ruins) — i.e. no loot chests. Pre-generating
+# a padded box around each world's dynamic-overrides center/radius (from
+# plugins/GlitchStash/src/main/resources/config.yml, auto-extract.dynamic-
+# overrides) with the default vanilla generator fills the gaps with normal
+# terrain, including vanilla structures and their loot. Small boxes — seconds,
+# not minutes — so no background-job messaging needed.
+declare -A IMPORTED_RED_PREGEN_CENTER=(
+  [glitch_red_eleria]="250 150"
+  [glitch_red_horizons]="150 100"
+)
+declare -A IMPORTED_RED_PREGEN_RADIUS=(
+  [glitch_red_eleria]=450
+  [glitch_red_horizons]=750
+)
+for RW in "${RED_WORLDS[@]:1}"; do
+  RW_MARKER="${DIM_DIR}/${RW}/.pregen-started"
+  RW_REGION="${DIM_DIR}/${RW}/region"
+  rw_mca_count=$(find "${RW_REGION}" -name '*.mca' 2>/dev/null | wc -l)
+  if [[ -f "${RW_MARKER}" ]]; then
+    log "${RW}: extraction-box pre-generation already done — skipping (delete ${RW_MARKER} to redo)"
+    continue
+  fi
+  center="${IMPORTED_RED_PREGEN_CENTER[${RW}]:-1000 1000}"
+  radius="${IMPORTED_RED_PREGEN_RADIUS[${RW}]:-1000}"
+  log "${RW}: pre-generating extraction box (center ${center}, radius ${radius}, was ${rw_mca_count} region files)"
+  mc "chunky world ${RW}"        >/dev/null
+  mc "chunky shape square"       >/dev/null
+  mc "chunky center ${center}"   >/dev/null
+  mc "chunky radius ${radius}"   >/dev/null
+  mc "chunky start"              >/dev/null
+  touch "${RW_MARKER}" 2>/dev/null || true
+  chown "${MC_USER}:${MC_USER}" "${RW_MARKER}" 2>/dev/null || true
+done
+
 cat <<'EOF'
 
 ============================================================
