@@ -1,0 +1,71 @@
+# The Glitch — MythicMobs: Glitch Reaver (Tier 3.5 mini-boss, new 2026-09-21)
+# Custom model: "endermauler" rig (EndMobsVol1 pack) kept near-verbatim — the
+# pack's most polished asset (boss bar, segmented tail render, teleport-maul,
+# scream-of-ender AOE). A rare standing Red Zone threat, not a scheduled
+# server event like GlitchCore/TheGlitchKing. Resonates Hollow.
+# Design: GAME_DESIGN §2 (new, between T3 elite and T4 boss),
+# Resonance: ITEM_SYSTEM §5.
+
+GlitchReaver:
+  Type: VINDICATOR
+  Display: '<bold><light_purple>The Glitch Reaver'
+  Health: 350
+  Damage: 16
+  Faction: GLITCH
+  BossBar:
+    Enabled: true
+    Title: "<light_purple>The Glitch Reaver"
+    Range: 50
+    Color: PURPLE
+    Style: SEGMENTED_10
+  DamageModifiers:
+    - SUFFOCATION 0
+    - FALL 0
+  Modules:
+    ThreatTable: true
+  AIGoalSelectors:
+    - clear
+    - meleeattack
+    - movetowardstarget
+    - randomstroll
+  AITargetSelectors:
+    - clear
+    - attacker
+    - players
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.4
+    FollowRange: 32
+    KnockbackResistance: 1
+    Silent: true
+    Persistent: true
+    Despawn: true
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    PreventBlockDestruction: true
+    MaxCombatDistance: 32
+    ScoreboardTags: [res_hollow]
+    ShowHealth: true
+  Skills:
+    - skill{s=CancelEvent} @self ~onAttack
+    - model{mid=endermauler;n=false;step=1;usm=true} @self ~onSpawn
+    - model{mid=endermauler;n=false;step=1;usm=true} @self ~onLoad
+    - skill{s=GlitchReaver_IdleTeleport} @self ~onTimer:400
+    - randomskill{skills=GlitchReaver_RightSlash,GlitchReaver_LeftSlash,GlitchReaver_DashBiteStartup,GlitchReaver_Scream,GlitchReaver_TeleportMaul,GlitchReaver_CloseSlashes,GlitchReaver_CloseSlashes} @self ~onTimer:20
+    - skill{s=GlitchReaver_AggroSound} @self ~onTimer:1000
+    - sound{s=tugkandeman.ender_idle_watcher;v=2;p=1} @self ~onTimer:600
+    - sound{s=tugkandeman.endermauler_hurt;v=2;p=1} @self ~onDamaged
+    - stopsound{s=tugkandeman.endermauler_scream} @PIR{r=50} ~onDeath
+    - stopsound{s=tugkandeman.ender_ringing} @PIR{r=50} ~onDeath
+    - sound{s=tugkandeman.endermauler_death;v=2;p=1} @self ~onDeath
+    # Segmented tail renderer — endermauler's signature visual, registered once per spawn.
+    - segment{m=endermauler;angle=50;extend=0.25}
+    - segment{m=endermauler;p=root1;bounded=false}
+    - segment{m=endermauler;p=lace;em=false;roll=true;angle=80;extend=0.1}
+    - renderinit{m=endermauler}
+  Drops:
+    - GlitchReaverLoot

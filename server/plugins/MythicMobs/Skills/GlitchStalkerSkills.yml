@@ -1,0 +1,207 @@
+# The Glitch — MythicMobs Skills: Glitch Stalker
+# Ported from EndMobsVol1/skills/end_mobs_skills.yml ("ender_crawler"), renamed
+# and rescaled from ~10 dmg/hit down to Tier 2 (~6 dmg/hit).
+
+GlitchStalker_Chase:
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=1.5;type=WALKING} @self
+    - defaultstate{model=ender_crawler;type=walk;state=chase} @self
+
+GlitchStalker_Walk:
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=1;type=WALKING} @self
+    - defaultstate{model=ender_crawler;type=walk;state=walk} @self
+
+GlitchStalker_FangAttack:
+  Conditions:
+    - incombat true
+    - targetwithin{d=4} true
+    - hasaura{n=GlitchStalkerFangAttack} false
+    - hasaura{n=GlitchStalkerHornAttack} false
+    - hasaura{n=GlitchStalkerJumpAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchStalkerFangAttack;duration=40} @self
+    - state{model=ender_crawler;state=fang_attack} @self
+    - sound{s=tugkandeman.ender_crawler_fang;v=2;p=1} @self
+    - delay 11
+    - aura{auraName=GlitchStalkerFangAttackD;duration=5;oT=GlitchStalker_FangAttack_Damage} @self
+    - delay 29
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchStalker_FangAttack_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=6} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=ender_crawler;pid=hurtbox}
+
+GlitchStalker_HornAttack:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=0.5} true
+    - targetwithin{d=4} true
+    - hasaura{n=GlitchStalkerFangAttack} false
+    - hasaura{n=GlitchStalkerHornAttack} false
+    - hasaura{n=GlitchStalkerJumpAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchStalkerHornAttack;duration=50} @self
+    - state{model=ender_crawler;state=horn_attack} @self
+    - sound{s=tugkandeman.ender_crawler_horn;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - lunge{v=1} @forward{f=2.5;lockpitch=true}
+    - delay 2
+    - aura{auraName=GlitchStalkerHornAttackD;duration=5;oT=GlitchStalker_HornAttack_Damage} @self
+    - delay 38
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchStalker_HornAttack_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=6} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=ender_crawler;pid=hurtbox}
+
+# Jump attack — distance-tiered dispatcher (leaping bite that closes distance)
+GlitchStalker_JumpAttack:
+  Conditions:
+    - incombat true
+    - (targetnotwithin{d=12} && targetwithin{d=14}) CastInstead GlitchStalker_JumpAttack_1
+    - (targetnotwithin{d=14} && targetwithin{d=16}) CastInstead GlitchStalker_JumpAttack_2
+    - (targetnotwithin{d=16} && targetwithin{d=18}) CastInstead GlitchStalker_JumpAttack_3
+    - (targetnotwithin{d=18} && targetwithin{d=20}) CastInstead GlitchStalker_JumpAttack_4
+  Skills:
+    - CancelEvent @self
+
+GlitchStalker_JumpAttack_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=6} ];hnp=true;hp=true;hR=2;vR=2;i=1;drawhitbox=false} @ModelPart{mid=ender_crawler;pid=hurtbox}
+
+GlitchStalker_JumpAttack_1:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=12} true
+    - targetwithin{d=14} true
+    - hasaura{n=GlitchStalkerFangAttack} false
+    - hasaura{n=GlitchStalkerHornAttack} false
+    - hasaura{n=GlitchStalkerJumpAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchStalkerJumpAttack;duration=70} @self
+    - state{model=ender_crawler;state=jump_attack} @self
+    - sound{s=tugkandeman.ender_crawler_jump;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 1
+    - projectile{sE=false;syo=0;tyo=0;vO=0.6;g=1.5;d=22;v=20;onTick=[ - teleport @ProjectileForward{f=-1.3} ];hnp=true} @forward{f=13}
+    - delay 20
+    - aura{auraName=GlitchStalkerJumpAttackD;d=5;oT=GlitchStalker_JumpAttack_Damage} @self
+    - delay 39
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchStalker_JumpAttack_2:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=14} true
+    - targetwithin{d=16} true
+    - hasaura{n=GlitchStalkerFangAttack} false
+    - hasaura{n=GlitchStalkerHornAttack} false
+    - hasaura{n=GlitchStalkerJumpAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchStalkerJumpAttack;duration=70} @self
+    - state{model=ender_crawler;state=jump_attack} @self
+    - sound{s=tugkandeman.ender_crawler_jump;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 1
+    - projectile{sE=false;syo=0;tyo=0;vO=0.65;g=1.45;d=22;v=20.5;onTick=[ - teleport @ProjectileForward{f=-1.2} ];hnp=true} @forward{f=15}
+    - delay 20
+    - aura{auraName=GlitchStalkerJumpAttackD;d=5;oT=GlitchStalker_JumpAttack_Damage} @self
+    - delay 39
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchStalker_JumpAttack_3:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=16} true
+    - targetwithin{d=18} true
+    - hasaura{n=GlitchStalkerFangAttack} false
+    - hasaura{n=GlitchStalkerHornAttack} false
+    - hasaura{n=GlitchStalkerJumpAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchStalkerJumpAttack;duration=70} @self
+    - state{model=ender_crawler;state=jump_attack} @self
+    - sound{s=tugkandeman.ender_crawler_jump;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 1
+    - projectile{sE=false;syo=0;tyo=0;vO=0.7;g=1.4;d=22;v=21;onTick=[ - teleport @ProjectileForward{f=-1.2} ];hnp=true} @forward{f=17}
+    - delay 20
+    - aura{auraName=GlitchStalkerJumpAttackD;d=5;oT=GlitchStalker_JumpAttack_Damage} @self
+    - delay 39
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchStalker_JumpAttack_4:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=18} true
+    - targetwithin{d=20} true
+    - hasaura{n=GlitchStalkerFangAttack} false
+    - hasaura{n=GlitchStalkerHornAttack} false
+    - hasaura{n=GlitchStalkerJumpAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchStalkerJumpAttack;duration=70} @self
+    - state{model=ender_crawler;state=jump_attack} @self
+    - sound{s=tugkandeman.ender_crawler_jump;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 1
+    - projectile{sE=false;syo=0;tyo=0;vO=0.75;g=1.35;d=22;v=21.5;onTick=[ - teleport @ProjectileForward{f=-1.2} ];hnp=true} @forward{f=19}
+    - delay 20
+    - aura{auraName=GlitchStalkerJumpAttackD;d=5;oT=GlitchStalker_JumpAttack_Damage} @self
+    - delay 39
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchStalker_AggroSound:
+  Conditions:
+    - incombat true
+  Skills:
+    - sound{s=tugkandeman.ender_aggro;v=2;p=1} @self
+
+GlitchStalker_IdleSound1:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_1;v=2;p=1.1} @self
+
+GlitchStalker_IdleSound2:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_2;v=2;p=1.1} @self
+
+GlitchStalker_IdleSound3:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_3;v=2;p=1.1} @self

@@ -1,0 +1,305 @@
+# The Glitch — MythicMobs Skills: Glitch Reaver (new mini-boss, T3.5)
+# Ported from EndMobsVol1/skills/end_mobs_skills.yml ("endermauler") near-
+# verbatim — this is the pack's most polished asset (boss bar, segmented tail
+# render, teleport-maul) and is kept close to its source design rather than
+# folded into an existing mob slot. Damage kept at the source's own 10/hit
+# (it hits many times per combo) with Health set high in the mob file instead.
+
+GlitchReaver_IdleTeleport:
+  Conditions:
+    - incombat false
+    - chance{c=0.3} true
+  Skills:
+    - CancelEvent @self
+    - summon{type=GlitchVoidwake;amount=1} @self
+    - partvis{model=endermauler;p=endermauler;v=false;child=true} @self
+    - delay 1
+    - teleport{r=20;sv=2} @self
+    - sound{s=tugkandeman.endermauler_teleport2;v=2;p=1} @self
+    - delay 1
+    - partvis{model=endermauler;p=endermauler;v=true;child=true} @self
+
+GlitchReaver_RightSlash:
+  Cooldown: 8
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=1} true
+    - targetwithin{d=6} true
+    - hasaura{n=GlitchReaverRightSlash} false
+    - hasaura{n=GlitchReaverLeftSlash} false
+    - hasaura{n=GlitchReaverDashBiteStartup} false
+    - hasaura{n=GlitchReaverDashBite} false
+    - hasaura{n=GlitchReaverScream} false
+    - hasaura{n=GlitchReaverTeleportMaul} false
+    - hasaura{n=GlitchReaverCloseSlashes} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchReaverRightSlash;duration=50} @self
+    - state{model=endermauler;state=right_slash} @self
+    - sound{s=tugkandeman.endermauler_rightslash;v=2;p=1} @self
+    - delay 9
+    - propel{v=2} @target
+    - lockmodel @self
+    - delay 3
+    - aura{auraName=GlitchReaverRightSlashD;duration=5;oT=GlitchReaver_RightSlash_Damage} @self
+    - delay 38
+    - skill{s=GlitchReaver_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchReaver_RightSlash_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=endermauler;pid=hurtbox}
+
+GlitchReaver_LeftSlash:
+  Cooldown: 8
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=1} true
+    - targetwithin{d=6} true
+    - hasaura{n=GlitchReaverRightSlash} false
+    - hasaura{n=GlitchReaverLeftSlash} false
+    - hasaura{n=GlitchReaverDashBiteStartup} false
+    - hasaura{n=GlitchReaverDashBite} false
+    - hasaura{n=GlitchReaverScream} false
+    - hasaura{n=GlitchReaverTeleportMaul} false
+    - hasaura{n=GlitchReaverCloseSlashes} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchReaverLeftSlash;duration=50} @self
+    - state{model=endermauler;state=left_slash} @self
+    - sound{s=tugkandeman.endermauler_rightslash;v=2;p=1} @self
+    - delay 9
+    - propel{v=2} @target
+    - lockmodel @self
+    - delay 3
+    - aura{auraName=GlitchReaverLeftSlashD;duration=5;oT=GlitchReaver_LeftSlash_Damage} @self
+    - delay 38
+    - skill{s=GlitchReaver_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchReaver_LeftSlash_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=endermauler;pid=hurtbox}
+
+GlitchReaver_DashBiteStartup:
+  Cooldown: 10
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=6} true
+    - targetwithin{d=15} true
+    - hasaura{n=GlitchReaverRightSlash} false
+    - hasaura{n=GlitchReaverLeftSlash} false
+    - hasaura{n=GlitchReaverDashBiteStartup} false
+    - hasaura{n=GlitchReaverDashBite} false
+    - hasaura{n=GlitchReaverScream} false
+    - hasaura{n=GlitchReaverTeleportMaul} false
+    - hasaura{n=GlitchReaverCloseSlashes} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchReaverDashBiteStartup;duration=40} @self
+    - state{model=endermauler;state=dash_bite_startup} @self
+    - sound{s=tugkandeman.endermauler_dashstart;v=2;p=1} @self
+    - delay 14
+    - sound{s=tugkandeman.endermauler_teleport2;v=2;p=1} @self
+    - lockmodel @self
+    - delay 11
+    - skill{s=GlitchReaver_DashBite} @self
+
+GlitchReaver_DashBite:
+  Conditions:
+    - incombat true
+    - hasaura{n=GlitchReaverDashBiteStartup} true
+    - hasaura{n=GlitchReaverDashBite} false
+  Skills:
+    - aura{auraName=GlitchReaverDashBite;duration=30} @self
+    - state{model=endermauler;state=dash_bite} @self
+    - aura{auraName=GlitchReaverDashBiteL1;duration=8;oT=GlitchReaver_DashBite_Lunge1} @self
+    - sound{s=tugkandeman.endermauler_dashbite;v=2;p=1} @self
+    - delay 1
+    - aura{auraName=GlitchReaverDashBiteD;duration=11;oT=GlitchReaver_DashBite_Damage} @self
+    - delay 8
+    - aura{auraName=GlitchReaverDashBiteL2;duration=4;oT=GlitchReaver_DashBite_Lunge2} @self
+    - delay 5
+    - summon{type=GlitchVoidwake;amount=1} @self
+    - partvis{model=endermauler;p=endermauler;v=false;child=true} @self
+    - delay 2
+    - lockmodel{l=false} @self
+    - delay 4
+    - teleport{r=10to20;sv=1} @self
+    - delay 10
+    - partvis{model=endermauler;p=endermauler;v=true;child=true} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchReaver_DashBite_Lunge1:
+  Skills:
+    - propel{v=2} @target
+
+GlitchReaver_DashBite_Lunge2:
+  Skills:
+    - propel{v=1.25} @target
+
+GlitchReaver_DashBite_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=10};
+                    - skill{s=GlitchReaver_IdleTeleport} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=endermauler;pid=hurtbox}
+
+GlitchReaver_Scream:
+  Cooldown: 60
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=8} true
+    - targetwithin{d=16} true
+    - health{a=>40} true
+    - hasaura{n=GlitchReaverRightSlash} false
+    - hasaura{n=GlitchReaverLeftSlash} false
+    - hasaura{n=GlitchReaverDashBiteStartup} false
+    - hasaura{n=GlitchReaverDashBite} false
+    - hasaura{n=GlitchReaverScream} false
+    - hasaura{n=GlitchReaverTeleportMaul} false
+    - hasaura{n=GlitchReaverCloseSlashes} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0.0001;type=WALKING} @self
+    - aura{auraName=GlitchReaverScream;duration=200} @self
+    - state{model=endermauler;state=scream_of_ender} @self
+    - sound{s=tugkandeman.endermauler_scream;v=3;p=1} @self
+    - sound{s=tugkandeman.endermauler_scream_far;v=16;p=1} @self
+    - delay 14
+    - aura{auraName=GlitchReaverScreamD1;duration=66;oT=GlitchReaver_Scream_Damage1} @self
+    - delay 66
+    - lockmodel @self
+    - delay 10
+    - aura{auraName=GlitchReaverScreamD2;duration=68;oT=GlitchReaver_Scream_Damage2} @self
+    - setAI{ai=false} @self
+    - delay 60
+    - sound{s=tugkandeman.ender_ringing;v=2;p=1} @self
+    - delay 48
+    - setAI{ai=true} @self
+    - skill{s=GlitchReaver_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchReaver_Scream_Damage1:
+  Skills:
+    - damage{a=10} @LivingInCone{a=50;r=16;ignore=samefaction}
+    - throw{v=8} @LivingInCone{a=50;r=16;ignore=samefaction}
+    - potion{type=LEVITATION;d=0.1;l=1;p=false;i=false} @LivingInCone{a=50;r=16;ignore=samefaction}
+
+GlitchReaver_Scream_Damage2:
+  Skills:
+    - damage{a=10} @LivingInCone{a=50;r=32;ignore=samefaction}
+    - throw{v=20} @LivingInCone{a=50;r=32;ignore=samefaction}
+    - potion{type=LEVITATION;d=2;l=1;p=false;i=false} @LivingInCone{a=50;r=32;ignore=samefaction}
+
+GlitchReaver_TeleportMaul:
+  Cooldown: 12
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=8} true
+    - targetwithin{d=24} true
+    - hasaura{n=GlitchReaverRightSlash} false
+    - hasaura{n=GlitchReaverLeftSlash} false
+    - hasaura{n=GlitchReaverDashBiteStartup} false
+    - hasaura{n=GlitchReaverDashBite} false
+    - hasaura{n=GlitchReaverScream} false
+    - hasaura{n=GlitchReaverTeleportMaul} false
+    - hasaura{n=GlitchReaverCloseSlashes} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchReaverTeleportMaul;duration=70} @self
+    - state{model=endermauler;state=teleport_maul} @self
+    - summon{type=GlitchVoidwake;amount=1} @self
+    - sound{s=tugkandeman.endermauler_teleport1;v=2;p=1} @self
+    - delay 1
+    - partvis{model=endermauler;p=endermauler;v=false;child=true} @self
+    - delay 7
+    - teleport{r=1;pp=false;py=false} @target
+    - sound{s=tugkandeman.endermauler_tpslash;v=2;p=1} @self
+    - delay 2
+    - partvis{model=endermauler;p=endermauler;v=true;child=true} @self
+    - delay 3
+    - aura{auraName=GlitchReaverTeleportMaulD;duration=5;oT=GlitchReaver_TeleportMaul_Damage} @self
+    - delay 6
+    - lunge{v=1} @forward{f=2}
+    - delay 3
+    - aura{auraName=GlitchReaverTeleportMaulD;duration=5;oT=GlitchReaver_TeleportMaul_Damage} @self
+    - delay 3
+    - summon{type=GlitchVoidwake;amount=1} @self
+    - delay 1
+    - sound{s=tugkandeman.endermauler_teleport2;v=2;p=1} @self
+    - delay 1
+    - partvis{model=endermauler;p=endermauler;v=false;child=true} @self
+    - delay 7
+    - teleport{r=1;pp=false;py=false} @target
+    - sound{s=tugkandeman.endermauler_tpbite;v=2;p=1} @self
+    - delay 1
+    - partvis{model=endermauler;p=endermauler;v=true;child=true} @self
+    - delay 1
+    - aura{auraName=GlitchReaverTeleportMaulD;duration=5;oT=GlitchReaver_TeleportMaul_Damage} @self
+    - delay 34
+    - skill{s=GlitchReaver_TeleportAway} @self 0.1
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchReaver_TeleportMaul_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=endermauler;pid=hurtbox}
+
+GlitchReaver_CloseSlashes:
+  Cooldown: 2
+  Conditions:
+    - incombat true
+    - targetwithin{d=3} true
+    - hasaura{n=GlitchReaverRightSlash} false
+    - hasaura{n=GlitchReaverLeftSlash} false
+    - hasaura{n=GlitchReaverDashBiteStartup} false
+    - hasaura{n=GlitchReaverDashBite} false
+    - hasaura{n=GlitchReaverScream} false
+    - hasaura{n=GlitchReaverTeleportMaul} false
+    - hasaura{n=GlitchReaverCloseSlashes} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchReaverCloseSlashes;duration=40} @self
+    - state{model=endermauler;state=close_slashes} @self
+    - sound{s=tugkandeman.endermauler_closeslash;v=2;p=1} @self
+    - delay 5
+    - lockmodel @self
+    - delay 4
+    - aura{auraName=GlitchReaverCloseSlashesD;duration=10;oT=GlitchReaver_CloseSlashes_Damage} @self
+    - delay 15
+    - skill{s=GlitchReaver_TeleportAway} @self 0.5
+    - delay 31
+    - lockmodel{l=false} @self
+    - setspeed{speed=1.5;type=WALKING} @self
+
+GlitchReaver_CloseSlashes_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=endermauler;pid=hurtbox}
+
+GlitchReaver_TeleportAway:
+  Skills:
+    - summon{type=GlitchVoidwake;amount=1} @self
+    - partvis{model=endermauler;p=endermauler;v=false;child=true} @self
+    - delay 1
+    - teleport{r=20;sv=2} @self
+    - sound{s=tugkandeman.endermauler_teleport2;v=2;p=1} @self
+    - delay 1
+    - partvis{model=endermauler;p=endermauler;v=true;child=true} @self
+
+GlitchReaver_AggroSound:
+  Conditions:
+    - incombat true
+  Skills:
+    - sound{s=tugkandeman.ender_aggro;v=2;p=1} @self

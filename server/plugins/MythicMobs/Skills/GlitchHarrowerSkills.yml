@@ -1,0 +1,31 @@
+# The Glitch — MythicMobs Skills: Glitch Harrower (new mob, T3)
+# Ported from the_voids/MythicMobs/skills/voids_skill.yml ("voids_mask"),
+# renamed and rescaled from 3 dmg up to Tier 3 elite (~10 dmg). Source pack's
+# own skill name had a bug (mob yml called "voids_mask_attack" but the skill
+# was defined as "void_mask_attack") — irrelevant here since we use our own
+# Glitch-prefixed name throughout.
+
+GlitchHarrower_Attack:
+  Cooldown: 3
+  Skills:
+    - stun{d=40;ai=true} @self
+    - state{s=attack} @self
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#59338B;color2=#694CC8;speed=1;a=10;size=1.5;hs=0.25;vs=1;repeat=2;repeati=12} @self
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1;a=10;size=1.5;hs=0.25;vs=1;repeat=2;repeati=12} @self
+    - effect:sound{s=entity.strider.saddle;v=0.55;p=0.85} @self
+    - delay 20
+    - effect:particlering{particle=portal;radius=0.5;points=32;amount=10;hS=0;vS=0;s=0} @self
+    - delay 2
+    - effect:particlering{particle=portal;radius=1.5;points=32;amount=10;hS=0;vS=0.1;s=0} @self
+    - delay 2
+    - effect:particlering{particle=portal;radius=2.5;points=32;amount=10;hS=0;vS=0.15;s=0} @self
+    - delay 2
+    - effect:particlering{particle=portal;radius=3.5;points=32;amount=10;hS=0;vS=0.2;s=0} @self
+    - delay 5
+    - effect:sound{s=block.fence_gate.close;v=0.55;p=0.5} @self
+    - effect:sound{s=block.fence_gate.close;v=0.65;p=0} @self
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#59338B;color2=#694CC8;speed=1;a=5;size=0.8;hs=0.25;vs=0.45;repeat=2;repeati=6} @target ?playerwithin{d=3}
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1;a=5;size=0.8;hs=0.25;vs=0.45;repeat=2;repeati=6} @target ?playerwithin{d=3}
+    - damage{a=10;ie=true;ia=true} @target ?playerwithin{d=3.5}
+    - throw{velocity=10;velocityY=5.5} @target ?playerwithin{d=3.5}
+    - potion{type=slow;duration=60;level=1} @target ?playerwithin{d=3.5}

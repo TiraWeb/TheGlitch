@@ -1,26 +1,43 @@
 # The Glitch — MythicMobs: Corrupted Crawler (Tier 1 fodder)
-# Silverfish that bursts out of walls. Poisons on hit (2s). Resonates Hollow.
+# Custom model 2026-09-21: "voids_ghost" rig (the_voids pack), full-adopt —
+# ghostly corrupted spirit, was a Silverfish. Stun+poison+slow burst on hit
+# (docs/MODELS.md). Resonates Hollow.
 # Design: GAME_DESIGN §2 (T1), Resonance: ITEM_SYSTEM §5.
 
 CorruptedCrawler:
-  Type: SILVERFISH
+  Type: ZOMBIE
   Display: '<green>Corrupted Crawler'
-  Health: 18
+  Health: 24
   Damage: 3
+  AITargetSelectors:
+    - clear
+    - players
   Options:
-    MovementSpeed: 0.35
+    MovementSpeed: 0.25
     AlwaysShowName: true
     Persistent: false
     Despawn: true
     FollowRange: 20
-    KnockbackResistance: 0
+    KnockbackResistance: 0.4
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    PreventSunburn: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
     PreventBlockDestruction: true
     ScoreboardTags: [res_hollow]
     ShowHealth: true
   Skills:
-    - effect:sound{s=entity.silverfish.ambient;v=0.6;p=1.2} @self ~onSpawn 1
-    - effect:sound{s=entity.silverfish.hurt;v=0.7;p=1.0} @self ~onDamaged 0.4
-    - effect:sound{s=entity.silverfish.death;v=1;p=0.8} @self ~onDeath 1
-    - potion{type=POISON;duration=40;level=0} @Trigger ~onAttack 0.5
+    - model{mid=voids_ghost;usm=true} @self ~onSpawn
+    - model{mid=voids_ghost;usm=true} @self ~onLoad
+    - scale{s=0.85} @self ~onSpawn
+    - scale{s=0.85} @self ~onLoad
+    - cancelevent{sync=true} @self ~onAttack
+    - skill{s=CorruptedCrawler_Attack} @target ~onAttack
+    - effect:sound{s=entity.breeze.whirl;v=0.5;p=0.65} @self ~onTimer:20 ?moving
+    - effect:sound{s=entity.strider.ambient;v=0.8;p=0.8} @self ~onTimer:150 0.4
+    - effect:sound{s=entity.strider.hurt;v=0.8;p=0.8} @self ~onDamaged 0.4
+    - effect:particles{particle=falling_dust;m=GOLD_BLOCK;a=4;hS=0.5;vS=2.5} @self ~onDamaged 0.4
+    - effect:sound{s=entity.strider.death;v=0.85;p=0.3} @self ~onDeath 1
   Drops:
     - CorruptedCrawlerLoot

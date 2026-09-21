@@ -1,0 +1,34 @@
+# The Glitch — MythicMobs: Glitch Voidwake (internal VFX helper, not a real spawn)
+# Ported from EndMobsVol1/mobs/end_mobs_mob.yml ("vfx_end_teleport") — an
+# invincible, immobile, 1-second helper entity that plays the teleport puff
+# model and removes itself. Summoned by Glitch_TeleportAway and the reaver's
+# teleport skills; never spawns naturally (not in any randomspawns group).
+
+GlitchVoidwake:
+  Type: WOLF
+  Display: 'Glitch Voidwake'
+  Health: 200
+  Damage: 0
+  AIGoalSelectors:
+    - clear
+  AITargetSelectors:
+    - clear
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0
+    FollowRange: 1
+    KnockbackResistance: 1
+    Silent: true
+    Despawn: true
+    Invincible: true
+    Collidable: false
+    PreventSunburn: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    MaxCombatDistance: 1
+  Skills:
+    - cancelevent{sync=true} @self ~onAttack
+    - model{mid=vfx_end_teleport;usm=true} @self ~onSpawn
+    - model{mid=vfx_end_teleport;usm=true} @self ~onLoad
+    - skill{s=GlitchVoidwake_Summoned} @self ~onSpawn

@@ -159,6 +159,45 @@ WARDEN_SLAYER:
     - 100 EXPERIENCE
     Skills: []
 
+HARROWER_HUNTER:
+  Display: 'Harrower Hunter'
+  Description: 'Defeat 5 Glitch Harrowers'
+  Category: MONSTER_HUNTING
+  Frame: CHALLENGE
+  Icon:
+    Material: PRISMARINE_SHARD
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchHarrower
+      Amount: 5
+      Conditions: []
+  Reward:
+    Message: 'You have hunted down 5 Glitch Harrowers!'
+    Drops:
+    - 100 EXPERIENCE
+    Skills: []
+
+# --- Tier 3.5 mini-boss ---
+REAVER_HUNTER:
+  Display: 'Reaver Hunter'
+  Description: 'Defeat 3 Glitch Reavers'
+  Category: MONSTER_HUNTING
+  Frame: CHALLENGE
+  Icon:
+    Material: END_ROD
+  Criteria:
+    KILL:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchReaver
+      Amount: 3
+      Conditions: []
+  Reward:
+    Message: 'You have brought down 3 Glitch Reavers!'
+    Drops:
+    - 175 EXPERIENCE
+    Skills: []
+
 # --- Tier 4 boss ---
 CORE_BREAKER:
   Display: 'Core Breaker'
@@ -239,6 +278,14 @@ GLITCH_BESTIARY:
     WARDEN:
       Type: KILL_MYTHIC_MOB
       MobType: GlitchWarden
+      Amount: 1
+    HARROWER:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchHarrower
+      Amount: 1
+    REAVER:
+      Type: KILL_MYTHIC_MOB
+      MobType: GlitchReaver
       Amount: 1
     CORE:
       Type: KILL_MYTHIC_MOB

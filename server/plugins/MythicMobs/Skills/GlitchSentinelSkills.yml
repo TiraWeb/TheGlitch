@@ -1,0 +1,99 @@
+# The Glitch — MythicMobs Skills: Glitch Sentinel
+# Ported from EndMobsVol1/skills/end_mobs_skills.yml ("ender_watchman"),
+# renamed and rescaled from ~10 dmg/hit up to Tier 3 elite (~12 dmg/hit).
+# SummonWraiths is retargeted to spawn GlitchWisp (our own reskinned mob)
+# instead of the pack's raw "end_wraith" type — this replaces Sentinel's old
+# "summons 2 Wisps every 30s" mechanic one-for-one.
+
+GlitchSentinel_LanternSmack:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=0.5} true
+    - targetwithin{d=4} true
+    - hasaura{n=GlitchSentinelLanternSmack} false
+    - hasaura{n=GlitchSentinelSummonWraiths} false
+    - hasaura{n=GlitchSentinelLanternPush} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchSentinelLanternSmack;duration=50} @self
+    - state{model=ender_watchman;state=lantern_smack} @self
+    - sound{s=tugkandeman.ender_watcher_lantern;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - lunge{v=1} @forward{f=3;lockpitch=true}
+    - delay 3
+    - aura{auraName=GlitchSentinelLanternSmackD;d=5;oT=GlitchSentinel_LanternSmack_Damage} @self
+    - delay 37
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchSentinel_LanternSmack_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=12} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=ender_watchman;pid=hurtbox}
+
+# Summon Wraiths — Sentinel's signature: 3 GlitchWisps over its channel
+GlitchSentinel_SummonWraiths:
+  Cooldown: 30
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=5} true
+    - mobsInRadius{r=100;a=<9;type=GlitchWisp} true
+    - hasaura{n=GlitchSentinelLanternSmack} false
+    - hasaura{n=GlitchSentinelSummonWraiths} false
+    - hasaura{n=GlitchSentinelLanternPush} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchSentinelSummonWraiths;duration=100} @self
+    - state{model=ender_watchman;state=summon_wraiths} @self
+    - sound{s=tugkandeman.ender_watcher_summon;v=2;p=1} @self
+    - lockmodel @self
+    - delay 22
+    - summon{type=GlitchWisp;amount=1} @selfLocation{fo=-3;y=1}
+    - delay 20
+    - summon{type=GlitchWisp;amount=1} @selfLocation{fo=-3;y=1}
+    - delay 20
+    - summon{type=GlitchWisp;amount=1} @selfLocation{fo=-3;y=1}
+    - delay 38
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchSentinel_LanternPush:
+  Conditions:
+    - incombat true
+    - targetwithin{d=4} true
+    - hasaura{n=GlitchSentinelLanternSmack} false
+    - hasaura{n=GlitchSentinelSummonWraiths} false
+    - hasaura{n=GlitchSentinelLanternPush} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchSentinelLanternPush;duration=40} @self
+    - state{model=ender_watchman;state=lantern_push} @self
+    - sound{s=tugkandeman.ender_watcher_lanternpush;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 1
+    - aura{auraName=GlitchSentinelLanternPushD;d=14;oT=GlitchSentinel_LanternPush_Damage} @self
+    - delay 29
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchSentinel_LanternPush_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=12};
+                    - throw{v=15};
+                    - potion{type=LEVITATION;d=5;l=1} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=ender_watchman;pid=hurtbox}
+
+GlitchSentinel_AggroSound:
+  Conditions:
+    - incombat true
+  Skills:
+    - sound{s=tugkandeman.ender_aggro;v=2;p=1} @self

@@ -187,10 +187,10 @@ Each **armor piece** rolls one Resonance (+defense against matching mobs).
 | Resonance | Color | Theme | Mobs (proposed) | Weapon effect | Armor effect |
 |---|---|---|---|---|---|
 | **Aegis** | Amber/gold | shielding | Brute, Warden | +25% dmg vs Aegis mobs | +15% dmg reduction from Aegis mobs |
-| **Veil** | Deep blue | shadow/mobility | Wisp, Phantom | +25% dmg vs Veil mobs | +10% movement speed |
+| **Veil** | Deep blue | shadow/mobility | Wisp, Phantom, Harrower | +25% dmg vs Veil mobs | +10% movement speed |
 | **Bloom** | Emerald | life | Stalker | +25% dmg vs Bloom mobs | +1 HP regen / 4s out of combat |
 | **Ward** | Crimson | raw force | Sentinel, Sniper | +25% dmg vs Ward mobs | +1 armor tier vs Ward mobs |
-| **Hollow** | Violet | void | Crawler, Core, King | +25% dmg vs Hollow mobs | +15% dmg reduction from Hollow mobs |
+| **Hollow** | Violet | void | Crawler, Core, King, Reaver | +25% dmg vs Hollow mobs | +15% dmg reduction from Hollow mobs |
 
 ### Mobs table (extend GAME_DESIGN.md §2 — add a `Resonance:` column)
 
@@ -204,6 +204,8 @@ Each **armor piece** rolls one Resonance (+defense against matching mobs).
 | Glitch Sentinel | Ward |
 | Glitch Sniper | Ward |
 | Glitch Warden | Aegis |
+| Glitch Harrower | Veil |
+| Glitch Reaver | Hollow |
 | The Glitch King | Hollow |
 | The Corrupted Core | Hollow |
 

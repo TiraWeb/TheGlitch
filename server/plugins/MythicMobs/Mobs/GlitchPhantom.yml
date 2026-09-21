@@ -1,11 +1,16 @@
-# The Glitch — MythicMobs: Glitch Phantom (ranged/special mob)
-# Flies, shoots projectiles. Appears in boss rooms and high-tier dungeons.
+# The Glitch — MythicMobs: Glitch Phantom (Tier 2 ranged)
+# Custom model 2026-09-21: "mage" rig (Beyond Mob Pack), partial-adopt —
+# keeps Phantom's native PHANTOM Type/fly-float-randomfly AI (flight is core
+# to its identity) and only layers the mage's model + animated burst-attack
+# on top, rather than becoming a grounded SKELETON caster like the source mob.
+# Resonates Veil.
+# Design: GAME_DESIGN §2 (T2), Resonance: ITEM_SYSTEM §5.
 
 GlitchPhantom:
   Type: PHANTOM
   Display: '<light_purple>Glitch Phantom'
-  Health: 35
-  Damage: 3
+  Health: 40
+  Damage: 8
   Options:
     MovementSpeed: 0.35
     AlwaysShowName: true
@@ -26,9 +31,12 @@ GlitchPhantom:
     - clear
     - players
   Skills:
+    - model{mid=mage;usm=true;n=false;step=1} @self ~onSpawn
+    - model{mid=mage;usm=true;n=false;step=1} @self ~onLoad
     - effect:sound{s=entity.phantom.ambient;v=0.5;p=1.2} @self ~onSpawn 1
     - effect:sound{s=entity.phantom.hurt;v=0.7;p=0.9} @self ~onDamaged 0.4
     - effect:sound{s=entity.phantom.death;v=1;p=0.6} @self ~onDeath 1
-    - projectile{onTick=model;damage=5;speed=1.5;hRange=4;vRange=4;interval=1} @target ~onTimer:60 0.5
+    - skill{s=GlitchPhantom_Hit} @self ~onDamaged 0.4
+    - skill{s=GlitchPhantom_Attack} @target ~onTimer:60 0.5
   Drops:
     - GlitchPhantomLoot

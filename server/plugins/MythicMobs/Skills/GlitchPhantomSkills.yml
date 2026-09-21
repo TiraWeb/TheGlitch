@@ -1,0 +1,42 @@
+# The Glitch — MythicMobs Skills: Glitch Phantom
+# Ported from Beyond Mob Pack 1.0/MythicMobs/packs/Beyond_Mob_Pack/skills/Beyond_Skills.yml
+# ("mage"), renamed and rescaled 7->8 dmg to match Phantom's GAME_DESIGN band.
+# Triggered on the existing onTimer:60 cadence (Phantom keeps its native
+# fly/float/randomfly AI — see the mob file header for why this is a partial
+# exception to "full adopt": mage's own bowattack/onShoot trigger only makes
+# sense for a grounded archer, not a flier).
+
+GlitchPhantom_Attack:
+  Cooldown: 1.4
+  Skills:
+    - state{s=attack} @self
+    - delay 5
+    - setspeed{speed=0;type=walk} @self
+    - effect:particles{p=spell_witch;amount=18;hS=0.35;vS=0.45;s=0.01;y=1.0} @self
+    - effect:particles{p=reverse_portal;amount=10;hS=0.30;vS=0.35;s=0.02;y=1.0} @self
+    - effect:particles{p=end_rod;amount=6;hS=0.25;vS=0.35;s=0.01;y=1.05} @self
+    - sound{s=entity.illusioner.prepare_mirror;v=1.1;p=1.2} @self
+    - delay 13
+    - damage{a=8;pkb=false;hnp=false;hp=true} @target
+    - effect:particles{p=dust_color_transition;color=#9b5cff;toColor=#5fffff;size=1.4;amount=16;hS=0.30;vS=0.36;s=0.01;y=0.62} @target
+    - effect:particles{p=dust_color_transition;color=#3f1aff;toColor=#ffffff;size=1.0;amount=12;hS=0.24;vS=0.30;s=0.01;y=0.64} @target
+    - effect:particles{p=spell;amount=10;hS=0.22;vS=0.28;s=0.01;y=0.64} @target
+    - effect:particles{p=end_rod;amount=5;hS=0.22;vS=0.24;s=0.01;y=0.68} @target
+    - effect:particles{p=witch;amount=6;hS=0.24;vS=0.26;s=0.02;y=0.66} @target
+    - sound{s=entity.warden.sonic_boom;v=0.6;p=1.45} @self
+    - sound{s=block.amethyst_block.hit;v=1.0;p=1.55} @self
+    - delay 6
+    - effect:particles{p=spore_blossom_air;amount=10;hS=0.40;vS=0.40;s=0.02;y=0.9} @self
+    - effect:particles{p=glow;amount=8;hS=0.35;vS=0.35;s=0.01;y=1.0} @self
+    - effect:particles{p=enchant;amount=8;hS=0.30;vS=0.32;s=0.02;y=1.05} @self
+    - sound{s=block.amethyst_cluster.break;v=0.7;p=1.4} @self
+    - delay 70
+    - setspeed{speed=1;type=walk} @self
+    - state{s=idle;f=true;lerp=false} @self
+
+GlitchPhantom_Hit:
+  Skills:
+    - state{s=none;f=true;lerp=false} @self
+    - state{s=hit;f=true;lerp=false} @self
+    - delay 8
+    - state{s=idle;f=true;lerp=false} @self

@@ -1,0 +1,182 @@
+{
+    "tugkandeman.end_wraith_dash": {
+        "sounds": [
+            "tugkandeman/end_wraith_dash"
+        ]
+    },
+	"tugkandeman.end_wraith_leftslash": {
+        "sounds": [
+            "tugkandeman/end_wraith_leftslash"
+        ]
+    },
+	"tugkandeman.end_wraith_rightslash": {
+        "sounds": [
+            "tugkandeman/end_wraith_rightslash"
+        ]
+    },
+	"tugkandeman.end_wraith_spinslash": {
+        "sounds": [
+            "tugkandeman/end_wraith_spinslash"
+        ]
+    },
+	"tugkandeman.ender_aggro": {
+        "sounds": [
+            "tugkandeman/ender_aggro"
+        ]
+    },
+	"tugkandeman.ender_crawler_fang": {
+        "sounds": [
+            "tugkandeman/ender_crawler_fang"
+        ]
+    },
+	"tugkandeman.ender_crawler_horn": {
+        "sounds": [
+            "tugkandeman/ender_crawler_horn"
+        ]
+    },
+	"tugkandeman.ender_crawler_jump": {
+        "sounds": [
+            "tugkandeman/ender_crawler_jump"
+        ]
+    },
+	"tugkandeman.ender_idle_1": {
+        "sounds": [
+            "tugkandeman/ender_idle_1"
+        ]
+    },
+	"tugkandeman.ender_idle_2": {
+        "sounds": [
+            "tugkandeman/ender_idle_2"
+        ]
+    },
+	"tugkandeman.ender_idle_3": {
+        "sounds": [
+            "tugkandeman/ender_idle_3"
+        ]
+    },
+	"tugkandeman.ender_idle_mauler": {
+        "sounds": [
+            "tugkandeman/ender_idle_mauler"
+        ]
+    },
+	"tugkandeman.ender_idle_strider": {
+        "sounds": [
+            "tugkandeman/ender_idle_strider"
+        ]
+    },
+	"tugkandeman.ender_idle_watcher": {
+        "sounds": [
+            "tugkandeman/ender_idle_watcher"
+        ]
+    },
+	"tugkandeman.ender_ringing": {
+        "sounds": [
+            "tugkandeman/ender_ringing"
+        ]
+    },
+	"tugkandeman.ender_strider_walk": {
+        "sounds": [
+            "tugkandeman/ender_strider_walk"
+        ]
+    },
+	"tugkandeman.ender_watcher_lantern": {
+        "sounds": [
+            "tugkandeman/ender_watcher_lantern"
+        ]
+    },
+	"tugkandeman.ender_watcher_lanternpush": {
+        "sounds": [
+            "tugkandeman/ender_watcher_lanternpush"
+        ]
+    },
+	"tugkandeman.ender_watcher_summon": {
+        "sounds": [
+            "tugkandeman/ender_watcher_summon"
+        ]
+    },
+	"tugkandeman.enderbruiser_attack": {
+        "sounds": [
+            "tugkandeman/enderbruiser_attack"
+        ]
+    },
+	"tugkandeman.enderbruiser_smash": {
+        "sounds": [
+            "tugkandeman/enderbruiser_smash"
+        ]
+    },
+	"tugkandeman.enderbruiser_throw": {
+        "sounds": [
+            "tugkandeman/enderbruiser_throw"
+        ]
+    },
+	"tugkandeman.enderling_attack": {
+        "sounds": [
+            "tugkandeman/enderling_attack"
+        ]
+    },
+	"tugkandeman.endermauler_closeslash": {
+        "sounds": [
+            "tugkandeman/endermauler_closeslash"
+        ]
+    },
+	"tugkandeman.endermauler_dashbite": {
+        "sounds": [
+            "tugkandeman/endermauler_dashbite"
+        ]
+    },
+	"tugkandeman.endermauler_dashstart": {
+        "sounds": [
+            "tugkandeman/endermauler_dashstart"
+        ]
+    },
+	"tugkandeman.endermauler_death": {
+        "sounds": [
+            "tugkandeman/endermauler_death"
+        ]
+    },
+	"tugkandeman.endermauler_hurt": {
+        "sounds": [
+            "tugkandeman/endermauler_hurt"
+        ]
+    },
+	"tugkandeman.endermauler_rightslash": {
+        "sounds": [
+            "tugkandeman/endermauler_rightslash"
+        ]
+    },
+	"tugkandeman.endermauler_scream": {
+        "sounds": [
+            "tugkandeman/endermauler_scream"
+        ]
+    },
+	"tugkandeman.endermauler_scream_far": {
+        "sounds": [
+            "tugkandeman/endermauler_scream_far"
+        ]
+    },
+	"tugkandeman.endermauler_teleport1": {
+        "sounds": [
+            "tugkandeman/endermauler_teleport1"
+        ]
+    },
+	"tugkandeman.endermauler_teleport2": {
+        "sounds": [
+            "tugkandeman/endermauler_teleport2"
+        ]
+    },
+	"tugkandeman.endermauler_tpbite": {
+        "sounds": [
+            "tugkandeman/endermauler_tpbite"
+        ]
+    },
+	"tugkandeman.endermauler_tpslash": {
+        "sounds": [
+            "tugkandeman/endermauler_tpslash"
+        ]
+    },
+	"tugkandeman.generic_land": {
+        "sounds": [
+            "tugkandeman/generic_land"
+        ]
+    }
+}

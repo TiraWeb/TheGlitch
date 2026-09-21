@@ -1,33 +1,53 @@
 # The Glitch — MythicMobs: Glitch Sentinel (Tier 3 elite)
-# Wither skeleton elite. AoE slam (5-block radius, 15 dmg, heavy slow), summons
-# 2 Glitch Wisps every 30s, immune to knockback. Resonates Ward.
+# Custom model 2026-09-21: "ender_watchman" rig (EndMobsVol1 pack), full-adopt —
+# a corrupted watchman with a lantern-smack/summon-wraiths/lantern-push kit,
+# was a Wither Skeleton. Its summon-wraiths mechanic is the drop-in
+# replacement for the old "summons 2 Wisps every 30s". Resonates Ward.
 # Design: GAME_DESIGN §2 (T3), Resonance: ITEM_SYSTEM §5.
 
 GlitchSentinel:
-  Type: WITHER_SKELETON
+  Type: VINDICATOR
   Display: '<red>Glitch Sentinel'
-  Health: 120
-  Damage: 8
+  Health: 150
+  Damage: 12
+  Faction: GLITCH
+  DamageModifiers:
+    - SUFFOCATION 0
+    - FALL 0
+  AIGoalSelectors:
+    - clear
+    - meleeattack
+    - movetowardstarget
+    - randomstroll
+  AITargetSelectors:
+    - clear
+    - attacker
+    - players
   Options:
+    NoDamageTicks: 10
     MovementSpeed: 0.28
-    AlwaysShowName: true
-    Persistent: false
-    Despawn: true
     FollowRange: 24
     KnockbackResistance: 1
+    Silent: true
+    Persistent: false
+    Despawn: true
+    Invincible: false
     PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
     PreventBlockDestruction: true
+    MaxCombatDistance: 24
     ScoreboardTags: [res_ward]
     ShowHealth: true
-  Equipment:
-    - IRON_SWORD HAND
   Skills:
-    - effect:sound{s=entity.wither_skeleton.ambient;v=0.5;p=0.9} @self ~onSpawn 1
+    - skill{s=CancelEvent} @self ~onAttack
+    - model{mid=ender_watchman;usm=true} @self ~onSpawn
+    - model{mid=ender_watchman;usm=true} @self ~onLoad
+    - randomskill{skills=GlitchSentinel_LanternSmack,GlitchSentinel_SummonWraiths,GlitchSentinel_LanternPush} @self ~onTimer:20
+    - skill{s=GlitchSentinel_AggroSound} @self ~onTimer:1000
     - effect:sound{s=entity.wither_skeleton.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
     - effect:sound{s=entity.wither_skeleton.death;v=1;p=0.7} @self ~onDeath 1
-    - summon{m=GlitchWisp;a=2;r=6} @self ~onTimer:600 1
-    - damage{amount=9} @PlayersInRadius{r=5} ~onTimer:300 0.6
-    - potion{type=SLOWNESS;duration=60;level=5} @PlayersInRadius{r=5} ~onTimer:300 0.6
-    - effect:sound{s=entity.generic.explode;v=0.6;p=0.4} @self ~onTimer:300 0.6
   Drops:
     - GlitchSentinelLoot

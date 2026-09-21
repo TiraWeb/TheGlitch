@@ -1,0 +1,13 @@
+# The Glitch — MythicMobs DropTable: Glitch Harrower loot
+# Tier 3 elite — shards + elite materials (GAME_DESIGN §3), good rift chance
+
+GlitchHarrowerLoot:
+  TotalItems: 7
+  Drops:
+    - COINS 10-16 1
+    - nexo rune_fragment 3-6 1
+    - nexo aether_shard 1 0.3
+    - nexo rift_crystal 1 0.15
+    - nexo void_essence 1 0.05
+    - nexo unstable_rift_uncommon 1 0.3
+    - nexo unstable_rift_rare 1 0.15

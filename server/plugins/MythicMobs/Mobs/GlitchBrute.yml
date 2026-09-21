@@ -1,38 +1,53 @@
-# The Glitch — MythicMobs: Glitch Brute (tank mob)
-# Slow, heavy hitter with knockback resistance. Appears in later dungeon waves.
+# The Glitch — MythicMobs: Glitch Brute (Tier 2 heavy)
+# Custom model 2026-09-21: "enderbruiser" rig (EndMobsVol1 pack), full-adopt —
+# a corrupted vindicator brute with a smash/toss/L-R combo, was a Zombie.
+# The toss attack is its signature — a heavy knockback throw. Resonates Aegis.
+# Design: GAME_DESIGN §2 (T2), Resonance: ITEM_SYSTEM §5.
 
 GlitchBrute:
-  Type: ZOMBIE
+  Type: VINDICATOR
   Display: '<dark_red>Glitch Brute'
-  Health: 110
+  Health: 115
   Damage: 7
-  Options:
-    MovementSpeed: 0.22
-    AlwaysShowName: true
-    Persistent: false
-    Despawn: true
-    FollowRange: 20
-    KnockbackResistance: 0.6
-    PreventSunburn: true
-    PreventBlockDestruction: true
-    ScoreboardTags: [res_aegis]
-    ShowHealth: true
-  Equipment:
-    - NETHERITE_SWORD HAND
-    - NETHERITE_CHESTPLATE CHEST
-    - NETHERITE_LEGGINGS LEGS
-    - NETHERITE_BOOTS FEET
+  Faction: GLITCH
+  DamageModifiers:
+    - SUFFOCATION 0
+    - FALL 0
   AIGoalSelectors:
     - clear
     - meleeattack
-    - lookatplayers
+    - movetowardstarget
+    - randomstroll
   AITargetSelectors:
     - clear
-    - players
     - attacker
+    - players
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.22
+    FollowRange: 20
+    KnockbackResistance: 1
+    Silent: true
+    Persistent: false
+    Despawn: true
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    PreventBlockDestruction: true
+    MaxCombatDistance: 20
+    ScoreboardTags: [res_aegis]
+    ShowHealth: true
   Skills:
+    - skill{s=CancelEvent} @self ~onAttack
+    - model{mid=enderbruiser;usm=true} @self ~onSpawn
+    - model{mid=enderbruiser;usm=true} @self ~onLoad
+    - randomskill{skills=GlitchBrute_Smash,GlitchBrute_Toss,GlitchBrute_RightAttack,GlitchBrute_LeftAttack} @self ~onTimer:20
+    - skill{s=GlitchBrute_AggroSound} @self ~onTimer:1000
+    - randomskill{skills=GlitchBrute_IdleSound1,GlitchBrute_IdleSound2,GlitchBrute_IdleSound3} @self ~onTimer:600
     - effect:sound{s=entity.iron_golem.attack;v=0.7;p=0.9} @self ~onDamaged 0.3
     - effect:sound{s=entity.iron_golem.death;v=1;p=0.5} @self ~onDeath 1
-    - throw{velocity=4;velocityY=2} @target ~onDamaged 0.2
   Drops:
     - GlitchBruteLoot

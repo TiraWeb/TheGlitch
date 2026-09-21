@@ -1,0 +1,19 @@
+# The Glitch — MythicMobs Skills: shared helpers for the EndMobsVol1-derived
+# reskins (GlitchWisp, GlitchStalker, GlitchBrute, GlitchSentinel, GlitchReaver).
+# Ported from EndMobsVol1/skills/end_mobs_skills.yml ("teleport_away" +
+# "vfx_end_teleport_summoned"), renamed to avoid colliding with any future
+# pack import. GlitchVoidwake is a short-lived invincible helper mob that just
+# plays the teleport VFX model and removes itself — see Mobs/GlitchVoidwake.yml.
+
+Glitch_TeleportAway:
+  Skills:
+    - summon{type=GlitchVoidwake;amount=1} @self
+    - delay 1
+    - teleport{r=20;sv=2} @self
+    - sound{s=tugkandeman.endermauler_teleport2;v=2;p=1} @self
+
+GlitchVoidwake_Summoned:
+  Skills:
+    - state{m=vfx_end_teleport;state=end_teleport} @self
+    - delay 20
+    - remove @self

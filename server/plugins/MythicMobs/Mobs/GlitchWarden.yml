@@ -1,34 +1,45 @@
 # The Glitch — MythicMobs: Glitch Warden (Tier 3 elite)
-# Iron Golem area guard. Vortex-pulls players every 20s and radiates a small
-# damage field. Target selectors force it to aggro players (golems are neutral
-# by default). Resonates Aegis.
+# Custom model 2026-09-21: "coffin_man" rig (Beyond Mob Pack), full-adopt —
+# a heavy 2-variant melee guardian, was an Iron Golem. Keeps the Warden's
+# original vortex-pull + damage-field as a layered bonus on top of coffin_man's
+# kit, since that's the mob's namesake mechanic. Resonates Aegis.
 # Design: GAME_DESIGN §2 (T3), Resonance: ITEM_SYSTEM §5.
 
 GlitchWarden:
-  Type: IRON_GOLEM
+  Type: SKELETON
   Display: '<dark_aqua>Glitch Warden'
-  Health: 180
-  Damage: 5
+  Health: 200
+  Damage: 8
   Options:
-    MovementSpeed: 0.22
-    AlwaysShowName: true
-    Persistent: false
+    FollowRange: 25
+    PreventOtherDrops: true
+    MovementSpeed: 0.25
     Despawn: true
-    FollowRange: 24
+    PreventSunburn: true
+    Silent: true
     KnockbackResistance: 1
-    PreventBlockDestruction: true
     ScoreboardTags: [res_aegis]
     ShowHealth: true
+  AIGoalSelectors:
+    - 0 clear
+    - 1 meleeattack
+    - 2 lookatplayers
+    - 3 randomstroll
   AITargetSelectors:
-    - clear
-    - players
-    - attacker
+    - 0 clear
+    - 1 players
+    - 2 attacker
   Skills:
+    - model{mid=coffin_man;usm=true;n=false;step=1} @self ~onSpawn
+    - model{mid=coffin_man;usm=true;n=false;step=1} @self ~onLoad
+    - cancelevent{sync=true} @self ~onAttack
+    - skill{s=GlitchWarden_Attack} @target ~onAttack
+    - skill{s=GlitchWarden_Hit} @self ~onDamaged
     - effect:sound{s=entity.iron_golem.ambient;v=0.5;p=0.9} @self ~onSpawn 1
-    - effect:sound{s=entity.iron_golem.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
     - effect:sound{s=entity.iron_golem.death;v=1;p=0.7} @self ~onDeath 1
+    # Signature vortex pull + damage field — the Warden's original mechanic, kept.
     - throw{velocity=1.5;velocityY=1.2} @PlayersInRadius{r=6} ~onTimer:400 0.6
-    - damage{amount=4} @PlayersInRadius{r=3} ~onTimer:100 0.7
+    - damage{amount=6} @PlayersInRadius{r=3} ~onTimer:100 0.7
     - effect:sound{s=entity.shulker.bullet.hit;v=0.8;p=0.6} @self ~onTimer:400 0.6
   Drops:
     - GlitchWardenLoot

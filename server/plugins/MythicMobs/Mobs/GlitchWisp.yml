@@ -1,25 +1,53 @@
 # The Glitch — MythicMobs: Glitch Wisp (Tier 1 fodder)
-# Fast, low-HP Vex that swarms in groups of 3-5. Resonates Veil.
+# Custom model 2026-09-21: "end_wraith" rig (EndMobsVol1 pack), full-adopt —
+# fast teleporting ender-wraith, was a Vex. Right/left/spin slash + a
+# distance-tiered dash gap-closer (docs/MODELS.md). Resonates Veil.
 # Design: GAME_DESIGN §2 (T1), Resonance: ITEM_SYSTEM §5.
 
 GlitchWisp:
-  Type: VEX
+  Type: ENDERMAN
   Display: '<aqua>Glitch Wisp'
-  Health: 12
+  Health: 16
   Damage: 2
+  Faction: GLITCH
+  DamageModifiers:
+    - SUFFOCATION 0
+    - FALL 0
+  AIGoalSelectors:
+    - clear
+    - meleeattack
+    - movetowardstarget
+    - randomstroll
+  AITargetSelectors:
+    - clear
+    - attacker
+    - players
   Options:
+    NoDamageTicks: 10
     MovementSpeed: 0.4
-    AlwaysShowName: true
+    FollowRange: 24
+    KnockbackResistance: 1
+    Silent: true
     Persistent: false
     Despawn: true
-    FollowRange: 24
-    KnockbackResistance: 0
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
     PreventBlockDestruction: true
+    MaxCombatDistance: 24
     ScoreboardTags: [res_veil]
     ShowHealth: true
   Skills:
-    - effect:sound{s=entity.vex.ambient;v=0.5;p=1.3} @self ~onSpawn 1
+    - skill{s=CancelEvent} @self ~onAttack
+    - model{mid=end_wraith;usm=true} @self ~onSpawn
+    - model{mid=end_wraith;usm=true} @self ~onLoad
+    - randomskill{skills=GlitchWisp_RightSlash,GlitchWisp_LeftSlash,GlitchWisp_SpinSlash,GlitchWisp_Dash} @self ~onTimer:20
+    - skill{s=GlitchWisp_Summoned} @self ~onSpawn
+    - skill{s=GlitchWisp_AggroSound} @self ~onTimer:1000
+    - randomskill{skills=GlitchWisp_IdleSound1,GlitchWisp_IdleSound2,GlitchWisp_IdleSound3} @self ~onTimer:600
     - effect:sound{s=entity.vex.hurt;v=0.7;p=1.1} @self ~onDamaged 0.4
-    - effect:sound{s=entity.vex.death;v=0.9;p=0.9} @self ~onDeath 1
   Drops:
     - GlitchWispLoot

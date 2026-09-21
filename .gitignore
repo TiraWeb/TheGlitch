@@ -51,3 +51,10 @@ backups/*.sha256
 # Downloaded world save archives (deployed to the host out-of-band, never committed)
 /*.zip
 !backups/.gitkeep
+
+# Downloaded MythicMobs/ModelEngine content packs (source art, extracted at repo
+# root) — only the specific blueprint/mob/skill files we pick from them are
+# ever committed, under server/plugins/. See docs/MODELS.md.
+/Beyond Mob Pack*/
+/EndMobsVol1*/
+/the_voids/

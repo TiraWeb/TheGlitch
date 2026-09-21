@@ -126,26 +126,30 @@ Four classes, each with a unique identity. Classes are chosen once and can be re
 
 ## 2. Custom Mobs (MythicMobs)
 
-10 mobs across 4 tiers. Resonance tags (docs/ITEM_SYSTEM.md §5) are matched by gear:
-a Hollow weapon deals +25% damage to Hollow mobs. `Resonance:` column is a MythicMobs
-metadata field.
+12 mobs across 4 tiers plus a new T3.5 mini-boss slot. Resonance tags
+(docs/ITEM_SYSTEM.md §5) are matched by gear: a Hollow weapon deals +25%
+damage to Hollow mobs. `Resonance:` column is a MythicMobs metadata field.
 
-**Custom models (live 2026-09-14, docs/MODELS.md):** Glitch Wisp wears the
-winged `glitchwisp` rig (static glide, vex base) and Glitch Warden the furnace-golem
-rig (idle + user walk cycle, golem base) — visual sign-off pending, hitboxes stay
-vanilla. Live stats differ from the original table: Wisp **12 HP / 2 dmg**, Warden
-**180 HP / 5 dmg** (mob yml is authoritative; retune here when combat data lands).
+**Custom models (2026-09-21, docs/MODELS.md):** all 8 non-boss mobs plus 2
+new mobs (Glitch Reaver, Glitch Harrower) got full-adopt ModelEngine rigs
+sourced from three downloaded packs — Type, AI, and full multi-stage attack
+kits replaced, not just a cosmetic model swap (two exceptions: Phantom kept
+its native flying AI, Warden kept its vortex-pull layered on top of the new
+kit). GlitchCore and TheGlitchKing stay vanilla (Warden/Ender Dragon) — no
+pack had a matching boss-scale rig. Live stats below are current as of that
+pass; mob yml is authoritative, retune here when combat data lands.
+Visual/animation sign-off pending (needs a client, can't be verified by an agent).
 
 **Zone distribution:**
 - **glitch_pve (dungeons):** wave-based spawning scaled per dungeon tier (§5). T1 dungeons = T1 mobs, T2 = T1+T2, ..., T5 = everything incl. bosses.
-- **glitch_red (open world):** T1 fodder roams everywhere (common), T2 standard mobs occupy mid zones, T3 elites guard points of interest (the Core at 0,0, Vaults, extraction sites), T4 bosses spawn as scheduled server events.
+- **glitch_red (open world):** T1 fodder roams everywhere (common), T2 standard mobs occupy mid zones, T3 elites guard points of interest (the Core at 0,0, Vaults, extraction sites), the T3.5 mini-boss is a rare standing threat, T4 bosses spawn as scheduled server events.
 
 ### Tier 1 — Corrupted Drones (Fodder)
 
 | Mob | Base | HP | Damage | Resonance | Behavior |
 |---|---|---|---|---|---|
-| **Glitch Wisp** | Vex | 20 | 3 | Veil | Swarm (spawns in groups of 3-5). Fast, low HP. Alert other mobs when they spot a player. |
-| **Corrupted Crawler** | Silverfish | 30 | 4 | Hollow | Burrows through walls. Emerges under players. Poisons on hit (2s). |
+| **Glitch Wisp** | Enderman (`end_wraith` rig) | 16 | 2 | Veil | Teleporting ender-wraith. Right/left/spin slash combo plus a distance-tiered dash gap-closer. |
+| **Corrupted Crawler** | Zombie (`voids_ghost` rig) | 24 | 3 | Hollow | Ghostly corrupted spirit. Stun-locks briefly then bursts a poison + slow hit at close range. |
 
 **Drops:** Rune Fragment (common), nothing special.
 
@@ -155,9 +159,9 @@ vanilla. Live stats differ from the original table: Wisp **12 HP / 2 dmg**, Ward
 
 | Mob | Base | HP | Damage | Resonance | Behavior |
 |---|---|---|---|---|---|
-| **Glitch Stalker** | Zombie | 60 | 6 | Bloom | Sneaks toward players. Attacks from behind for bonus damage (1.5x). Retreats when low HP. |
-| **Glitch Brute** | Zombie (large) | 120 | 10 | Aegis | Slow, heavy hitter. Charges in a straight line (knockback 10 blocks). 3s charge-up telegraphed by particles. |
-| **Glitch Phantom** | Skeleton | 50 | 8 | Veil | Ranged attacker. Teleports when a player gets within 5 blocks. Shoots spectral arrows that bypass shields. |
+| **Glitch Stalker** | Enderman (`ender_crawler` rig) | 50 | 4 | Bloom | Aggressive ender-crawler. Fang bite, horn charge, and a leaping-bite gap-closer at range. |
+| **Glitch Brute** | Vindicator (`enderbruiser` rig) | 115 | 7 | Aegis | Smash/toss/right/left combo. Toss is the signature move — a heavy knockback throw. |
+| **Glitch Phantom** | Phantom (`mage` rig, kept native flight) | 40 | 8 | Veil | Flies as before; layered with a floating spellcaster's telegraphed burst-damage cast. |
 
 **Drops:** Rune Fragment (common), Aether Shard (10%), Rift Crystal (5%), Unstable Rift (small chance, §3 drop table).
 
@@ -167,11 +171,27 @@ vanilla. Live stats differ from the original table: Wisp **12 HP / 2 dmg**, Ward
 
 | Mob | Base | HP | Damage | Resonance | Behavior |
 |---|---|---|---|---|---|
-| **Glitch Sentinel** | Wither Skeleton | 200 | 14 | Ward | AoE slam (5-block radius, 15 damage, 2s stun). Summons 2 Glitch Wisps every 30s. Immune to knockback. |
-| **Glitch Sniper** | Skeleton (enchanted) | 80 | 18 | Ward | Long-range laser. Charges for 2s (red beam telegraph), then fires for massive damage. Weak point: glowing core. |
-| **Glitch Warden** | Iron Golem | 300 | 8 | Aegis | Guards a specific area. Pulls players toward it with a vortex (every 20s). Spawns a damage field around itself. |
+| **Glitch Sentinel** | Vindicator (`ender_watchman` rig) | 150 | 12 | Ward | Lantern smack/push melee plus its signature Summon Wraiths — channels then spawns 3 Glitch Wisps. |
+| **Glitch Sniper** | Zombie (`voids_wizard` rig, kites instead of standing) | 80 | 8 | Ward | Kiting caster. Charges a burst that pulls nearby players in, then hits for heavy AOE damage + nausea. |
+| **Glitch Warden** | Skeleton (`coffin_man` rig) | 200 | 8 | Aegis | Heavy 2-variant melee combo, plus its original vortex-pull + damage field kept as a bonus layer. |
+| **Glitch Harrower** *(new)* | Zombie (`voids_mask` rig) | 95 | 10 | Veil | Corrupted ambusher. Stuns, expands a portal ring outward, then knocks the target back with a heavy throw + slow. |
 
 **Drops:** Rune Fragment (uncommon), Aether Shard (30%), Rift Crystal (15%), Void Essence (5%), Unstable Rift (good chance, higher rarity weighting).
+
+---
+
+### Tier 3.5 — Mini-Boss (Rare Standing Threat)
+
+| Mob | Base | HP | Damage | Resonance | Behavior |
+|---|---|---|---|---|---|
+| **Glitch Reaver** *(new)* | Vindicator (`endermauler` rig) | 350 | 16 | Hollow | The most complex kit in the roster: right/left slash, a dash-bite gap-closer, teleport-maul (repositions behind the target twice), and a scream-of-ender cone AOE. Has its own boss bar. |
+
+Unlike GlitchCore/TheGlitchKing, the Reaver isn't a scheduled server event —
+it's a rare open-world spawn in `glitch_red` (own `randomspawns` group, long
+cooldown), meant to be a dangerous surprise rather than an announced fight.
+
+**Drops:** between Tier 3 and Tier 4 — bigger shard payout than a T3 elite,
+small Legendary Relic chance (see `GlitchReaverLoot.yml`).
 
 ---
 

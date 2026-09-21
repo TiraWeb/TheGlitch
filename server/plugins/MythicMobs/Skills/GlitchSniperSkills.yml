@@ -1,0 +1,57 @@
+# The Glitch — MythicMobs Skills: Glitch Sniper
+# Ported from the_voids/MythicMobs/skills/voids_skill.yml ("voids_wizard"),
+# renamed and rescaled from 10 dmg up to Tier 3 elite (~16 dmg) to match the
+# "long-range laser... massive damage" GAME_DESIGN flavor. Kept the pull+AOE
+# nausea burst as the signature ability.
+
+GlitchSniper_Attack:
+  Cooldown: 3
+  Skills:
+    - slash{y=1;w=1.8;h=1.8;mpd=true;a=340;p=64;oP=GlitchSniper_Attack_Tick2;Pitch=90to90;fo=1.5;d=0} @self
+    - stun{d=40;ai=true} @self
+    - effect:sound{s=block.trial_spawner.spawn_item_begin;v=1;p=1} @self
+    - effect:sound{s=block.trial_spawner.spawn_mob;v=1;p=0.8} @self
+    - delay 20
+    - setSkillCooldown{skill=GlitchSniper_Attack;seconds=3} @self
+    - state{s=attack;speed=0.5} @self
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#B057B0;color2=#FBB9DB;speed=1;a=10;size=1.5;hs=0.25;vs=1;repeat=2;repeati=12} @self
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1;a=10;size=1.5;hs=0.25;vs=1;repeat=2;repeati=12} @self
+    - effect:sound{s=entity.witch.throw;v=0.55;p=0} @self
+    - delay 45
+    - effect:sound{s=entity.illusioner.cast_spell;v=0.55;p=3} @self
+    - effect:sound{s=block.trial_spawner.ominous_activate;v=0.55;p=3} @self
+    - projectile{onTick=GlitchSniper_Attack_Tick;onHit=GlitchSniper_Attack_Hit;v=10;i=1;hR=1.5;vR=1.5;hnp=true;sE=false;sB=true;sfo=1;syo=1.5;hs=true;g=5;mr=16} @targetlocation
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#FB47A7;color2=#694CC8;speed=1;a=5;size=0.8;hs=0.25;vs=0.45;repeat=2;repeati=6} @target ?playerwithin{d=3}
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1;a=5;size=0.8;hs=0.25;vs=0.45;repeat=2;repeati=6} @target ?playerwithin{d=3}
+
+GlitchSniper_Attack_Tick2:
+  Skills:
+    - effect:particleorbital{p=portal;a=1;points=1;an=1;hs=0.15;vs=0.15;y=1;ticks=20;in=1;rx=0.2;ry=0;r=0.3;speed=1} @origin
+
+GlitchSniper_Attack_Tick:
+  Skills:
+    - pull{v=8;to=true} @EntitiesNearOrigin{r=2.5;ignore=monster}
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1.5;a=5;size=0.2;sfo=0.2;vs=random(0, 0.25)} @origin
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1.5;a=5;size=0.2;sfo=0.3;vs=random(0, 0.25)} @origin
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1.5;a=5;size=0.2;sfo=0.4;vs=random(0, 0.25)} @origin
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#FB47A7;color2=#694CC8;speed=1.5;a=5;size=0.5;sfo=0.5;vs=random(0, 0.5);hs=0.5} @origin
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#FB47A7;color2=#694CC8;speed=1.5;a=5;size=0.5;sfo=0.6;vs=random(0, 0.5);hs=0.5} @origin
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#FB47A7;color2=#694CC8;speed=1.5;a=5;size=0.5;sfo=0.7;vs=random(0, 0.5);hs=0.5} @origin
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#A18DFF;color2=#DF89FF;speed=1.5;a=5;size=0.65;sfo=0.8;vs=random(0, 0.5);hs=0.5} @origin
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#A18DFF;color2=#DF89FF;speed=1.5;a=5;size=0.65;sfo=0.9;vs=random(0, 0.5);hs=0.5} @origin
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#A18DFF;color2=#DF89FF;speed=1.5;a=5;size=0.65;sfo=1;vs=random(0, 0.5);hs=0.5} @origin
+
+GlitchSniper_Attack_Hit:
+  Skills:
+    - potion{type=Nausea;duration=140;level=1} @EntitiesNearOrigin{r=2.5;ignore=monster}
+    - effect:sound{s=block.trial_spawner.spawn_mob;v=1;p=1.5}
+    - damage{a=16} @EntitiesNearOrigin{r=2.5;ignore=monster}
+
+GlitchSniper_Walk:
+  Conditions:
+    - moving true
+    - skillOnCooldown{skill=GlitchSniper_Attack} false
+  Skills:
+    - state{s=walk2} @self ?moving
+    - delay 100
+    - state{s=idle} @self ?!moving

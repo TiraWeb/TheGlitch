@@ -1,0 +1,142 @@
+# The Glitch — MythicMobs Skills: Glitch Brute
+# Ported from EndMobsVol1/skills/end_mobs_skills.yml ("enderbruiser"), renamed
+# and rescaled from ~10 dmg/hit up to Tier 2 heavy (~9 dmg/hit, toss keeps its
+# strong throw knockback as the signature move).
+
+GlitchBrute_Smash:
+  Conditions:
+    - incombat true
+    - targetwithin{d=4} true
+    - hasaura{n=GlitchBruteSmash} false
+    - hasaura{n=GlitchBruteToss} false
+    - hasaura{n=GlitchBruteRightAttack} false
+    - hasaura{n=GlitchBruteLeftAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchBruteSmash;duration=40} @self
+    - state{model=enderbruiser;state=smash} @self
+    - sound{s=tugkandeman.enderbruiser_smash;v=2;p=1} @self
+    - delay 12
+    - lockmodel @self
+    - delay 1
+    - aura{auraName=GlitchBruteSmashD;duration=5;oT=GlitchBrute_Smash_Damage} @self
+    - delay 27
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchBrute_Smash_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=9} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=enderbruiser;pid=hurtbox}
+
+# Toss — the Brute's signature: a heavy throw that launches the target
+GlitchBrute_Toss:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=1} true
+    - targetwithin{d=5} true
+    - hasaura{n=GlitchBruteSmash} false
+    - hasaura{n=GlitchBruteToss} false
+    - hasaura{n=GlitchBruteRightAttack} false
+    - hasaura{n=GlitchBruteLeftAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchBruteToss;duration=40} @self
+    - state{model=enderbruiser;state=toss} @self
+    - sound{s=tugkandeman.enderbruiser_throw;v=2;p=1} @self
+    - delay 8
+    - lockmodel @self
+    - lunge{v=1} @forward{f=2.5;lockpitch=true}
+    - delay 3
+    - aura{auraName=GlitchBruteTossD;duration=5;oT=GlitchBrute_Toss_Damage} @self
+    - totem{md=2;oH=[ - throw{v=-10;vy=10} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=enderbruiser;pid=hurtbox}
+    - delay 29
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchBrute_Toss_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=9} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=enderbruiser;pid=hurtbox}
+
+GlitchBrute_RightAttack:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=0.5} true
+    - targetwithin{d=4} true
+    - hasaura{n=GlitchBruteSmash} false
+    - hasaura{n=GlitchBruteToss} false
+    - hasaura{n=GlitchBruteRightAttack} false
+    - hasaura{n=GlitchBruteLeftAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchBruteRightAttack;duration=35} @self
+    - state{model=enderbruiser;state=right_attack} @self
+    - sound{s=tugkandeman.enderbruiser_attack;v=2;p=1} @self
+    - delay 9
+    - lockmodel @self
+    - lunge{v=1} @forward{f=2.5;lockpitch=true}
+    - delay 1
+    - aura{auraName=GlitchBruteRightAttackD;duration=5;oT=GlitchBrute_RightAttack_Damage} @self
+    - delay 25
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchBrute_RightAttack_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=9} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=enderbruiser;pid=hurtbox}
+
+GlitchBrute_LeftAttack:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=0.5} true
+    - targetwithin{d=4} true
+    - hasaura{n=GlitchBruteSmash} false
+    - hasaura{n=GlitchBruteToss} false
+    - hasaura{n=GlitchBruteRightAttack} false
+    - hasaura{n=GlitchBruteLeftAttack} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchBruteLeftAttack;duration=35} @self
+    - state{model=enderbruiser;state=left_attack} @self
+    - sound{s=tugkandeman.enderbruiser_attack;v=2;p=1} @self
+    - delay 9
+    - lockmodel @self
+    - lunge{v=1} @forward{f=2.5;lockpitch=true}
+    - delay 1
+    - aura{auraName=GlitchBruteLeftAttackD;duration=5;oT=GlitchBrute_LeftAttack_Damage} @self
+    - delay 25
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchBrute_LeftAttack_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=9} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=enderbruiser;pid=hurtbox}
+
+GlitchBrute_AggroSound:
+  Conditions:
+    - incombat true
+  Skills:
+    - sound{s=tugkandeman.ender_aggro;v=2;p=1} @self
+
+GlitchBrute_IdleSound1:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_1;v=2;p=0.9} @self
+
+GlitchBrute_IdleSound2:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_2;v=2;p=0.9} @self
+
+GlitchBrute_IdleSound3:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_3;v=2;p=0.9} @self

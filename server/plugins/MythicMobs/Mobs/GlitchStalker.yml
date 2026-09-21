@@ -1,39 +1,54 @@
-# The Glitch — MythicMobs: Glitch Stalker (basic dungeon mob)
-# Fast, aggressive zombie variant. The bread-and-butter of dungeon encounters.
+# The Glitch — MythicMobs: Glitch Stalker (Tier 2 standard)
+# Custom model 2026-09-21: "ender_crawler" rig (EndMobsVol1 pack), full-adopt —
+# aggressive ender-crawler with fang/horn/leaping-bite attacks, was a Zombie.
+# Resonates Bloom.
+# Design: GAME_DESIGN §2 (T2), Resonance: ITEM_SYSTEM §5.
 
 GlitchStalker:
-  Type: ZOMBIE
+  Type: ENDERMAN
   Display: '<red>Glitch Stalker'
-  Health: 45
+  Health: 50
   Damage: 4
-  Options:
-    MovementSpeed: 0.32
-    AlwaysShowName: true
-    Persistent: false
-    Despawn: true
-    FollowRange: 24
-    KnockbackResistance: 0.1
-    PreventSunburn: true
-    PreventBlockDestruction: true
-    ScoreboardTags: [res_bloom]
-    ShowHealth: true
-  Equipment:
-    - IRON_SWORD HAND
-    - CHAINMAIL_CHESTPLATE CHEST
-    - CHAINMAIL_LEGGINGS LEGS
-    - CHAINMAIL_BOOTS FEET
+  Faction: GLITCH
+  DamageModifiers:
+    - SUFFOCATION 0
+    - FALL 0
   AIGoalSelectors:
     - clear
     - meleeattack
-    - lookatplayers
+    - movetowardstarget
     - randomstroll
   AITargetSelectors:
     - clear
-    - players
     - attacker
+    - players
+  Options:
+    NoDamageTicks: 10
+    MovementSpeed: 0.32
+    FollowRange: 24
+    KnockbackResistance: 1
+    Silent: true
+    Persistent: false
+    Despawn: true
+    Invincible: false
+    PreventSunburn: true
+    PreventBlockInfection: true
+    PreventOtherDrops: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    PreventBlockDestruction: true
+    MaxCombatDistance: 24
+    ScoreboardTags: [res_bloom]
+    ShowHealth: true
   Skills:
-    - effect:sound{s=entity.zombie.ambient;v=0.6;p=1.2} @self ~onSpawn 1
+    - skill{s=CancelEvent} @self ~onAttack
+    - model{mid=ender_crawler;usm=true} @self ~onSpawn
+    - model{mid=ender_crawler;usm=true} @self ~onLoad
+    - skill{s=GlitchStalker_Chase} @self ~onEnterCombat
+    - skill{s=GlitchStalker_Walk} @self ~onDropCombat
+    - randomskill{skills=GlitchStalker_FangAttack,GlitchStalker_HornAttack,GlitchStalker_JumpAttack} @self ~onTimer:20
+    - skill{s=GlitchStalker_AggroSound} @self ~onTimer:1000
+    - randomskill{skills=GlitchStalker_IdleSound1,GlitchStalker_IdleSound2,GlitchStalker_IdleSound3} @self ~onTimer:600
     - effect:sound{s=entity.zombie.hurt;v=0.8;p=0.8} @self ~onDamaged 0.4
-    - effect:sound{s=entity.zombie.death;v=1;p=0.6} @self ~onDeath 1
   Drops:
     - GlitchStalkerLoot

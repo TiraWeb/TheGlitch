@@ -31,17 +31,31 @@ RZ_T2_Stalker_Brute_Phantom:
   Cooldown: 90
 
 # --- T3 elites: Core and beacons (rarer, stronger) — was 0.08/90 ---
+# GlitchHarrower (new 2026-09-21) added, weights rebalanced across 4 entries.
 RZ_T3_Sentinel_Sniper_Warden:
   Action: ADD
   Types:
-  - GlitchSentinel 40
-  - GlitchSniper 35
-  - GlitchWarden 25
+  - GlitchSentinel 30
+  - GlitchSniper 27
+  - GlitchWarden 20
+  - GlitchHarrower 23
   Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
   Chance: 0.015
   Priority: 3
   PositionType: LAND
   Cooldown: 180
+
+# --- T3.5 mini-boss: rare standing threat, not a scheduled server event
+# (unlike RZ_T4_Bosses below) — new 2026-09-21 ---
+RZ_T35_Reaver:
+  Action: ADD
+  Types:
+  - GlitchReaver 100
+  Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
+  Chance: 0.0025
+  Priority: 5
+  PositionType: LAND
+  Cooldown: 600
 
 # --- T4 bosses: very rare, only occasionally ---
 RZ_T4_Bosses:

@@ -1,0 +1,246 @@
+# The Glitch — MythicMobs Skills: Glitch Wisp
+# Ported from EndMobsVol1/skills/end_mobs_skills.yml ("end_wraith"), renamed
+# and rescaled from its source ~10 dmg/hit down to Tier 1 fodder (~3 dmg/hit).
+# Timings/mechanics kept as-authored (they're synced to the model's animation
+# frames) — only Health/Damage numbers were rescaled.
+
+GlitchWisp_Summoned:
+  Skills:
+    - aura{auraName=GlitchWispSummoned;duration=20} @self
+    - setgravity{g=false} @self
+    - setNoDamageTicks{ticks=20;delay=1} @self
+    - delay 20
+    - setgravity{g=true} @self
+    - potion{type=SLOW_FALLING;d=20;l=10} @self
+
+GlitchWisp_RightSlash:
+  Conditions:
+    - incombat true
+    - targetwithin{d=3} true
+    - hasaura{n=GlitchWispSummoned} false
+    - hasaura{n=GlitchWispRightSlash} false
+    - hasaura{n=GlitchWispLeftSlash} false
+    - hasaura{n=GlitchWispSpinSlash} false
+    - hasaura{n=GlitchWispDash} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchWispRightSlash;duration=30} @self
+    - state{model=end_wraith;state=right_slash} @self
+    - sound{s=tugkandeman.end_wraith_rightslash;v=2;p=1} @self
+    - delay 8
+    - lockmodel @self
+    - delay 1
+    - aura{auraName=GlitchWispRightSlashD;duration=5;oT=GlitchWisp_RightSlash_Damage} @self
+    - delay 21
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchWisp_RightSlash_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=3} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=end_wraith;pid=hurtbox}
+
+GlitchWisp_LeftSlash:
+  Conditions:
+    - incombat true
+    - targetwithin{d=3} true
+    - hasaura{n=GlitchWispSummoned} false
+    - hasaura{n=GlitchWispRightSlash} false
+    - hasaura{n=GlitchWispLeftSlash} false
+    - hasaura{n=GlitchWispSpinSlash} false
+    - hasaura{n=GlitchWispDash} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchWispLeftSlash;duration=30} @self
+    - state{model=end_wraith;state=left_slash} @self
+    - sound{s=tugkandeman.end_wraith_leftslash;v=2;p=1} @self
+    - delay 8
+    - lockmodel @self
+    - delay 1
+    - aura{auraName=GlitchWispLeftSlashD;duration=5;oT=GlitchWisp_LeftSlash_Damage} @self
+    - delay 21
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchWisp_LeftSlash_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=3} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=end_wraith;pid=hurtbox}
+
+GlitchWisp_SpinSlash:
+  Conditions:
+    - incombat true
+    - targetwithin{d=3} true
+    - hasaura{n=GlitchWispSummoned} false
+    - hasaura{n=GlitchWispRightSlash} false
+    - hasaura{n=GlitchWispLeftSlash} false
+    - hasaura{n=GlitchWispSpinSlash} false
+    - hasaura{n=GlitchWispDash} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchWispSpinSlash;duration=40} @self
+    - state{model=end_wraith;state=spin_slash} @self
+    - sound{s=tugkandeman.end_wraith_spinslash;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 1
+    - aura{auraName=GlitchWispSpinSlashD;duration=10;oT=GlitchWisp_SpinSlash_Damage} @self
+    - delay 29
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchWisp_SpinSlash_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=3} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=end_wraith;pid=hurtbox}
+
+# Dash — distance-tiered dispatcher (mirrors the source pack's pattern)
+GlitchWisp_Dash:
+  Conditions:
+    - incombat true
+    - (targetnotwithin{d=8} && targetwithin{d=10}) CastInstead GlitchWisp_Dash_1
+    - (targetnotwithin{d=10} && targetwithin{d=12}) CastInstead GlitchWisp_Dash_2
+    - (targetnotwithin{d=12} && targetwithin{d=14}) CastInstead GlitchWisp_Dash_3
+    - (targetnotwithin{d=14} && targetwithin{d=16}) CastInstead GlitchWisp_Dash_4
+  Skills:
+    - CancelEvent @self
+
+GlitchWisp_Dash_Damage:
+  Skills:
+    - totem{md=2;oH=[ - damage{a=3} ];hnp=true;hp=true;hR=1.5;vR=1.5;i=1;drawhitbox=false} @ModelPart{mid=end_wraith;pid=hurtbox}
+
+GlitchWisp_Dash_1:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=8} true
+    - targetwithin{d=10} true
+    - hasaura{n=GlitchWispSummoned} false
+    - hasaura{n=GlitchWispRightSlash} false
+    - hasaura{n=GlitchWispLeftSlash} false
+    - hasaura{n=GlitchWispSpinSlash} false
+    - hasaura{n=GlitchWispDash} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchWispDash;duration=70} @self
+    - state{model=end_wraith;state=wraith_dash} @self
+    - sound{s=tugkandeman.end_wraith_dash;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 20
+    - projectile{sE=false;syo=0;tyo=0;d=12;v=20;onTick=[ - teleport @ProjectileForward{f=-1.2} ];hnp=true} @forward{f=9}
+    - delay 12
+    - aura{auraName=GlitchWispDashD;d=5;oT=GlitchWisp_Dash_Damage} @self
+    - delay 28
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchWisp_Dash_2:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=10} true
+    - targetwithin{d=12} true
+    - hasaura{n=GlitchWispSummoned} false
+    - hasaura{n=GlitchWispRightSlash} false
+    - hasaura{n=GlitchWispLeftSlash} false
+    - hasaura{n=GlitchWispSpinSlash} false
+    - hasaura{n=GlitchWispDash} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchWispDash;duration=70} @self
+    - state{model=end_wraith;state=wraith_dash} @self
+    - sound{s=tugkandeman.end_wraith_dash;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 20
+    - projectile{sE=false;syo=0;tyo=0;d=12;v=20;onTick=[ - teleport @ProjectileForward{f=-1.2} ];hnp=true} @forward{f=11}
+    - delay 12
+    - aura{auraName=GlitchWispDashD;d=5;oT=GlitchWisp_Dash_Damage} @self
+    - delay 28
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchWisp_Dash_3:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=12} true
+    - targetwithin{d=14} true
+    - hasaura{n=GlitchWispSummoned} false
+    - hasaura{n=GlitchWispRightSlash} false
+    - hasaura{n=GlitchWispLeftSlash} false
+    - hasaura{n=GlitchWispSpinSlash} false
+    - hasaura{n=GlitchWispDash} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchWispDash;duration=70} @self
+    - state{model=end_wraith;state=wraith_dash} @self
+    - sound{s=tugkandeman.end_wraith_dash;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 20
+    - projectile{sE=false;syo=0;tyo=0;d=12;v=20;onTick=[ - teleport @ProjectileForward{f=-1.2} ];hnp=true} @forward{f=13}
+    - delay 12
+    - aura{auraName=GlitchWispDashD;d=5;oT=GlitchWisp_Dash_Damage} @self
+    - delay 28
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchWisp_Dash_4:
+  Conditions:
+    - incombat true
+    - targetnotwithin{d=14} true
+    - targetwithin{d=16} true
+    - hasaura{n=GlitchWispSummoned} false
+    - hasaura{n=GlitchWispRightSlash} false
+    - hasaura{n=GlitchWispLeftSlash} false
+    - hasaura{n=GlitchWispSpinSlash} false
+    - hasaura{n=GlitchWispDash} false
+  Skills:
+    - delay 1
+    - CancelEvent @self
+    - setspeed{speed=0;type=WALKING} @self
+    - aura{auraName=GlitchWispDash;duration=70} @self
+    - state{model=end_wraith;state=wraith_dash} @self
+    - sound{s=tugkandeman.end_wraith_dash;v=2;p=1} @self
+    - delay 10
+    - lockmodel @self
+    - delay 20
+    - projectile{sE=false;syo=0;tyo=0;d=12;v=20;onTick=[ - teleport @ProjectileForward{f=-1.2} ];hnp=true} @forward{f=15}
+    - delay 12
+    - aura{auraName=GlitchWispDashD;d=5;oT=GlitchWisp_Dash_Damage} @self
+    - delay 28
+    - skill{s=Glitch_TeleportAway} @self 0.1
+    - lockmodel{l=false} @self
+    - setspeed{speed=1;type=WALKING} @self
+
+GlitchWisp_AggroSound:
+  Conditions:
+    - incombat true
+  Skills:
+    - sound{s=tugkandeman.ender_aggro;v=2;p=1} @self
+
+GlitchWisp_IdleSound1:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_1;v=2;p=1.5} @self
+
+GlitchWisp_IdleSound2:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_2;v=2;p=1.5} @self
+
+GlitchWisp_IdleSound3:
+  Skills:
+    - sound{s=tugkandeman.ender_idle_3;v=2;p=1.5} @self

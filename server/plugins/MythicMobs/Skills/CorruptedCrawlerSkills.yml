@@ -1,0 +1,20 @@
+# The Glitch — MythicMobs Skills: Corrupted Crawler
+# Ported from the_voids/MythicMobs/skills/voids_skill.yml (voids_ghost, renamed
+# + rescaled to Tier 1 fodder). Source pack's own skill name had a bug (mob
+# yml called "voids_ghost_attack" but the skill was defined as "void_ghost_attack",
+# missing the "s") — using our own Glitch-prefixed name throughout avoids it.
+
+CorruptedCrawler_Attack:
+  Cooldown: 3
+  Skills:
+    - stun{d=20;ai=true} @self
+    - state{s=attack} @self
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#59338B;color2=#694CC8;speed=1;a=10;size=1.5;hs=0.25;vs=1;repeat=2;repeati=12} @self
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1;a=10;size=1.5;hs=0.25;vs=1;repeat=2;repeati=12} @self
+    - effect:sound{s=entity.phantom.bite;v=0.25;p=0} @self
+    - delay 15
+    - e:particles{p=DUST_COLOR_TRANSITION;color=#59338B;color2=#694CC8;speed=1;a=5;size=0.8;hs=0.25;vs=0.45;repeat=2;repeati=6} @target ?playerwithin{d=3}
+    - e:particles{p=Spell_mob;color=#694CC8;speed=1;a=5;size=0.8;hs=0.25;vs=0.45;repeat=2;repeati=6} @target ?playerwithin{d=3}
+    - damage{a=3} @target ?playerwithin{d=3.5}
+    - potion{type=POISON;duration=40;level=0} @target ?playerwithin{d=3.5}
+    - potion{type=SLOWNESS;duration=30;level=0} @target ?playerwithin{d=3.5}
