@@ -158,7 +158,7 @@ rarity-colors:
 
 # Residual Glitch — greed stacks while lingering in the rift
 residual-glitch:
-  enabled-worlds: [glitch_red]
+  enabled-worlds: [glitch_red, glitch_red_eleria, glitch_red_horizons]
   stack-interval-minutes: 5
   max-stacks: 8
   damage-taken-per-stack: 5
@@ -190,7 +190,7 @@ elite-hunt:
 # required key, and applies the Residual Glitch loot-luck consumer
 # (per-roll rarity surge chance + surge drop chance = lootLuckBonus%).
 containers:
-  enabled-worlds: [glitch_red, glitch_pve]
+  enabled-worlds: [glitch_red, glitch_red_eleria, glitch_red_horizons, glitch_pve]
   # Extra container rolls for Specters with the Scavenge trait (GlitchClasses
   # keeps the specter_scavenge scoreboard tag in sync)
   scavenge-bonus-rolls: 1
@@ -269,7 +269,7 @@ scatter:
   # (one container per cell, jittered inside) instead of pure-random x,z which
   # clumps. Set false to restore legacy pure-random picks.
   even-spread: true
-  enabled-worlds: [glitch_red]
+  enabled-worlds: [glitch_red, glitch_red_eleria, glitch_red_horizons]
   interval-minutes: 31
   clear-previous: true
   on-top-only: true

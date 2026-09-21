@@ -5,6 +5,8 @@
 # on death the player keeps leggings + boots; everything else drops.
 mercy-worlds:
   - glitch_red
+  - glitch_red_eleria
+  - glitch_red_horizons
 
 # Entry invulnerability after entering the Red Zone (or spawning inside it).
 entry-invulnerability:

@@ -40,21 +40,20 @@ public final class RaidListener implements Listener {
         Player player = event.getPlayer();
         String to = player.getWorld().getName();
         String from = event.getFrom().getName();
-        String raidWorld = manager.getAutoStartWorld();
         String hubWorld = manager.getHubWorld();
 
         // Fix 1: hard block on physical entry during the 1m scatter buffer —
         // bounce non-bypass players straight back to hub (no raid join/start).
-        if (to.equalsIgnoreCase(raidWorld) && manager.denyRedEntryDuringBuffer(player)) {
+        if (manager.isRedWorld(to) && manager.denyRedEntryDuringBuffer(player)) {
             return;
         }
 
-        // Entering the raid world -> auto start if not already in raid
+        // Entering a red world -> auto start if not already in raid
         // Global-remaining mode: late joiners share the remaining time of the running 30m extraction
-        if (to.equalsIgnoreCase(raidWorld) && !manager.isInRaid(player.getUniqueId())) {
-            RaidSession global = manager.findActiveGlobalSession(raidWorld);
+        if (manager.isRedWorld(to) && !manager.isInRaid(player.getUniqueId())) {
+            RaidSession global = manager.findActiveGlobalSession(to);
             if (global != null) {
-                boolean added = manager.addToGlobalSession(player, raidWorld);
+                boolean added = manager.addToGlobalSession(player, to);
                 if (added) {
                     plugin.getLogger().info("Auto-joined GLOBAL raid for " + player.getName() + " (entered " + to + " remaining=" + manager.formatTime(global.getRemainingSeconds()) + ")");
                 }
@@ -71,7 +70,7 @@ public final class RaidListener implements Listener {
                     }
                 }
             }
-        } else if (to.equalsIgnoreCase(raidWorld) && manager.isInRaid(player.getUniqueId())) {
+        } else if (manager.isRedWorld(to) && manager.isInRaid(player.getUniqueId())) {
             // Already in raid (party pull) — ensure other party members are also pulled and see remaining time
             Party party = manager.getPartyManager().getParty(player.getUniqueId());
             RaidSession mySession = manager.getSession(player.getUniqueId());
@@ -81,19 +80,19 @@ public final class RaidListener implements Listener {
                     // Never re-abduct members who already extracted during this raid cycle
                     if (!manager.isInRaid(mid) && manager.hasExtractedThisRaid(mid)) continue;
                     Player other = Bukkit.getPlayer(mid);
-                    if (other != null && !other.getWorld().getName().equalsIgnoreCase(raidWorld)) {
+                    if (other != null && !other.getWorld().getName().equalsIgnoreCase(to)) {
                         // Don't pull if other is recently dead (avoid death loop)
                         if (manager.isRecentlyDead(mid, 5000L)) continue;
                         // Fix 1: never drag members into red during the scatter buffer (except bypass).
-                        if (manager.isInBufferPeriod() && !other.hasPermission("glitchraid.admin")) {
+                        if (manager.isInBufferPeriod(to) && !other.hasPermission("glitchraid.admin")) {
                             try { other.sendMessage(MM.deserialize("<yellow>The Glitch is scattering — <gray>staying out of the Red Zone until the next extraction.</gray></yellow>")); } catch (Exception ignored) {}
-                            plugin.getLogger().info("Party pull skipped for " + other.getName() + " — in 1m buffer (stays out of " + raidWorld + ")");
+                            plugin.getLogger().info("Party pull skipped for " + other.getName() + " — in 1m buffer (stays out of " + to + ")");
                             continue;
                         }
                         try {
                             FoliaScheduler.teleportEntity(other, plugin, player.getLocation());
-                            other.sendMessage(MM.deserialize("<gray>Party pulled you to <white>" + raidWorld + "</white> with <white>" + player.getName() + "</white>.</gray>"));
-                            plugin.getLogger().info("Party pull: " + other.getName() + " -> " + player.getName() + " in " + raidWorld);
+                            other.sendMessage(MM.deserialize("<gray>Party pulled you to <white>" + to + "</white> with <white>" + player.getName() + "</white>.</gray>"));
+                            plugin.getLogger().info("Party pull: " + other.getName() + " -> " + player.getName() + " in " + to);
                         } catch (Exception ignored) {}
                         // Ensure pulled member shares the same timer (remaining time) — crucial for global-remaining
                         if (other != null && !manager.isInRaid(mid) && mySession != null) {
@@ -112,8 +111,8 @@ public final class RaidListener implements Listener {
             }
         }
 
-        // Leaving raid world to hub -> treat as extraction if in raid (and not a recent death respawn)
-        if (from.equalsIgnoreCase(raidWorld) && to.equalsIgnoreCase(hubWorld) && manager.isInRaid(player.getUniqueId())) {
+        // Leaving a red world to hub -> treat as extraction if in raid (and not a recent death respawn)
+        if (manager.isRedWorld(from) && to.equalsIgnoreCase(hubWorld) && manager.isInRaid(player.getUniqueId())) {
             if (manager.isRecentlyDead(player.getUniqueId(), 10000L)) {
                 plugin.getLogger().info("Raid world->hub for " + player.getName() + " ignored (recent death, not extraction)");
                 return;
@@ -137,7 +136,7 @@ public final class RaidListener implements Listener {
             // never wake up in the Red Zone — reroute to hub with an explanation.
             boolean cancelled = manager.takeDisconnectCancelled(player);
             String spawnWorld = player.getWorld().getName();
-            if (spawnWorld.equalsIgnoreCase(manager.getAutoStartWorld())
+            if (manager.isRedWorld(spawnWorld)
                     && (cancelled || !manager.isInRaid(player.getUniqueId()))) {
                 manager.teleportToHub(player);
                 String raw = cancelled ? manager.getDisconnectCancelledMessage() : manager.getInterruptedMessage();
@@ -147,12 +146,12 @@ public final class RaidListener implements Listener {
                 return;
             }
             // Fix 1: joining while standing in red during the 1m scatter buffer — bounce to hub.
-            if (spawnWorld.equalsIgnoreCase(manager.getAutoStartWorld())
+            if (manager.isRedWorld(spawnWorld)
                     && manager.denyRedEntryDuringBuffer(player)) {
                 return;
             }
             String world = player.getWorld().getName();
-            if (world.equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
+            if (manager.isRedWorld(world) && !manager.isInRaid(player.getUniqueId())) {
                 RaidSession global = manager.findActiveGlobalSession(world);
                 if (global != null) {
                     boolean added = manager.addToGlobalSession(player, world);
@@ -167,17 +166,17 @@ public final class RaidListener implements Listener {
                         plugin.getLogger().info("Auto-started raid for " + player.getName() + " (join in " + world + ")");
                     }
                 }
-            } else if (manager.isInRaid(player.getUniqueId()) && !world.equalsIgnoreCase(manager.getAutoStartWorld())) {
+            } else if (manager.isInRaid(player.getUniqueId()) && !manager.isRedWorld(world)) {
                 // Player is in an active raid but spawned in hub (e.g., party was pulled, they were offline) — pull to raid
                 RaidSession s = manager.getSession(player.getUniqueId());
                 if (s != null) {
                     for (UUID mid : s.getMembers()) {
                         if (mid.equals(player.getUniqueId())) continue;
                         Player other = Bukkit.getPlayer(mid);
-                        if (other != null && other.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
+                        if (other != null && manager.isRedWorld(other.getWorld().getName())) {
                             try {
                                 FoliaScheduler.teleportEntity(player, plugin, other.getLocation());
-                                player.sendMessage(MM.deserialize("<gray>Rejoined raid — pulled to party in <white>" + manager.getAutoStartWorld() + "</white>.</gray>"));
+                                player.sendMessage(MM.deserialize("<gray>Rejoined raid — pulled to party in <white>" + other.getWorld().getName() + "</white>.</gray>"));
                                 // Ensure bossbar shown
                                 net.kyori.adventure.bossbar.BossBar bar = manager.getBossBarForSession(s);
                                 if (bar != null) player.showBossBar(bar);
@@ -218,13 +217,14 @@ public final class RaidListener implements Listener {
             org.bukkit.Location respawn = event.getRespawnLocation();
             if (respawn != null && respawn.getWorld() != null) {
                 String respawnWorld = respawn.getWorld().getName();
-                if (respawnWorld.equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
+                if (manager.isRedWorld(respawnWorld) && !manager.isInRaid(player.getUniqueId())) {
                     FoliaScheduler.runLaterGlobal(plugin, () -> {
                         if (!player.isOnline()) return;
-                        if (player.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld()) && !manager.isInRaid(player.getUniqueId())) {
-                            RaidSession global = manager.findActiveGlobalSession(manager.getAutoStartWorld());
+                        String currentWorld = player.getWorld().getName();
+                        if (manager.isRedWorld(currentWorld) && !manager.isInRaid(player.getUniqueId())) {
+                            RaidSession global = manager.findActiveGlobalSession(currentWorld);
                             if (global != null) {
-                                boolean added = manager.addToGlobalSession(player, manager.getAutoStartWorld());
+                                boolean added = manager.addToGlobalSession(player, currentWorld);
                                 if (added) plugin.getLogger().info("Auto-joined GLOBAL raid on respawn for " + player.getName() + " remaining=" + manager.formatTime(global.getRemainingSeconds()));
                             } else {
                                 boolean started = manager.startRaid(player, true);
@@ -299,7 +299,7 @@ public final class RaidListener implements Listener {
         if (session == null) {
             return;
         }
-        String raidWorld = manager.getAutoStartWorld();
+        String raidWorld = session.getWorldKey() != null ? session.getWorldKey() : manager.getAutoStartWorld();
         if (!player.getWorld().getName().equalsIgnoreCase(raidWorld)) {
             // Quit outside the raid world (e.g. hub) — keep the old resume behavior
             if (!manager.isSessionGlobal(session)) {

@@ -15,19 +15,28 @@ public final class RaidSession {
     private final Set<UUID> members;
     private final long startTime;
     private final long endTime;
+    // Which red-world (e.g. glitch_red / glitch_red_eleria / glitch_red_horizons) this
+    // session belongs to — lets callers avoid scanning globalSessions for identity match.
+    private final String worldKey;
     // Per-player loot/deaths — concurrent because tick + pickup can race
     private final java.util.concurrent.ConcurrentHashMap<UUID, Integer> lootByPlayer = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<UUID, Integer> deathsByPlayer = new java.util.concurrent.ConcurrentHashMap<>();
 
-    public RaidSession(UUID leader, Set<UUID> members, long startTime, long endTime) {
+    public RaidSession(UUID leader, Set<UUID> members, long startTime, long endTime, String worldKey) {
         this.leader = leader;
         this.members = members;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.worldKey = worldKey;
     }
 
     public UUID getLeader() {
         return leader;
+    }
+
+    /** The red-world this session is anchored to (normalized lowercase world name). */
+    public String getWorldKey() {
+        return worldKey;
     }
 
     public Set<UUID> getMembers() {

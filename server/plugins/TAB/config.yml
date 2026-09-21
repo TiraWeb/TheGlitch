@@ -81,6 +81,39 @@ scoreboard:
         - "<red>✗ Full Loot — Die = Lose All</red>"
         - "<yellow>⚡ Extract at beacons to bank shards</yellow>"
         - ""
+    # Same red-zone scoreboard, duplicated per world (no verified multi-value/OR
+    # display-condition syntax to copy elsewhere in this file, so duplication is
+    # the safe choice over guessing at one).
+    glitch-red-eleria:
+      display-condition: "%world%=glitch_red_eleria"
+      title: "<gradient:#FF0000:#FF00FF>⚡ RED ZONE — ELERIA</gradient>"
+      lines:
+        - ""
+        - "<red><bold>⚠ DANGER ZONE ⚠</bold></red>"
+        - "<gray>Zone:</gray> <red>Eleria</red>"
+        - "<gray>Mode:</gray> <red>PvPvE Extraction</red>"
+        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%glitchclasses_class%</white>"
+        - ""
+        - "<gray>────────────</gray>"
+        - "<red>✗ Full Loot — Die = Lose All</red>"
+        - "<yellow>⚡ Extract at beacons to bank shards</yellow>"
+        - ""
+    glitch-red-horizons:
+      display-condition: "%world%=glitch_red_horizons"
+      title: "<gradient:#FF0000:#FF00FF>⚡ RED ZONE — HORIZONS</gradient>"
+      lines:
+        - ""
+        - "<red><bold>⚠ DANGER ZONE ⚠</bold></red>"
+        - "<gray>Zone:</gray> <red>Horizons</red>"
+        - "<gray>Mode:</gray> <red>PvPvE Extraction</red>"
+        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%glitchclasses_class%</white>"
+        - ""
+        - "<gray>────────────</gray>"
+        - "<red>✗ Full Loot — Die = Lose All</red>"
+        - "<yellow>⚡ Extract at beacons to bank shards</yellow>"
+        - ""
     default:
       title: "<gradient:#5B00FF:#FF00FF>⚡ The Glitch</gradient>"
       lines:

@@ -9,6 +9,8 @@ insurance:
   cooldown-seconds: 60
   enabled-worlds:
     - glitch_red
+    - glitch_red_eleria
+    - glitch_red_horizons
     - glitch_pve
 
 messages:

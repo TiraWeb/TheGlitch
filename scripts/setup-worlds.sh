@@ -25,6 +25,12 @@ MC_USER="minecraft"
 # rather than rebuilt.
 MAIN_WORLD="hub"
 DIM_DIR="${SERVER_DIR}/${MAIN_WORLD}/dimensions/minecraft"
+# All Red Zone worlds — each gets identical gamerules/WorldGuard flags below.
+# The first entry is the originally-generated/seeded world; any additional
+# entries are external map imports (glitch_red_eleria/glitch_red_horizons,
+# added 2026-09-21) and are expected to already have region data — Chunky
+# pre-gen (below) only runs for the first/generated entry.
+RED_WORLDS=(glitch_red glitch_red_eleria glitch_red_horizons)
 
 log()  { echo -e "\033[1;32m[worlds]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[worlds]\033[0m $*"; }
@@ -67,13 +73,20 @@ ensure_world() {
 }
 
 ensure_world glitch_pve normal --world-type flat --no-structures --no-adjust-spawn
-ensure_world glitch_red normal --seed "${RED_SEED}"
+# Only the first (originally seed-generated) red world uses `mv create` with a
+# seed — additional red worlds are external map imports, so ensure_world's
+# "import if region/ exists, else create fresh" branch handles them the same
+# way glitch_pve/glitch_red always worked.
+ensure_world "${RED_WORLDS[0]}" normal --seed "${RED_SEED}"
+for RW in "${RED_WORLDS[@]:1}"; do
+  ensure_world "${RW}" normal
+done
 
 # --- per-world Paper override (into the REAL dimension folder) --------------
 # glitch_pve's dungeon-trash fast-despawn tuning, placed at the actual world
 # path. Takes effect on the next server restart (Paper reads paper-world.yml
 # at world load).
-for PW_NAME in glitch_pve glitch_red; do
+for PW_NAME in glitch_pve "${RED_WORLDS[@]}"; do
   PW_SRC="${REPO_DIR}/server/world-overrides/${PW_NAME}/paper-world.yml"
   if [[ -f "${PW_SRC}" && -d "${DIM_DIR}/${PW_NAME}" ]]; then
     install -o "${MC_USER}" -g "${MC_USER}" -m 644 \
@@ -147,14 +160,18 @@ done
 mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null
 mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
 
-# glitch_red (dim glitch_red) — full-loot PvP, MythicMobs-only via RandomSpawns ADD.
-# spawn_mobs MUST be true for Mythic RandomSpawns ADD (GenerateSpawnPoints:true); vanilla suppressed via Mythic DisableVanillaSpawns.
-for rule in "keep_inventory false" "spawn_mobs true" "spawn_phantoms false" "mob_griefing false" \
-             "fire_spread_radius_around_player 0" "advance_weather false" \
-             "spawn_wandering_traders false"; do
-  apply_rule ${rule} glitch_red
+# Every red world (dim glitch_red / glitch_red_eleria / glitch_red_horizons) —
+# full-loot PvP, MythicMobs-only via RandomSpawns ADD. spawn_mobs MUST be true
+# for Mythic RandomSpawns ADD (GenerateSpawnPoints:true); vanilla suppressed via
+# Mythic DisableVanillaSpawns. All red worlds share identical rules.
+for RW in "${RED_WORLDS[@]}"; do
+  for rule in "keep_inventory false" "spawn_mobs true" "spawn_phantoms false" "mob_griefing false" \
+               "fire_spread_radius_around_player 0" "advance_weather false" \
+               "spawn_wandering_traders false"; do
+    apply_rule ${rule} "${RW}"
+  done
+  mc "execute in minecraft:${RW} run weather clear" >/dev/null || true
 done
-mc "execute in minecraft:glitch_red run weather clear" >/dev/null
 
 # --- clear leftover hostile mobs (one-time cleanup, safe to repeat) ---------
 # Mobs that spawned in hub/glitch_pve before spawn_mobs was correctly set to
@@ -226,32 +243,34 @@ flag glitch_pve mycelium-spread deny
 flag glitch_pve vine-growth deny
 flag glitch_pve enderpearl deny
 
-# glitch_red — full-loot PvP on a curated, non-editable map (RED WORLD only)
+# Every red world — full-loot PvP on a curated, non-editable map (RED WORLDS only)
 # Indestructible adventure-like: deny all world modification, allow chest-access
 # and mob damage so players can loot and fight MythicMobs. pvp allow for Red PvP.
 # damage-animals allow + no mob-damage deny keeps custom MythicMobs hittable.
-flag glitch_red passthrough deny
-flag glitch_red pvp allow
-flag glitch_red use allow
-flag glitch_red chest-access allow
-flag glitch_red damage-animals allow
-flag glitch_red block-break deny
-flag glitch_red block-place deny
-flag glitch_red leaf-decay deny
-flag glitch_red ice-form deny
-flag glitch_red ice-melt deny
-flag glitch_red snow-fall deny
-flag glitch_red snow-melt deny
-flag glitch_red grass-spread deny
-flag glitch_red mycelium-spread deny
-flag glitch_red vine-growth deny
-flag glitch_red creeper-explosion deny
-flag glitch_red other-explosion deny
-flag glitch_red tnt deny
-flag glitch_red enderdragon-block-damage deny
-flag glitch_red wither-damage deny
-flag glitch_red item-drop allow
-flag glitch_red item-pickup allow
+for RW in "${RED_WORLDS[@]}"; do
+  flag "${RW}" passthrough deny
+  flag "${RW}" pvp allow
+  flag "${RW}" use allow
+  flag "${RW}" chest-access allow
+  flag "${RW}" damage-animals allow
+  flag "${RW}" block-break deny
+  flag "${RW}" block-place deny
+  flag "${RW}" leaf-decay deny
+  flag "${RW}" ice-form deny
+  flag "${RW}" ice-melt deny
+  flag "${RW}" snow-fall deny
+  flag "${RW}" snow-melt deny
+  flag "${RW}" grass-spread deny
+  flag "${RW}" mycelium-spread deny
+  flag "${RW}" vine-growth deny
+  flag "${RW}" creeper-explosion deny
+  flag "${RW}" other-explosion deny
+  flag "${RW}" tnt deny
+  flag "${RW}" enderdragon-block-damage deny
+  flag "${RW}" wither-damage deny
+  flag "${RW}" item-drop allow
+  flag "${RW}" item-pickup allow
+done
 
 # --- verify the gamerules that actually matter for safety -------------------
 # Read back the two gameplay-critical rules per world via Multiverse's filtered
@@ -260,7 +279,7 @@ flag glitch_red item-pickup allow
 # false in glitch_red. (Primary safety net is apply_rule's rejection warning
 # above — this is the visible confirmation.)
 log "Verifying critical gamerules (paste this back):"
-for w in hub glitch_pve glitch_red; do
+for w in hub glitch_pve "${RED_WORLDS[@]}"; do
   echo "  == ${w} =="
   mc "mv gamerule list ${w} --filter spawn_mobs"     2>/dev/null | grep -i "spawn_mobs:"     || echo "     spawn_mobs: (unreadable)"
   mc "mv gamerule list ${w} --filter keep_inventory" 2>/dev/null | grep -i "keep_inventory:" || echo "     keep_inventory: (unreadable)"
@@ -297,18 +316,20 @@ cat <<'EOF'
 
   Worlds:  hub (main, border 512) | glitch_pve (border 4096)
            glitch_red (border 2000, seed 20260719)
+           glitch_red_eleria, glitch_red_horizons (external map imports)
 
   If pre-generation started, it runs in the background —
   expect elevated CPU and TPS dips for ~15-20 minutes.
     progress:  sudo ./console.sh   (chunky prints updates)
     pause:     scripts/mc-cmd.py 'chunky pause'
     resume:    scripts/mc-cmd.py 'chunky continue'
-  (Re-running this script skips pre-gen automatically once done.)
+  (Re-running this script skips pre-gen automatically once done. Pre-gen only
+   runs for glitch_red — the two imported red worlds already have terrain.)
 
   Recommended after pre-gen finishes:
     sudo systemctl restart theglitch   # applies per-world paper-world.yml
-  then confirm all three worlds are registered across the restart:
-    scripts/mc-cmd.py 'mv list'        # expect hub, glitch_pve, glitch_red
+  then confirm all five worlds are registered across the restart:
+    scripts/mc-cmd.py 'mv list'        # expect hub, glitch_pve, glitch_red(_eleria/_horizons)
   (Paper 26.x stores them as dimensions of hub, so there is no per-world
    level.dat — 'mv list' is the right check, not a find for level.dat.)
 

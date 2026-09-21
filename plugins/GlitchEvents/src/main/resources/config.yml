@@ -6,6 +6,8 @@ events:
   # Worlds where dynamic events may occur
   enabled-worlds:
     - glitch_red
+    - glitch_red_eleria
+    - glitch_red_horizons
   # Automatically schedule random events between min/max interval
   auto-events-enabled: true
   min-interval-minutes: 20

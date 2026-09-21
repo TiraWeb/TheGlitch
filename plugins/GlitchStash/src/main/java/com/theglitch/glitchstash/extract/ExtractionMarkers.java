@@ -32,6 +32,7 @@ public final class ExtractionMarkers {
     private static final int PARTICLE_STACK = 3;
 
     private final GlitchStash plugin;
+    private final String world;
     private final WaypointBridge bridge;
     private final List<ActivePoint> active = new ArrayList<>();
     private final List<long[]> forcedChunks = new ArrayList<>();
@@ -39,8 +40,9 @@ public final class ExtractionMarkers {
 
     private record ActivePoint(ExtractionPoint point, ArmorStand marker, TextDisplay label) {}
 
-    public ExtractionMarkers(GlitchStash plugin) {
+    public ExtractionMarkers(GlitchStash plugin, String world) {
         this.plugin = plugin;
+        this.world = world;
         this.bridge = new WaypointBridge(plugin);
     }
 
@@ -112,21 +114,24 @@ public final class ExtractionMarkers {
             }
         }
         forcedChunks.clear();
-        // Backup sweep: restarts mid-cycle or kills can leak tagged entities.
-        for (World world : Bukkit.getWorlds()) {
-            for (ArmorStand stand : world.getEntitiesByClass(ArmorStand.class)) {
+        // Backup sweep: restarts mid-cycle or kills can leak tagged entities. Scoped to this
+        // instance's own world only — sweeping every loaded world would delete another red
+        // world's still-active markers when running concurrent per-world cycles.
+        World myWorld = Bukkit.getWorld(this.world);
+        if (myWorld != null) {
+            for (ArmorStand stand : myWorld.getEntitiesByClass(ArmorStand.class)) {
                 if (stand.getScoreboardTags().contains(BASE_TAG)) {
                     // Stale marker from a previous cycle — release its forced chunk too
                     // (force-loads persist across restarts in level data).
                     try {
-                        world.setChunkForceLoaded(stand.getLocation().getBlockX() >> 4,
+                        myWorld.setChunkForceLoaded(stand.getLocation().getBlockX() >> 4,
                                 stand.getLocation().getBlockZ() >> 4, false);
                     } catch (Throwable ignored) {
                     }
                     stand.remove();
                 }
             }
-            for (TextDisplay display : world.getEntitiesByClass(TextDisplay.class)) {
+            for (TextDisplay display : myWorld.getEntitiesByClass(TextDisplay.class)) {
                 if (display.getScoreboardTags().contains(BASE_TAG)) display.remove();
             }
         }

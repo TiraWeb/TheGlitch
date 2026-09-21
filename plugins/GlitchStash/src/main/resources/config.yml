@@ -46,10 +46,19 @@ auto-extract:
   raid-duration-minutes: 30
   # Buffer between scatter loot and next cycle (interval = raidDuration + buffer)
   buffer-minutes: 1
-  # RED world name — only this world is killed at t0+30m, not hub/pve
-  red-world: "glitch_red"
+  # RED worlds — each gets its OWN independent 31m cycle, 3 dynamic extraction
+  # points, and timeout kill (only that world is killed at t0+30m, not hub/pve).
+  # (Legacy: the old singular "red-world" key is still read as a fallback if
+  # this list is empty/absent.)
+  red-worlds:
+    - "glitch_red"
+    - "glitch_red_eleria"
+    - "glitch_red_horizons"
+  # red-world: "glitch_red"
   # Allow-list of arenas to auto-start. Empty = all discovered via VelKoth API or arenas.yml.
   # Example: arenas: ["extraction_alpha", "extraction_bravo"]
+  # NOTE: legacy (non-dynamic) mode is not per-world — keep dynamic.enabled: true
+  # for any world beyond the first if running more than one red world.
   arenas: []
   # Dynamic extraction — each cycle picks N random validated surface spots on the
   # land box, creates/moves VelKoth arenas there (arena-prefix + index), starts them
@@ -59,7 +68,9 @@ auto-extract:
     enabled: true
     # Number of extraction points per cycle
     points: 3
-    # Land box center and half-width (random x/z within center ± radius)
+    # Land box center and half-width (random x/z within center ± radius) — shared
+    # default for every red world. If a new map's playable area isn't centered
+    # near here, override it per-world below rather than forcing this default.
     center-x: 1000
     center-z: 1000
     radius: 1000
@@ -69,10 +80,31 @@ auto-extract:
     max-surface-y: 100
     # VelKoth capture timer for the generated arenas
     capture-time-seconds: 30
-    # Arena id prefix — slots are <prefix>0, <prefix>1, ...
+    # Arena id prefix — slots are <prefix>0, <prefix>1, ... Per-world overrides
+    # below prevent concurrent cycles across red worlds from colliding on the
+    # same VelKoth arena ids.
     arena-prefix: extraction_dyn
     # Existing static arenas used to fill in when random validation fails
     fallback-arenas: []
+  # Per-world arena-id prefix — falls back to "<dynamic.arena-prefix>_<worldsuffix>"
+  # for any world not listed here (glitch_red keeps the original "extraction_dyn"
+  # prefix so its live arena ids don't change under it).
+  arena-prefix-overrides:
+    glitch_red: "extraction_dyn"
+    glitch_red_eleria: "extraction_dyn_eleria"
+    glitch_red_horizons: "extraction_dyn_horizons"
+  # Optional per-world override of the dynamic land box — only needed if a new
+  # map's usable terrain isn't centered near (1000,1000). Uncomment and adjust
+  # after spot-checking the map in-game.
+  # dynamic-overrides:
+  #   glitch_red_eleria:
+  #     center-x: 1000
+  #     center-z: 1000
+  #     radius: 1000
+  #   glitch_red_horizons:
+  #     center-x: 1000
+  #     center-z: 1000
+  #     radius: 1000
 
 # Modern UI layer — shared stash kiosk wall + dialog-based remote stash
 modern-ui:

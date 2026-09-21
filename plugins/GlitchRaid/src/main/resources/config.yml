@@ -22,7 +22,21 @@ raid:
 
   # World names — change if your hub extraction world is named differently
   hub-world: "hub"
-  auto-start-world: "glitch_red"
+  # All Red Zone worlds — each gets its own independent 31m extraction cycle,
+  # global session, and bossbar. The hub NPC's RedZoneSelectGUI lets players
+  # pick which one to enter. (Legacy: the old singular "auto-start-world" key
+  # is still read as a fallback if this list is empty/absent.)
+  auto-start-worlds:
+    - "glitch_red"
+    - "glitch_red_eleria"
+    - "glitch_red_horizons"
+  # auto-start-world: "glitch_red"
+
+  # Display names shown in the Red Zone picker GUI (hub NPC).
+  world-display-names:
+    glitch_red: "The Glitch"
+    glitch_red_eleria: "Eleria"
+    glitch_red_horizons: "Horizons"
 
 # Hub-to-Red walk-in portal (replaces the old red NPC).
 # Mark corners in-game with /redportal pos1|pos2, then /redportal set fills

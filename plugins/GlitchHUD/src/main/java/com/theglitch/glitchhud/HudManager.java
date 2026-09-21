@@ -59,6 +59,10 @@ public final class HudManager {
     private volatile String titlePve = "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>";
     private volatile String titleRed = "<gradient:#FF2A2A:#FF6A00><bold>RED ZONE</bold></gradient>";
     private volatile String titleDefault = "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>";
+    // Which worlds render the "RED ZONE" title/scoreboard styling — config-driven so
+    // additional Red Zone worlds (glitch_red_eleria, glitch_red_horizons) are recognized
+    // without a code change.
+    private volatile java.util.Set<String> redZoneWorlds = java.util.Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
 
     private FoliaScheduler.Cancellable ticker;
     private volatile int tickCounter = 0;
@@ -77,6 +81,15 @@ public final class HudManager {
         titlePve = plugin.getConfig().getString("hud.title.pve", titlePve);
         titleRed = plugin.getConfig().getString("hud.title.red", titleRed);
         titleDefault = plugin.getConfig().getString("hud.title.default", titleDefault);
+
+        List<String> configuredRed = plugin.getConfig().getStringList("hud.red-zone-worlds");
+        if (configuredRed != null && !configuredRed.isEmpty()) {
+            java.util.Set<String> normalized = new java.util.HashSet<>();
+            for (String w : configuredRed) {
+                if (w != null && !w.isBlank()) normalized.add(w.trim().toLowerCase(java.util.Locale.ROOT));
+            }
+            if (!normalized.isEmpty()) redZoneWorlds = java.util.Set.copyOf(normalized);
+        }
     }
 
     public void start() {
@@ -280,7 +293,7 @@ public final class HudManager {
         String world = player.getWorld().getName();
         String titleRaw = titleForWorld(world);
         // Subtle pulse for RED extraction active: alternate glow every 2 ticks
-        boolean extractionActive = placeholders.isInRaid(player) && "glitch_red".equalsIgnoreCase(world);
+        boolean extractionActive = placeholders.isInRaid(player) && redZoneWorlds.contains(world.toLowerCase(java.util.Locale.ROOT));
         if (extractionActive && (tickCounter % 2 == 1)) {
             // Slight variant — add subtle outer glow via extra tag (use same title but with different gradient intensity)
             // Keep minimal: switch between two red gradients every second
@@ -311,7 +324,7 @@ public final class HudManager {
         String lower = world.toLowerCase(java.util.Locale.ROOT);
         if ("hub".equals(lower)) base = titleHub;
         else if ("glitch_pve".equals(lower)) base = titlePve;
-        else if ("glitch_red".equals(lower)) {
+        else if (redZoneWorlds.contains(lower)) {
             if (extractionActive) {
                 // Subtle cycling: alternate between two red-orange gradients every tick
                 boolean alt = (tickCounter % 2 == 0);
@@ -340,7 +353,7 @@ public final class HudManager {
         String lower = world.toLowerCase(java.util.Locale.ROOT);
         if ("hub".equals(lower)) return titleHub;
         if ("glitch_pve".equals(lower)) return titlePve;
-        if ("glitch_red".equals(lower)) return titleRed;
+        if (redZoneWorlds.contains(lower)) return titleRed;
         return titleDefault;
     }
 
@@ -349,7 +362,7 @@ public final class HudManager {
         String lower = world.toLowerCase(java.util.Locale.ROOT);
         if ("hub".equals(lower)) return buildHub(p);
         if ("glitch_pve".equals(lower)) return buildPve(p);
-        if ("glitch_red".equals(lower)) return buildRed(p, extractionActive);
+        if (redZoneWorlds.contains(lower)) return buildRed(p, extractionActive);
         return buildDefault(p);
     }
 
@@ -454,7 +467,7 @@ public final class HudManager {
             out.add(label);
             out.add("<yellow>\u26A1 Extract at beacons</yellow>");
         } else {
-            String next = StashCycleProbe.formatNextCycle();
+            String next = StashCycleProbe.formatNextCycle(p.getWorld().getName());
             if (next != null) {
                 out.add("<gray>Next:</gray> <white>" + next + "</white> <gray>\u25B6 beacons</gray>");
             } else {

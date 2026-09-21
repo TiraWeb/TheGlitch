@@ -32,7 +32,7 @@ public final class BelowNameManager {
     private final HudManager hudManager;
     private final Map<UUID, Integer> lastValue = new ConcurrentHashMap<>();
     private volatile boolean enabled = true;
-    private volatile String world = "glitch_red";
+    private volatile java.util.Set<String> worlds = java.util.Set.of("glitch_red");
     private volatile String mode = "stacks"; // stacks | payout | level
     private volatile String emptyIcon = "";
 
@@ -47,11 +47,31 @@ public final class BelowNameManager {
 
     public void reload() {
         enabled = plugin.getConfig().getBoolean("below-name.enabled", true);
-        world = plugin.getConfig().getString("below-name.world", "glitch_red");
+        java.util.List<String> configuredWorlds = plugin.getConfig().getStringList("below-name.worlds");
+        java.util.Set<String> normalized = new java.util.HashSet<>();
+        if (configuredWorlds != null) {
+            for (String w : configuredWorlds) {
+                if (w != null && !w.isBlank()) normalized.add(w.trim());
+            }
+        }
+        if (normalized.isEmpty()) {
+            // Back-compat: fall back to the deprecated singular key, then a hard default.
+            String legacy = plugin.getConfig().getString("below-name.world", "glitch_red");
+            if (legacy != null && !legacy.isBlank()) normalized.add(legacy.trim());
+        }
+        if (normalized.isEmpty()) normalized.add("glitch_red");
+        worlds = java.util.Set.copyOf(normalized);
         mode = plugin.getConfig().getString("below-name.mode", "stacks");
         emptyIcon = plugin.getConfig().getString("below-name.empty-icon", "<dark_gray>\uE047</dark_gray>");
-        if (world == null || world.isBlank()) world = "glitch_red";
         if (mode == null || mode.isBlank()) mode = "stacks";
+    }
+
+    private boolean isTrackedWorld(String worldName) {
+        if (worldName == null) return false;
+        for (String w : worlds) {
+            if (w.equalsIgnoreCase(worldName)) return true;
+        }
+        return false;
     }
 
     public void start() {
@@ -117,7 +137,7 @@ public final class BelowNameManager {
             ensureObjective();
         }
         for (Player target : Bukkit.getOnlinePlayers()) {
-            boolean inWorld = world.equalsIgnoreCase(target.getWorld().getName());
+            boolean inWorld = isTrackedWorld(target.getWorld().getName());
             if (!inWorld) {
                 Integer last = lastValue.remove(target.getUniqueId());
                 if (last != null) {
@@ -201,7 +221,7 @@ public final class BelowNameManager {
         Objective vo = vb.getObjective("glitchhud_below");
         if (vo == null) return;
         for (Player target : Bukkit.getOnlinePlayers()) {
-            if (!world.equalsIgnoreCase(target.getWorld().getName())) continue;
+            if (!isTrackedWorld(target.getWorld().getName())) continue;
             int value = resolveValue(target);
             try { applyBelowScore(vo.getScore(target.getName()), value); } catch (Exception ignored) {}
         }

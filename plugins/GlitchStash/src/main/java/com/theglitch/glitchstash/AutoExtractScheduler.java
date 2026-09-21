@@ -71,20 +71,23 @@ public final class AutoExtractScheduler {
     private volatile int raidDurationMinutes = 30;
     private volatile int bufferMinutes = 1;
     private volatile List<String> configuredArenas = List.of(); // empty = all
-    private volatile String redWorld = "glitch_red";
+    // Authoritative — set once at construction, one instance per configured red world.
+    // Not re-read from config on reload() (that field is now a list shared across instances).
+    private final String redWorld;
 
     private volatile FoliaScheduler.Cancellable fixedRateTask;
     private final List<FoliaScheduler.Cancellable> pendingBufferTasks = Collections.synchronizedList(new ArrayList<>());
     private final AtomicInteger cycleCounter = new AtomicInteger(0);
     private volatile long lastCycleStartMillis = 0L;
 
-    public AutoExtractScheduler(GlitchStash plugin) {
-        this(plugin, null);
+    public AutoExtractScheduler(GlitchStash plugin, String world) {
+        this(plugin, null, world);
     }
 
-    public AutoExtractScheduler(GlitchStash plugin, DynamicExtractionManager dynamicManager) {
+    public AutoExtractScheduler(GlitchStash plugin, DynamicExtractionManager dynamicManager, String world) {
         this.plugin = plugin;
         this.dynamicManager = dynamicManager;
+        this.redWorld = (world == null || world.isBlank()) ? "glitch_red" : world.trim();
         this.pluginManager = Bukkit.getPluginManager();
         reload();
     }
@@ -115,7 +118,6 @@ public final class AutoExtractScheduler {
             raidDurationMinutes = 30;
             bufferMinutes = 1;
             configuredArenas = List.of();
-            redWorld = "glitch_red";
             reloadDynamic();
             return;
         }
@@ -156,9 +158,6 @@ public final class AutoExtractScheduler {
             if (a != null && !a.isBlank()) normalized.add(a.trim());
         }
         configuredArenas = List.copyOf(normalized);
-
-        String world = section.getString("red-world", "glitch_red");
-        if (world != null && !world.isBlank()) redWorld = world.trim();
 
         plugin.getLogger().info("[AutoExtract] Config reloaded — enabled=" + enabled + ", interval=" + intervalMinutes + "m, raidDuration=" + raidDurationMinutes + "m, buffer=" + bufferMinutes + "m, arenas=" + (configuredArenas.isEmpty() ? "<all discovered>" : configuredArenas) + ", redWorld=" + redWorld);
         reloadDynamic();

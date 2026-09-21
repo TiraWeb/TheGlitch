@@ -163,7 +163,7 @@ public final class RaidCommand implements CommandExecutor {
                             // Teleport to a party member in glitch_red if possible
                             for (java.util.UUID other : session.getMembers()) {
                                 Player otherP = Bukkit.getPlayer(other);
-                                if (otherP != null && otherP.getWorld().getName().equalsIgnoreCase(manager.getAutoStartWorld())) {
+                                if (otherP != null && manager.isRedWorld(otherP.getWorld().getName())) {
                                     try {
                                         FoliaScheduler.teleportEntity(player, plugin, otherP.getLocation());
                                         player.showBossBar(manager.getBossBarForSession(session));
@@ -263,8 +263,8 @@ public final class RaidCommand implements CommandExecutor {
         player.sendMessage(MM.deserialize("<yellow>/raid kick <player></yellow> <gray>— Leader kicks</gray>"));
         player.sendMessage(MM.deserialize("<yellow>/raid leave</yellow> <gray>— Leave party (not in raid)</gray>"));
         player.sendMessage(MM.deserialize("<yellow>/raid list</yellow> <gray>— Show party</gray>"));
-        player.sendMessage(MM.deserialize("<yellow>/raid start</yellow> <gray>— Start solo (auto also on entering glitch_red)</gray>"));
-        player.sendMessage(MM.deserialize("<dark_gray>Party auto-teleports: when any member enters glitch_red, rest are pulled.</dark_gray>"));
+        player.sendMessage(MM.deserialize("<yellow>/raid start</yellow> <gray>— Start solo (auto also on entering a Red Zone world)</gray>"));
+        player.sendMessage(MM.deserialize("<dark_gray>Party auto-teleports: when any member enters a Red Zone world, rest are pulled.</dark_gray>"));
     }
 
     private String getLeaderName(RaidSession session) {

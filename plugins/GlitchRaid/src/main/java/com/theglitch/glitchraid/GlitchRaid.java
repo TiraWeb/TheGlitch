@@ -15,6 +15,7 @@ public final class GlitchRaid extends JavaPlugin {
     private static GlitchRaid instance;
     private RaidManager raidManager;
     private RedPortalManager portalManager;
+    private com.theglitch.glitchraid.gui.RedZoneSelectGUI redZoneSelectGui;
 
     @Override
     public void onEnable() {
@@ -23,10 +24,12 @@ public final class GlitchRaid extends JavaPlugin {
 
         raidManager = new RaidManager(this);
         portalManager = new RedPortalManager(this);
+        redZoneSelectGui = new com.theglitch.glitchraid.gui.RedZoneSelectGUI(this, raidManager);
 
         // Register listeners
         Bukkit.getPluginManager().registerEvents(new RaidListener(this, raidManager), this);
         Bukkit.getPluginManager().registerEvents(new RedPortalListener(this, raidManager, portalManager), this);
+        Bukkit.getPluginManager().registerEvents(redZoneSelectGui, this);
         // VelKoth bridge — only if VelKoth present, to avoid NoClassDefFoundError when hard import missing
         if (Bukkit.getPluginManager().getPlugin("VelKoth") != null) {
             try {
@@ -58,6 +61,11 @@ public final class GlitchRaid extends JavaPlugin {
             getCommand("redportal").setExecutor(new RedPortalCommand(this, portalManager));
         } else {
             getLogger().warning("Command 'redportal' not found in plugin.yml — check registration.");
+        }
+        if (getCommand("redzone") != null) {
+            getCommand("redzone").setExecutor(new RedZoneUICommand(redZoneSelectGui));
+        } else {
+            getLogger().warning("Command 'redzone' not found in plugin.yml — check registration.");
         }
 
         // PlaceholderAPI expansion

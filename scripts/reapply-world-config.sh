@@ -12,12 +12,18 @@ mc() { sudo "${SCRIPT_DIR}/mc-cmd.py" "$@"; }
 log()  { echo -e "\033[1;36m[config]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[config]\033[0m $*"; }
 
+# All Red Zone worlds — glitch_red_eleria/glitch_red_horizons (added 2026-09-21)
+# get identical treatment to glitch_red throughout this script.
+RED_WORLDS=(glitch_red glitch_red_eleria glitch_red_horizons)
+
 # ---- difficulty (Multiverse per-world, persisted in worlds.yml) ----
 # Re-imports reset this to peaceful, which silently kills ALL red-world mobs
 # (2026-09-05: glitch_red + glitch_pve drifted to peaceful). mv modify persists
 # immediately — no restart needed, survives reboots until the next re-import.
 log "Setting world difficulties..."
-mc "mv modify glitch_red set difficulty hard" >/dev/null
+for RW in "${RED_WORLDS[@]}"; do
+  mc "mv modify ${RW} set difficulty hard" >/dev/null
+done
 mc "mv modify glitch_pve set difficulty hard" >/dev/null
 
 # ---- gamerules (canonical 26.x snake_case — see scripts/lib/gamerules.sh) ----
@@ -50,9 +56,11 @@ else
 fi
 
 if declare -p GAMERULES_RED_SNAKE >/dev/null 2>&1; then
-  apply_world_gamerules "glitch_red" "GAMERULES_RED_SNAKE"
+  for RW in "${RED_WORLDS[@]}"; do
+    apply_world_gamerules "${RW}" "GAMERULES_RED_SNAKE"
+  done
 else
-  warn "GAMERULES_RED_SNAKE not loaded — skipping glitch_red gamerules"
+  warn "GAMERULES_RED_SNAKE not loaded — skipping red-world gamerules"
 fi
 
 if declare -p GAMERULES_HUB_SNAKE >/dev/null 2>&1; then
@@ -64,7 +72,9 @@ fi
 # glitch_pve — dark always
 mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null
 mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
-mc "execute in minecraft:glitch_red run weather clear" >/dev/null
+for RW in "${RED_WORLDS[@]}"; do
+  mc "execute in minecraft:${RW} run weather clear" >/dev/null || true
+done
 
 # ---- world borders ----
 # Removed per user request (2026-08-24): no world borders are set. Worlds use vanilla default (6M).
@@ -78,7 +88,9 @@ for dim in overworld glitch_pve; do
   # infrastructure and hub trades must survive this cleanup).
   mc "execute in minecraft:${dim} run kill @e[type=!minecraft:player,type=!minecraft:armor_stand,type=!minecraft:item_frame,type=!minecraft:glow_item_frame,type=!minecraft:painting,type=!minecraft:item,type=!minecraft:interaction,type=!minecraft:text_display,type=!minecraft:item_display,type=!minecraft:experience_orb,type=!minecraft:villager]" >/dev/null || true
 done
-mc "execute in minecraft:glitch_red run kill @e[type=!minecraft:player,type=!minecraft:warden]" >/dev/null || true
+for RW in "${RED_WORLDS[@]}"; do
+  mc "execute in minecraft:${RW} run kill @e[type=!minecraft:player,type=!minecraft:warden]" >/dev/null || true
+done
 
 # ---- WorldGuard flags ----
 log "Applying WorldGuard flags..."
@@ -124,32 +136,34 @@ flag glitch_pve mycelium-spread deny
 flag glitch_pve vine-growth deny
 flag glitch_pve enderpearl deny
 
-# glitch_red — indestructible adventure-like, full-loot PvP (RED WORLD only)
+# Every red world — indestructible adventure-like, full-loot PvP (RED WORLDS only)
 # Block/world modification denied; use/chest-access allowed so players can loot;
 # damage-animals allow + mob-damage NOT denied so custom MythicMobs remain hittable.
 # Explosion/dragon flags ensure MythicMobs with PreventBlockDestruction still cannot grief via vanilla.
-flag glitch_red passthrough deny
-flag glitch_red pvp allow
-flag glitch_red use allow
-flag glitch_red chest-access allow
-flag glitch_red damage-animals allow
-flag glitch_red block-break deny
-flag glitch_red block-place deny
-flag glitch_red leaf-decay deny
-flag glitch_red ice-form deny
-flag glitch_red ice-melt deny
-flag glitch_red snow-fall deny
-flag glitch_red snow-melt deny
-flag glitch_red grass-spread deny
-flag glitch_red mycelium-spread deny
-flag glitch_red vine-growth deny
-flag glitch_red creeper-explosion deny
-flag glitch_red other-explosion deny
-flag glitch_red tnt deny
-flag glitch_red enderdragon-block-damage deny
-flag glitch_red wither-damage deny
-flag glitch_red item-drop allow
-flag glitch_red item-pickup allow
+for RW in "${RED_WORLDS[@]}"; do
+  flag "${RW}" passthrough deny
+  flag "${RW}" pvp allow
+  flag "${RW}" use allow
+  flag "${RW}" chest-access allow
+  flag "${RW}" damage-animals allow
+  flag "${RW}" block-break deny
+  flag "${RW}" block-place deny
+  flag "${RW}" leaf-decay deny
+  flag "${RW}" ice-form deny
+  flag "${RW}" ice-melt deny
+  flag "${RW}" snow-fall deny
+  flag "${RW}" snow-melt deny
+  flag "${RW}" grass-spread deny
+  flag "${RW}" mycelium-spread deny
+  flag "${RW}" vine-growth deny
+  flag "${RW}" creeper-explosion deny
+  flag "${RW}" other-explosion deny
+  flag "${RW}" tnt deny
+  flag "${RW}" enderdragon-block-damage deny
+  flag "${RW}" wither-damage deny
+  flag "${RW}" item-drop allow
+  flag "${RW}" item-pickup allow
+done
 
 # ---- exp setting ----
 log "Setting hub spawn..."

@@ -47,4 +47,7 @@ try2.key
 backups/*.tar.gz
 backups/*.tar
 backups/*.sha256
+
+# Downloaded world save archives (deployed to the host out-of-band, never committed)
+/*.zip
 !backups/.gitkeep

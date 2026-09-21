@@ -95,6 +95,9 @@ public final class RedPortalListener implements Listener {
         }
         cooldown.put(player.getUniqueId(), now);
 
+        // Dormant/unconfigured on live (portal.region.world is empty) — the supported multi-world
+        // entry point is the hub NPC's RedZoneSelectGUI. If ever activated, this defaults to the
+        // first configured red world; it has no 3-way picker of its own.
         World red = Bukkit.getWorld(manager.getAutoStartWorld());
         if (red == null) {
             player.sendMessage(MM.deserialize("<red>The rift is dormant (raid world missing).</red>"));

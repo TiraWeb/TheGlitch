@@ -7,6 +7,8 @@ loot:
   # Worlds in which GlitchLoot bonus drops can trigger
   enabled-worlds:
     - glitch_red
+    - glitch_red_eleria
+    - glitch_red_horizons
     - glitch_pve
 
 adaptive:

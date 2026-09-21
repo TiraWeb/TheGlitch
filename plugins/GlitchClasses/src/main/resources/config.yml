@@ -11,6 +11,8 @@ ultimate-level: 10
 game-worlds:
   - glitch_pve
   - glitch_red
+  - glitch_red_eleria
+  - glitch_red_horizons
 
 # Cost in shards to reset class (0 = free)
 reset-cost: 500

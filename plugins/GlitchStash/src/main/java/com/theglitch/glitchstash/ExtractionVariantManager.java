@@ -110,13 +110,42 @@ public final class ExtractionVariantManager {
      * with the given runtime zones — used by the dynamic extraction manager so
      * zones follow the randomly-picked arenas each cycle. Config zones remain
      * the template/fallback: passing null/empty (or a reload) restores them.
+     *
+     * @deprecated replaces the ENTIRE cross-world zone map — with multiple red
+     * worlds running concurrent cycles this wipes every other world's zones.
+     * Use {@link #setRuntimeZonesForWorld(String, List)} instead.
      */
+    @Deprecated
     public void setRuntimeZones(List<Variant> zones) {
         if (zones == null || zones.isEmpty()) {
             byWorld = indexByWorld(variants);
             return;
         }
         byWorld = indexByWorld(zones);
+    }
+
+    /**
+     * Replaces only {@code world}'s entry in the zone map, leaving every other
+     * world's zones (config-defined or another world's own runtime cycle) untouched.
+     * Empty/null zones restore that world's config-defined template zones.
+     */
+    public void setRuntimeZonesForWorld(String world, List<Variant> zones) {
+        if (world == null) return;
+        Map<String, List<Variant>> updated = new ConcurrentHashMap<>(byWorld);
+        if (zones == null || zones.isEmpty()) {
+            List<Variant> templateForWorld = new ArrayList<>();
+            for (Variant v : variants) {
+                if (world.equalsIgnoreCase(v.world())) templateForWorld.add(v);
+            }
+            if (templateForWorld.isEmpty()) {
+                updated.remove(world);
+            } else {
+                updated.put(world, templateForWorld);
+            }
+        } else {
+            updated.put(world, zones);
+        }
+        byWorld = updated;
     }
 
     private Map<String, List<Variant>> indexByWorld(List<Variant> list) {

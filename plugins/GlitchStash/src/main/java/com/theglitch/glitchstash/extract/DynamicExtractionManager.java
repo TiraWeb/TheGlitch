@@ -43,16 +43,19 @@ public final class DynamicExtractionManager {
     private volatile int captureTimeSeconds = 30;
     private volatile int radiusBlocks = 5;
     private volatile String arenaPrefix = "extraction_dyn";
-    private volatile String redWorld = "glitch_red";
+    // Authoritative — set once at construction, one instance per configured red world.
+    // Not re-read from config on reload() (that field is now a list shared across instances).
+    private final String redWorld;
     private volatile List<String> fallbackArenas = List.of();
 
     private final Object cycleLock = new Object();
     private boolean cycleActive = false;
     private volatile List<ExtractionPoint> currentPoints = List.of();
 
-    public DynamicExtractionManager(GlitchStash plugin, ExtractionMarkers markers) {
+    public DynamicExtractionManager(GlitchStash plugin, ExtractionMarkers markers, String world) {
         this.plugin = plugin;
         this.markers = markers;
+        this.redWorld = (world == null || world.isBlank()) ? "glitch_red" : world.trim();
         this.spotPicker = new SpotPicker(plugin);
         reload();
     }
@@ -67,10 +70,18 @@ public final class DynamicExtractionManager {
         maxSurfaceY = clamp(plugin.getConfig().getInt("auto-extract.dynamic.max-surface-y", 100), 1, 320);
         captureTimeSeconds = clamp(plugin.getConfig().getInt("auto-extract.dynamic.capture-time-seconds", 30), 1, 3600);
         radiusBlocks = clamp(plugin.getConfig().getInt("auto-extract.dynamic.radius-blocks", 5), 1, 64);
-        String prefix = plugin.getConfig().getString("auto-extract.dynamic.arena-prefix", "extraction_dyn");
-        arenaPrefix = (prefix == null || prefix.isBlank()) ? "extraction_dyn" : prefix.trim();
-        String world = plugin.getConfig().getString("auto-extract.red-world", "glitch_red");
-        redWorld = (world == null || world.isBlank()) ? "glitch_red" : world.trim();
+        // Per-world override lets 3 concurrent cycles avoid colliding on VelKoth arena ids;
+        // falls back to "<dynamic.arena-prefix>_<worldsuffix>" so unlisted worlds still get
+        // distinct ids automatically, and to the bare prefix for the primary red world so
+        // existing live arena ids (extraction_dyn0/1/2) don't change under it.
+        String prefix = plugin.getConfig().getString("auto-extract.arena-prefix-overrides." + redWorld, "");
+        if (prefix == null || prefix.isBlank()) {
+            String base = plugin.getConfig().getString("auto-extract.dynamic.arena-prefix", "extraction_dyn");
+            base = (base == null || base.isBlank()) ? "extraction_dyn" : base.trim();
+            String suffix = redWorld.replaceFirst("(?i)^glitch_red_?", "");
+            prefix = suffix.isBlank() ? base : base + "_" + suffix;
+        }
+        arenaPrefix = prefix.trim();
         List<String> fallback = plugin.getConfig().getStringList("auto-extract.dynamic.fallback-arenas");
         List<String> normalized = new ArrayList<>();
         if (fallback != null) {
@@ -228,7 +239,7 @@ public final class DynamicExtractionManager {
                         template != null ? template.keyName() : "",
                         template != null ? template.payoutBonus() : 0));
             }
-            variants.setRuntimeZones(zones);
+            variants.setRuntimeZonesForWorld(redWorld, zones);
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "[DynamicExtract] Failed to update variant zones: " + e.getMessage(), e);
         }

@@ -11,7 +11,7 @@ RZ_T1_Wisp_Crawler:
   Types:
   - GlitchWisp 60
   - CorruptedCrawler 40
-  Worlds: glitch_red
+  Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
   Chance: 0.06
   Priority: 1
   PositionType: LAND
@@ -24,7 +24,7 @@ RZ_T2_Stalker_Brute_Phantom:
   - GlitchStalker 45
   - GlitchBrute 30
   - GlitchPhantom 25
-  Worlds: glitch_red
+  Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
   Chance: 0.04
   Priority: 2
   PositionType: LAND
@@ -37,7 +37,7 @@ RZ_T3_Sentinel_Sniper_Warden:
   - GlitchSentinel 40
   - GlitchSniper 35
   - GlitchWarden 25
-  Worlds: glitch_red
+  Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
   Chance: 0.015
   Priority: 3
   PositionType: LAND
@@ -49,7 +49,7 @@ RZ_T4_Bosses:
   Types:
   - GlitchCore 50
   - TheGlitchKing 50
-  Worlds: glitch_red
+  Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
   Chance: 0.001
   Priority: 10
   PositionType: LAND
