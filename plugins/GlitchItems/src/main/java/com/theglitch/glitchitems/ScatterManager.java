@@ -576,6 +576,12 @@ public final class ScatterManager {
             if (clearPrevious) {
                 cleared = clearPrevious();
                 plugin.getLogger().info("[Scatter] Cleared " + cleared + " previous containers.");
+                // Persist the "cleared" state right away too — otherwise a kill
+                // between clearing and the first world's placement (see the
+                // per-world flush comment below) leaves byLocation/scattered.json
+                // pointing at furniture that was already physically removed.
+                containers.flush();
+                saveData();
             } else {
                 plugin.getLogger().info("[Scatter] clearPrevious=false — keeping " + scattered.size() + " previous.");
                 // Still empty in-memory? We keep them but don't clear blocks
@@ -589,19 +595,24 @@ public final class ScatterManager {
                 WorldBounds bounds = boundsFor(world);
                 int placed = placeNew(world, bounds);
                 totalPlaced += placed;
+                // Persist after every world, not once at the very end of the
+                // loop — a scatter cycle overlaps almost exactly with the
+                // 30-minute raid cycle boundary (GlitchStash schedules it at
+                // t0+30m+5s) where a restart is most likely, and an interrupted
+                // cycle previously lost whichever worlds hadn't been persisted
+                // yet (2026-09-21 bug report: containers.json found with one
+                // world's tracked containers entirely missing after a restart
+                // landed mid-scatter). Flushing per-world bounds the damage to
+                // at most the one world in flight.
+                containers.flush();
+                saveData();
                 if (broadcastEnabled && placed > 0) {
                     broadcastScatter(world, placed);
                 }
             }
-            // Batch-persist ContainerManager's location-keyed container records
-            // (one flush per cycle instead of one write per mark()/clear() call).
-            containers.flush();
 
             long elapsed = System.currentTimeMillis() - start;
             plugin.getLogger().info("[Scatter] Scatter complete in " + elapsed + "ms — cleared=" + cleared + " placed=" + totalPlaced + " totalTracked=" + scattered.size() + " worlds=" + worlds.stream().map(World::getName).toList() + ".");
-
-            // Persist after each full cycle
-            saveData();
         } finally {
             scatterLock.set(false);
         }
