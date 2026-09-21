@@ -14,6 +14,7 @@ import org.bukkit.Rotation;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -161,6 +163,18 @@ public final class ContainerManager {
         int z;
         String type;
         long lastOpened;
+        /**
+         * Furniture-backed containers only — the placed {@link ItemDisplay}'s
+         * UUID. Nexo's {@code FurnitureMechanic#place} applies its own
+         * spawn-location correction (hitbox height, solid-ground snap) after
+         * we hand it a target Location, so the entity's actual Location can
+         * end up in a different block than the one this record is keyed under
+         * in {@link #byLocation}. Interact lookups resolve through
+         * {@link #byEntity} (this UUID) instead, which is exact regardless of
+         * that correction — see ContainerFurnitureListener (2026-09-21 fix for
+         * "this is not a glitch container" on the first click).
+         */
+        String entityUuid;
 
         ContainerRecord() {}
 
@@ -190,6 +204,8 @@ public final class ContainerManager {
     // Nexo furniture is entity-based and cannot carry block PDC; see class javadoc).
     private final File dataFile;
     private final Map<String, ContainerRecord> byLocation = new ConcurrentHashMap<>();
+    /** Furniture-only secondary index — see {@link ContainerRecord#entityUuid}. */
+    private final Map<UUID, ContainerRecord> byEntity = new ConcurrentHashMap<>();
     private final AtomicBoolean dirty = new AtomicBoolean(false);
 
     public ContainerManager(GlitchItems plugin) {
@@ -335,6 +351,7 @@ public final class ContainerManager {
      */
     public boolean mark(Location loc, ContainerType type) {
         if (loc == null || loc.getWorld() == null || type == null) return false;
+        UUID entityUuid = null;
         if (type.isFurniture()) {
             if (!NexoUtil.available()) {
                 plugin.getLogger().warning("[Containers] Nexo not available — cannot place furniture container " + type.furnitureId());
@@ -348,11 +365,15 @@ public final class ContainerManager {
                 return false;
             }
             if (placed == null) return false;
+            entityUuid = placed.getUniqueId();
         } else {
             loc.getBlock().setType(type.material());
         }
-        byLocation.put(locKey(loc), new ContainerRecord(
-                loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), type.name(), 0L));
+        ContainerRecord record = new ContainerRecord(
+                loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), type.name(), 0L);
+        record.entityUuid = entityUuid == null ? null : entityUuid.toString();
+        byLocation.put(locKey(loc), record);
+        if (entityUuid != null) byEntity.put(entityUuid, record);
         dirty.set(true);
         return true;
     }
@@ -373,8 +394,27 @@ public final class ContainerManager {
         dirty.set(true);
         ContainerType type = record == null ? null : types.get(record.type);
         if (type != null && type.isFurniture()) {
+            UUID entityUuid = null;
+            if (record.entityUuid != null) {
+                try {
+                    entityUuid = UUID.fromString(record.entityUuid);
+                    byEntity.remove(entityUuid);
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+            // Prefer removing the exact tracked entity — NexoFurniture.remove(Location)
+            // does a positional search that can miss if the entity's actual
+            // Location drifted from the one it was placed/tracked under (see
+            // ContainerRecord#entityUuid javadoc), leaving a stale, untracked
+            // furniture entity behind that never gets cleared on later scatter
+            // cycles (2026-09-21 bug report: loot piling up in the same spot).
+            Entity entity = entityUuid == null ? null : Bukkit.getEntity(entityUuid);
             try {
-                NexoFurniture.remove(loc);
+                if (entity != null) {
+                    NexoFurniture.remove(entity);
+                } else {
+                    NexoFurniture.remove(loc);
+                }
             } catch (Exception e) {
                 plugin.getLogger().log(Level.FINE, "[Containers] Failed to remove furniture at " + key, e);
             }
@@ -403,6 +443,12 @@ public final class ContainerManager {
                 for (ContainerRecord rec : loaded) {
                     if (rec == null || rec.world == null || rec.world.isBlank() || rec.type == null) continue;
                     byLocation.put(locKey(rec.world, rec.x, rec.y, rec.z), rec);
+                    if (rec.entityUuid != null) {
+                        try {
+                            byEntity.put(UUID.fromString(rec.entityUuid), rec);
+                        } catch (IllegalArgumentException ignored) {
+                        }
+                    }
                 }
             }
             plugin.getLogger().info("[Containers] Loaded " + byLocation.size() + " tracked container(s) from " + dataFile.getPath());
@@ -456,17 +502,38 @@ public final class ContainerManager {
             player.sendMessage(msg("not-container"));
             return false;
         }
-        String key = locKey(loc);
-        ContainerRecord record = byLocation.get(key);
+        ContainerRecord record = byLocation.get(locKey(loc));
+        return openRecord(player, record);
+    }
+
+    /**
+     * Furniture interact path — looks up by the entity's own UUID first
+     * (exact, see {@link ContainerRecord#entityUuid}), falling back to its
+     * current Location only for records tracked before this index existed.
+     */
+    public boolean open(Player player, Entity entity) {
+        if (entity == null) {
+            player.sendMessage(msg("not-container"));
+            return false;
+        }
+        ContainerRecord record = byEntity.get(entity.getUniqueId());
+        if (record == null) {
+            record = byLocation.get(locKey(entity.getLocation()));
+        }
+        return openRecord(player, record);
+    }
+
+    private boolean openRecord(Player player, ContainerRecord record) {
         ContainerType type = record == null ? null : types.get(record.type);
         if (type == null) {
             player.sendMessage(msg("not-container"));
             return false;
         }
-        if (!enabledWorlds.contains(loc.getWorld().getName())) {
+        if (!enabledWorlds.contains(record.world)) {
             player.sendMessage(msg("disabled-world"));
             return false;
         }
+        Location loc = new Location(Bukkit.getWorld(record.world), record.x, record.y, record.z);
 
         long now = System.currentTimeMillis();
         long remaining = record.lastOpened + type.regenSeconds() * 1000L - now;
