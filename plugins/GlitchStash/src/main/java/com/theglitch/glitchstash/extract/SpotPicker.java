@@ -27,11 +27,11 @@ public final class SpotPicker {
 
     private static final int MAX_ATTEMPTS = 250;
     private static final int SCAN_DEPTH = 12;
-    private static final int FLATNESS_TOLERANCE = 2;
 
     /** Per-cycle placement parameters from {@code auto-extract.dynamic}. */
     public record PickSpec(int centerX, int centerZ, int radius, int minSeparation,
-                           int maxSurfaceY, int radiusBlocks, List<String> fallbackArenas) {}
+                           int maxSurfaceY, int radiusBlocks, List<String> fallbackArenas,
+                           int flatnessTolerance) {}
 
     private final GlitchStash plugin;
     private volatile boolean wgWarned = false;
@@ -110,7 +110,7 @@ public final class SpotPicker {
             if (targetY > spec.maxSurfaceY()) continue; // floating islands
 
             int groundY = targetY - 1;
-            if (!isFlatEnough(world, x, z, groundY, spec.radiusBlocks())) continue;
+            if (!isFlatEnough(world, x, z, groundY, spec.radiusBlocks(), spec.flatnessTolerance())) continue;
 
             if (tooClose(x, z, picked, spec.minSeparation())) continue;
 
@@ -121,14 +121,14 @@ public final class SpotPicker {
         return null;
     }
 
-    /** Ground Y at 9 points (center + 4 edges + 4 corners) must be within ±2 of center. */
-    private boolean isFlatEnough(World world, int x, int z, int groundY, int r) {
+    /** Ground Y at 9 points (center + 4 edges + 4 corners) must be within `tolerance` of center. */
+    private boolean isFlatEnough(World world, int x, int z, int groundY, int r, int tolerance) {
         int[] checkX = {x, x - r, x + r, x, x, x - r, x + r, x - r, x + r};
         int[] checkZ = {z, z, z, z - r, z + r, z - r, z - r, z + r, z + r};
         for (int i = 0; i < checkX.length; i++) {
             Integer colY = findValidTargetY(world, checkX[i], checkZ[i]);
             if (colY == null) return false;
-            if (Math.abs((colY - 1) - groundY) > FLATNESS_TOLERANCE) return false;
+            if (Math.abs((colY - 1) - groundY) > tolerance) return false;
             // Also ensure the column has solid ground 2 deep (not a 1-block pillar)
             Block below = world.getBlockAt(checkX[i], colY - 2, checkZ[i]);
             if (below == null || !below.getType().isSolid()) return false;

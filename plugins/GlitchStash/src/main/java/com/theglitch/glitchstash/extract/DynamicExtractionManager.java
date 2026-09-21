@@ -42,6 +42,7 @@ public final class DynamicExtractionManager {
     private volatile int maxSurfaceY = 100;
     private volatile int captureTimeSeconds = 30;
     private volatile int radiusBlocks = 5;
+    private volatile int flatnessTolerance = 2;
     private volatile String arenaPrefix = "extraction_dyn";
     // Authoritative — set once at construction, one instance per configured red world.
     // Not re-read from config on reload() (that field is now a list shared across instances).
@@ -75,6 +76,13 @@ public final class DynamicExtractionManager {
         maxSurfaceY = clamp(plugin.getConfig().getInt("auto-extract.dynamic.max-surface-y", 100), 1, 320);
         captureTimeSeconds = clamp(plugin.getConfig().getInt("auto-extract.dynamic.capture-time-seconds", 30), 1, 3600);
         radiusBlocks = clamp(plugin.getConfig().getInt("auto-extract.dynamic.radius-blocks", 5), 1, 64);
+        // Ground-Y tolerance (blocks) across the capture-square's 9-point flatness
+        // check. 2 suited glitch_red's purpose-curated map but was too strict for
+        // Eleria's naturally rolling terrain — most random candidates had at least
+        // one corner 3+ blocks off from center and got rejected, which is what was
+        // actually causing its low validated-point count (not terrain sparsity or
+        // ungenerated chunks, both ruled out via RCON scan, 2026-09-21).
+        flatnessTolerance = clamp(plugin.getConfig().getInt("auto-extract.dynamic.flatness-tolerance", 2), 0, 16);
         // Per-world override lets 3 concurrent cycles avoid colliding on VelKoth arena ids;
         // falls back to "<dynamic.arena-prefix>_<worldsuffix>" so unlisted worlds still get
         // distinct ids automatically, and to the bare prefix for the primary red world so
@@ -114,7 +122,7 @@ public final class DynamicExtractionManager {
         long openUntil = System.currentTimeMillis() + raidMs;
 
         SpotPicker.PickSpec spec = new SpotPicker.PickSpec(centerX, centerZ, radius, minSeparation,
-                maxSurfaceY, radiusBlocks, fallbackArenas);
+                maxSurfaceY, radiusBlocks, fallbackArenas, flatnessTolerance);
         List<ExtractionPoint> picked = spotPicker.pick(world, points, arenaPrefix, openUntil, spec);
         if (picked.isEmpty()) return false;
 

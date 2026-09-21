@@ -78,6 +78,14 @@ auto-extract:
     min-separation: 400
     # Reject spots above this Y (floating islands); capture square must be ±3 flat
     max-surface-y: 100
+    # Max ground-Y difference (blocks) allowed between the capture square's center
+    # and its 8 edge/corner points. 2 suited glitch_red's purpose-curated flat
+    # terrain but was too strict on Eleria's naturally rolling map — nearly every
+    # candidate spot had a corner 3+ blocks off and got rejected, which (not
+    # terrain sparsity or ungenerated chunks) was the real cause of its low
+    # validated-point count. Raised for all worlds since it's strictly more
+    # permissive — safe even for the already-flat maps. (2026-09-21)
+    flatness-tolerance: 4
     # VelKoth capture timer for the generated arenas
     capture-time-seconds: 30
     # Arena id prefix — slots are <prefix>0, <prefix>1, ... Per-world overrides
