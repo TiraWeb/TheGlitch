@@ -5,19 +5,23 @@
 # within SpawnRadiusPerPlayer (64). Cooldown throttles per-entry.
 # Density target: ~90-110 concurrent (~1/150 chunks) with 4 tiers.
 
-# --- T1 fodder: spawns everywhere, most common — tuned 2026-08-24: was 0.25/30 too dense (150/min) ---
+# --- T1 fodder: spawns everywhere, most common — 2026-08-24: 0.25/30 was too
+# dense (150/min); 0.06/60 turned out too sparse (operator: "rarely see a mob,
+# sometimes only at spawn" — SpawnRadiusPerPlayer is only 64, so a low Chance
+# per point-check compounds into long dry stretches while exploring). 2026-09-21:
+# split the difference, still well under the original "too dense" values.
 RZ_T1_Wisp_Crawler:
   Action: ADD
   Types:
   - GlitchWisp 60
   - CorruptedCrawler 40
   Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
-  Chance: 0.06
+  Chance: 0.10
   Priority: 1
   PositionType: LAND
-  Cooldown: 60
+  Cooldown: 45
 
-# --- T2 mid-tier: cross-ring and general — was 0.18/45 too dense ---
+# --- T2 mid-tier: cross-ring and general — was 0.18/45 too dense, 0.04/90 too sparse ---
 RZ_T2_Stalker_Brute_Phantom:
   Action: ADD
   Types:
@@ -25,12 +29,12 @@ RZ_T2_Stalker_Brute_Phantom:
   - GlitchBrute 30
   - GlitchPhantom 25
   Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
-  Chance: 0.04
+  Chance: 0.07
   Priority: 2
   PositionType: LAND
-  Cooldown: 90
+  Cooldown: 70
 
-# --- T3 elites: Core and beacons (rarer, stronger) — was 0.08/90 ---
+# --- T3 elites: Core and beacons (rarer, stronger) — was 0.08/90 too dense, 0.015/180 too sparse ---
 # GlitchHarrower (new 2026-09-21) added, weights rebalanced across 4 entries.
 RZ_T3_Sentinel_Sniper_Warden:
   Action: ADD
@@ -40,10 +44,10 @@ RZ_T3_Sentinel_Sniper_Warden:
   - GlitchWarden 20
   - GlitchHarrower 23
   Worlds: glitch_red,glitch_red_eleria,glitch_red_horizons
-  Chance: 0.015
+  Chance: 0.025
   Priority: 3
   PositionType: LAND
-  Cooldown: 180
+  Cooldown: 140
 
 # --- T3.5 mini-boss: rare standing threat, not a scheduled server event
 # (unlike RZ_T4_Bosses below) — new 2026-09-21 ---

@@ -281,10 +281,34 @@ scatter:
   clear-previous: true
   on-top-only: true
   border-radius: 1000
-  # Center of the scatter square. The imported Odyssey 2k map's land sits at
-  # [0..2000]² (offset +1000,+1000 from world origin), so the scatter targets it.
+  # Legacy global square — fallback ONLY for a world with no entry under
+  # 'worlds:' below. glitch_red itself has an explicit entry (unchanged values).
   center-x: 1000
   center-z: 1000
+  # Per-world rectangular bounds (2026-09-21) — glitch_red's own square and the
+  # two imported maps are neither the same shape nor centered at the same point.
+  # Eleria/Horizons are centered near world origin (confirmed via their spawn
+  # points, both ~(0,0)/(30,0)), NOT glitch_red's (1000,1000) — using the shared
+  # square here previously meant loot (and only fixed separately for extraction,
+  # see GlitchStash's auto-extract.dynamic-overrides) only ever landed in a
+  # fraction of each imported map. Real map sizes confirmed by the operator:
+  # Horizons 3200x1400, Eleria 3000x1500, both centered on (0,0).
+  worlds:
+    glitch_red:
+      min-x: 0
+      max-x: 2000
+      min-z: 0
+      max-z: 2000
+    glitch_red_eleria:
+      min-x: -1500
+      max-x: 1500
+      min-z: -750
+      max-z: 750
+    glitch_red_horizons:
+      min-x: -1600
+      max-x: 1600
+      min-z: -700
+      max-z: 700
   chunks-per-container: 8
   max-attempts-per-container: 50
   counts:

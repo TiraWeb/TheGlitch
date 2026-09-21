@@ -101,6 +101,19 @@ public final class ScatterManager {
         }
     }
 
+    /**
+     * Per-world scatter bounding box. Imported maps (Eleria/Horizons) are not
+     * square and are not centered at the same point as glitch_red's own
+     * [0,2000]² area — assuming one shared square border across all worlds is
+     * what originally caused loot (and, separately, extraction points) to only
+     * ever land in a fraction of each imported map. See {@code scatter.worlds.*}
+     * in config.yml and {@link #reload()}.
+     */
+    private record WorldBounds(int minX, int maxX, int minZ, int maxZ) {
+        int width() { return maxX - minX; }
+        int length() { return maxZ - minZ; }
+    }
+
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type LIST_TYPE = new TypeToken<List<ScatteredPos>>() {}.getType();
     private static final net.kyori.adventure.text.minimessage.MiniMessage MM =
@@ -146,6 +159,7 @@ public final class ScatterManager {
     private volatile int maxAttemptsPerContainer = DEFAULT_MAX_ATTEMPTS;
     private volatile boolean evenSpread = true;
     private volatile Map<String, Integer> counts = new LinkedHashMap<>(DEFAULT_COUNTS);
+    private volatile Map<String, WorldBounds> worldBounds = new LinkedHashMap<>();
     private volatile String broadcastMessage = "<gray>Glitch energy coalesces — <white>{total}</white> caches scattered across the Red World.";
     private volatile boolean broadcastEnabled = true;
 
@@ -242,6 +256,32 @@ public final class ScatterManager {
         centerX = sec.getInt("center-x", 0);
         centerZ = sec.getInt("center-z", 0);
 
+        // Per-world rectangular bounds (2026-09-21) — glitch_red's own square
+        // border and the imported maps' actual footprints are neither the same
+        // shape nor the same center (Eleria/Horizons are centered near world
+        // origin, not glitch_red's (1000,1000)); a world with no explicit entry
+        // here falls back to the legacy global square (centerX/centerZ ± borderRadius).
+        Map<String, WorldBounds> boundsMap = new LinkedHashMap<>();
+        ConfigurationSection worldsSec = sec.getConfigurationSection("worlds");
+        if (worldsSec != null) {
+            for (String w : worldsSec.getKeys(false)) {
+                ConfigurationSection ws = worldsSec.getConfigurationSection(w);
+                if (ws == null) continue;
+                int minX = ws.getInt("min-x", Integer.MIN_VALUE);
+                int maxX = ws.getInt("max-x", Integer.MIN_VALUE);
+                int minZ = ws.getInt("min-z", Integer.MIN_VALUE);
+                int maxZ = ws.getInt("max-z", Integer.MIN_VALUE);
+                if (minX == Integer.MIN_VALUE || maxX == Integer.MIN_VALUE
+                        || minZ == Integer.MIN_VALUE || maxZ == Integer.MIN_VALUE
+                        || minX >= maxX || minZ >= maxZ) {
+                    plugin.getLogger().warning("[Scatter] Invalid/incomplete bounds for scatter.worlds." + w + " — falling back to the global square for this world.");
+                    continue;
+                }
+                boundsMap.put(w, new WorldBounds(minX, maxX, minZ, maxZ));
+            }
+        }
+        worldBounds = boundsMap;
+
         int cpc = sec.getInt("chunks-per-container", DEFAULT_CHUNKS_PER_CONTAINER);
         if (cpc < 1 || cpc > 1000) {
             plugin.getLogger().warning("[Scatter] Invalid chunks-per-container " + cpc + " — clamped to " + DEFAULT_CHUNKS_PER_CONTAINER + ".");
@@ -314,11 +354,20 @@ public final class ScatterManager {
         borderRadius = DEFAULT_BORDER_RADIUS;
         centerX = 0;
         centerZ = 0;
+        worldBounds = new LinkedHashMap<>();
         chunksPerContainer = DEFAULT_CHUNKS_PER_CONTAINER;
         maxAttemptsPerContainer = DEFAULT_MAX_ATTEMPTS;
         counts = new LinkedHashMap<>(DEFAULT_COUNTS);
         broadcastMessage = "<gray>Glitch energy coalesces — <white>{total}</white> caches scattered across the Red World.";
         broadcastEnabled = true;
+    }
+
+    /** Resolves {@code world}'s scatter bounds — explicit override, or the legacy global square. */
+    private WorldBounds boundsFor(World world) {
+        WorldBounds explicit = worldBounds.get(world.getName());
+        if (explicit != null) return explicit;
+        return new WorldBounds(centerX - borderRadius, centerX + borderRadius,
+                centerZ - borderRadius, centerZ + borderRadius);
     }
 
     // ------------------------------------------------------------------------
@@ -517,8 +566,8 @@ public final class ScatterManager {
         }
         try {
             long start = System.currentTimeMillis();
-            World world = pickWorld();
-            if (world == null) {
+            List<World> worlds = loadedWorlds();
+            if (worlds.isEmpty()) {
                 plugin.getLogger().warning("[Scatter] No enabled world found among " + enabledWorlds + " — aborting scatter.");
                 return;
             }
@@ -532,17 +581,25 @@ public final class ScatterManager {
                 // Still empty in-memory? We keep them but don't clear blocks
             }
 
-            int placed = placeNew(world);
+            // Each world gets its own bounds and its own full pass — loot used to
+            // only ever refresh whichever single world pickWorld() happened to
+            // return, so the other two red worlds silently went un-scattered.
+            int totalPlaced = 0;
+            for (World world : worlds) {
+                WorldBounds bounds = boundsFor(world);
+                int placed = placeNew(world, bounds);
+                totalPlaced += placed;
+                if (broadcastEnabled && placed > 0) {
+                    broadcastScatter(world, placed);
+                }
+            }
             // Batch-persist ContainerManager's location-keyed container records
             // (one flush per cycle instead of one write per mark()/clear() call).
             containers.flush();
 
             long elapsed = System.currentTimeMillis() - start;
-            plugin.getLogger().info("[Scatter] Scatter complete in " + elapsed + "ms — cleared=" + cleared + " placed=" + placed + " totalTracked=" + scattered.size() + " world=" + world.getName() + ".");
+            plugin.getLogger().info("[Scatter] Scatter complete in " + elapsed + "ms — cleared=" + cleared + " placed=" + totalPlaced + " totalTracked=" + scattered.size() + " worlds=" + worlds.stream().map(World::getName).toList() + ".");
 
-            if (broadcastEnabled && placed > 0) {
-                broadcastScatter(world, placed);
-            }
             // Persist after each full cycle
             saveData();
         } finally {
@@ -728,11 +785,11 @@ public final class ScatterManager {
      *
      * @return number of containers successfully placed
      */
-    private int placeNew(World world) {
+    private int placeNew(World world, WorldBounds bounds) {
         if (world == null) return 0;
 
         // Resolve counts: if explicit counts present use them, else compute from density
-        Map<String, Integer> toPlace = resolveCounts(world);
+        Map<String, Integer> toPlace = resolveCounts(bounds);
         if (toPlace.isEmpty()) {
             plugin.getLogger().warning("[Scatter] No containers to place (counts empty).");
             return 0;
@@ -769,11 +826,13 @@ public final class ScatterManager {
         }
         Collections.shuffle(queue, rand);
 
-        // Stratified grid: the square is dealt into cells without replacement
+        // Stratified grid: the rectangle is dealt into cells without replacement
         // (one container per cell, jittered inside) so coverage is uniform.
         // Pure-random x,z clumps — several finds in one spot, deserts elsewhere.
+        // Cells aren't square when the world's bounds aren't (Eleria/Horizons).
         int grid = Math.max(1, (int) Math.ceil(Math.sqrt(Math.max(1, queue.size()))));
-        int cellSize = Math.max(1, (borderRadius * 2) / grid);
+        int cellSizeX = Math.max(1, bounds.width() / grid);
+        int cellSizeZ = Math.max(1, bounds.length() / grid);
         List<Integer> cells = new ArrayList<>(grid * grid);
         for (int i = 0; i < grid * grid; i++) cells.add(i);
         Collections.shuffle(cells, rand);
@@ -801,11 +860,11 @@ public final class ScatterManager {
                     int cellIdx = cells.get(cursor++ % cells.size());
                     int cellX = cellIdx % grid;
                     int cellZ = cellIdx / grid;
-                    x = centerX - borderRadius + cellX * cellSize + rand.nextInt(cellSize);
-                    z = centerZ - borderRadius + cellZ * cellSize + rand.nextInt(cellSize);
+                    x = bounds.minX() + cellX * cellSizeX + rand.nextInt(cellSizeX);
+                    z = bounds.minZ() + cellZ * cellSizeZ + rand.nextInt(cellSizeZ);
                 } else {
-                    x = centerX + rand.nextInt(-borderRadius, borderRadius + 1);
-                    z = centerZ + rand.nextInt(-borderRadius, borderRadius + 1);
+                    x = rand.nextInt(bounds.minX(), bounds.maxX() + 1);
+                    z = rand.nextInt(bounds.minZ(), bounds.maxZ() + 1);
                 }
 
                 // Chunk handling: ensure chunk is at least considered loaded or loadable
@@ -962,17 +1021,17 @@ public final class ScatterManager {
      * {@code chunks-per-container} density across the border area.
      * </p>
      */
-    private Map<String, Integer> resolveCounts(World world) {
+    private Map<String, Integer> resolveCounts(WorldBounds bounds) {
         if (counts != null && !counts.isEmpty()) {
             // Return a copy so caller can mutate
             return new LinkedHashMap<>(counts);
         }
-        // Fallback density: total chunks = (borderRadius*2/16)^2
+        // Fallback density: total chunks = (width/16) * (length/16)
         // total containers = chunks / chunksPerContainer
         // Then distribute proportionally by DEFAULT_COUNTS ratios
-        long diameter = (long) borderRadius * 2L;
-        long chunksPerSide = diameter / 16L;
-        long totalChunks = chunksPerSide * chunksPerSide;
+        long chunksWide = (long) bounds.width() / 16L;
+        long chunksLong = (long) bounds.length() / 16L;
+        long totalChunks = chunksWide * chunksLong;
         int totalContainers = (int) Math.max(1, totalChunks / Math.max(1, chunksPerContainer));
         // Cap to avoid explosion on tiny chunks-per-container
         totalContainers = Math.min(totalContainers, 60);
@@ -1208,18 +1267,20 @@ public final class ScatterManager {
     // World picker
     // ------------------------------------------------------------------------
 
-    private World pickWorld() {
-        // Prefer first enabled world that exists and is loaded
+    /** All currently-loaded enabled worlds — scatter refreshes every one of them per cycle. */
+    private List<World> loadedWorlds() {
+        List<World> found = new ArrayList<>();
         for (String name : enabledWorlds) {
             if (name == null || name.isBlank()) continue;
             World w = Bukkit.getWorld(name);
-            if (w != null) return w;
-            // Try case-insensitive
-            for (World bw : Bukkit.getWorlds()) {
-                if (bw.getName().equalsIgnoreCase(name)) return bw;
+            if (w == null) {
+                for (World bw : Bukkit.getWorlds()) {
+                    if (bw.getName().equalsIgnoreCase(name)) { w = bw; break; }
+                }
             }
+            if (w != null) found.add(w);
         }
-        return null;
+        return found;
     }
 
     // ------------------------------------------------------------------------

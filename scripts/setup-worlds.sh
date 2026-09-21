@@ -322,20 +322,20 @@ fi
 #
 # 2026-09-21 (initial): pre-generated only a small padded box around each
 # world's dynamic-overrides extraction center/radius — fixed extraction but
-# left the wider ScatterManager loot-scatter border (center 1000,1000, radius
-# 1000 — see plugins/GlitchItems/src/main/resources/config.yml scatter.*)
-# still full of gaps, which is what actually crashed the server.
-# 2026-09-21 (later): widened to match the scatter border exactly (center
-# 1000,1000 radius 1000, i.e. the full 2000x2000 area) for both worlds, so
-# the loot-scatter zone and the extraction zone are both fully covered.
-# Chunky skips chunks already on disk, so re-running this only fills gaps.
-declare -A IMPORTED_RED_PREGEN_CENTER=(
-  [glitch_red_eleria]="1000 1000"
-  [glitch_red_horizons]="1000 1000"
-)
-declare -A IMPORTED_RED_PREGEN_RADIUS=(
-  [glitch_red_eleria]=1000
-  [glitch_red_horizons]=1000
+# left the wider ScatterManager loot-scatter border still full of gaps, which
+# is what actually crashed the server.
+# 2026-09-21 (2nd pass): widened to a SQUARE centered at (1000,1000) radius
+# 1000, copying glitch_red's own convention — WRONG, because Eleria/Horizons
+# are not centered there at all (confirmed via their spawn points, both
+# ~(0,0)/(30,0), and later via the operator's own map-file dimensions).
+# 2026-09-21 (3rd pass, correct): rectangular corners centered on world origin,
+# sized to the operator's confirmed real map dimensions (Horizons 3200x1400,
+# Eleria 3000x1500) — matches plugins/GlitchItems/src/main/resources/config.yml
+# scatter.worlds.* exactly. Chunky skips chunks already on disk, so re-running
+# this only fills gaps.
+declare -A IMPORTED_RED_PREGEN_CORNERS=(
+  [glitch_red_eleria]="-1500 -750 1500 750"
+  [glitch_red_horizons]="-1600 -700 1600 700"
 )
 for RW in "${RED_WORLDS[@]:1}"; do
   RW_MARKER="${DIM_DIR}/${RW}/.pregen-started"
@@ -345,13 +345,11 @@ for RW in "${RED_WORLDS[@]:1}"; do
     log "${RW}: extraction-box pre-generation already done — skipping (delete ${RW_MARKER} to redo)"
     continue
   fi
-  center="${IMPORTED_RED_PREGEN_CENTER[${RW}]:-1000 1000}"
-  radius="${IMPORTED_RED_PREGEN_RADIUS[${RW}]:-1000}"
-  log "${RW}: pre-generating extraction box (center ${center}, radius ${radius}, was ${rw_mca_count} region files)"
+  corners="${IMPORTED_RED_PREGEN_CORNERS[${RW}]:--1000 -1000 1000 1000}"
+  log "${RW}: pre-generating loot/extraction zone (corners ${corners}, was ${rw_mca_count} region files)"
   mc "chunky world ${RW}"        >/dev/null
-  mc "chunky shape square"       >/dev/null
-  mc "chunky center ${center}"   >/dev/null
-  mc "chunky radius ${radius}"   >/dev/null
+  mc "chunky shape rectangle"    >/dev/null
+  mc "chunky corners ${corners}" >/dev/null
   mc "chunky start"              >/dev/null
   touch "${RW_MARKER}" 2>/dev/null || true
   chown "${MC_USER}:${MC_USER}" "${RW_MARKER}" 2>/dev/null || true
