@@ -290,11 +290,10 @@ arcane-engineer archetype once abilities are renamed.
 | Locked Vault | **Vault** | hard areas, needs Vault Key |
 | Core Cache | **Rift Vault** | boss areas, needs Rift Key |
 
-**2026-09-21 — Crate furniture models:** Debris Pile, Loot Cache, and Rift Vault now render as
-custom 3D crate models (Nexo furniture, ported from a downloaded "Loot Models" ItemsAdder pack —
-`loot_crates_fire`/`loot_crates_earth`/`loot_crates_darkness`) instead of vanilla
-BARREL/CHEST/DECORATED_POT blocks. Vault keeps its vanilla BLUE_SHULKER_BOX (no matching model
-picked). Because Nexo furniture is entity-based (not a tile entity), container identity/regen
+**2026-09-21 — Crate furniture models:** All 4 containers now render as custom 3D crate models
+(Nexo furniture, ported from a downloaded "Loot Models" ItemsAdder pack) instead of vanilla
+blocks: Debris Pile→`loot_crates_fire`, Loot Cache→`loot_crates_earth`, Vault→`loot_crates_water`,
+Rift Vault→`loot_crates_darkness`. Because Nexo furniture is entity-based (not a tile entity), container identity/regen
 state moved off per-block PersistentDataContainer onto a location-keyed store
 (`plugins/GlitchItems/data/containers.json`) shared by both backends — see
 `ContainerManager` class javadoc. Interaction for furniture containers goes through Nexo's

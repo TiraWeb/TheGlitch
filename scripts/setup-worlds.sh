@@ -308,28 +308,34 @@ else
   chown "${MC_USER}:${MC_USER}" "${PREGEN_MARKER}" 2>/dev/null || true
 fi
 
-# --- Imported red worlds: bounded pre-generation around the extraction box ---
+# --- Imported red worlds: pre-generation across the FULL scatter/loot zone ---
 # Eleria/Horizons only ship the small footprint the source map download
 # covered — everything outside it is ungenerated. SpotPicker (GlitchStash)
-# deliberately never force-generates chunks live (that's what caused the
-# 2026-09-21 watchdog freeze/crash — see docs/STATUS.md), so any ungenerated
-# chunk inside the dynamic-extraction land box is just permanently
-# unavailable to it, which is what was actually causing Eleria to validate
-# only ~1/3 extraction points per cycle (previously misdiagnosed as terrain
-# sparsity) and both new worlds to have almost no naturally-generated
-# structures (mineshafts/villages/ruins) — i.e. no loot chests. Pre-generating
-# a padded box around each world's dynamic-overrides center/radius (from
-# plugins/GlitchStash/src/main/resources/config.yml, auto-extract.dynamic-
-# overrides) with the default vanilla generator fills the gaps with normal
-# terrain, including vanilla structures and their loot. Small boxes — seconds,
-# not minutes — so no background-job messaging needed.
+# and ScatterManager (GlitchItems) both deliberately never force-generate
+# chunks live (that's what caused the 2026-09-21 watchdog freeze/crash — see
+# docs/STATUS.md), so any ungenerated chunk inside their search area is just
+# permanently unavailable to them: extraction points fail to validate, and
+# loot containers/vanilla structures never spawn there even after a player
+# walks in and the chunk naturally generates (scatter already ran and moved
+# on by then). The fix is to make "ungenerated chunk in the loot zone" not
+# exist in the first place.
+#
+# 2026-09-21 (initial): pre-generated only a small padded box around each
+# world's dynamic-overrides extraction center/radius — fixed extraction but
+# left the wider ScatterManager loot-scatter border (center 1000,1000, radius
+# 1000 — see plugins/GlitchItems/src/main/resources/config.yml scatter.*)
+# still full of gaps, which is what actually crashed the server.
+# 2026-09-21 (later): widened to match the scatter border exactly (center
+# 1000,1000 radius 1000, i.e. the full 2000x2000 area) for both worlds, so
+# the loot-scatter zone and the extraction zone are both fully covered.
+# Chunky skips chunks already on disk, so re-running this only fills gaps.
 declare -A IMPORTED_RED_PREGEN_CENTER=(
-  [glitch_red_eleria]="250 150"
-  [glitch_red_horizons]="150 100"
+  [glitch_red_eleria]="1000 1000"
+  [glitch_red_horizons]="1000 1000"
 )
 declare -A IMPORTED_RED_PREGEN_RADIUS=(
-  [glitch_red_eleria]=450
-  [glitch_red_horizons]=750
+  [glitch_red_eleria]=1000
+  [glitch_red_horizons]=1000
 )
 for RW in "${RED_WORLDS[@]:1}"; do
   RW_MARKER="${DIM_DIR}/${RW}/.pregen-started"

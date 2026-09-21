@@ -227,6 +227,7 @@ containers:
     vault:
       display: "<blue>Vault"
       material: BLUE_SHULKER_BOX
+      furniture-id: "loot_crates_water"
       key-id: "vault_key"
       key-material: "TRIPWIRE_HOOK"
       key-name: "Vault Key"

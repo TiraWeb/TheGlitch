@@ -833,13 +833,23 @@ public final class ScatterManager {
                         }
                         // Fall through to try sync load if no async
                     }
-                    // Purpur path: try to load chunk synchronously if not loaded
-                    // This may cause sync chunk generation but scatter runs rarely (30m)
-                    // so it's acceptable for up to 36 containers.
+                    // Purpur path: only LOAD an already-generated chunk from disk,
+                    // never force-generate one. world.getChunkAt() generates
+                    // synchronously on the main thread if the chunk doesn't exist —
+                    // on the imported red worlds (Eleria/Horizons only ship the small
+                    // footprint their source download covered) that stalled the main
+                    // thread long enough to trip the watchdog and crash the server
+                    // (2026-09-21, see docs/STATUS.md). Same guard as GlitchStash's
+                    // SpotPicker. Red worlds are meant to be fully pre-generated across
+                    // the whole scatter border (scripts/setup-worlds.sh) so this should
+                    // rarely trigger — it's a safety net, not the primary fix.
+                    if (!world.isChunkGenerated(cx, cz)) {
+                        diagAttempts++;
+                        diagChunkFail++;
+                        continue;
+                    }
                     try {
-                        // This will generate/load the chunk if needed
                         world.getChunkAt(cx, cz);
-                        // Re-check loaded after?
                     } catch (Exception e) {
                         diagAttempts++;
                         diagChunkFail++;
