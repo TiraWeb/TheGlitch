@@ -24,12 +24,6 @@ GlitchWarden:
     - players
     - attacker
   Skills:
-    # ModelEngine furnace-golem rig (blueprint asset_c8951772…, state machine auto-switches
-    # idle/walk, base golem hidden by MEG). Walk clip is the user's GentleSlowWalk,
-    # stored under MEG's default 'walk' name so usm picks it up on movement.
-    - model{mid=asset_c89517720db045279ea8fb46f3d93d5b;usm=true;save=true} @self ~onSpawn
-    - defaultstate{mid=asset_c89517720db045279ea8fb46f3d93d5b;type=idle;state=FurnaceGuardIdle;li=4;lo=4} @self ~onSpawn
-    - defaultstate{mid=asset_c89517720db045279ea8fb46f3d93d5b;type=walk;state=walk;li=4;lo=4} @self ~onSpawn
     - effect:sound{s=entity.iron_golem.ambient;v=0.5;p=0.9} @self ~onSpawn 1
     - effect:sound{s=entity.iron_golem.hurt;v=0.7;p=0.9} @self ~onDamaged 0.3
     - effect:sound{s=entity.iron_golem.death;v=1;p=0.7} @self ~onDeath 1

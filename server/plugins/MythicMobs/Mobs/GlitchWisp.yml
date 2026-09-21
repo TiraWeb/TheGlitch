@@ -18,9 +18,6 @@ GlitchWisp:
     ScoreboardTags: [res_veil]
     ShowHealth: true
   Skills:
-    # ModelEngine winged furnace-wisp rig (blueprint glitchwisp, static rest pose —
-    # no anim clips in the source package; vex base flies so it glides).
-    - model{mid=glitchwisp;usm=true;save=true} @self ~onSpawn
     - effect:sound{s=entity.vex.ambient;v=0.5;p=1.3} @self ~onSpawn 1
     - effect:sound{s=entity.vex.hurt;v=0.7;p=1.1} @self ~onDamaged 0.4
     - effect:sound{s=entity.vex.death;v=0.9;p=0.9} @self ~onDeath 1
