@@ -63,9 +63,14 @@ public final class DynamicExtractionManager {
     public void reload() {
         dynEnabled = plugin.getConfig().getBoolean("auto-extract.dynamic.enabled", true);
         points = clamp(plugin.getConfig().getInt("auto-extract.dynamic.points", 3), 1, 16);
-        centerX = plugin.getConfig().getInt("auto-extract.dynamic.center-x", 1000);
-        centerZ = plugin.getConfig().getInt("auto-extract.dynamic.center-z", 1000);
-        radius = clamp(plugin.getConfig().getInt("auto-extract.dynamic.radius", 1000), 16, 100000);
+        // Per-world override of the land box — a shared default center/radius won't
+        // suit every imported map (glitch_red_eleria/glitch_red_horizons have
+        // generated terrain concentrated well away from the shared default,
+        // found via low validated-point counts + an RCON terrain scan, 2026-09-21).
+        String overridePrefix = "auto-extract.dynamic-overrides." + redWorld + ".";
+        centerX = plugin.getConfig().getInt(overridePrefix + "center-x", plugin.getConfig().getInt("auto-extract.dynamic.center-x", 1000));
+        centerZ = plugin.getConfig().getInt(overridePrefix + "center-z", plugin.getConfig().getInt("auto-extract.dynamic.center-z", 1000));
+        radius = clamp(plugin.getConfig().getInt(overridePrefix + "radius", plugin.getConfig().getInt("auto-extract.dynamic.radius", 1000)), 16, 100000);
         minSeparation = clamp(plugin.getConfig().getInt("auto-extract.dynamic.min-separation", 400), 0, 100000);
         maxSurfaceY = clamp(plugin.getConfig().getInt("auto-extract.dynamic.max-surface-y", 100), 1, 320);
         captureTimeSeconds = clamp(plugin.getConfig().getInt("auto-extract.dynamic.capture-time-seconds", 30), 1, 3600);

@@ -93,18 +93,21 @@ auto-extract:
     glitch_red: "extraction_dyn"
     glitch_red_eleria: "extraction_dyn_eleria"
     glitch_red_horizons: "extraction_dyn_horizons"
-  # Optional per-world override of the dynamic land box — only needed if a new
-  # map's usable terrain isn't centered near (1000,1000). Uncomment and adjust
-  # after spot-checking the map in-game.
-  # dynamic-overrides:
-  #   glitch_red_eleria:
-  #     center-x: 1000
-  #     center-z: 1000
-  #     radius: 1000
-  #   glitch_red_horizons:
-  #     center-x: 1000
-  #     center-z: 1000
-  #     radius: 1000
+  # Per-world override of the dynamic land box — the shared (1000,1000) default
+  # only suits glitch_red. Eleria/Horizons' pre-generated terrain (from their
+  # source map, not Chunky) sits elsewhere; the first live cycle at the shared
+  # default only validated 1/3 points on each (mostly ocean/ungenerated), so
+  # these were set from an RCON terrain scan + the actual points the picker
+  # validated on that cycle (2026-09-21). Revisit if cycles still come up short.
+  dynamic-overrides:
+    glitch_red_eleria:
+      center-x: 350
+      center-z: 200
+      radius: 400
+    glitch_red_horizons:
+      center-x: 150
+      center-z: 100
+      radius: 400
 
 # Modern UI layer — shared stash kiosk wall + dialog-based remote stash
 modern-ui:
