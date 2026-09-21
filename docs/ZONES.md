@@ -178,11 +178,21 @@ world's `mv setspawn` coordinate is what players actually land on.
   **underwater** (top block at y=40, well below sea level) — not a hazard today since
   the ring isn't used for entry, but would need addressing before Phase 6 activates it.
 - Both new worlds' dynamic-extraction center (1000,1000, shared default) landed in
-  ocean (top block water at y=62) on both maps — the dynamic extraction system
-  validates/rejects unsuitable spots itself (`SpotPicker`), so this is self-correcting,
-  but if cycles repeatedly fall back to `fallback-arenas` for a world, override its
-  center via `auto-extract.dynamic-overrides` (GlitchStash config) after finding a
-  better land box in-game.
+  ocean (top block water at y=62) on both maps, which — combined with `SpotPicker`
+  originally being allowed to *synchronously generate* ungenerated chunks — caused a
+  real production incident on first deploy: 30+ second main-thread freezes
+  (watchdog thread dumps) that crashed the server once. Fixed by rejecting
+  ungenerated chunks outright (`SpotPicker.pickRandom`, `isChunkGenerated` check)
+  instead of forcing generation, and by adding per-world `auto-extract.dynamic-overrides`
+  (GlitchStash config) so each world's land box can be centered on its own actual
+  generated terrain rather than the shared default. After tuning: `glitch_red` and
+  `glitch_red_horizons` both reliably validate 3/3 points per cycle;
+  `glitch_red_eleria` consistently lands around 1/3 regardless of the override box
+  tried (250,150 r300 / 350,200 r400 / r650) — its terrain in the explored area is
+  genuinely sparse for the flatness+400-block-separation constraints, not a config
+  bug. This degrades gracefully (fewer points, not a crash) but finding a better box
+  for Eleria likely needs an actual in-game look at the map rather than more RCON
+  guessing.
 - This was an automated RCON scan (binary-searched top solid/liquid block, no player
   client) — a full visual walkthrough by an op is still recommended before treating
   either new map as fully verified.
