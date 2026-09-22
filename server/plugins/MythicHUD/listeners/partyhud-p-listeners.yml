@@ -1,34 +1,35 @@
-# The Glitch — raid party HUD listeners. Rewired from the "Parties" plugin +
-# MMOCore to GlitchRaid (via ParseOther chaining to %glitchraid_member_N_name%)
-# + Residual Glitch (glitchitems_stacks) in place of the original's mana bar.
+# The Glitch — raid party HUD listeners. Slot 1 = party leader (Parties rank
+# "leader"), slots 2-4 = the other members (Parties' default "member" rank,
+# numbered 1-3) — see partyhud-p.yml header for why this uses the Parties
+# plugin's own relational placeholders instead of a GlitchRaid-native one.
 member1_health_p:
-  value: '%parseother_unsafe_{glitchraid_member_1_name}_{player_health_rounded}%'
-  max: '%parseother_unsafe_{glitchraid_member_1_name}_{player_max_health_rounded}%'
+  value: '%parties_list_rank_leader_1_player_health_rounded%'
+  max: '%parties_list_rank_leader_1_player_max_health_rounded%'
 
 member1_residual_p:
-  value: '%parseother_unsafe_{glitchraid_member_1_name}_{glitchitems_stacks}%'
-  max: '%parseother_unsafe_{glitchraid_member_1_name}_{glitchitems_max_stacks}%'
+  value: '%parties_list_rank_leader_1_glitchitems_stacks%'
+  max: '%parties_list_rank_leader_1_glitchitems_max_stacks%'
 #############################################################################################
 member2_health_p:
-  value: '%parseother_unsafe_{glitchraid_member_2_name}_{player_health_rounded}%'
-  max: '%parseother_unsafe_{glitchraid_member_2_name}_{player_max_health_rounded}%'
+  value: '%parties_list_rank_member_1_player_health_rounded%'
+  max: '%parties_list_rank_member_1_player_max_health_rounded%'
 
 member2_residual_p:
-  value: '%parseother_unsafe_{glitchraid_member_2_name}_{glitchitems_stacks}%'
-  max: '%parseother_unsafe_{glitchraid_member_2_name}_{glitchitems_max_stacks}%'
+  value: '%parties_list_rank_member_1_glitchitems_stacks%'
+  max: '%parties_list_rank_member_1_glitchitems_max_stacks%'
 #############################################################################################
 member3_health_p:
-  value: '%parseother_unsafe_{glitchraid_member_3_name}_{player_health_rounded}%'
-  max: '%parseother_unsafe_{glitchraid_member_3_name}_{player_max_health_rounded}%'
+  value: '%parties_list_rank_member_2_player_health_rounded%'
+  max: '%parties_list_rank_member_2_player_max_health_rounded%'
 
 member3_residual_p:
-  value: '%parseother_unsafe_{glitchraid_member_3_name}_{glitchitems_stacks}%'
-  max: '%parseother_unsafe_{glitchraid_member_3_name}_{glitchitems_max_stacks}%'
+  value: '%parties_list_rank_member_2_glitchitems_stacks%'
+  max: '%parties_list_rank_member_2_glitchitems_max_stacks%'
 #############################################################################################
 member4_health_p:
-  value: '%parseother_unsafe_{glitchraid_member_4_name}_{player_health_rounded}%'
-  max: '%parseother_unsafe_{glitchraid_member_4_name}_{player_max_health_rounded}%'
+  value: '%parties_list_rank_member_3_player_health_rounded%'
+  max: '%parties_list_rank_member_3_player_max_health_rounded%'
 
 member4_residual_p:
-  value: '%parseother_unsafe_{glitchraid_member_4_name}_{glitchitems_stacks}%'
-  max: '%parseother_unsafe_{glitchraid_member_4_name}_{glitchitems_max_stacks}%'
+  value: '%parties_list_rank_member_3_glitchitems_stacks%'
+  max: '%parties_list_rank_member_3_glitchitems_max_stacks%'

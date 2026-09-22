@@ -101,9 +101,25 @@ HEALTHBAR_ENTITY_init:
   - variablesubtract{var=caster.parentlevel;val=" ";type=STRING} @parent{conditions=[ - isplayer false]} ?varequals{var=caster.display_level_on_health_bar;val=false}
   - setvar{var=caster.hpbartimeout;val=<caster.var.hide_timeout_length>;type=INTEGER} @parent
   - setvar{var=caster.hp_bar;val=A;type=STRING} @parent
-  
+  # Note (2026-09-22): the pack's single vertical_offset default (0.25 above eye
+  # location) sits mid-body on mobs whose visual model (ModelEngine) is much
+  # taller than their vanilla hitbox/eye height — e.g. GlitchReaver is a
+  # VINDICATOR (eye height ~1.6) wearing the much taller "endermauler" model.
+  # Per-mob-type overrides live in HEALTHBAR_ENTITY_tall_mob_offsets below;
+  # add a line there for any other custom-modeled mob with the same problem.
+  - skill{s=HEALTHBAR_ENTITY_tall_mob_offsets} @parent
   - skill{s=HEALTHBAR_ENTITY_set_bar_text;sync=true;delay=1} @self
   - displaytransformation{action=set;transformation=translation;value=0.0,<caster.var.vertical_offset>,0.0;delay=1} @self
+
+HEALTHBAR_ENTITY_tall_mob_offsets:
+  TargetConditions:
+  - mythicmobtype{t=GlitchReaver} true
+  Skills:
+  - setvar{var=caster.vertical_offset;val=1.1;type=FLOAT} @self
+
+HEALTHBAR_ENTITY_do_remount:
+  Skills:
+  - mountme @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
 
   
 HEALTHBAR_ENTITY_sudo_give_parent_name:

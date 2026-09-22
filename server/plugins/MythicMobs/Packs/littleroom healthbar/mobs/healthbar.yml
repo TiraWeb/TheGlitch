@@ -53,6 +53,14 @@ HEALTHBAR_ENTITY:
   - skill{s=HEALTHBAR_ENTITY_init} @self ~onSpawn
   - skill{s=HEALTHBAR_ENTITY_determine_status} @parent ~onTimer:2
   - skill{s=HEALTHBAR_ENTITY_detect_sneak} @parent ~onTimer:10
+  # Note (2026-09-22): the bar is only ever mounted once, right after summon
+  # (HEALTHBAR_GLOBAL_set_bar). If a mount ever silently drops (observed live:
+  # the bar stays behind at the spot it was created while the mob walks off),
+  # nothing re-attaches it. This re-affirms the mount every 4 ticks — a no-op
+  # when already mounted, a fix when not. sudoskill swaps the caster to the
+  # mob (@parent) so mountme runs in the same caster=mob/target=self direction
+  # HEALTHBAR_GLOBAL_set_bar already uses successfully.
+  - sudoskill{skill=HEALTHBAR_ENTITY_do_remount} @parent ~onTimer:4
   - remove @self ~onTimer:1 ?!isparentalive
 
   

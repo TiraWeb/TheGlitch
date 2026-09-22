@@ -169,6 +169,8 @@ residual-glitch:
   rarity-upgrade-percent-per-stack: 2
   # Boss bar HUD (top of screen, MiniMessage format) — {stacks}/{max}/{dmg}/{payout} placeholders
   bossbar-title: "<red>Residual Glitch: <white>{stacks}/{max}</white> <dark_gray>(<gray>+{dmg}% dmg taken, +{payout}% payout</gray>)</dark_gray>"
+  # Off (2026-09-22): redundant with the TAB scoreboard's Residual line.
+  show-bossbar: false
   # Mirror stacks onto the vanilla XP bar (level = stacks, fill = 8/8).
   # Off by default — the boss bar is the HUD; the XP bar is free for other uses.
   show-xp-bar: false

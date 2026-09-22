@@ -13,12 +13,10 @@ GlitchReaver:
   Health: 350
   Damage: 16
   Faction: GLITCH
+  # BossBar disabled (2026-09-22): redundant with the littleroom health bar
+  # rendered above the mob in-world, and the TAB scoreboard.
   BossBar:
-    Enabled: true
-    Title: "<light_purple>The Glitch Reaver"
-    Range: 50
-    Color: PURPLE
-    Style: SEGMENTED_10
+    Enabled: false
   DamageModifiers:
     - SUFFOCATION 0
     - FALL 0

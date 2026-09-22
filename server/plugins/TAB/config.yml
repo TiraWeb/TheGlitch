@@ -31,6 +31,44 @@ primary-group-finding-list:
   - donor
   - default
 
+# Star-bar for Residual Glitch stacks (max-stacks is fixed at 8 in GlitchItems'
+# config, so 8 literal conditions is safe — see plugins/GlitchItems config.yml
+# residual-glitch.max-stacks). Each is gold star_full when stacks>=N, else a
+# dim star_empty. Matches the old GlitchHUD sidebar's star meter (commit e5c7524).
+conditions:
+  glitch_star_1:
+    conditions: ['%glitchitems_stacks%>=1']
+    true: "<gold></gold>"
+    false: "<dark_gray></dark_gray>"
+  glitch_star_2:
+    conditions: ['%glitchitems_stacks%>=2']
+    true: "<gold></gold>"
+    false: "<dark_gray></dark_gray>"
+  glitch_star_3:
+    conditions: ['%glitchitems_stacks%>=3']
+    true: "<gold></gold>"
+    false: "<dark_gray></dark_gray>"
+  glitch_star_4:
+    conditions: ['%glitchitems_stacks%>=4']
+    true: "<gold></gold>"
+    false: "<dark_gray></dark_gray>"
+  glitch_star_5:
+    conditions: ['%glitchitems_stacks%>=5']
+    true: "<gold></gold>"
+    false: "<dark_gray></dark_gray>"
+  glitch_star_6:
+    conditions: ['%glitchitems_stacks%>=6']
+    true: "<gold></gold>"
+    false: "<dark_gray></dark_gray>"
+  glitch_star_7:
+    conditions: ['%glitchitems_stacks%>=7']
+    true: "<gold></gold>"
+    false: "<dark_gray></dark_gray>"
+  glitch_star_8:
+    conditions: ['%glitchitems_stacks%>=8']
+    true: "<gold></gold>"
+    false: "<dark_gray></dark_gray>"
+
 scoreboard:
   enabled: true
   toggle-command: /sb
@@ -39,36 +77,37 @@ scoreboard:
   delay-on-join-milliseconds: 0
   # Restyled 2026-09-22 to match the deleted GlitchHUD plugin's sidebar (see
   # plugins/GlitchHUD/.../HudManager.java + UiConstants.java at commit e5c7524, the
-  # last version before its removal): same title gradients/wording, and the same
-  # /// Nexo PUA glyphs (shard/star_full/star_empty/divider —
-  # confirmed still defined in server/plugins/Nexo/glyphs/oraxen_glyphs, unaffected by
-  # GlitchHUD's removal). Two things intentionally NOT replicated: (1) GlitchHUD's
-  # per-class icon (resIcon()) mapped OLD class names (Aegis/Veil/Bloom/Ward/Hollow)
-  # that no longer match our current classes (Vanguard/Warden/Specter/Operator) — the
-  # class system was renamed after GlitchHUD was last touched, so that mapping doesn't
-  # apply anymore; shown as plain %glitchclasses_class% text instead. (2) GlitchHUD's
-  # per-tick color pulse/flicker and live "next extraction cycle" countdown were driven
-  # by Java game-state (StashCycleProbe, tickCounter) with no PAPI placeholder exposing
-  # that data — TAB's static YAML scoreboard can't reproduce live animation or that
-  # countdown without new Java work, so the Residual/extraction lines are static text.
+  # last version before its removal): same title gradients/wording, the title-rune
+  # glyph () flanking every title, the shard glyph () before the Shards
+  # value, and now a real per-stack star bar (/ via the conditions
+  # above) instead of plain "N/max" text. Two things intentionally NOT replicated:
+  # (1) GlitchHUD's per-class icon (resIcon()) mapped OLD class names
+  # (Aegis/Veil/Bloom/Ward/Hollow) that no longer match our current classes
+  # (Vanguard/Warden/Specter/Operator) — the class system was renamed after
+  # GlitchHUD was last touched, so that mapping doesn't apply anymore; shown as
+  # plain %glitchclasses_class% text instead. (2) GlitchHUD's per-tick color
+  # pulse/flicker and live "next extraction cycle" countdown were driven by Java
+  # game-state (StashCycleProbe, tickCounter) with no PAPI placeholder exposing
+  # that data — TAB's static YAML scoreboard can't reproduce live animation or
+  # that countdown without new Java work.
   scoreboards:
     glitch-hub:
       display-condition: "%world%=hub"
-      title: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
+      title: "<font:minecraft:default></font> <gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient> <font:minecraft:default></font>"
       lines:
         - ""
         - "<gray>Zone:</gray> <white>Hub City</white>"
         - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
         - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<dark_gray></dark_gray>"
+        - "<dark_gray></dark_gray>"
         - "<gray>Ping:</gray> <white>%ping%ms</white> <gray>TPS:</gray> <white>%tps%</white>"
         - ""
         - "<gray><italic>Warp NPCs to deploy</italic></gray>"
         - ""
     glitch-pve:
       display-condition: "%world%=glitch_pve"
-      title: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
+      title: "<font:minecraft:default></font> <gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient> <font:minecraft:default></font>"
       lines:
         - ""
         - "<gray>Zone:</gray> <white>Standard Glitch</white>"
@@ -76,13 +115,13 @@ scoreboard:
         - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
         - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<dark_gray></dark_gray>"
+        - "<dark_gray></dark_gray>"
         - "<green>✓ Keep Inventory</green>"
         - "<yellow>⚠ Shards drop on death</yellow>"
         - ""
     glitch-red:
       display-condition: "%world%=glitch_red"
-      title: "<gradient:#FF2A2A:#FF6A00><bold>RED ZONE</bold></gradient>"
+      title: "<font:minecraft:default></font> <gradient:#FF2A2A:#FF6A00><bold>RED ZONE</bold></gradient> <font:minecraft:default></font>"
       lines:
         - ""
         - "<red><bold>⚠ DANGER ZONE ⚠</bold></red>"
@@ -91,8 +130,8 @@ scoreboard:
         - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
         - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<dark_gray></dark_gray>"
-        - "<light_purple>Residual: %glitchitems_stacks%/%glitchitems_max_stacks%</light_purple>"
+        - "<dark_gray></dark_gray>"
+        - "<light_purple>Residual:</light_purple> %condition:glitch_star_1%%condition:glitch_star_2%%condition:glitch_star_3%%condition:glitch_star_4%%condition:glitch_star_5%%condition:glitch_star_6%%condition:glitch_star_7%%condition:glitch_star_8% <white>%glitchitems_stacks%/%glitchitems_max_stacks%</white>"
         - "<dark_gray>+%glitchitems_dmg_taken%% dmg  +%glitchitems_payout%% payout</dark_gray>"
         - "<yellow>⚡ Extract at beacons</yellow>"
         - ""
@@ -102,7 +141,7 @@ scoreboard:
     # the safe choice over guessing at one).
     glitch-red-eleria:
       display-condition: "%world%=glitch_red_eleria"
-      title: "<gradient:#FF2A2A:#FF6A00><bold>RED ZONE — ELERIA</bold></gradient>"
+      title: "<font:minecraft:default></font> <gradient:#FF2A2A:#FF6A00><bold>RED ZONE — ELERIA</bold></gradient> <font:minecraft:default></font>"
       lines:
         - ""
         - "<red><bold>⚠ DANGER ZONE ⚠</bold></red>"
@@ -111,15 +150,15 @@ scoreboard:
         - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
         - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<dark_gray></dark_gray>"
-        - "<light_purple>Residual: %glitchitems_stacks%/%glitchitems_max_stacks%</light_purple>"
+        - "<dark_gray></dark_gray>"
+        - "<light_purple>Residual:</light_purple> %condition:glitch_star_1%%condition:glitch_star_2%%condition:glitch_star_3%%condition:glitch_star_4%%condition:glitch_star_5%%condition:glitch_star_6%%condition:glitch_star_7%%condition:glitch_star_8% <white>%glitchitems_stacks%/%glitchitems_max_stacks%</white>"
         - "<dark_gray>+%glitchitems_dmg_taken%% dmg  +%glitchitems_payout%% payout</dark_gray>"
         - "<yellow>⚡ Extract at beacons</yellow>"
         - ""
         - "<gray>Players:</gray> <white>%server_online%</white>"
     glitch-red-horizons:
       display-condition: "%world%=glitch_red_horizons"
-      title: "<gradient:#FF2A2A:#FF6A00><bold>RED ZONE — HORIZONS</bold></gradient>"
+      title: "<font:minecraft:default></font> <gradient:#FF2A2A:#FF6A00><bold>RED ZONE — HORIZONS</bold></gradient> <font:minecraft:default></font>"
       lines:
         - ""
         - "<red><bold>⚠ DANGER ZONE ⚠</bold></red>"
@@ -128,14 +167,14 @@ scoreboard:
         - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
         - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<dark_gray></dark_gray>"
-        - "<light_purple>Residual: %glitchitems_stacks%/%glitchitems_max_stacks%</light_purple>"
+        - "<dark_gray></dark_gray>"
+        - "<light_purple>Residual:</light_purple> %condition:glitch_star_1%%condition:glitch_star_2%%condition:glitch_star_3%%condition:glitch_star_4%%condition:glitch_star_5%%condition:glitch_star_6%%condition:glitch_star_7%%condition:glitch_star_8% <white>%glitchitems_stacks%/%glitchitems_max_stacks%</white>"
         - "<dark_gray>+%glitchitems_dmg_taken%% dmg  +%glitchitems_payout%% payout</dark_gray>"
         - "<yellow>⚡ Extract at beacons</yellow>"
         - ""
         - "<gray>Players:</gray> <white>%server_online%</white>"
     default:
-      title: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
+      title: "<font:minecraft:default></font> <gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient> <font:minecraft:default></font>"
       lines:
         - ""
         - "<gray>Zone:</gray> <white>%world%</white>"

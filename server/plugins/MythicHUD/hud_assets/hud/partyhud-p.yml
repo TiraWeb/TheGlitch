@@ -1,18 +1,26 @@
 ### THE GLITCH — RAID PARTY HUD (adapted from Volya's Party HUD, "Parties" FULL version) ###
-### Rewired from the third-party "Parties" plugin + MMOCore to GlitchRaid + GlitchClasses:
-###   %parties_members_total%        -> %glitchraid_party_size%
-###   list_rank_leader_N / member health/class lookups -> %glitchraid_member_N_name/health/max_health/class%
-###   mmocore_class / mmocore_level  -> glitchclasses_class / glitchclasses_level
-### Slot 1 is always the party leader (RaidExpansion.resolveSlotUuid). No mana bar per
-### member (we have no mana resource) — replaced with each member's Residual Glitch stacks.
+### 2026-09-22: switched to the Parties plugin's OWN relational placeholders
+### (%parties_list_rank_<rank>_<number>_<placeholder>%) — this is what the original,
+### unmodified Volya template used, and what MythicHUD's party HUD template actually
+### needs to resolve "who is member N" at all. Two earlier attempts both failed
+### identically (raw unparsed text, no server-side error either time): first chaining
+### through the ParseOther PAPI expansion to read another party member's placeholder,
+### then a native GlitchRaid PlaceholderAPI expansion with no third-party indirection.
+### Both were investigated at length (bytecode decompiles of ParseOther + MythicHUD's
+### own parser) with no explainable fault found. The common thread: MythicHUD's party
+### HUD has no independent way to know who's in "slot 1/2/3/4" without a supported
+### party plugin (Parties/MMOCore/Mythic Dungeons) doing that lookup itself — so it
+### likely never even attempts to resolve slot text without one installed, regardless
+### of which placeholders the YAML asks for.
 ###
-### 2026-09-22: originally chained the ParseOther PAPI expansion (same as the original
-### pack) to read another member's %player_health_rounded%/%glitchclasses_class% — never
-### reliably resolved in testing (stayed as literal unparsed text) even after installing
-### ParseOther and confirming its exact syntax via bytecode decompile, and no error ever
-### logged server-side to explain why. Replaced with member_N_health/max_health/class
-### placeholders resolved natively in RaidExpansion.java (direct Player/PAPI lookups, no
-### third-party relational-placeholder plugin or MythicHUD-side caching involved).
+### GlitchRaid stays the real party system (invites, raid rules, etc.) — PartiesBridge
+### (plugins/GlitchRaid) mirrors its membership into a same-shape Parties party purely
+### so this HUD has real data to read: our leader is always Parties rank "leader"
+### (list_rank_leader_1, singular), other members are always Parties' default "member"
+### rank (list_rank_member_1/2/3 for slots 2-4). Health uses the plain PAPI
+### %player_health_rounded%; class uses our own %glitchclasses_class% expansion —
+### Parties' list_rank_..._<placeholder> mechanism resolves either against the target
+### member directly (see PartiesPlaceholder#parseListRank upstream).
 ###
 ### NOTE: all 4 slots render unconditionally (no hide-if-empty-slot logic) since this
 ### plugin's exact true/false condition-direction semantics couldn't be verified without
@@ -31,16 +39,16 @@ partymember_1_p:
       texture:
         path: assets/partyhud/class/party_class_empty.png
       conditions:
-        - placeholder{ph=%glitchraid_member_1_class%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
-        - placeholder{ph=%glitchraid_member_1_class%;v=Warden} true texture assets/partyhud/class/party_class_cleric
-        - placeholder{ph=%glitchraid_member_1_class%;v=Specter} true texture assets/partyhud/class/party_class_assassin
-        - placeholder{ph=%glitchraid_member_1_class%;v=Operator} true texture assets/partyhud/class/party_class_artificier
+        - placeholder{ph=%parties_list_rank_leader_1_glitchclasses_class%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
+        - placeholder{ph=%parties_list_rank_leader_1_glitchclasses_class%;v=Warden} true texture assets/partyhud/class/party_class_cleric
+        - placeholder{ph=%parties_list_rank_leader_1_glitchclasses_class%;v=Specter} true texture assets/partyhud/class/party_class_assassin
+        - placeholder{ph=%parties_list_rank_leader_1_glitchclasses_class%;v=Operator} true texture assets/partyhud/class/party_class_artificier
       offset:
         x: 2
         y: -2
         z: 1
     name:
-      text: "<#6cd71b>%glitchraid_member_1_name%"
+      text: "<#6cd71b>%parties_list_rank_leader_1%"
       font: "volya"
       outlined: true
       align: right
@@ -49,7 +57,7 @@ partymember_1_p:
         x: 19
         y: -2
     hp_text:
-      text: "%glitchraid_member_1_health%"
+      text: "%parties_list_rank_leader_1_player_health_rounded%"
       font: "volya"
       outlined: true
       align: left
@@ -67,7 +75,7 @@ partymember_1_p:
         x: 58
         y: -8
     hp_text_max:
-      text: "%glitchraid_member_1_max_health%"
+      text: "%parties_list_rank_leader_1_player_max_health_rounded%"
       font: "volya"
       outlined: true
       align: right
@@ -121,16 +129,16 @@ partymember_2_p:
       texture:
         path: assets/partyhud/class/party_class_empty.png
       conditions:
-        - placeholder{ph=%glitchraid_member_2_class%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
-        - placeholder{ph=%glitchraid_member_2_class%;v=Warden} true texture assets/partyhud/class/party_class_cleric
-        - placeholder{ph=%glitchraid_member_2_class%;v=Specter} true texture assets/partyhud/class/party_class_assassin
-        - placeholder{ph=%glitchraid_member_2_class%;v=Operator} true texture assets/partyhud/class/party_class_artificier
+        - placeholder{ph=%parties_list_rank_member_1_glitchclasses_class%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
+        - placeholder{ph=%parties_list_rank_member_1_glitchclasses_class%;v=Warden} true texture assets/partyhud/class/party_class_cleric
+        - placeholder{ph=%parties_list_rank_member_1_glitchclasses_class%;v=Specter} true texture assets/partyhud/class/party_class_assassin
+        - placeholder{ph=%parties_list_rank_member_1_glitchclasses_class%;v=Operator} true texture assets/partyhud/class/party_class_artificier
       offset:
         x: 2
         y: -2
         z: 1
     name:
-      text: "<#cccccc>%glitchraid_member_2_name%"
+      text: "<#cccccc>%parties_list_rank_member_1%"
       font: "volya"
       outlined: true
       align: right
@@ -139,7 +147,7 @@ partymember_2_p:
         x: 19
         y: -2
     hp_text:
-      text: "%glitchraid_member_2_health%"
+      text: "%parties_list_rank_member_1_player_health_rounded%"
       font: "volya"
       outlined: true
       align: left
@@ -157,7 +165,7 @@ partymember_2_p:
         x: 58
         y: -8
     hp_text_max:
-      text: "%glitchraid_member_2_max_health%"
+      text: "%parties_list_rank_member_1_player_max_health_rounded%"
       font: "volya"
       outlined: true
       align: right
@@ -211,16 +219,16 @@ partymember_3_p:
       texture:
         path: assets/partyhud/class/party_class_empty.png
       conditions:
-        - placeholder{ph=%glitchraid_member_3_class%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
-        - placeholder{ph=%glitchraid_member_3_class%;v=Warden} true texture assets/partyhud/class/party_class_cleric
-        - placeholder{ph=%glitchraid_member_3_class%;v=Specter} true texture assets/partyhud/class/party_class_assassin
-        - placeholder{ph=%glitchraid_member_3_class%;v=Operator} true texture assets/partyhud/class/party_class_artificier
+        - placeholder{ph=%parties_list_rank_member_2_glitchclasses_class%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
+        - placeholder{ph=%parties_list_rank_member_2_glitchclasses_class%;v=Warden} true texture assets/partyhud/class/party_class_cleric
+        - placeholder{ph=%parties_list_rank_member_2_glitchclasses_class%;v=Specter} true texture assets/partyhud/class/party_class_assassin
+        - placeholder{ph=%parties_list_rank_member_2_glitchclasses_class%;v=Operator} true texture assets/partyhud/class/party_class_artificier
       offset:
         x: 2
         y: -2
         z: 1
     name:
-      text: "<#cccccc>%glitchraid_member_3_name%"
+      text: "<#cccccc>%parties_list_rank_member_2%"
       font: "volya"
       outlined: true
       align: right
@@ -229,7 +237,7 @@ partymember_3_p:
         x: 19
         y: -2
     hp_text:
-      text: "%glitchraid_member_3_health%"
+      text: "%parties_list_rank_member_2_player_health_rounded%"
       font: "volya"
       outlined: true
       align: left
@@ -247,7 +255,7 @@ partymember_3_p:
         x: 58
         y: -8
     hp_text_max:
-      text: "%glitchraid_member_3_max_health%"
+      text: "%parties_list_rank_member_2_player_max_health_rounded%"
       font: "volya"
       outlined: true
       align: right
@@ -301,16 +309,16 @@ partymember_4_p:
       texture:
         path: assets/partyhud/class/party_class_empty.png
       conditions:
-        - placeholder{ph=%glitchraid_member_4_class%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
-        - placeholder{ph=%glitchraid_member_4_class%;v=Warden} true texture assets/partyhud/class/party_class_cleric
-        - placeholder{ph=%glitchraid_member_4_class%;v=Specter} true texture assets/partyhud/class/party_class_assassin
-        - placeholder{ph=%glitchraid_member_4_class%;v=Operator} true texture assets/partyhud/class/party_class_artificier
+        - placeholder{ph=%parties_list_rank_member_3_glitchclasses_class%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
+        - placeholder{ph=%parties_list_rank_member_3_glitchclasses_class%;v=Warden} true texture assets/partyhud/class/party_class_cleric
+        - placeholder{ph=%parties_list_rank_member_3_glitchclasses_class%;v=Specter} true texture assets/partyhud/class/party_class_assassin
+        - placeholder{ph=%parties_list_rank_member_3_glitchclasses_class%;v=Operator} true texture assets/partyhud/class/party_class_artificier
       offset:
         x: 2
         y: -2
         z: 1
     name:
-      text: "<#cccccc>%glitchraid_member_4_name%"
+      text: "<#cccccc>%parties_list_rank_member_3%"
       font: "volya"
       outlined: true
       align: right
@@ -319,7 +327,7 @@ partymember_4_p:
         x: 19
         y: -2
     hp_text:
-      text: "%glitchraid_member_4_health%"
+      text: "%parties_list_rank_member_3_player_health_rounded%"
       font: "volya"
       outlined: true
       align: left
@@ -337,7 +345,7 @@ partymember_4_p:
         x: 58
         y: -8
     hp_text_max:
-      text: "%glitchraid_member_4_max_health%"
+      text: "%parties_list_rank_member_3_player_max_health_rounded%"
       font: "volya"
       outlined: true
       align: right

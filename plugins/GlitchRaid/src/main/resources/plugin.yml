@@ -12,6 +12,7 @@ softdepend:
   - GlitchStash
   - VelKoth
   - Coins
+  - Parties
 commands:
   raid:
     description: Raid lifecycle commands — start, end, status, help

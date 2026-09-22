@@ -41,6 +41,7 @@ public final class ResidualGlitchManager {
     private volatile long eliteSpawnIntervalMs = 10 * 60_000L;
     private volatile double payoutPerStack = 0.10;
     private volatile String bossbarTemplate = "<red>Residual Glitch: <white>{stacks}/{max}</white> <dark_gray>(<gray>+{dmg}% dmg taken, +{payout}% payout</gray>)</dark_gray>";
+    private volatile boolean showBossBar = true;
     private volatile boolean showXpBar = false;
     private volatile String eliteMob = "GlitchSentinel";
     private volatile int eliteSpawnRadius = 12;
@@ -66,6 +67,7 @@ public final class ResidualGlitchManager {
         eliteHuntStacks = plugin.getConfig().getInt("residual-glitch.elite-hunt-stacks", 5);
         payoutPerStack = plugin.getConfig().getDouble("residual-glitch.payout-per-stack", 0.10);
         bossbarTemplate = plugin.getConfig().getString("residual-glitch.bossbar-title", bossbarTemplate);
+        showBossBar = plugin.getConfig().getBoolean("residual-glitch.show-bossbar", true);
         showXpBar = plugin.getConfig().getBoolean("residual-glitch.show-xp-bar", false);
         eliteMob = plugin.getConfig().getString("elite-hunt.mob", "GlitchSentinel");
         eliteSpawnIntervalMs = Math.max(1, plugin.getConfig().getInt("elite-hunt.spawn-interval-minutes", 10)) * 60_000L;
@@ -124,6 +126,29 @@ public final class ResidualGlitchManager {
 
     private void show(Player player) {
         int stacks = getStacks(player);
+        // Residual Glitch's own boss bar is redundant with the TAB scoreboard's
+        // Residual line (2026-09-22) — off by default; the stack tracking/XP-bar
+        // mirror below still run regardless of this toggle.
+        if (!showBossBar) {
+            BossBar existingBar = bars.remove(player.getUniqueId());
+            if (existingBar != null) {
+                player.hideBossBar(existingBar);
+                lastShownStacks.remove(player.getUniqueId());
+            }
+        } else {
+            showBossBarFor(player, stacks);
+        }
+
+        if (showXpBar) {
+            savedXp.putIfAbsent(player.getUniqueId(), new SavedXp(player.getLevel(), player.getExp()));
+            player.setLevel(stacks);
+            player.setExp((float) stacks / maxStacks);
+        } else {
+            restoreXp(player);
+        }
+    }
+
+    private void showBossBarFor(Player player, int stacks) {
         Integer last = lastShownStacks.get(player.getUniqueId());
         BossBar existing = bars.get(player.getUniqueId());
         // Dirty-check: skip deserialize + bossbar update if stacks unchanged and bar exists
@@ -167,14 +192,6 @@ public final class ResidualGlitchManager {
         bar.progress((float) Math.min(1.0, (double) stacks / maxStacks));
         bar.color(stacks >= eliteHuntStacks ? BossBar.Color.PURPLE : BossBar.Color.RED);
         lastShownStacks.put(player.getUniqueId(), stacks);
-
-        if (showXpBar) {
-            savedXp.putIfAbsent(player.getUniqueId(), new SavedXp(player.getLevel(), player.getExp()));
-            player.setLevel(stacks);
-            player.setExp((float) stacks / maxStacks);
-        } else {
-            restoreXp(player);
-        }
     }
 
     private void restoreXp(Player player) {

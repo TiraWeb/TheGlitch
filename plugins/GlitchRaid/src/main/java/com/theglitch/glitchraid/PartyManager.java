@@ -23,10 +23,12 @@ public final class PartyManager {
 
     private final Map<UUID, Party> parties = new ConcurrentHashMap<>(); // leader -> party
     private final Map<UUID, UUID> playerToLeader = new ConcurrentHashMap<>(); // player -> leader
+    private final PartiesBridge partiesBridge;
 
     public PartyManager(GlitchRaid plugin) {
         this.plugin = plugin;
         this.maxPartySize = Math.max(1, plugin.getConfig().getInt("raid.party-max-size", 4));
+        this.partiesBridge = new PartiesBridge(plugin);
     }
 
     public void reload() {
@@ -67,6 +69,7 @@ public final class PartyManager {
         parties.put(id, party);
         playerToLeader.put(id, id);
         plugin.getLogger().info("Raid party created: leader=" + leader.getName());
+        partiesBridge.sync(party);
         return party;
     }
 
@@ -96,6 +99,7 @@ public final class PartyManager {
                 playerToLeader.put(pid, party.getLeader());
                 party.clearInvite(pid);
                 plugin.getLogger().info(player.getName() + " accepted raid party invite -> leader=" + Bukkit.getOfflinePlayer(party.getLeader()).getName());
+                partiesBridge.sync(party);
                 return true;
             }
         }
@@ -122,6 +126,7 @@ public final class PartyManager {
         if (!party.isMember(tid)) return false;
         party.removeMember(tid);
         playerToLeader.remove(tid);
+        partiesBridge.sync(party);
         return true;
     }
 
@@ -138,12 +143,10 @@ public final class PartyManager {
             }
             parties.remove(party.getLeader());
             plugin.getLogger().info("Raid party disbanded (leader left): " + playerUuid);
-        } else if (party.getSize() <= 1 && parties.containsKey(party.getLeader())) {
-            // Optional: keep solo party for leader; don't auto-disband small parties
-        }
-        // Clean empty
-        if (party.getSize() == 0) {
-            parties.remove(party.getLeader());
+            partiesBridge.disband(party.getLeader());
+        } else {
+            // Non-leader member left; leader (and anyone else) stays in the party.
+            partiesBridge.sync(party);
         }
     }
 
