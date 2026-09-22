@@ -11,8 +11,10 @@
 > GlitchHarrower) got custom rigs 2026-09-21, sourced from three downloaded
 > MythicMobs/ModelEngine packs (Beyond Mob Pack 1.0, the_voids, EndMobsVol1 by
 > RopeFire) rather than converted from raw source art — see Live rigs below.
-> GlitchCore and TheGlitchKing stay vanilla (WARDEN / ENDER_DRAGON) — neither
-> pack has a matching dragon/boss-scale rig. In-game visual sign-off pending.
+> GlitchCore stays vanilla (WARDEN) — neither pack has a matching boss-scale
+> rig. **2026-09-22: TheGlitchKing (ENDER_DRAGON) was removed from the game
+> entirely** (unbounded repeating summon skill contributed to a mob-density
+> crash) — it never had a custom model anyway. In-game visual sign-off pending.
 
 ## Stack
 

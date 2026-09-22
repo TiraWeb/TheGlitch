@@ -218,24 +218,9 @@ CORE_BREAKER:
     - 250 EXPERIENCE
     Skills: []
 
-KING_SLAYER:
-  Display: 'King Slayer'
-  Description: 'Defeat The Glitch King'
-  Category: MONSTER_HUNTING
-  Frame: CHALLENGE
-  Icon:
-    Material: DRAGON_HEAD
-  Criteria:
-    KILL:
-      Type: KILL_MYTHIC_MOB
-      MobType: TheGlitchKing
-      Amount: 1
-      Conditions: []
-  Reward:
-    Message: 'You have defeated The Glitch King!'
-    Drops:
-    - 250 EXPERIENCE
-    Skills: []
+# KING_SLAYER removed 2026-09-22 — TheGlitchKing (Ender Dragon) was removed
+# from the game (unbounded repeating summon skill contributed to a mob-density
+# crash; see randomspawns/RedZone_RandomSpawns.yml). No longer obtainable.
 
 # --- Capstone: one of every mob type ---
 GLITCH_BESTIARY:
@@ -290,10 +275,6 @@ GLITCH_BESTIARY:
     CORE:
       Type: KILL_MYTHIC_MOB
       MobType: GlitchCore
-      Amount: 1
-    KING:
-      Type: KILL_MYTHIC_MOB
-      MobType: TheGlitchKing
       Amount: 1
   Reward:
     Message: 'You have completed the Glitch Bestiary!'

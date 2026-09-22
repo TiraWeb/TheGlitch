@@ -135,9 +135,14 @@ new mobs (Glitch Reaver, Glitch Harrower) got full-adopt ModelEngine rigs
 sourced from three downloaded packs — Type, AI, and full multi-stage attack
 kits replaced, not just a cosmetic model swap (two exceptions: Phantom kept
 its native flying AI, Warden kept its vortex-pull layered on top of the new
-kit). GlitchCore and TheGlitchKing stay vanilla (Warden/Ender Dragon) — no
-pack had a matching boss-scale rig. Live stats below are current as of that
-pass; mob yml is authoritative, retune here when combat data lands.
+kit). GlitchCore stayed vanilla (Warden) — no pack had a matching boss-scale
+rig. **2026-09-22: TheGlitchKing (Ender Dragon) removed entirely** — its
+repeating summon skills weren't phase-gated, so it kept spawning adds for as
+long as it stayed alive, contributing to a mob-density crash. GlitchCore was
+pulled from the open-world random-spawn pool for the same reason but its mob
+file/drop table are kept — GlitchDungeons' wave-based dungeon boss rooms
+still spawn it by type. Live stats below are current as of the 2026-09-21
+model pass; mob yml is authoritative, retune here when combat data lands.
 Visual/animation sign-off pending (needs a client, can't be verified by an agent).
 
 **Zone distribution:**
@@ -186,7 +191,7 @@ Visual/animation sign-off pending (needs a client, can't be verified by an agent
 |---|---|---|---|---|---|
 | **Glitch Reaver** *(new)* | Vindicator (`endermauler` rig) | 350 | 16 | Hollow | The most complex kit in the roster: right/left slash, a dash-bite gap-closer, teleport-maul (repositions behind the target twice), and a scream-of-ender cone AOE. Has its own boss bar. |
 
-Unlike GlitchCore/TheGlitchKing, the Reaver isn't a scheduled server event —
+Unlike GlitchCore's dungeon boss fight, the Reaver isn't a scheduled event —
 it's a rare open-world spawn in `glitch_red` (own `randomspawns` group, long
 cooldown), meant to be a dangerous surprise rather than an announced fight.
 
@@ -195,12 +200,15 @@ small Legendary Relic chance (see `GlitchReaverLoot.yml`).
 
 ---
 
-### Tier 4 — Boss (Server Event)
+### Tier 4 — Boss (Dungeon-only, 2026-09-22)
 
-| Mob | Base | HP | Damage | Resonance | Behavior |
-|---|---|---|---|---|---|
-| **The Glitch King** | Ender Dragon | 2000 | 20+ | Hollow | 3-phase fight. Phase 1 (100-75% HP): Summons Glitch Stalkers, ground slam AoE. Phase 2 (75-25% HP): Teleports around arena, fires laser beams, creates corruption zones (damage over time). Phase 3 (<25% HP): Enrage mode — faster attacks, more spawns, but core is exposed (3x damage). |
-| **The Corrupted Core** | Wither | 1500 | 15+ | Hollow | Stationary boss. Spawns corruption turrets that fire projectiles. Players must destroy turrets to damage the core. Every 25% HP lost, spawns a wave of Corrupted Crawlers. |
+**The Glitch King (Ender Dragon) was removed entirely** — its repeating
+summon skills had no phase gating, so it kept spawning Glitch Stalker adds
+for as long as it stayed alive un-killed, contributing to a reported
+mob-density crash. `GlitchCore.yml` (Warden, 600 HP — see the actual mob
+file, not the legacy "Corrupted Core/Wither" draft this table used to
+describe) is no longer a Red Zone random spawn either; it now only appears
+as GlitchDungeons' scripted wave-based dungeon boss (§5).
 
 **Drops:** Void Essence (guaranteed), Legendary Relic (10%), Epic/Legendary loot (30%), guaranteed high-rarity Unstable Rifts, Shards (40-80).
 

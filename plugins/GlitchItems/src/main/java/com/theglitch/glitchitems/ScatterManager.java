@@ -199,6 +199,23 @@ public final class ScatterManager {
         loadData();
         startScheduler();
         registerCycleHook();
+        // Bug fix 2026-09-22: previously the FIRST scatter only happened one full
+        // interval (31m) after boot — GlitchStash's cycle-end hook doesn't fire
+        // until t0+30m+5s either. Any restart (crash or manual) left the map with
+        // whatever partial/stale container set survived, for up to half an hour,
+        // which read to players as "no loot in any world." Run one scatter shortly
+        // after startup (delayed to let worlds finish loading chunks/regions) so
+        // loot is always populated by the time anyone can log in and explore.
+        if (enabled) {
+            FoliaScheduler.runLaterGlobal(plugin, () -> {
+                plugin.getLogger().info("[Scatter] Running initial post-startup scatter.");
+                try {
+                    scatterNow();
+                } catch (Exception e) {
+                    plugin.getLogger().log(Level.WARNING, "[Scatter] Initial startup scatter threw", e);
+                }
+            }, 200L);
+        }
     }
 
     // ------------------------------------------------------------------------

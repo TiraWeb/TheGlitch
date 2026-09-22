@@ -1,0 +1,36 @@
+Configuration:
+  Spawners:
+    DisableCommandSaving: false
+  RandomSpawning:
+    DisableVanillaSpawns: true
+    GenerateSpawnPoints: true
+    SpawnRadiusPerPlayer: 64
+    SpawnRadiusPerPlayerMin: 12
+    SpawnRadiusPerPlayerY: 16
+    PlayerClusterDistance: 24.0
+    LimitMultiplier: 1.2
+    LocalGroupMultiplier: 0.1
+    # Fixed 2026-09-22 — both were -1 (unlimited), so the RandomSpawns ADD
+    # system (randomspawns/RedZone_RandomSpawns.yml) never actually capped
+    # anything: spawn points keep getting added near a player every Cooldown
+    # cycle forever, and mobs within ~32 blocks of a player never naturally
+    # despawn. An operator idling near one spot (e.g. spawn) let population
+    # pile up to 50-100 mobs in a single area, a likely contributor to a
+    # server crash. SpawningLimit is the server-wide cap; LocalSpawningLimit
+    # (scoped by PlayerClusterDistance above) is the one that directly
+    # prevents a single-area pileup. Values chosen to sit comfortably above
+    # RedZone_RandomSpawns.yml's own "~90-110 concurrent" design target
+    # without being effectively unlimited.
+    SpawningLimit: 150
+    LocalSpawningLimit: 25
+    IgnoreVanillaMobs: false
+    IgnoreUnnaturalMobs: false
+    ReplaceObeysCap: false
+    SharedCooldown: true
+    MaxGenerationAttempts: 10
+
+    # Generator used for ADD method. Can be NONE, CLUSTER, or LEGACY
+    Generator: NONE
+
+    # Maximum milliseconds per tick spent on spawning
+    MaxGenerationTime: 5

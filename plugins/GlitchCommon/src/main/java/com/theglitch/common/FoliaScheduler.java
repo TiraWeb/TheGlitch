@@ -25,6 +25,7 @@ import org.bukkit.plugin.Plugin;
 public final class FoliaScheduler {
 
     private static final boolean HAS_PAPER_SCHEDULER;
+    private static final boolean IS_FOLIA;
 
     static {
         boolean has = false;
@@ -35,16 +36,31 @@ public final class FoliaScheduler {
             has = false;
         }
         HAS_PAPER_SCHEDULER = has;
+
+        boolean folia = false;
+        if (has) {
+            try {
+                Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+                folia = true;
+            } catch (ClassNotFoundException e) {
+                folia = false;
+            }
+        }
+        IS_FOLIA = folia;
     }
 
+    /**
+     * Cached at class-init — a live server's platform never changes mid-run.
+     * Previously called {@code Class.forName(...)} on every invocation, which on
+     * Purpur always throws (walking the full plugin classloader group each time).
+     * Callers like {@code ScatterManager.placeNew()} invoke this once per container
+     * placement attempt (hundreds per scatter cycle); uncached, that repeated
+     * classloader traversal was a real contributor to multi-second main-thread
+     * stalls during scatter (confirmed via a live watchdog thread dump pinned on
+     * this call, 2026-09-22).
+     */
     public static boolean isFolia() {
-        if (!HAS_PAPER_SCHEDULER) return false;
-        try {
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
+        return IS_FOLIA;
     }
 
     public interface Cancellable {
