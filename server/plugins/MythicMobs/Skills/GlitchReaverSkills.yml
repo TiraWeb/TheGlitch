@@ -4,6 +4,16 @@
 # render, teleport-maul) and is kept close to its source design rather than
 # folded into an existing mob slot. Damage kept at the source's own 10/hit
 # (it hits many times per combo) with Health set high in the mob file instead.
+#
+# Bug fixed 2026-09-22 (live report: "mobs walk way too fast" after fighting
+# one in Eleria): every attack skill below freezes movement during its wind-up
+# (setspeed 0) then "restores" it afterward — but all 6 hardcoded that restore
+# to 1.5, the source pack's own base speed, not ours. GlitchReaver.yml sets
+# MovementSpeed: 0.4, so after the mob's very first attack its real walking
+# speed jumped to 1.5 (3.75x) and stayed there permanently (nothing else ever
+# reset it) — nothing to do with the same-day health-bar tracking fix, which
+# doesn't touch the mob at all. Changed all 6 restores to 0.4 to match. If
+# GlitchReaver.yml's MovementSpeed ever changes, these need updating too.
 
 GlitchReaver_IdleTeleport:
   Conditions:
@@ -47,7 +57,7 @@ GlitchReaver_RightSlash:
     - delay 38
     - skill{s=GlitchReaver_TeleportAway} @self 0.1
     - lockmodel{l=false} @self
-    - setspeed{speed=1.5;type=WALKING} @self
+    - setspeed{speed=0.4;type=WALKING} @self
 
 GlitchReaver_RightSlash_Damage:
   Skills:
@@ -81,7 +91,7 @@ GlitchReaver_LeftSlash:
     - delay 38
     - skill{s=GlitchReaver_TeleportAway} @self 0.1
     - lockmodel{l=false} @self
-    - setspeed{speed=1.5;type=WALKING} @self
+    - setspeed{speed=0.4;type=WALKING} @self
 
 GlitchReaver_LeftSlash_Damage:
   Skills:
@@ -136,7 +146,7 @@ GlitchReaver_DashBite:
     - teleport{r=10to20;sv=1} @self
     - delay 10
     - partvis{model=endermauler;p=endermauler;v=true;child=true} @self
-    - setspeed{speed=1.5;type=WALKING} @self
+    - setspeed{speed=0.4;type=WALKING} @self
 
 GlitchReaver_DashBite_Lunge1:
   Skills:
@@ -186,7 +196,7 @@ GlitchReaver_Scream:
     - setAI{ai=true} @self
     - skill{s=GlitchReaver_TeleportAway} @self 0.1
     - lockmodel{l=false} @self
-    - setspeed{speed=1.5;type=WALKING} @self
+    - setspeed{speed=0.4;type=WALKING} @self
 
 GlitchReaver_Scream_Damage1:
   Skills:
@@ -249,7 +259,7 @@ GlitchReaver_TeleportMaul:
     - aura{auraName=GlitchReaverTeleportMaulD;duration=5;oT=GlitchReaver_TeleportMaul_Damage} @self
     - delay 34
     - skill{s=GlitchReaver_TeleportAway} @self 0.1
-    - setspeed{speed=1.5;type=WALKING} @self
+    - setspeed{speed=0.4;type=WALKING} @self
 
 GlitchReaver_TeleportMaul_Damage:
   Skills:
@@ -282,7 +292,7 @@ GlitchReaver_CloseSlashes:
     - skill{s=GlitchReaver_TeleportAway} @self 0.5
     - delay 31
     - lockmodel{l=false} @self
-    - setspeed{speed=1.5;type=WALKING} @self
+    - setspeed{speed=0.4;type=WALKING} @self
 
 GlitchReaver_CloseSlashes_Damage:
   Skills:
