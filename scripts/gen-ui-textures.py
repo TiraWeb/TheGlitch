@@ -328,6 +328,12 @@ WOOD_MID = (131, 74, 53, 255)
 PARCHMENT_LIGHT = (222, 197, 160, 255)
 PARCHMENT_DARK = (188, 158, 122, 255)
 WOOD_GOLD = (251, 185, 84, 255)
+# Darker reddish tone for the player's-own-inventory section (always present
+# below the container part of every chest-style GUI, at a fixed vanilla
+# offset) — kept visually distinct from the container slots above it, same
+# 2-tone split the Medieval kit itself used.
+PLAYERINV_LIGHT = (168, 106, 84, 255)
+PLAYERINV_DARK = (140, 83, 66, 255)
 
 
 def chest_window(rows):
@@ -391,6 +397,44 @@ def chest_window(rows):
     for cx, cy in [(4, 4), (W - 5, 4)]:
         d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], fill=WOOD_GOLD)
         px(d, cx, cy, (255, 250, 235, 255))
+
+    # Player's own inventory (always shown below the container, fixed vanilla
+    # offset regardless of N): 4px gap, 3 rows main inv, 4px gap, 1 hotbar row.
+    # Previously left transparent, which rendered as a stray purple/black
+    # checkerboard in-game — now themed to match instead (round 9 follow-up).
+    inv_top = H + 4
+    inv_rows_end = inv_top + 3 * 18
+    hotbar_top = inv_rows_end + 4
+    hotbar_end = hotbar_top + 18
+
+    for y in range(inv_top, hotbar_end):
+        t = (y - inv_top) / (hotbar_end - inv_top)
+        c = tuple(int(a + (b - a) * t) for a, b in zip(PLAYERINV_LIGHT, PLAYERINV_DARK))
+        d.line([(0, y), (W - 1, y)], fill=c)
+        if rng.random() < 0.35:
+            x = rng.randrange(W)
+            n = rng.randint(-8, 8)
+            r, g, b_, _ = img.getpixel((x, y))
+            px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
+
+    inv_grid_line = (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 90)
+    for row in range(4):
+        gy = inv_top + row * 18
+        d.line([(7, gy), (W - 8, gy)], fill=inv_grid_line)
+    d.line([(7, hotbar_end), (W - 8, hotbar_end)], fill=inv_grid_line)
+    for col in range(10):
+        gx = 7 + col * 18
+        if gx < W - 7:
+            d.line([(gx, inv_top), (gx, inv_rows_end)], fill=inv_grid_line)
+            d.line([(gx, hotbar_top), (gx, hotbar_end)], fill=inv_grid_line)
+
+    for x in range(W):
+        px(d, x, inv_top - 1, WOOD_DARK)
+    for x in range(W):
+        px(d, x, hotbar_end - 1, WOOD_DARK)
+    for y in range(inv_top - 1, hotbar_end):
+        px(d, 0, y, WOOD_DARK)
+        px(d, W - 1, y, WOOD_DARK)
 
     return img
 
