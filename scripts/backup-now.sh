@@ -116,11 +116,8 @@ tar -cpf "$TMP_TAR" \
   server/plugins/GlitchItems \
   server/plugins/GlitchRaid \
   server/plugins/GlitchEvents \
-  server/plugins/GlitchLoot \
   server/plugins/GlitchShops \
-  server/plugins/GlitchDungeons \
   server/plugins/GlitchDeathRules \
-  server/plugins/GlitchHealthBar \
   server/plugins/Coins \
   server/plugins/LuckPerms \
   server/plugins/WorldGuard \

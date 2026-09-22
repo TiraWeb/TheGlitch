@@ -10,6 +10,9 @@ GlitchWarden:
   Display: '<dark_aqua>Glitch Warden'
   Health: 200
   Damage: 8
+  HealthBar:
+    Enabled: true
+    Offset: 2.3
   Options:
     FollowRange: 25
     PreventOtherDrops: true
@@ -19,7 +22,6 @@ GlitchWarden:
     Silent: true
     KnockbackResistance: 1
     ScoreboardTags: [res_aegis]
-    ShowHealth: true
   AIGoalSelectors:
     - 0 clear
     - 1 meleeattack

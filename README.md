@@ -199,35 +199,33 @@ Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or vi
 | Eli's Coins | Glitch Shards currency | `server/plugins/Coins/config.yml` |
 | MythicMobs | Custom mobs + loot (**Premium**, 2026-09-20; jar live-only, gitignored) | `server/plugins/MythicMobs/` |
 | MythicCrucible | Skill-driven custom items/furniture add-on for Mythic (2026-09-20; jar live-only, gitignored) | `server/plugins/MythicMobs/items/GlitchCrucibleItems.yml` |
-| MythicDungeons | Instanced party dungeons (2026-09-20; needs **ProtocolLib**; jar live-only, gitignored) | Built in-game via its own editor — no repo config |
+| MythicDungeons | Instanced party dungeons (2026-09-20; needs **ProtocolLib**; jar live-only, gitignored) — **2026-09-22: replacing GlitchDungeons, config not yet written** | Built in-game via its own editor — no repo config |
 | MythicAchievements | Custom advancements add-on (**Premium**, 2026-09-20; jar live-only, gitignored) | `server/plugins/MythicAchievements/Achievements/GlitchHunting.yml` |
-| MythicHUD | Custom action-bar HUD bars (2026-09-20; jar live-only, gitignored) | **Currently failing to enable** — see docs/STATUS.md |
+| MythicHUD | Custom HUD (jar upgraded 1.3.4→1.3.5-SNAPSHOT 2026-09-22, replacing GlitchHUD; the 1.3.4 build never worked — see docs/STATUS.md) | Config not yet written — pending |
+| MythicMobs native HealthBar | Per-mob floating HP-bar hologram (`HealthBar: {Enabled, Offset}` field), replacing GlitchHealthBar 2026-09-22 | Global styling in `server/plugins/MythicMobs/config/config-mobs.yml` (`Holograms.HealthBar`); per-mob in each `Mobs/*.yml` |
 | ProtocolLib | Packet library (dependency for MythicDungeons, 2026-09-20; jar live-only, gitignored) | N/A |
-| ModelEngine | Custom mob rigs (warden + wisp, 2/12 free-tier slots; jar live-only, gitignored) | `server/plugins/ModelEngine/blueprints/` — pipeline: `docs/MODELS.md` |
+| ModelEngine | Custom mob rigs (10/12 free-tier slots; jar live-only, gitignored) | `server/plugins/ModelEngine/blueprints/` — pipeline: `docs/MODELS.md` |
 | FancyNpcs | Packet-based NPCs | `server/plugins/FancyNpcs/` |
 | DeluxeMenus | GUI menus | `server/plugins/DeluxeMenus/gui_configs/` |
-| TAB | Tab list + header/footer (sidebar owned by GlitchHUD) | `server/plugins/TAB/config.yml` (`scoreboard.enabled: false`) |
+| TAB | Tab list + header/footer | `server/plugins/TAB/config.yml` |
 | PlaceholderAPI | Placeholder expansions | `server/plugins/PlaceholderAPI/` |
 | VelKoth | Extraction zones (KOTH) | `server/plugins/VelKoth/` |
 | Nexo | Custom items (20 Arcane Ruins items, `itemname:` — migrated from `displayname:` in 6e2fba7, config-version 3; migrated Oraxen→Nexo 2026-09-20) + UI glyphs | `server/plugins/Nexo/` |
-| **GlitchHUD** | **Scoreboard/HUD** (custom: per-world sidebar, below-name stacks, residual boss bar) | `plugins/GlitchHUD/` |
 | **GlitchStash** | **Extraction vault + dynamic spots + Fast/Silent variants** (custom) | `plugins/GlitchStash/` |
 | **GlitchClasses** | **Class system** (custom: abilities, ultimates, starter kit) | `plugins/GlitchClasses/` |
 | **GlitchItems** | **Item system** (custom: gear rolls, /identify, Resonance, Residual Glitch, loot containers) | `plugins/GlitchItems/` |
 | **GlitchShops** | **Grand Bazaar** (custom: buy/sell merchants, gear vendor) | `plugins/GlitchShops/` |
-| **GlitchHealthBar** | **Mob health bars** (custom: floating HP bar above mobs) | `plugins/GlitchHealthBar/` |
 | **GlitchDeathRules** | **Red Zone death rules** (custom: mercy keep, entry invulnerability) | `plugins/GlitchDeathRules/` |
 | **GlitchHideout** | **Hideout progression** (custom: stations, crafting, storage) | `plugins/GlitchHideout/` |
 | **GlitchRaid** | **Raid lifecycle** (custom: `/raid` timer, party, loot/death recap, `%glitchraid_*%`) | `plugins/GlitchRaid/` |
 | **GlitchInsurance** | **Gear insurance** (custom: shard premiums, claim window, `/insurance`) | `plugins/GlitchInsurance/` |
 | **GlitchEvents** | **World events** (custom: supply drops, roaming bosses, auto scheduler) | `plugins/GlitchEvents/` |
-| **GlitchLoot** | **Smart loot** (custom: adaptive drop rates, power budget, anti-funneling) | `plugins/GlitchLoot/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
 | GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
 | Chunky | World pre-generation | `server/plugins/Chunky/` |
 
-All **12** deployable custom plugins share the `com.theglitch` Maven reactor; `plugins/GlitchCommon/` is a shared library module (no plugin.yml — never deployed). `GlitchDungeons` is deferred/excluded by default — total 14 reactor modules.
+All **9** deployable custom plugins share the `com.theglitch` Maven reactor; `plugins/GlitchCommon/` is a shared library module (no plugin.yml — never deployed) — total 10 reactor modules. **2026-09-22: GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed** (see docs/STATUS.md) in favor of MythicDungeons, MythicHUD, MythicMobs' native HealthBar, and plain MythicMobs DropTables.
 
 ## The three zones (Phase 4)
 
@@ -255,32 +253,29 @@ Built from source on the server — **preferred: single reactor build** (Paper r
 
 ```bash
 cd ~/TheGlitch
-sudo ./scripts/build-all.sh              # all 12 deployable plugins in topological order (reactor, -T 1C)
+sudo ./scripts/build-all.sh              # all 9 deployable plugins in topological order (reactor, -T 1C)
 # sudo ./scripts/build-all.sh --clean    # full clean build
-# sudo ./scripts/build-all.sh GlitchDungeons   # deferred dungeon plugin — opt-in only
 sudo systemctl restart theglitch
 ```
 
-Legacy per-plugin (still works for first-time lib seeding or single-plugin debug — order matters; the five newest plugins have no `build.sh` and are built by the reactor only):
+Legacy per-plugin (still works for first-time lib seeding or single-plugin debug — order matters):
 
 ```bash
-# Topological order: Items → Shops → Stash → Classes → Hideout → DeathRules → HealthBar
+# Topological order: Items → Shops → Stash → Classes → Hideout → DeathRules
 sudo ./plugins/GlitchItems/build.sh
 sudo ./plugins/GlitchShops/build.sh
 sudo ./plugins/GlitchStash/build.sh
 sudo ./plugins/GlitchClasses/build.sh
 sudo ./plugins/GlitchHideout/build.sh
 sudo ./plugins/GlitchDeathRules/build.sh
-sudo ./plugins/GlitchHealthBar/build.sh
-# GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD: reactor-only
-#   mvn -B -DskipTests package -pl :GlitchHUD -am   (etc.)
-# sudo ./plugins/GlitchDungeons/build.sh   # deferred — source only, not deployed by default
+# GlitchRaid / GlitchInsurance / GlitchEvents: reactor-only
+#   mvn -B -DskipTests package -pl :GlitchRaid -am   (etc.)
 sudo systemctl restart theglitch
 ```
 
-Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, GlitchDungeons overrides to 25, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **14** modules. CI validate: `./scripts/build-all.sh --no-deploy`. GlitchItems `config-version` is now 3 (2026-09-02, was 1) — armor upgrade + per-slot identity (see `plugins/GlitchItems/src/main/resources/config.yml`).
+Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **10** modules. CI validate: `./scripts/build-all.sh --no-deploy`. GlitchItems `config-version` is now 3 (2026-09-02, was 1) — armor upgrade + per-slot identity (see `plugins/GlitchItems/src/main/resources/config.yml`).
 
-`build-all.sh` also syncs `GlitchHUD` extras on deploy: forces `server/plugins/TAB/config.yml` (`scoreboard.enabled: false` — sidebar owned by GlitchHUD) and `server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json`.
+**2026-09-22: GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed** from the reactor entirely — replaced by MythicDungeons (config pending), MythicHUD (new jar installed, config pending), MythicMobs' own per-mob `HealthBar` hologram field, and plain MythicMobs DropTables respectively. See docs/STATUS.md for the removal record. `build-all.sh` no longer syncs any TAB/Nexo HUD-takeover extras automatically — that logic was tied to GlitchHUD specifically and was removed with it; re-add it once MythicHUD's config is in place if still needed.
 
 GlitchInsurance additionally needs `lib/VaultUnlocked.jar` for its compile-time Vault API (`systemPath`) — `build-all.sh` auto-seeds it from `/opt/theglitch/server/plugins/` or `server/plugins/`.
 
@@ -308,7 +303,7 @@ scripts/setup-imported-worlds.sh    Phase 4: import custom maps (glitch_red + gl
 scripts/reapply-world-config.sh     Phase 4: re-apply gamerules/flags/borders after world import
 scripts/setup-luckperms.sh          Phase 5.1: LuckPerms groups, hierarchy
 scripts/setup-essentials.sh         Phase 5.2: spawn, warps, starter kit (INCOMPATIBLE)
-scripts/setup-tab.sh                Phase 5.7: TAB header/footer (sidebar now owned by GlitchHUD)
+scripts/setup-tab.sh                Phase 5.7: TAB header/footer
 scripts/setup-papi.sh               Phase 5.7: PlaceholderAPI expansions
 scripts/setup-mythicmobs.sh         Phase 5.3: MythicMobs reload
 scripts/setup-coins.sh              Phase 5.2: Glitch Shards economy
@@ -329,16 +324,13 @@ plugins/GlitchStash/      GlitchStash source — vault + dynamic extraction (Spo
 plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
 plugins/GlitchItems/      GlitchItems source (built via build.sh) — gear, residual, containers
 plugins/GlitchShops/      GlitchShops source (built via build.sh)
-plugins/GlitchHealthBar/  GlitchHealthBar source (built via build.sh)
 plugins/GlitchDeathRules/ GlitchDeathRules source (built via build.sh)
 plugins/GlitchHideout/    GlitchHideout source (built via build.sh)
 plugins/GlitchCommon/     shared library module (no plugin.yml — reference/shade, not deployed)
 plugins/GlitchRaid/       GlitchRaid source (reactor-only build)
 plugins/GlitchInsurance/  GlitchInsurance source (reactor-only; needs lib/VaultUnlocked.jar)
 plugins/GlitchEvents/     GlitchEvents source (reactor-only build)
-plugins/GlitchLoot/       GlitchLoot source (reactor-only build)
-plugins/GlitchHUD/        GlitchHUD source (reactor-only; per-world sidebar + TAB takeover + negative_space sync)
-plugins/GlitchDungeons/   GlitchDungeons source (deferred — not deployed by default)
+# GlitchDungeons, GlitchHUD, GlitchHealthBar, GlitchLoot removed 2026-09-22 — see docs/STATUS.md
 server/plugins/Nexo/      Nexo item/glyph configs + pack assets (migrated from Oraxen 2026-09-20)
 server/plugins/ModelEngine/blueprints/  MEG rig blueprints (generated, tracked — source zips at repo root)
 GlitchWardenV2.zip / GlitchWisp.zip  custom-model source packages (myrlin bundles, see docs/MODELS.md)

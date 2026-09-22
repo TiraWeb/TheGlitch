@@ -8,6 +8,9 @@ GlitchHarrower:
   Type: ZOMBIE
   Health: 95
   Damage: 10
+  HealthBar:
+    Enabled: true
+    Offset: 2.3
   Display: '<dark_purple>Glitch Harrower'
   AITargetSelectors:
     - clear
@@ -26,7 +29,6 @@ GlitchHarrower:
     Jockey: false
     KnockbackResistance: 0.65
     ScoreboardTags: [res_veil]
-    ShowHealth: true
   Skills:
     - model{mid=voids_mask;h=true} @self ~onSpawn
     - model{mid=voids_mask;h=true} @self ~onLoad

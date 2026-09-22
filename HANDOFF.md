@@ -1,6 +1,6 @@
 # The Glitch - Session Handoff
 
-Updated: 2026-09-14
+Updated: 2026-09-22
 
 This document is a concise handoff. The authoritative status is
 [docs/STATUS.md](docs/STATUS.md); this file must not contradict it.
@@ -18,6 +18,7 @@ player data, or deployed third-party jars.
 ## Current Status
 
 - Server bootstrap, Purpur, Java, firewall, systemd, and base plugin setup are scripted.
+- **2026-09-22: GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed from the reactor entirely** — replaced by MythicDungeons (config pending), MythicHUD (new jar installed, config pending), MythicMobs' native per-mob `HealthBar` field, and plain MythicMobs DropTables respectively. The reactor is now **9 deployable plugins + `GlitchCommon` = 10 modules** (was 12+2=14 — the line below is the pre-2026-09-22 history, kept for record). See docs/STATUS.md's 2026-09-22 dated entries for the full removal record.
 - **All 12 deployable custom plugins build via the 14-module Maven reactor (`scripts/build-all.sh`) and are deployed live with clean logs (2026-09-02 — `f312262` GlitchHUD, `c1634b3`/`a0edffa`/`9d8f05a` dynamic extraction, `c9a229e` ping/TPS+ByteTag fix).** In-game playtests remain for newer plugins/areas; `GlitchItems` `/identify`, `GlitchShops` `/shop`, `GlitchHealthBar` are live-tested earlier and GlitchHUD visuals + dynamic cycle verified on box (`Cycle #1 3/3`) + 2026-09-02 balance (4d8c554) + armor (f1da4d0/d847c69) via scripts/deploy-balance-2026-09-02.sh + scripts/deploy-armor-2026-09-02.sh, BUILD SUCCESS, mm reload + oraxen reload all + restart, rift_vault=6 and armor +5 verified via RCON.
 - Efficiency pass complete: root parent POM, config caching in hot paths, async atomic saves, `plugins/GlitchCommon` shared library, `scripts/lib/{preflight,gamerules}.sh` + `build-common.sh` dedupe, GitHub Actions CI.
 - Geyser/Floodgate configured; real Bedrock join test still pending.
@@ -33,7 +34,7 @@ player data, or deployed third-party jars.
 - GlitchRaid: raid lifecycle — BossBar timer (1800s), parties of 4 (`FoliaScheduler`), loot/death recap, `/raid start|end|status` + `/raidadmin`, real `%glitchraid_*%` PAPI expansion (`me.clip:placeholderapi:2.12.3` via `pom.xml:53`). Built + deployed; in-game playtest pending.
 - GlitchInsurance: shard insurance — premium 100/item (max 3), 300s claim window, 60s cooldown, Vault withdraw, async atomic YAML persistence; `/insurance buy|list|claim`. Needs `lib/VaultUnlocked.jar` at compile (auto-seeded). Built + deployed; in-game playtest pending.
 - GlitchEvents: world events — auto-scheduler (20–45 min), supply drops near players, roaming bosses via MythicMobs console spawn, `/glitchevents` admin tools. Built + deployed; in-game playtest pending.
-- GlitchLoot: smart loot — dry-streak adaptive bonus, hourly power budget, anti-funnel cooldown, guarded EntityDeathEvent bonus drops, `/glitchloot status|reload`. Built + deployed; in-game playtest pending.
+- GlitchLoot: removed entirely 2026-09-22 (see top of file). Mob loot now comes solely from each mob's own MythicMobs `DropTables` entry, no adaptive layer.
 - Economy fix 2026-08-23: `server/plugins/Coins/config.yml:85,114` `player-drop:false` `lose-on-death:false` `drop-on-death:false` (account-bound) + live `coins reload`; GlitchShops buy/sell now atomic (`ShopGUI.java:375` deposit-first / `transactionSuccess` / refund). COINS retuned 2026-09-02 T1 1-2 / T2 Stalker 2-6 / Phantom 3-8 / Brute 5-10 / T3 10-16 / boss 40-80 (docs/ITEM_BALANCE.md, 4d8c554).
 - Custom UI theming 2026-08-23: Oraxen font glyphs `E040-E049` (`server/plugins/Oraxen/glyphs/theglitch.yml`, textures via `scripts/gen-ui-textures.py`), global themed chest override `pack/textures/gui/**/generic_54.png`, Wynncraft-style gear detail pages (`GlitchUI.java` + `GearManager.buildItem`), glyph titles in Shops/Hideout Java + Stash/Classes configs. Bedrock intentionally sees plain text. Live config patch needed once: stash display-name + classes gui.title (seeded-once files). Oraxen `itemname:` migration 2026-09-02 (20 items, displayname:→itemname: in 6e2fba7, config-version 3).
 - MythicMobs: twelve mob definitions (10 original + GlitchReaver mini-boss + GlitchHarrower, 2026-09-21) with per-tier drop tables (rifts on T2-T4) and Red Zone spawn areas (T1 everywhere, T2 mid cross-ring, T3 at Core + extraction beacons, T3.5 rare standing threat) are in repo; scatter corrected to land (`cd74932`). **2026-09-21:** all 8 non-boss mobs + the 2 new ones got full-adopt custom ModelEngine rigs (Type/AI/skill kit all replaced, sourced from 3 downloaded packs) — see docs/MODELS.md for the roster and known limits (boss-bar/enderman texture assets deliberately not merged). Live test pending — this includes verifying every reskinned mob's animations/abilities in-game, which needs a client and can't be done by an agent.
@@ -41,8 +42,8 @@ player data, or deployed third-party jars.
 - **Custom models (2026-09-14 `c32baa0`/`4d73404`, docs/MODELS.md):** ModelEngine R4.1.0 free — warden rig (user `walk` clip, dual-path usm trigger, feet planted) + winged wisp rig (static glide). Blueprints tracked, pack merged via `10_modelengine.zip`, `3 models loaded` clean. Visual sign-off + wisp-scale decision pending.
 - **Pre-alpha hardening (2026-09-14 `64ed02a`):** raid-buffer red-entry block, dialogs removed repo-wide (chest GUIs), floating Bazaar/Dungeon panels. Rank ladder live (Member←Wisp←Stalker←Sentinel; Helper←Moderator←Admin←Owner + Dev; badges E050-E058).
 - GlitchShops is deployed and live-tested: `/shop` buy/sell works. Grand Bazaar NPC placement and balance tuning remain.
-- GlitchHealthBar is deployed and live-tested: floating HP bars above hostiles.
-- GlitchDungeons has a source prototype and is **deferred by operator decision**; config parsing, extraction startup, stash integration, and cleanup still require work. It is excluded from `build-all.sh` defaults (opt-in via argument). Do not describe it as deployed-by-default.
+- GlitchHealthBar: removed entirely 2026-09-22 (see top of file). Mob health bars now come from MythicMobs' own `HealthBar` field on each mob.
+- GlitchDungeons: removed entirely 2026-09-22 (see top of file). Dungeons will be rebuilt on the MythicDungeons plugin instead, config pending.
 - Physical hub facilities, dungeon shells, and Red Zone POIs are not stored or completed in the repository.
 - Remaining: Identifier NPC flow, anti-grief remainder (friendly fire/AFK kick — shard behavior now account-bound + live-patched, needs playtest), world population containers marking, launch operations (backups, moderation, load test, checklist).
 - Bug audits: 2026-08-10 compile/data-loss/crash/balance pass + 2026-09-01 GlitchHUD/ping + `ByteTag` PDC + SpotPicker flatness hardening; see docs/LOW_LEVEL_BUGS.md.
@@ -60,7 +61,7 @@ sudo ./scripts/deploy-balance-2026-09-02.sh  # 2026-09-02 balance: 20 items item
 sudo ./scripts/deploy-armor-2026-09-02.sh     # 2026-09-02 armor: +0..+5 ANVIL slot40 or /armor upgrade, per-slot identity, config v3 (f1da4d0/d847c69, RCON verified)
 
 # Preferred — single reactor build (correct topological order, Paper resolved once, parallel):
-sudo ./scripts/build-all.sh           # builds/deploys all 12 plugins + syncs TAB + negative_space for GlitchHUD
+sudo ./scripts/build-all.sh           # builds/deploys all 9 plugins (GlitchDungeons/HUD/HealthBar/Loot removed 2026-09-22)
 # Or: sudo ./scripts/build-all.sh --clean   # full clean
 # Or: sudo ./scripts/build-all.sh --no-deploy  # validate only
 
@@ -70,7 +71,7 @@ sudo ./scripts/build-all.sh           # builds/deploys all 12 plugins + syncs TA
 # + `nexo reload` (players must RELOG for pack changes)
 
 # Legacy per-plugin (still works, use for first-time lib seeding or single-plugin debug):
-# Topological order MUST be: Items → Shops → Stash → Classes → Hideout → DeathRules → HealthBar
+# Topological order MUST be: Items → Shops → Stash → Classes → Hideout → DeathRules
 # (Stash depends on Items+Shops; Shops depends on Items; Hideout needs Vault from Classes)
 sudo ./plugins/GlitchItems/build.sh
 sudo ./plugins/GlitchShops/build.sh
@@ -78,26 +79,25 @@ sudo ./plugins/GlitchStash/build.sh
 sudo ./plugins/GlitchClasses/build.sh
 sudo ./plugins/GlitchHideout/build.sh
 sudo ./plugins/GlitchDeathRules/build.sh
-sudo ./plugins/GlitchHealthBar/build.sh
-# GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD have no build.sh — reactor only:
-#   mvn -B -DskipTests package -pl :GlitchHUD -am   (etc.; build-all.sh seeds lib/VaultUnlocked.jar + TAB/negative_space)
+# GlitchRaid / GlitchInsurance / GlitchEvents have no build.sh — reactor only:
+#   mvn -B -DskipTests package -pl :GlitchRaid -am   (etc.)
 
 sudo systemctl restart theglitch
 ```
 
-Paper/Java versions are pinned once in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`) and inherited by all 14 modules — bump there, not per-plugin. (GlitchDungeons is deferred — not built/deployed by default; it also pins Java 25.) `build-all.sh` also forces `server/plugins/TAB/config.yml` (`scoreboard.enabled: false`) and `server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json` for GlitchHUD.
+Paper/Java versions are pinned once in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`) and inherited by all 10 modules — bump there, not per-plugin. `build-all.sh` no longer auto-syncs any TAB/Nexo HUD extras — that logic was GlitchHUD-specific and was removed with the plugin on 2026-09-22; re-add it once MythicHUD's config lands if still needed.
 
 The custom plugin build scripts deploy to the live server. `bootstrap.sh` does
 not build them automatically.
 
 ## Immediate Work
 
-1. In-game playtests per docs/TESTING.md — verified 2026-09-01: dynamic capture + ring particles (3/3), hub divider, hub `Ping`/`TPS`, container keys. Still open: variant-key arming bonus, locator-bar waypoints at distance, `/sb` toggle, `BELOW_NAME` stacks, `NOTCHED_10`, GlitchRaid (`%glitchraid_*%`+Folia teleport)/GlitchInsurance/GlitchEvents/GlitchLoot, abilities/ultimates, GlitchHideout, spawn areas. + verify 2026-09-02: armor upgrade slot40 + /armor upgrade, tonic/salve, Attunement Pack, Void Infusion, roll-based sell, Vault 5%, scatter counts. + verify 2026-09-14 (relog for pack first): warden feet/facing/user walk cycle/name+bar, wisp wings/glide/name+bar; decide wisp scale (~4 blocks on a vex hitbox).
+1. In-game playtests per docs/TESTING.md — verified 2026-09-01: dynamic capture + ring particles (3/3), hub divider, hub `Ping`/`TPS`, container keys. Still open: variant-key arming bonus, locator-bar waypoints at distance, `/sb` toggle, `BELOW_NAME` stacks, `NOTCHED_10`, GlitchRaid (`%glitchraid_*%`+Folia teleport)/GlitchInsurance/GlitchEvents, abilities/ultimates, GlitchHideout, spawn areas. + verify 2026-09-02: armor upgrade slot40 + /armor upgrade, tonic/salve, Attunement Pack, Void Infusion, roll-based sell, Vault 5%, scatter counts. + verify 2026-09-14 (relog for pack first): warden feet/facing/user walk cycle/name+bar, wisp wings/glide/name+bar; decide wisp scale (~4 blocks on a vex hitbox). + verify 2026-09-22: MythicMobs native health bars render on all 10 mobs, MythicHUD once configured.
 2. Static Fast/Silent arenas (`extract_fast` 15s / `extract_silent` 10s) remain creatable via `/koth create|set time` and mirrored into `extraction-variants.zones` for non-dynamic tests; verify `/extractadmin zones|armed`.
 3. Finish the item loop: Identifier NPC flow (FancyNpcs + name binding).
 4. Anti-grief remainder: friendly-fire off everywhere, 2-min AFK kick (shards now account-bound `player-drop:false` etc — verify in-game no shard loss on death).
 5. Mark containers in-world (`/glitchcontainers set <type>`) and verify loot (after `ByteTag` fix).
-6. Repair GlitchDungeons later (deferred by operator).
+6. Configure MythicDungeons (replaces GlitchDungeons, removed 2026-09-22) once the operator provides a pre-built configuration.
 7. Provision and build the hub, dungeon shells, and Red Zone POIs.
 8. Perform Bedrock, extraction regression (pyramid/step reject), class, economy, and performance tests.
 

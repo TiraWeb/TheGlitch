@@ -9,6 +9,9 @@ GlitchBrute:
   Display: '<dark_red>Glitch Brute'
   Health: 115
   Damage: 7
+  HealthBar:
+    Enabled: true
+    Offset: 2.3
   Faction: GLITCH
   DamageModifiers:
     - SUFFOCATION 0
@@ -39,7 +42,6 @@ GlitchBrute:
     PreventBlockDestruction: true
     MaxCombatDistance: 20
     ScoreboardTags: [res_aegis]
-    ShowHealth: true
   Skills:
     - skill{s=CancelEvent} @self ~onAttack
     - model{mid=enderbruiser;usm=true} @self ~onSpawn

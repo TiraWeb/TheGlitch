@@ -73,23 +73,20 @@ documented in `docs/DUNGEON_SHELL.md` for when the operator is ready.
 - [x] **5.8 Extraction mechanic** — VelKoth CAPTURE arenas. _Standard 30s timer. **Dynamic extraction (2026-09-01 `c1634b3`+`9d8f05a`+`a0edffa`):** `AutoExtractScheduler` 31m cycle (`36000` ticks open + `5s` scatter) fires `DynamicExtractionManager` → `SpotPicker` 250 tries / 12-deep scan / 9-point flatness tol 2 / `isOccluding` 2-deep solid / barrier/bedrock/shulker rejection / WorldGuard / 30-block separation → 3 `extraction_dyn*` arenas via `ArenaManager.addArena/saveArenas` + `CuboidRegion p.y()-1..p.y()+4` (6 high) + force-loaded chunks + `WaypointBridge` locator-bar beacons + `ExtractionMarkers` ring particles. Live verified `Cycle #1 3/3`. Fast/Silent variants (GlitchStash, 2026-08-06) key-requiring + arming + bonus still live (`/extractadmin`). Manual wand fix: click block at feet._
 - [x] **5.9 Extraction vault** — GlitchStash plugin (custom, built from source). _Core inventory save, YAML persistence, retrieval GUI, overflow preservation, and Multiverse teleport exist. Dynamic + variant extraction integrated; container-key `ByteTag` crash fixed (`c9a229e` — `pdc.has` guard on all `OraxenUtil`/`HideoutManager`/`ShopManager`/`IdentifyManager`/`ExtractionVariantManager`); `scatter center (1000,1000) r 1000` corrected for `MMORPG_Odyssey [0..2000]²` land (`cd74932`). EssentialsX incompatible; teleport uses Multiverse._
 
-## Phase 5.4 — Custom Dungeon Plugin (TheGlitchDungeons)
+## Phase 5.4 — Dungeon System (MythicDungeons)
 
 _Authoritative development plan. See Phase 5.9 for extraction plugins._
 
-_Current reality: source exists, but this phase is not complete. The current
-configuration uses list-form mob entries while the wave code expects a
-configuration section; dungeon extraction is not fully started or integrated
-with GlitchStash. **Deferred by operator decision (2026-08-03)** — the dungeon
-PvE world is not the current focus._
-
-_**2026-09-22: operator decided to replace this custom plugin with the
-MythicDungeons plugin instead** (already installed on the server, currently
-unconfigured/unused) rather than continuing to build out GlitchDungeons —
-timing not yet decided. In the meantime, GlitchDungeons' wave-boss config
-(`plugins/GlitchDungeons/src/main/resources/config.yml`) was patched to spawn
-`GlitchReaver` instead of the now-deleted `GlitchCore` as a stopgap, not a
-rebalance — don't invest further tuning here._
+_**2026-09-22: GlitchDungeons (the custom plugin this phase originally tracked)
+was removed from the repo entirely** — module deleted, live jar/data moved to
+`/opt/theglitch/removed-plugins-2026-09-22/` on the host (not restored
+automatically). It was deferred and incomplete anyway (list-form mob entries
+vs. the wave code expecting a config section, no GlitchStash integration).
+Dungeons will be rebuilt on the already-installed **MythicDungeons** plugin
+instead — built entirely via its own in-game GUI editor, not YAML, so this
+phase's checklist below (written for the old custom-code approach) no longer
+applies as-is. Operator will provide a pre-built MythicDungeons configuration
+later; until then, dungeons are unconfigured/unavailable._
 
 - [ ] **5.4.1** Project setup — Maven/Gradle, Paper API + MythicMobs API dependencies
 - [ ] **5.4.2** Party system — create/invite/accept/leave/disband, max 4 players

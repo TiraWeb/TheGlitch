@@ -1,6 +1,6 @@
 # Config Versioning
 
-How `config.yml` upgrades work for The Glitch custom plugins: GlitchItems, GlitchShops, GlitchStash, GlitchClasses, GlitchHideout, GlitchDeathRules, GlitchHealthBar, GlitchRaid, GlitchInsurance, GlitchEvents, GlitchLoot, and GlitchHUD. (GlitchCommon has no config; GlitchDungeons is deferred.) GlitchItems is now config-version 3 (2026-09-02 armor-upgrade + piece-identity + vault buff + scatter rift_vault=6); others remain 1.
+How `config.yml` upgrades work for The Glitch custom plugins: GlitchItems, GlitchShops, GlitchStash, GlitchClasses, GlitchHideout, GlitchDeathRules, GlitchRaid, GlitchInsurance, and GlitchEvents. (GlitchCommon has no config. GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed 2026-09-22 — see docs/STATUS.md.) GlitchItems is now config-version 3 (2026-09-02 armor-upgrade + piece-identity + vault buff + scatter rift_vault=6); others remain 1.
 
 ## Rule: live configs are seeded only if missing
 

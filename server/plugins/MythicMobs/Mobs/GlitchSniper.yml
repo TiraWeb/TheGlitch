@@ -9,6 +9,9 @@ GlitchSniper:
   Display: '<dark_red>Glitch Sniper'
   Health: 80
   Damage: 8
+  HealthBar:
+    Enabled: true
+    Offset: 2.3
   AIGoalSelectors:
     - clear
     - fleeplayers{d=4;s=1.5;ss=1.5}
@@ -32,7 +35,6 @@ GlitchSniper:
     PreventJockeyMounts: true
     PreventBlockDestruction: true
     ScoreboardTags: [res_ward]
-    ShowHealth: true
   Skills:
     - model{mid=voids_wizard;h=true} @self ~onSpawn
     - model{mid=voids_wizard;h=true} @self ~onLoad

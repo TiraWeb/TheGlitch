@@ -9,6 +9,9 @@ CorruptedCrawler:
   Display: '<green>Corrupted Crawler'
   Health: 24
   Damage: 3
+  HealthBar:
+    Enabled: true
+    Offset: 2.0
   AITargetSelectors:
     - clear
     - players
@@ -27,7 +30,6 @@ CorruptedCrawler:
     PreventJockeyMounts: true
     PreventBlockDestruction: true
     ScoreboardTags: [res_hollow]
-    ShowHealth: true
   Skills:
     - model{mid=voids_ghost;usm=true} @self ~onSpawn
     - model{mid=voids_ghost;usm=true} @self ~onLoad

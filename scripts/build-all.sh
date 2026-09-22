@@ -25,8 +25,10 @@ LIVE_PLUGIN_DIR="/opt/theglitch/server/plugins"
 REPO_DEPLOY="${REPO_DIR}/server/plugins"
 
 # Topological order: dependencies first (Items before Shops/Stash, etc.)
-# GlitchDungeons is deferred — excluded by default, opt-in via args.
 # GlitchCommon is a library module (no plugin.yml) — never deploy it; it is not listed here.
+# 2026-09-22: GlitchDungeons, GlitchHUD, GlitchHealthBar, GlitchLoot removed —
+# replaced by MythicDungeons, MythicHUD, MythicMobs' native HealthBar hologram,
+# and plain MythicMobs DropTables respectively (see docs/STATUS.md).
 TRACK1_ORDER=(
   "GlitchItems"
   "GlitchShops"
@@ -34,27 +36,9 @@ TRACK1_ORDER=(
   "GlitchClasses"
   "GlitchHideout"
   "GlitchDeathRules"
-  "GlitchHealthBar"
   "GlitchRaid"
   "GlitchInsurance"
   "GlitchEvents"
-  "GlitchLoot"
-  "GlitchHUD"
-)
-ALL_WITH_DUNGEONS=(
-  "GlitchItems"
-  "GlitchShops"
-  "GlitchStash"
-  "GlitchClasses"
-  "GlitchHideout"
-  "GlitchDeathRules"
-  "GlitchHealthBar"
-  "GlitchRaid"
-  "GlitchInsurance"
-  "GlitchEvents"
-  "GlitchLoot"
-  "GlitchHUD"
-  "GlitchDungeons"
 )
 
 log()  { echo -e "\033[1;36m[build-all]\033[0m $*"; }
@@ -92,8 +76,8 @@ else
   # Validate names
   for s in "${SELECTED[@]}"; do
     found=false
-    for a in "${ALL_WITH_DUNGEONS[@]}"; do [[ "$s" == "$a" ]] && found=true; done
-    $found || die "Unknown plugin: $s (valid: ${ALL_WITH_DUNGEONS[*]})"
+    for a in "${TRACK1_ORDER[@]}"; do [[ "$s" == "$a" ]] && found=true; done
+    $found || die "Unknown plugin: $s (valid: ${TRACK1_ORDER[*]})"
   done
 fi
 
@@ -230,22 +214,6 @@ for plugin in "${SELECTED[@]}"; do
         seed_lib GlitchInsurance VaultUnlocked || warn "Missing VaultUnlocked.jar for GlitchInsurance — run: sudo cp ${LIVE_PLUGIN_DIR}/VaultUnlocked.jar plugins/GlitchInsurance/lib/"
       fi
       ;;
-    GlitchDungeons)
-      if [[ ! -f "${REPO_DIR}/plugins/GlitchDungeons/lib/MythicMobs.jar" ]]; then
-        # Try multiple live locations
-        src=""
-        for cand in "${REPO_DIR}/server/plugins/MythicMobs/MythicMobs.jar" "${LIVE_PLUGIN_DIR}/MythicMobs.jar" "${REPO_DIR}/server/plugins/MythicMobs.jar"; do
-          for f in $cand; do [[ -f "$f" ]] && src="$f" && break 2; done
-        done
-        if [[ -n "$src" ]]; then
-          mkdir -p "${REPO_DIR}/plugins/GlitchDungeons/lib"
-          cp -f "$src" "${REPO_DIR}/plugins/GlitchDungeons/lib/MythicMobs.jar"
-          log "Seeded GlitchDungeons/lib/MythicMobs.jar from ${src}"
-        else
-          warn "Missing MythicMobs.jar for GlitchDungeons"
-        fi
-      fi
-      ;;
   esac
 done
 
@@ -322,28 +290,12 @@ for plugin in "${SELECTED[@]}"; do
   done
 done
 
-# --- GlitchHUD extras: TAB takeover + Nexo negative-space font ---
-for plugin in "${SELECTED[@]}"; do
-  if [[ "$plugin" == "GlitchHUD" ]]; then
-    # TAB sidebar is now owned by GlitchHUD — force repo TAB config to live so scoreboard.enabled=false takes effect.
-    # The repo file is the source of truth for TAB after the HUD takeover (box's copy no longer wins).
-    if [[ -f "${REPO_DIR}/server/plugins/TAB/config.yml" ]]; then
-      mkdir -p "${LIVE_PLUGIN_DIR}/TAB"
-      cp -f "${REPO_DIR}/server/plugins/TAB/config.yml" "${LIVE_PLUGIN_DIR}/TAB/config.yml"
-      cp -f "${REPO_DIR}/server/plugins/TAB/config.yml" "${REPO_DEPLOY}/TAB/config.yml" 2>/dev/null || true
-      log "Synced TAB/config.yml (HUD takeover — scoreboard.enabled=false)"
-    fi
-    # Negative-space font for pixel-perfect HUD shifts (HUD uses \uF80x glyphs)
-    if [[ -f "${REPO_DIR}/server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json" ]]; then
-      mkdir -p "${LIVE_PLUGIN_DIR}/Nexo/pack/assets/minecraft/font"
-      cp -f "${REPO_DIR}/server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json" "${LIVE_PLUGIN_DIR}/Nexo/pack/assets/minecraft/font/negative_space.json"
-      mkdir -p "${REPO_DEPLOY}/Nexo/pack/assets/minecraft/font"
-      cp -f "${REPO_DIR}/server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json" "${REPO_DEPLOY}/Nexo/pack/assets/minecraft/font/negative_space.json" 2>/dev/null || true
-      log "Synced Nexo negative_space font (HUD shifts)"
-    fi
-    break
-  fi
-done
+# NOTE: GlitchHUD's "TAB takeover + Nexo negative-space font" extras block was
+# removed here 2026-09-22 along with the plugin itself (replaced by MythicHUD).
+# If MythicHUD needs the same TAB scoreboard.enabled=false takeover or the
+# negative_space font sync, wire it back in once MythicHUD's config lands —
+# server/plugins/TAB/config.yml and server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json
+# are still tracked in the repo, just no longer auto-synced by this script.
 
 cat <<'EOF'
 

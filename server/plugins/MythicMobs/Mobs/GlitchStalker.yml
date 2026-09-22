@@ -9,6 +9,9 @@ GlitchStalker:
   Display: '<red>Glitch Stalker'
   Health: 50
   Damage: 4
+  HealthBar:
+    Enabled: true
+    Offset: 3.2
   Faction: GLITCH
   DamageModifiers:
     - SUFFOCATION 0
@@ -39,7 +42,6 @@ GlitchStalker:
     PreventBlockDestruction: true
     MaxCombatDistance: 24
     ScoreboardTags: [res_bloom]
-    ShowHealth: true
   Skills:
     - skill{s=CancelEvent} @self ~onAttack
     - model{mid=ender_crawler;usm=true} @self ~onSpawn

@@ -34,7 +34,7 @@
 #
 # Or the high-level helper:
 #   build_plugin GlitchItems --needs VaultUnlocked,Nexo,PlaceholderAPI
-#   build_plugin GlitchHealthBar   # no extra deps
+#   build_plugin GlitchDeathRules   # no extra deps
 #
 # Idempotent: safe to source multiple times (guarded by __GLITCH_BUILD_COMMON_SOURCED).
 # Does NOT call set -euo pipefail — leaves that to the caller.
@@ -372,7 +372,7 @@ seed_config() {
 # High-level helper that does seed + mvn_build + deploy_jar + seed_config in one call.
 # Example:
 #   build_plugin GlitchItems --needs VaultUnlocked,Nexo,PlaceholderAPI
-#   build_plugin GlitchHealthBar
+#   build_plugin GlitchDeathRules
 #   build_plugin GlitchStash --needs VaultUnlocked,GlitchItems,GlitchShops --needs VelKoth
 #
 # --needs <list>  comma-separated jar names (without .jar); each is seeded via

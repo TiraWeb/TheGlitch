@@ -130,7 +130,7 @@ elif [[ -f "${REPO_DIR}/plugins/build-common.sh" ]]; then
 fi
 ```
 
-**Example — minimal per-plugin build.sh (see `plugins/GlitchHealthBar/build.sh`):**
+**Example — minimal per-plugin build.sh (see `plugins/GlitchDeathRules/build.sh`):**
 
 ```bash
 #!/usr/bin/env bash
@@ -138,7 +138,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 source "${REPO_DIR}/scripts/build-common.sh"  # or plugins/build-common.sh mirror
-PLUGIN="GlitchHealthBar"
+PLUGIN="GlitchDeathRules"
 ensure_maven_java
 mvn_build "${PLUGIN}"
 deploy_jar "${PLUGIN}"
@@ -183,5 +183,5 @@ build_plugin GlitchStash --needs VaultUnlocked,GlitchItems,GlitchShops,VelKoth
 
 - `scripts/setup-worlds.sh` — canonical gamerule values and WorldGuard flags
 - `scripts/reapply-world-config.sh` — example consumer of `gamerules.sh`
-- `plugins/GlitchHealthBar/build.sh` — example consumer of `build-common.sh`
+- `plugins/GlitchDeathRules/build.sh` — example consumer of `build-common.sh`
 - `scripts/build-all.sh` — reactor build that already deduplicates `seed_lib` logic (now shares helpers via `build-common.sh`)

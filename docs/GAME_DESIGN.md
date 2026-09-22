@@ -140,11 +140,12 @@ removed entirely.** TheGlitchKing's repeating summon skills weren't
 phase-gated, so it kept spawning adds for as long as it stayed alive,
 contributing to a mob-density crash; GlitchCore was first pulled from the
 open-world random-spawn pool for the same density reasoning, then removed
-outright at the operator's request, including from GlitchDungeons' wave-based
-boss rooms (now use GlitchReaver instead — GlitchDungeons itself is slated
-to be replaced by the MythicDungeons plugin later). Live stats below are
-current as of the 2026-09-21 model pass; mob yml is authoritative, retune
-here when combat data lands.
+outright at the operator's request, including from the wave-based boss rooms
+that GlitchDungeons used to run — that plugin was removed entirely on
+2026-09-22 in favor of the MythicDungeons plugin (config still pending), so
+GlitchReaver's role as an interim dungeon boss is itself moot. Live stats
+below are current as of the 2026-09-21 model pass; mob yml is authoritative,
+retune here when combat data lands.
 Visual/animation sign-off pending (needs a client, can't be verified by an agent).
 
 **Zone distribution:**
@@ -195,8 +196,7 @@ Visual/animation sign-off pending (needs a client, can't be verified by an agent
 
 The Reaver isn't a scheduled event — it's a rare open-world spawn in
 `glitch_red` (own `randomspawns` group, long cooldown), meant to be a
-dangerous surprise rather than an announced fight. It also doubles as
-GlitchDungeons' wave-boss mob (§5), since GlitchCore was removed 2026-09-22.
+dangerous surprise rather than an announced fight.
 
 **Drops:** between Tier 3 and Tier 4 — bigger shard payout than a T3 elite,
 small Legendary Relic chance (see `GlitchReaverLoot.yml`).
@@ -210,10 +210,11 @@ entirely**, per operator request. The Glitch King's repeating summon skills
 had no phase gating, so it kept spawning Glitch Stalker adds for as long as
 it stayed alive un-killed, contributing to a reported mob-density crash;
 Glitch Core was pulled from the Red Zone random spawn for the same reason,
-then removed outright including from GlitchDungeons' wave-based boss rooms
-(§5), which now spawn Glitch Reaver instead as an interim substitute —
-GlitchDungeons itself is slated to be replaced by the MythicDungeons plugin
-later. There is currently no Tier 4 mob in the roster.
+then removed outright. GlitchDungeons (the custom dungeon plugin that had
+briefly used Glitch Reaver as Core's dungeon-boss substitute) was itself
+removed entirely on 2026-09-22 — dungeons will be rebuilt on the MythicDungeons
+plugin instead (§5), config still pending. There is currently no Tier 4 mob
+in the roster.
 
 **Drops:** Void Essence (guaranteed), Legendary Relic (10%), Epic/Legendary loot (30%), guaranteed high-rarity Unstable Rifts, Shards (40-80).
 

@@ -12,6 +12,9 @@ GlitchReaver:
   Display: '<bold><light_purple>The Glitch Reaver'
   Health: 350
   Damage: 16
+  HealthBar:
+    Enabled: true
+    Offset: 2.6
   Faction: GLITCH
   BossBar:
     Enabled: true
@@ -50,7 +53,6 @@ GlitchReaver:
     PreventBlockDestruction: true
     MaxCombatDistance: 32
     ScoreboardTags: [res_hollow]
-    ShowHealth: true
   Skills:
     - skill{s=CancelEvent} @self ~onAttack
     - model{mid=endermauler;n=false;step=1;usm=true} @self ~onSpawn
