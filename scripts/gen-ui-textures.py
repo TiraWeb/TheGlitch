@@ -279,7 +279,7 @@ def chest_window(rows):
             px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
 
     # per-cell grid — 18px squares starting at (7,17), matching vanilla's real slot pitch
-    grid_line = (WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 70)
+    grid_line = (WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 140)
     for row in range(rows + 1):
         gy = 17 + row * 18
         if gy < H:
@@ -313,13 +313,14 @@ def chest_window(rows):
     # Player's own inventory (always shown below the container, at a fixed
     # vanilla offset). Round 9 drew a precise 176px-wide grid here (matching
     # the container's own coordinates) and it came out visibly WIDER and a
-    # different shape in-game than the container above it — this region isn't
-    # governed by the same 176px assumption we verified for the container
-    # part, and guessing at its real width a second time risks the same kind
-    # of mismatch. So: fill the full remaining canvas width (0..256, not just
-    # 176) with a smooth, borderless gradient instead of a hard-edged grid —
-    # whatever width vanilla actually samples here, a flat color has no edges
-    # to look "wrong shape", unlike grid lines or a border would.
+    # different shape in-game than the container above it, so that follow-up
+    # dropped the grid entirely (flat fill, no edges to look "wrong shape").
+    # Round 11: the operator wants the boxes back. Compromise — draw the grid
+    # at the same 18px pitch (starting x=7, matching real slot spacing) but
+    # tile it across the FULL 0..256 width instead of stopping at column 9.
+    # A repeating pattern has no "this is where it should end" edge to be
+    # wrong about, so wherever vanilla actually crops this region, the real
+    # slots still land on grid-lined cells instead of a hard mismatched border.
     for y in range(H, 256):
         t = (y - H) / (256 - H)
         c = tuple(int(a + (b - a) * t) for a, b in zip(PLAYERINV_LIGHT, PLAYERINV_DARK))
@@ -329,6 +330,18 @@ def chest_window(rows):
             n = rng.randint(-8, 8)
             r, g, b_, _ = img.getpixel((x, y))
             px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
+
+    playerinv_grid = (PLAYERINV_DARK[0] - 30, PLAYERINV_DARK[1] - 20, PLAYERINV_DARK[2] - 15, 140)
+    row = 0
+    gy = H
+    while gy < 256:
+        d.line([(0, gy), (255, gy)], fill=playerinv_grid)
+        gy += 18
+        row += 1
+    gx = 7
+    while gx < 256:
+        d.line([(gx, H), (gx, 255)], fill=playerinv_grid)
+        gx += 18
 
     return img
 
@@ -380,6 +393,32 @@ def inventory_background():
     for y in range(27, 65):
         px(d, 88, y, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
         px(d, 123, y, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
+
+    # Per-slot grid for armor column (4 slots, x=7..25) and main inv + hotbar
+    # (standard vanilla survival_inventory coordinates — this screen's own
+    # geometry, unlike the chest window's player-inv strip, was never in
+    # question, only the missing grid art).
+    inv_grid_line = (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 110)
+    for row in range(5):
+        gy = 7 + row * 18
+        d.line([(7, gy), (25, gy)], fill=inv_grid_line)
+    for gx in (7, 25):
+        d.line([(gx, 7), (gx, 79)], fill=inv_grid_line)
+
+    inv_top = 83
+    for row in range(4):
+        gy = inv_top + row * 18
+        d.line([(7, gy), (W - 8, gy)], fill=inv_grid_line)
+    hotbar_top = inv_top + 3 * 18 + 4
+    hotbar_end = hotbar_top + 18
+    d.line([(7, hotbar_top), (W - 8, hotbar_top)], fill=inv_grid_line)
+    d.line([(7, hotbar_end), (W - 8, hotbar_end)], fill=inv_grid_line)
+    for col in range(10):
+        gx = 7 + col * 18
+        if gx < W - 7:
+            d.line([(gx, inv_top), (gx, inv_top + 3 * 18)], fill=inv_grid_line)
+            d.line([(gx, hotbar_top), (gx, hotbar_end)], fill=inv_grid_line)
+
     # corner runes like chest
     for cx, cy in [(4, 4), (W - 5, 4)]:
         d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], fill=WOOD_GOLD)

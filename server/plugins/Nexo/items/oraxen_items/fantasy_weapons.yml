@@ -12,6 +12,7 @@ colossal_sword:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/colossal_sword
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -41,6 +42,7 @@ core_hammer:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/core_hammer
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -70,6 +72,7 @@ cursed_spear:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/cursed_spear
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -99,6 +102,7 @@ dark_destroyer:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/dark_destroyer
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -128,6 +132,7 @@ death_hand:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/death_hand
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -157,6 +162,7 @@ void_sword:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/void_sword
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -186,6 +192,7 @@ ktanazul:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/ktanazul
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -215,6 +222,7 @@ hell_bringer:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/hell_bringer
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -244,6 +252,7 @@ moonlight:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/moonlight
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -273,6 +282,7 @@ jade_glaive:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/jade_glaive
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -302,6 +312,7 @@ lantern_scythe:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/lantern_scythe
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -331,6 +342,7 @@ great_scythe:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/great_scythe
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -360,6 +372,7 @@ prismarine_greataxe:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/prismarine_greataxe
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -389,6 +402,7 @@ silver_halberd:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/silver_halberd
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -418,6 +432,7 @@ storm_axe:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/storm_axe
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -447,6 +462,7 @@ twisted_greatsword:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/twisted_greatsword
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -476,6 +492,7 @@ singularity_hammer_awakened:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/singularity_hammer_awakened
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -505,6 +522,7 @@ duality:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/duality
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -534,6 +552,7 @@ yin:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/yin
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -563,6 +582,7 @@ yang:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/yang
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -592,6 +612,7 @@ blood_gladius_awakened:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/blood_gladius_awakened
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -621,6 +642,7 @@ celestial_night_blade:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/celestial_night_blade
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -650,6 +672,7 @@ combustion_awakened:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/combustion_awakened
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -679,6 +702,7 @@ resistance_greatsword_awakened:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/resistance_greatsword_awakened
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
@@ -708,6 +732,7 @@ royal_greatsword_awakened:
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
+    oversized_in_gui: true
     model: skulpt:arsenals/fantasy_arsenal/royal_greatsword_awakened
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
