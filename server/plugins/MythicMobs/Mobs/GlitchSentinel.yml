@@ -10,9 +10,6 @@ GlitchSentinel:
   Display: '<red>Glitch Sentinel'
   Health: 150
   Damage: 12
-  HealthBar:
-    Enabled: true
-    Offset: 2.3
   Faction: GLITCH
   DamageModifiers:
     - SUFFOCATION 0

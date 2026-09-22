@@ -37,89 +37,109 @@ scoreboard:
   remember-toggle-choice: false
   hidden-by-default: false
   delay-on-join-milliseconds: 0
+  # Restyled 2026-09-22 to match the deleted GlitchHUD plugin's sidebar (see
+  # plugins/GlitchHUD/.../HudManager.java + UiConstants.java at commit e5c7524, the
+  # last version before its removal): same title gradients/wording, and the same
+  # /// Nexo PUA glyphs (shard/star_full/star_empty/divider —
+  # confirmed still defined in server/plugins/Nexo/glyphs/oraxen_glyphs, unaffected by
+  # GlitchHUD's removal). Two things intentionally NOT replicated: (1) GlitchHUD's
+  # per-class icon (resIcon()) mapped OLD class names (Aegis/Veil/Bloom/Ward/Hollow)
+  # that no longer match our current classes (Vanguard/Warden/Specter/Operator) — the
+  # class system was renamed after GlitchHUD was last touched, so that mapping doesn't
+  # apply anymore; shown as plain %glitchclasses_class% text instead. (2) GlitchHUD's
+  # per-tick color pulse/flicker and live "next extraction cycle" countdown were driven
+  # by Java game-state (StashCycleProbe, tickCounter) with no PAPI placeholder exposing
+  # that data — TAB's static YAML scoreboard can't reproduce live animation or that
+  # countdown without new Java work, so the Residual/extraction lines are static text.
   scoreboards:
     glitch-hub:
       display-condition: "%world%=hub"
-      title: "<gradient:#5B00FF:#FF00FF>⚡ The Glitch</gradient>"
+      title: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
       lines:
         - ""
         - "<gray>Zone:</gray> <white>Hub City</white>"
-        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
-        - "<gray>Class:</gray> <white>%glitchclasses_class%</white>"
+        - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<gray>────────────</gray>"
-        - "<gray>Ping:</gray> <white>%ping%</white><gray>ms</gray>"
+        - "<dark_gray></dark_gray>"
+        - "<gray>Ping:</gray> <white>%ping%ms</white> <gray>TPS:</gray> <white>%tps%</white>"
         - ""
-        - "<gray><italic>Use warp NPCs to deploy</italic></gray>"
+        - "<gray><italic>Warp NPCs to deploy</italic></gray>"
         - ""
     glitch-pve:
       display-condition: "%world%=glitch_pve"
-      title: "<gradient:#5B00FF:#FF00FF>⚡ The Glitch</gradient>"
+      title: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
       lines:
         - ""
         - "<gray>Zone:</gray> <white>Standard Glitch</white>"
         - "<gray>Mode:</gray> <green>PvE Instance</green>"
-        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
-        - "<gray>Class:</gray> <white>%glitchclasses_class%</white>"
+        - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<gray>────────────</gray>"
+        - "<dark_gray></dark_gray>"
         - "<green>✓ Keep Inventory</green>"
         - "<yellow>⚠ Shards drop on death</yellow>"
         - ""
     glitch-red:
       display-condition: "%world%=glitch_red"
-      title: "<gradient:#FF0000:#FF00FF>⚡ RED ZONE</gradient>"
+      title: "<gradient:#FF2A2A:#FF6A00><bold>RED ZONE</bold></gradient>"
       lines:
         - ""
         - "<red><bold>⚠ DANGER ZONE ⚠</bold></red>"
         - "<gray>Zone:</gray> <red>The Red Zone</red>"
         - "<gray>Mode:</gray> <red>PvPvE Extraction</red>"
-        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
-        - "<gray>Class:</gray> <white>%glitchclasses_class%</white>"
+        - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<gray>────────────</gray>"
-        - "<red>✗ Full Loot — Die = Lose All</red>"
-        - "<yellow>⚡ Extract at beacons to bank shards</yellow>"
+        - "<dark_gray></dark_gray>"
+        - "<light_purple>Residual: %glitchitems_stacks%/%glitchitems_max_stacks%</light_purple>"
+        - "<dark_gray>+%glitchitems_dmg_taken%% dmg  +%glitchitems_payout%% payout</dark_gray>"
+        - "<yellow>⚡ Extract at beacons</yellow>"
         - ""
+        - "<gray>Players:</gray> <white>%server_online%</white>"
     # Same red-zone scoreboard, duplicated per world (no verified multi-value/OR
     # display-condition syntax to copy elsewhere in this file, so duplication is
     # the safe choice over guessing at one).
     glitch-red-eleria:
       display-condition: "%world%=glitch_red_eleria"
-      title: "<gradient:#FF0000:#FF00FF>⚡ RED ZONE — ELERIA</gradient>"
+      title: "<gradient:#FF2A2A:#FF6A00><bold>RED ZONE — ELERIA</bold></gradient>"
       lines:
         - ""
         - "<red><bold>⚠ DANGER ZONE ⚠</bold></red>"
         - "<gray>Zone:</gray> <red>Eleria</red>"
         - "<gray>Mode:</gray> <red>PvPvE Extraction</red>"
-        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
-        - "<gray>Class:</gray> <white>%glitchclasses_class%</white>"
+        - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<gray>────────────</gray>"
-        - "<red>✗ Full Loot — Die = Lose All</red>"
-        - "<yellow>⚡ Extract at beacons to bank shards</yellow>"
+        - "<dark_gray></dark_gray>"
+        - "<light_purple>Residual: %glitchitems_stacks%/%glitchitems_max_stacks%</light_purple>"
+        - "<dark_gray>+%glitchitems_dmg_taken%% dmg  +%glitchitems_payout%% payout</dark_gray>"
+        - "<yellow>⚡ Extract at beacons</yellow>"
         - ""
+        - "<gray>Players:</gray> <white>%server_online%</white>"
     glitch-red-horizons:
       display-condition: "%world%=glitch_red_horizons"
-      title: "<gradient:#FF0000:#FF00FF>⚡ RED ZONE — HORIZONS</gradient>"
+      title: "<gradient:#FF2A2A:#FF6A00><bold>RED ZONE — HORIZONS</bold></gradient>"
       lines:
         - ""
         - "<red><bold>⚠ DANGER ZONE ⚠</bold></red>"
         - "<gray>Zone:</gray> <red>Horizons</red>"
         - "<gray>Mode:</gray> <red>PvPvE Extraction</red>"
-        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
-        - "<gray>Class:</gray> <white>%glitchclasses_class%</white>"
+        - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
+        - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
         - ""
-        - "<gray>────────────</gray>"
-        - "<red>✗ Full Loot — Die = Lose All</red>"
-        - "<yellow>⚡ Extract at beacons to bank shards</yellow>"
+        - "<dark_gray></dark_gray>"
+        - "<light_purple>Residual: %glitchitems_stacks%/%glitchitems_max_stacks%</light_purple>"
+        - "<dark_gray>+%glitchitems_dmg_taken%% dmg  +%glitchitems_payout%% payout</dark_gray>"
+        - "<yellow>⚡ Extract at beacons</yellow>"
         - ""
+        - "<gray>Players:</gray> <white>%server_online%</white>"
     default:
-      title: "<gradient:#5B00FF:#FF00FF>⚡ The Glitch</gradient>"
+      title: "<gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient>"
       lines:
         - ""
         - "<gray>Zone:</gray> <white>%world%</white>"
-        - "<gray>Shards:</gray> <white>%vault_eco_balance%</white>"
+        - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
         - ""
         - "<gray>Players:</gray> <white>%server_online%</white>"
         - ""

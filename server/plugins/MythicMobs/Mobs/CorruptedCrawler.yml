@@ -9,9 +9,6 @@ CorruptedCrawler:
   Display: '<green>Corrupted Crawler'
   Health: 24
   Damage: 3
-  HealthBar:
-    Enabled: true
-    Offset: 2.0
   AITargetSelectors:
     - clear
     - players

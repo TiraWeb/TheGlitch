@@ -1,0 +1,446 @@
+﻿#########################################################
+
+
+
+
+HEALTHBAR_GLOBAL_init:
+  Skills:
+  - command{c="gamerule sendCommandFeedback false"}
+  - setchunkforceloaded @Location{location=0,0,0,0,0}
+  - teleportto{location=0,0,0} @self
+  - skill{s=HEALTHBAR_GLOBAL_purge_healthbars} @EIW
+  - delay 5
+  - skill{s=HEALTHBAR_GLOBAL_remove_old} @NLNO{r=8192;target=markers;ignore=self}
+  - message{m="<&lb>hpbar<gradient:#ff5555:#c71a1a>LISTENER</gradient><&rb> <green>Listener Initialized ✔</green>"} @everyone{conditions=[ - haspermission{p=hpbar.admin} true ]}
+  
+HEALTHBAR_GLOBAL_remove_old:
+  TargetConditions:
+  - mythicmobtype{t=HEALTHBAR_GLOBAL_LISTENER} true
+  Skills:
+  - message{m="<&lb>hpbar<gradient:#ff5555:#c71a1a>LISTENER</gradient><&rb> <dark_red>Old Listener Removed! ✖</dark_red>"} @everyone{conditions=[ - haspermission{p=hpbar.admin} true ]}
+  - remove
+
+HEALTHBAR_GLOBAL_purge_healthbars:
+  Skills:
+  - sudoskill{skill=[ - remove @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]} ]}
+  - varunset{var=target.hp_bar}
+  - varunset{var=target.statuseffects}
+  - varunset{var=target.healthbarvalue}
+
+  
+HEALTHBAR_GLOBAL_check_entity_health:
+  TargetConditions:
+  - ( isplayer true || ( isMythicMob true && hasAI true )) true
+  - variableisset{var=target.nohpbar} false
+  - healthpercent{p=<0.999}
+  - variableisset{var=target.has_a_health_bar} false
+  Skills:
+  - sudoskill{skill=HEALTHBAR_GLOBAL_set_bar}
+
+
+
+HEALTHBAR_GLOBAL_set_bar:
+  Skills:
+  - remove @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - setvariable{var=caster.hp_bar;type=STRING;value=A} @self
+  - setvariable{var=caster.statuseffects;type=STRING;value=V} @self
+  - variablesubtract{var=caster.statuseffects;type=STRING;value=V} @self
+  - summon{t=HEALTHBAR_ENTITY} @SelfEyeLocation
+  - delay 2
+  - mountmodel{mid=<caster.mythic_type>;m=walking;p=hpbar;drive=false} @children{target=item_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - mountme @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HEALTHBAR_ENTITY_init:
+  Skills:
+  - setvar{var=caster.parentname;val=" ";type=STRING} @self ?varequals{var=caster.show_entity_name;val=false}
+  - sudoskill{s=HEALTHBAR_ENTITY_sudo_give_parent_name;repeat=5;repeati=1} @parent ?varequals{var=caster.show_entity_name;val=true}
+  - setvar{var=caster.statuseffects;val="V";type=STRING} @self
+  - variablesubtract{var=caster.statuseffects;val="V";type=STRING} @self
+  - setvar{var=caster.owner_diff_hp;val=0;type=INTEGER} @self
+  - setvar{var=caster.owner_prev_hp;val=0;type=INTEGER} @parent
+  - setvar{var=caster.parentlevel;val=" ";type=STRING} @self ?varequals{var=caster.display_level_on_health_bar;val=false}
+  - setvar{var=caster.parentlevel_integer;val=<target.level>;type=INTEGER} @parent{conditions=[ - isplayer false]} ?varequals{var=caster.display_level_on_health_bar;val=true}
+  - setvar{var=caster.parentlevel;val="Lv.<caster.var.parentlevel_integer> ";type=STRING} @parent{conditions=[ - isplayer false]} ?varequals{var=caster.display_level_on_health_bar;val=true}
+  - setvar{var=caster.parentlevel;val="Lv.<caster.player_level_placeholder> ";type=STRING} @parent{conditions=[ - isplayer true]} ?varequals{var=caster.display_level_on_health_bar;val=true} ?!varequals{var=caster.player_level_placeholder;val=false}
+  - setvar{var=caster.parentlevel;val=" ";type=STRING} @parent{conditions=[ - isplayer true]} ?varequals{var=caster.display_level_on_health_bar;val=true} ?varequals{var=caster.player_level_placeholder;val=false}
+  - variablesubtract{var=caster.parentlevel;val=" ";type=STRING} @parent{conditions=[ - isplayer true]} ?varequals{var=caster.display_level_on_health_bar;val=true} ?varequals{var=caster.player_level_placeholder;val=false}
+  - variablesubtract{var=caster.parentlevel;val=" ";type=STRING} @parent{conditions=[ - isplayer false]} ?varequals{var=caster.display_level_on_health_bar;val=false}
+  - setvar{var=caster.hpbartimeout;val=<caster.var.hide_timeout_length>;type=INTEGER} @parent
+  - setvar{var=caster.hp_bar;val=A;type=STRING} @parent
+  
+  - skill{s=HEALTHBAR_ENTITY_set_bar_text;sync=true;delay=1} @self
+  - displaytransformation{action=set;transformation=translation;value=0.0,<caster.var.vertical_offset>,0.0;delay=1} @self
+
+  
+HEALTHBAR_ENTITY_sudo_give_parent_name:
+  Skills:
+  - setvar{var=target.parentname;val="<caster.name>";type=STRING} @children
+
+
+  
+HEALTHBAR_ENTITY_set_bar_text: #this is the skill that updates every tick and manages the bar display#
+  Skills:
+  - setvar{var=caster.hp_bar;val=<target.var.hp_bar>;type=STRING} @parent
+  - settext{text="<font:uniform><caster.var.parentlevel></font><caster.var.parentname><&nl><!shadow><font:minecraft:healthbar><caster.var.hp_bar></font><&nl><font:minecraft:healthbar><caster.var.statuseffects></font>"} @self
+
+
+
+
+HEALTHBAR_ENTITY_determine_status:
+  Skills:
+  - setvariable{var=target.has_a_health_bar;type=STRING;value=true;duration=10} @parent
+  - skill{s=HEALTHBAR_ENTITY_get_owner_health_difference} @parent
+  - skill{s=HEALTHBAR_ENTITY_hit_effect} @self ?variableInRange{var=caster.owner_diff_hp;val=>0}
+  - skill{s=HEALTHBAR_ENTITY_check_owner_effects} @parent
+  - skill{s=HEALTHBAR_ENTITY_timeout_tick;cd=1} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_16} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_15} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_14} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_13} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_12} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_11} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_10} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_9} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_8} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_7} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_6} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_5} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_4} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_3} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_2} @parent
+  - skill{s=HEALTHBAR_ENTITY_check_owner_health_1} @parent
+  - skill{s=HEALTHBAR_ENTITY_set_bar_text;sync=true} @self
+  
+  
+  
+  
+
+HEALTHBAR_ENTITY_get_owner_health_difference:
+  Skills:
+  - variableMath{var=caster.owner_diff_hp;eq="<caster.var.owner_prev_hp>-<target.hp>"} @parent
+  - setvar{var=caster.owner_prev_hp;val="<target.hp>";type=FLOAT} @parent
+  
+  
+  
+  
+  
+  
+  
+  
+HEALTHBAR_ENTITY_hit_effect:
+  Cooldown: 0.2
+  Skills:
+  - setvar{var=caster.hidden;val=false;type=STRING} @self
+  - setvar{var=target.hpbartimeout;val="<caster.var.hide_timeout_length>";type=FLOAT} @self
+  - displaytransformation{action=set;transformation=translation;value=0.0,<caster.var.vertical_offset>,0.0} @self
+  - displaytransformation{transformation=LEFT_ROTATION;val=0,0,0.05,0.995} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - displaytransformation{transformation=LEFT_ROTATION;val=0,0,-0.05,0.995;delay=1} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - displaytransformation{transformation=LEFT_ROTATION;val=0,0,0.03,0.997;delay=2} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - displaytransformation{transformation=LEFT_ROTATION;val=0,0,-0.03,0.997;delay=3} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - displaytransformation{transformation=LEFT_ROTATION;val=0,0,0,1;delay=4} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - displaytransformation{action=set;transformation=SCALE;value=0.9,0.9,0.9} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - displaytransformation{action=set;transformation=SCALE;value=1.1,1.1,1.1;delay=2} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - displaytransformation{action=set;transformation=SCALE;value=1,1,1;delay=4} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
+  - skill{s=HEALTHBAR_ENTITY_damage_amount_number} @self
+
+
+
+
+
+
+HEALTHBAR_ENTITY_damage_amount_number:
+  Conditions:
+  - offgcd true
+  - varequals{var=caster.show_damage_numbers;val=true}
+  Skills:
+  - summon{t=HEALTHBAR_ENTITY_damage_number} @self
+  - setvar{var=caster.damagenumber;val=0;type=INTEGER}
+  - variableMath{var=caster.damagenumber;eq="clamp(<caster.var.owner_diff_hp>,1,9999)"} @self
+  - settextdisplay{text="<font:minecraft:healthbar><caster.var.damagenumber></font>";repeat=1;repeati=1} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY_damage_number} ]}
+
+
+
+
+
+
+  
+
+
+HEALTHBAR_ENTITY_timeout_tick:
+  Cooldown: 1
+  TargetConditions:
+  Conditions:
+  - variableInRange{var=caster.hpbartimeout;val=>0} orelsecast HEALTHBAR_ENTITY_timeout_remove
+  Skills:
+  - variablesubtract{var=caster.hpbartimeout;val=1} @self
+  
+  
+HEALTHBAR_ENTITY_timeout_remove:
+  TargetConditions:
+  - ((variableInRange{var=caster.healthbarvalue;val=<16} false && isplayer true) || isplayer false) true
+  Conditions:
+  - varequals{var=caster.hidden;val=true} false
+  - variablecontains{var=caster.statuseffects;val=V} false
+  - variablecontains{var=caster.statuseffects;val=W} false
+  - variableInRange{var=caster.hpbartimeout;val=<0} false
+  Skills:
+  - displaytransformation{action=set;transformation=SCALE;value=0,0,0} @self
+  - displaytransformation{action=set;transformation=translation;value=0.0,<caster.var.vertical_offset>+0.5,0.0} @self
+  - setvar{var=caster.hidden;val=true;type=STRING} @self
+
+
+  
+  
+  
+  
+  
+  
+  
+
+HEALTHBAR_ENTITY_check_owner_effects:
+  Conditions:
+  - varequals{var=caster.show_status_effects;val=true} true
+  Skills:
+  - variableadd{var=caster.statuseffects;val="V"} @parent{conditions=[ - haspotioneffect{t=poison} true ]} ?!variablecontains{var=caster.statuseffects;val="V"}
+  - variablesubtract{var=caster.statuseffects;val="V"} @parent{conditions=[ - haspotioneffect{t=poison} false ]} ?variablecontains{var=caster.statuseffects;val="V"}
+  - e:p{color=#308c08;a=5;hs=.25;vs=.5;cd=0.5;y=0.5} @parent{conditions=[ - haspotioneffect{t=poison} true ]}
+  - variableadd{var=caster.statuseffects;val="W"} @parent{conditions=[ - haspotioneffect{t=wither} true ]} ?!variablecontains{var=caster.statuseffects;val="W"}
+  - variablesubtract{var=caster.statuseffects;val="W"} @parent{conditions=[ - haspotioneffect{t=wither} false ]} ?variablecontains{var=caster.statuseffects;val="W"}
+  - variableadd{var=caster.statuseffects;val="X"} @parent{conditions=[ - haspotioneffect{t=regeneration} true ]} ?!variablecontains{var=caster.statuseffects;val="X"}
+  - variablesubtract{var=caster.statuseffects;val="X"} @parent{conditions=[ - haspotioneffect{t=regeneration} false ]} ?variablecontains{var=caster.statuseffects;val="X"}
+  - variableadd{var=caster.statuseffects;val="Y"} @parent{conditions=[ - haspotioneffect{t=absorption} true ]} ?!variablecontains{var=caster.statuseffects;val="Y"}
+  - variablesubtract{var=caster.statuseffects;val="Y"} @parent{conditions=[ - haspotioneffect{t=absorption} false ]} ?variablecontains{var=caster.statuseffects;val="Y"}
+  - variableadd{var=caster.statuseffects;val="Z"} @parent{conditions=[ - haspotioneffect{t=health_boost} true ]} ?!variablecontains{var=caster.statuseffects;val="Z"}
+  - variablesubtract{var=caster.statuseffects;val="Z"} @parent{conditions=[ - haspotioneffect{t=health_boost} false ]} ?variablecontains{var=caster.statuseffects;val="Z"}
+
+
+
+
+
+  
+  
+HEALTHBAR_ENTITY_check_owner_health_16:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=16} false
+  TargetConditions:
+  - healthpercent{p=>0.95} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=16} @self
+  - setvar{var=target.hp_bar;val=A;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_15:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=15} false
+  TargetConditions:
+  - healthpercent{p=<0.95} true
+  - healthpercent{p=>0.875} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=15} @self
+  - setvar{var=target.hp_bar;val=B;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_14:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=14} false
+  TargetConditions:
+  - healthpercent{p=<0.875} true
+  - healthpercent{p=>0.8125} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=14} @self
+  - setvar{var=target.hp_bar;val=C;type=STRING} @parent
+
+HEALTHBAR_ENTITY_check_owner_health_13:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=13} false
+  TargetConditions:
+  - healthpercent{p=<0.8125} true
+  - healthpercent{p=>0.75} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=13} @self
+  - setvar{var=target.hp_bar;val=D;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_12:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=12} false
+  TargetConditions:
+  - healthpercent{p=<0.75} true
+  - healthpercent{p=>0.6875} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=12} @self
+  - setvar{var=target.hp_bar;val=E;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_11:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=11} false
+  TargetConditions:
+  - healthpercent{p=<0.756875} true
+  - healthpercent{p=>0.625} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=11} @self
+  - setvar{var=target.hp_bar;val=F;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_10:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=10} false
+  TargetConditions:
+  - healthpercent{p=<0.625} true
+  - healthpercent{p=>0.5625} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=10} @self
+  - setvar{var=target.hp_bar;val=G;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_9:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=9} false
+  TargetConditions:
+  - healthpercent{p=<0.5625} true
+  - healthpercent{p=>0.5} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=9} @self
+  - setvar{var=target.hp_bar;val=H;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_8:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=8} false
+  TargetConditions:
+  - healthpercent{p=<0.5} true
+  - healthpercent{p=>0.4375} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=8} @self
+  - setvar{var=target.hp_bar;val=I;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_7:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=7} false
+  TargetConditions:
+  - healthpercent{p=<0.4375} true
+  - healthpercent{p=>0.375} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=7} @self
+  - setvar{var=target.hp_bar;val=J;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_6:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=6} false
+  TargetConditions:
+  - healthpercent{p=<0.375} true
+  - healthpercent{p=>0.3125} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=6} @self
+  - setvar{var=target.hp_bar;val=K;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_5:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=5} false
+  TargetConditions:
+  - healthpercent{p=<0.3125} true
+  - healthpercent{p=>0.25} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=5} @self
+  - setvar{var=target.hp_bar;val=L;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_4:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=4} false
+  TargetConditions:
+  - healthpercent{p=<0.25} true
+  - healthpercent{p=>0.1875} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=4} @self
+  - setvar{var=target.hp_bar;val=M;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_3:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=3} false
+  TargetConditions:
+  - healthpercent{p=<0.1875} true
+  - healthpercent{p=>0.125} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=3} @self
+  - setvar{var=target.hp_bar;val=N;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_2:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=2} false
+  TargetConditions:
+  - healthpercent{p=<0.125} true
+  - healthpercent{p=>0.0625} true
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=2} @self
+  - setvar{var=target.hp_bar;val=O;type=STRING} @parent
+  
+HEALTHBAR_ENTITY_check_owner_health_1:
+  Conditions:
+  - varequals{var=caster.healthbarvalue;val=1} false
+  TargetConditions:
+  - ( healthpercent{p=<0.0625} true || health{h=1} true )
+  - varequals{var=target.healthbarvalue;val=1} false
+  Skills:
+  - setvariable{var=caster.healthbarvalue;type=INTEGER;value=1} @self
+  - setvar{var=target.hp_bar;val=P;type=STRING} @parent
+
+
+
+
+
+
+
+
+
+
+
+
+
+HEALTHBAR_ENTITY_detect_sneak:
+  Conditions:
+  - varequals{var=caster.hide_bar_on_sneak;val=true} true
+  Skills:
+  - skill{s=HEALTHBAR_ENTITY_detect_sneak_show} @parent
+  - skill{s=HEALTHBAR_ENTITY_detect_sneak_hide} @parent
+  
+HEALTHBAR_ENTITY_detect_sneak_show:
+  Conditions:
+  - varequals{var=caster.OWNERsneaking;val=false} false
+  TargetConditions:
+  - ( isplayer && crouching false )
+  Skills:
+  - setvar{var=caster.OWNERsneaking;val=false;type=STRING} @self
+  - command{c="data merge entity @s {text_opacity:255}";ac=true} @self
+  
+HEALTHBAR_ENTITY_detect_sneak_hide:
+  Conditions:
+  - varequals{var=caster.OWNERsneaking;val=true} false
+  TargetConditions:
+  - ( isplayer && crouching true )
+  Skills:
+  - setvar{var=caster.OWNERsneaking;val=true;type=STRING} @self
+  - command{c="data merge entity @s {text_opacity:<caster.var.hide_bar_on_sneak_opacity>}";ac=true} @self

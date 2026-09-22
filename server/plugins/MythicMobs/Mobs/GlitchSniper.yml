@@ -9,9 +9,6 @@ GlitchSniper:
   Display: '<dark_red>Glitch Sniper'
   Health: 80
   Damage: 8
-  HealthBar:
-    Enabled: true
-    Offset: 2.3
   AIGoalSelectors:
     - clear
     - fleeplayers{d=4;s=1.5;ss=1.5}

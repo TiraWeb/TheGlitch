@@ -9,9 +9,6 @@ GlitchWisp:
   Display: '<aqua>Glitch Wisp'
   Health: 16
   Damage: 2
-  HealthBar:
-    Enabled: true
-    Offset: 3.2
   Faction: GLITCH
   DamageModifiers:
     - SUFFOCATION 0

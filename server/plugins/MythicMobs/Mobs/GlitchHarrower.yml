@@ -8,9 +8,6 @@ GlitchHarrower:
   Type: ZOMBIE
   Health: 95
   Damage: 10
-  HealthBar:
-    Enabled: true
-    Offset: 2.3
   Display: '<dark_purple>Glitch Harrower'
   AITargetSelectors:
     - clear

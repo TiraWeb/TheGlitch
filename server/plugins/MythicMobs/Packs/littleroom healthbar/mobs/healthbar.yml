@@ -1,0 +1,96 @@
+﻿#########################################################
+
+
+
+
+
+HEALTHBAR_GLOBAL_LISTENER:
+  Type: MARKER
+  Display: 'HEALTHBAR_GLOBAL_LISTENER'
+  Options:
+    Collidable: false
+    Despawn: PERSISTENT
+  Skills:
+  - skill{s=HEALTHBAR_GLOBAL_init} @self ~onSpawn
+  - skill{s=HEALTHBAR_GLOBAL_check_entity_health;sync=true} @EIW ~onTimer:5
+  - skill{s=HEALTHBAR_GLOBAL_reset_player_vars} @EIW ~onTimer:20
+
+
+
+HEALTHBAR_ENTITY:
+  Display: 'TESTING'
+  Type: text_display
+  Options:
+    Collidable: false
+    Despawn: PERSISTENT
+  Variables:
+    hide_bar_on_sneak: string/true            
+    hide_bar_on_sneak_opacity: integer/128    # 255 is max opacity
+    show_entity_name: string/true             # show entity nametag above the healthbar
+    display_level_on_health_bar: string/true  # show entity level next to the nametag
+    player_level_placeholder: string/false    # if you want to use a plugin that handles player levels place it here for ex. set it to %mmocore_level% if you use mmocore
+    show_status_effects: string/true          # show potion icons under the healthbar
+    show_damage_numbers: string/true          # spawn numbers when taking damage
+    hide_timeout_length: integer/10           # how long before the healthbar times out
+    vertical_offset: float/0.25               # distance above the entity
+  DisplayOptions:
+    ViewRange: 0.5                            # 0.5 is 32 blocks
+    Text: "HEALTHBAR_ENTITY"
+    BlockLight: 15
+    SkyLight: 15
+    Billboard: CENTER
+    Scale: 0,0,0
+    Translation: 0,0.0,0
+    InterpolationDuration: 1
+    BackgroundColor: 0
+    Shadowed: true
+    Alignment: CENTER
+  Skills:
+  - displaytransformation{action=set;transformation=SCALE;value=1,1,1;delay=2} @self ~onSpawn
+  - skill{s=HEALTHBAR_ENTITY_init} @self ~onSpawn
+  - skill{s=HEALTHBAR_ENTITY_determine_status} @parent ~onTimer:2
+  - skill{s=HEALTHBAR_ENTITY_detect_sneak} @parent ~onTimer:10
+  - remove @self ~onTimer:1 ?!isparentalive
+
+  
+
+
+HEALTHBAR_ENTITY_damage_number: 
+  Type: text_display
+  Options:
+    Collidable: false
+    Despawn: PERSISTENT
+  DisplayOptions:
+    ViewRange: 0.5                            # 0.5 is 32 blocks
+    Text: "damagenumber"
+    BlockLight: 15
+    SkyLight: 15
+    Billboard: CENTER
+    Scale: 0,0,0
+    Translation: 0,0,0
+    InterpolationDuration: 2
+    BackgroundColor: 0
+    Shadowed: true
+    Alignment: CENTER
+  Skills:
+  - displaytransformation{action=set;transformation=SCALE;value=2,2,2;delay=2} @self ~onSpawn
+  - displaytransformation{action=set;transformation=SCALE;value=0,0,0;delay=15} @self ~onSpawn
+  - mount{type=HEALTHBAR_ENTITY_damage_number_stand} @self ~onSpawn
+  - remove{delay=20} @self ~onSpawn
+  
+HEALTHBAR_ENTITY_damage_number_stand:
+  Type: ARMOR_STAND
+  Options:
+    Collidable: false
+    PreventOtherDrops: true
+    Silent: true
+    Interactable: false
+    Invincible: true
+    NoAI: true
+    Small: true
+    HasBasePlate: false
+    Invisible: true
+  Skills:
+  - velocity{x=<random.float.-0.2to0.2>;y=<random.float.0.4to0.6>;z=<random.float.-0.2to0.2>} @self ~onSpawn
+  - remove{delay=20} @self ~onSpawn
+#U0URZkR0hUeZd2MxdGeXRWMBpWZwsGSixGeHdlMSZkVZZERNV2R1k0VjVmVFxGVzZHNYlnN

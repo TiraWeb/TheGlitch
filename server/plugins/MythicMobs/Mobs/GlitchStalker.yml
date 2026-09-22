@@ -9,9 +9,6 @@ GlitchStalker:
   Display: '<red>Glitch Stalker'
   Health: 50
   Damage: 4
-  HealthBar:
-    Enabled: true
-    Offset: 3.2
   Faction: GLITCH
   DamageModifiers:
     - SUFFOCATION 0

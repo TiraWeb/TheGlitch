@@ -11,9 +11,6 @@ GlitchPhantom:
   Display: '<light_purple>Glitch Phantom'
   Health: 40
   Damage: 8
-  HealthBar:
-    Enabled: true
-    Offset: 1.0
   Options:
     MovementSpeed: 0.35
     Silent: true

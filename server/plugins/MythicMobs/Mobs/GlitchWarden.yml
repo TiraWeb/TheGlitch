@@ -10,9 +10,6 @@ GlitchWarden:
   Display: '<dark_aqua>Glitch Warden'
   Health: 200
   Damage: 8
-  HealthBar:
-    Enabled: true
-    Offset: 2.3
   Options:
     FollowRange: 25
     PreventOtherDrops: true

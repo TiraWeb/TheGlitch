@@ -9,9 +9,6 @@ GlitchBrute:
   Display: '<dark_red>Glitch Brute'
   Health: 115
   Damage: 7
-  HealthBar:
-    Enabled: true
-    Offset: 2.3
   Faction: GLITCH
   DamageModifiers:
     - SUFFOCATION 0

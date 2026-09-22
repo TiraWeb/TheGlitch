@@ -1,0 +1,56 @@
+{
+	"providers": [
+		{
+			"type": "bitmap",
+			"file": "littleroom_healthbar:hp_numbers.png",
+			"ascent": 7,
+			"height": 8,
+			"chars": [
+				"0123456789"
+			]
+		},
+		{
+			"type": "bitmap",
+			"file": "littleroom_healthbar:healthbar.png",
+			"ascent": 15,
+			"height": 25,
+			"chars": [
+				"AI",
+				"BJ",
+				"CK",
+				"DL",
+				"EM",
+				"FN",
+				"GO",
+				"HP"
+			]
+		},
+		{
+			"type": "bitmap",
+			"file": "littleroom_healthbar:statusicons.png",
+			"ascent": 7,
+			"height": 8,
+			"chars": [
+				"VWXYZ"
+			]
+		},
+		{
+			"file": "littleroom_healthbar:empty_character.png",
+			"chars": [
+				""
+			],
+			"height": -6,
+			"ascent": -32768,
+			"type": "bitmap"
+		},
+		{
+			"file": "littleroom_healthbar:empty_character.png",
+			"chars": [
+				""
+			],
+			"height": 6,
+			"ascent": -65536,
+			"type": "bitmap"
+		}
+	]
+}

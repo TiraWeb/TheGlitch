@@ -1,0 +1,6 @@
+HEALTHBAR_GLOBAL_LISTENER:
+  Id: GOAT_HORN
+  Display: "Healthbar Global Listener Spawner"
+  Skills:
+  - summon{t=HEALTHBAR_GLOBAL_LISTENER;cd=0.5} @self ~onUse
+#U0URZkR0hUeZd2MxdGeXRWMBpWZwsGSixGeHdlMSZkVZZERNV2R1k0VjVmVFxGVzZHNYlnN

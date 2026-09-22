@@ -12,9 +12,6 @@ GlitchReaver:
   Display: '<bold><light_purple>The Glitch Reaver'
   Health: 350
   Damage: 16
-  HealthBar:
-    Enabled: true
-    Offset: 2.6
   Faction: GLITCH
   BossBar:
     Enabled: true
