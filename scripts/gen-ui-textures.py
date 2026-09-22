@@ -1,19 +1,32 @@
 #!/usr/bin/env python3
-"""The Glitch — UI texture generator (placeholder art, replace later).
+"""The Glitch — UI texture generator.
 
-Generates every custom-font glyph texture and the global vanilla-chest
-override used by the Nexo resource pack (migrated from Oraxen 2026-09-20).
+Generates every custom-font glyph texture and copies the chest-window
+overrides used by the Nexo resource pack (migrated from Oraxen 2026-09-20).
 Pure Pillow, deterministic output, safe to re-run (idempotent).
 
 Outputs into server/plugins/Nexo/pack/external_packs/Oraxen/assets/minecraft/textures/:
-  glyphs/*.png                           inline font-glyph icons
-  gui/sprites/container/generic_54.png   themed 6-row chest window (256x256)
-  gui/container/generic_54.png           legacy-path duplicate (pre-1.20.2)
+  glyphs/*.png                                 inline font-glyph icons (procedural, Arcane Ruins palette)
+  gui/sprites/container/generic_{9,18,27,36,45,54}.png   themed chest windows (256x256 each, one per row count)
+  gui/container/generic_{9,18,27,36,45,54}.png           legacy-path duplicates (pre-1.20.2)
+
+The chest-window art itself (2026-09-22 — "GUI pack" drop, ItemsAdder-format,
+adapted for Nexo) is pre-made, not procedural: source PNGs live in
+assets/ui-kits/medieval/ (tracked in git) and are copied byte-for-byte to
+every size Bukkit can open (9/18/27/36/45/54 slots) — previously only the
+54-slot window had a themed override, so Class Detail (45) and Select Red
+Zone (27) fell back to vanilla. assets/ui-kits/medieval/ also carries spare
+menu_template.png/jobs_template.png/profile_template.png/rewards_template.png
+(same 256x256 shape, distinct banner art) plus a buttons.png icon sheet and a
+two-tone bitmap font (typography_title.png/typography_button.png) staged for
+future custom GUIs (e.g. the planned Menu hub) — not wired into the pack yet
+since no size is reserved for them and no bitmap-font provider exists yet.
 
 Glyph unicode mapping lives in server/plugins/Nexo/glyphs/oraxen_glyphs/theglitch.yml
 and is mirrored in plugins/GlitchItems/.../GlitchUI.java — keep in sync.
+Glyphs/rank badges/inventory.png stay procedural (Arcane Ruins void purple/
+amethyst/aqua palette) — only the chest window itself changed.
 
-Palette matches play.theglitch.gg (void purple / amethyst / aqua).
 Usage:  python scripts/gen-ui-textures.py
 """
 
@@ -25,6 +38,7 @@ import random
 
 REPO = Path(__file__).resolve().parents[1]
 TEX = REPO / "server" / "plugins" / "Nexo" / "pack" / "external_packs" / "Oraxen" / "assets" / "minecraft" / "textures"
+UI_KIT = REPO / "assets" / "ui-kits" / "medieval"
 
 # ---------------------------------------------------------------- palette ---
 VOID_TOP = (13, 6, 22, 255)
@@ -301,61 +315,22 @@ def rank_owner():
 
 
 # --------------------------------------------------- vanilla chest window ---
-def chest_generic_54():
-    """Themed override for container/generic_54.png (256x256).
+CHEST_SIZES = (9, 18, 27, 36, 45, 54)
 
-    Supports ALL chest sizes (27/36/45/54) by painting borders at every
-    possible bottom edge (17 + rows*18). Vanilla blits only header + N*18
-    rows, so a single texture with seams at each boundary works for any N.
+
+def copy_chest_windows():
+    """Copy the pre-made Medieval GUI-kit chest windows to every chest size.
+
+    Each generic_N.png in assets/ui-kits/medieval/ is already 256x256 and
+    matches the vanilla container atlas layout, so this is a straight copy —
+    no per-size generation needed (unlike the old procedural single-texture
+    approach, this set has real art for all 6 row counts, not just 54).
     """
-    img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
-    rng = random.Random(0xC0FFEE)
-    d = ImageDraw.Draw(img)
-
-    W = 176
-    MAX_H = 125  # 6 rows: 17 + 6*18
-    for y in range(MAX_H):
-        t = y / MAX_H
-        c = tuple(int(a + (b - a) * t) for a, b in zip(VOID_TOP, VOID_BOT))
-        d.line([(0, y), (W - 1, y)], fill=c)
-        if rng.random() < 0.30:
-            x = rng.randrange(W)
-            n = rng.randint(-5, 5)
-            r, g, b_, _ = img.getpixel((x, y))
-            px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
-
-    # outer vertical borders (full height)
-    for y in range(MAX_H):
-        px(d, 0, y, AMETHYST)
-        px(d, W - 1, y, AMETHYST)
-    # top border
-    for x in range(W):
-        px(d, x, 0, AMETHYST)
-    # bottom borders at EVERY valid chest height so any size shows a clean edge
-    for rows in (3, 4, 5, 6):
-        by = 17 + rows * 18 - 1
-        for x in range(W):
-            px(d, x, by, AMETHYST)
-        # inner hairline just above each bottom
-        for x in range(1, W - 1):
-            px(d, x, by - 1, (52, 24, 82, 255))
-    # top inner hairline
-    d.rectangle((1, 1, W - 2, MAX_H - 2), outline=(52, 24, 82, 80))
-
-    d.line([(2, 15), (W - 3, 15)], fill=(59, 29, 94, 255))
-    d.line([(2, 16), (W - 3, 16)], fill=(38, 18, 62, 160))
-
-    for cx, cy in [(4, 4), (W - 5, 4)]:
-        d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)],
-                  fill=FUCHSIA)
-        px(d, cx, cy, (250, 240, 255, 255))
-
-    for i in range(6):
-        a = 90 - i * 14
-        if a <= 0:
-            break
-        d.line([(2 + i, MAX_H - 2 - i), (W - 3 - i, MAX_H - 2 - i)], fill=(168, 85, 247, a))
-    return img
+    for n in CHEST_SIZES:
+        src = UI_KIT / f"generic_{n}.png"
+        img = Image.open(src).convert("RGBA")
+        save(img, f"gui/sprites/container/generic_{n}.png")
+        save(img.copy(), f"gui/container/generic_{n}.png")  # legacy path fallback
 
 
 def inventory_background():
@@ -420,9 +395,7 @@ def main():
     save(rank_moderator(), f"{g}/rank_moderator.png")
     save(rank_admin(), f"{g}/rank_admin.png")
     save(rank_owner(), f"{g}/rank_owner.png")
-    chest = chest_generic_54()
-    save(chest, "gui/sprites/container/generic_54.png")
-    save(chest.copy(), "gui/container/generic_54.png")  # legacy path fallback
+    copy_chest_windows()
     inv = inventory_background()
     save(inv, "gui/sprites/container/inventory.png")
     save(inv.copy(), "gui/container/inventory.png")
