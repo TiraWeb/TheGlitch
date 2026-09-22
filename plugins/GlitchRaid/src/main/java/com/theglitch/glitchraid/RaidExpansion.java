@@ -1,8 +1,15 @@
 package com.theglitch.glitchraid;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * PlaceholderAPI expansion for GlitchRaid.
@@ -15,9 +22,18 @@ import org.bukkit.entity.Player;
  *   <li>%glitchraid_loot% — current loot value (or 0 if not in raid)</li>
  *   <li>%glitchraid_deaths% — death count this raid (or 0)</li>
  *   <li>%glitchraid_party_size% — party/raid size (or 0)</li>
+ *   <li>%glitchraid_member_&lt;1-4&gt;_name% — that party slot's player name, or "" if
+ *       the slot is empty. Slot 1 is always the party leader; slots 2-4 are the
+ *       remaining members sorted alphabetically (stable ordering — {@link Party}
+ *       itself stores members in a {@link java.util.Set}, which has no order).
+ *       Meant to be chained through the ParseOther PAPI expansion, e.g.
+ *       {@code %parseother_unsafe_{glitchraid_member_1_name}_{player_health_rounded}%},
+ *       for the party HUD.</li>
  * </ul>
  */
 public final class RaidExpansion extends PlaceholderExpansion {
+
+    private static final Pattern MEMBER_NAME = Pattern.compile("member_([1-4])_name");
 
     private final GlitchRaid plugin;
     private final RaidManager manager;
@@ -73,7 +89,7 @@ public final class RaidExpansion extends PlaceholderExpansion {
             case "time_left_formatted":
                 return "00:00";
             default:
-                return null;
+                return MEMBER_NAME.matcher(id).matches() ? "" : null;
         }
     }
 
@@ -116,8 +132,41 @@ public final class RaidExpansion extends PlaceholderExpansion {
                 }
                 return String.valueOf(session.getMembers().size());
             }
-            default:
+            default: {
+                Matcher m = MEMBER_NAME.matcher(id);
+                if (m.matches()) {
+                    int slot = Integer.parseInt(m.group(1));
+                    return resolveSlotName(player.getUniqueId(), slot);
+                }
                 return null;
+            }
         }
+    }
+
+    /**
+     * Slot 1 is always the party leader; slots 2-4 are the remaining members
+     * sorted alphabetically by name, so the party HUD's 4 fixed slots don't
+     * visually reshuffle every time someone joins/leaves. Returns "" for an
+     * empty slot (used by the HUD layout to hide it).
+     */
+    private String resolveSlotName(UUID viewerUuid, int slot) {
+        Party party = manager.getPartyManager().getParty(viewerUuid);
+        if (party == null) return "";
+        UUID leader = party.getLeader();
+        List<String> ordered = new ArrayList<>();
+        ordered.add(nameOf(leader));
+        List<String> rest = new ArrayList<>();
+        for (UUID member : party.getMembers()) {
+            if (!member.equals(leader)) rest.add(nameOf(member));
+        }
+        rest.sort(String.CASE_INSENSITIVE_ORDER);
+        ordered.addAll(rest);
+        int index = slot - 1;
+        return index < ordered.size() ? ordered.get(index) : "";
+    }
+
+    private String nameOf(UUID uuid) {
+        String name = Bukkit.getOfflinePlayer(uuid).getName();
+        return name != null ? name : "";
     }
 }

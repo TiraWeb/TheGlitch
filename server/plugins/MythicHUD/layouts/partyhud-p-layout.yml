@@ -1,0 +1,39 @@
+# The Glitch — raid party HUD layout (positions from Volya's Party HUD, unchanged).
+partyhud-p-layout:
+  elements:
+    partymember_1_p:
+      asset: 'partymember_1_p'
+      align: right
+      position:
+        x: 0
+        y: 100
+      offset:
+        x: 2
+        y: -2
+    partymember_2_p:
+      asset: 'partymember_2_p'
+      align: right
+      position:
+        x: 0
+        y: 100
+      offset:
+        x: 2
+        y: -23
+    partymember_3_p:
+      asset: 'partymember_3_p'
+      align: right
+      position:
+        x: 0
+        y: 100
+      offset:
+        x: 2
+        y: -44
+    partymember_4_p:
+      asset: 'partymember_4_p'
+      align: right
+      position:
+        x: 0
+        y: 100
+      offset:
+        x: 2
+        y: -65

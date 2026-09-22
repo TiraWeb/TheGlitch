@@ -118,4 +118,8 @@ public final class GlitchClasses extends JavaPlugin {
     public StarterKit getStarterKit() {
         return starterKit;
     }
+
+    public AbilityListener getAbilityListener() {
+        return abilityListener;
+    }
 }

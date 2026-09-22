@@ -1,0 +1,12 @@
+# The Glitch — class ability bar layout: bottom-center, above the hotbar.
+skillbar-layout:
+  elements:
+    skillbar:
+      asset: 'skillbar'
+      align: center
+      position:
+        x: 50.0
+        y: 100.0
+      offset:
+        x: -40
+        y: -30

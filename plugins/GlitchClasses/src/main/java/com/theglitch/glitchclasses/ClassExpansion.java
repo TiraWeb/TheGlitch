@@ -55,6 +55,13 @@ public final class ClassExpansion extends PlaceholderExpansion {
                 int next = data.level() + 1;
                 return String.valueOf(plugin.getClassManager().getXpForLevel(next));
             }
+            // Ability cooldowns (seconds remaining, 0 = ready) — used by the skill-casting HUD.
+            case "cooldown_prime":
+                return String.valueOf(plugin.getAbilityListener().getCooldownSeconds(player.getUniqueId(), "prime"));
+            case "cooldown_tactical":
+                return String.valueOf(plugin.getAbilityListener().getCooldownSeconds(player.getUniqueId(), "tactical"));
+            case "cooldown_ultimate":
+                return String.valueOf(plugin.getAbilityListener().getCooldownSeconds(player.getUniqueId(), "ultimate"));
             default:
                 return null;
         }

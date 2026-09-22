@@ -1,0 +1,31 @@
+generate-default-files: true
+generate-unicode-files: true
+layout:
+  default:
+  - mmohud-layout
+  - partyhud-p-layout
+  - skillbar-layout
+check-update: 5
+placeholder-update: 5
+decimal-format: '#.##'
+nexo-hook: true
+copy-pack:
+  enabled: true
+  path: Nexo/pack/external_packs/MythicHud.zip
+boss-bar:
+  max: 7
+  hud-position: 4
+  color: yellow
+disable-geyser-players: true
+disable-netty-injection: false
+hide-exp: false
+hide-vanilla-hud: false
+updaters:
+  EXPERIENCE: true
+  ARMOR: true
+  CONSUMING: true
+  RESPAWNING: true
+  AIR: true
+pack-support: all
+default-namespace: mythichud
+config-version: 11

@@ -1,0 +1,17 @@
+# The Glitch — main HUD listeners (adapted from Volya's MMORPG HUD).
+# "mana"/"stamina"/"mmoexp" (MMOCore-specific in the original pack) replaced —
+# we have no MMOCore. "residual" drives the repurposed mana-bar visual with
+# Residual Glitch stacks; "classxp" drives the exp bar with GlitchClasses
+# per-class level progress instead of vanilla XP. health/food/armor/air stay
+# on MythicHUD's built-in native listeners (no entry needed here).
+residual:
+  value: '%glitchitems_stacks%'
+  max: '%glitchitems_max_stacks%'
+
+absorption:
+  value: '%player_absorption%'
+  max: '%player_max_health%'
+
+classxp:
+  value: '%glitchclasses_xp%'
+  max: '%glitchclasses_xp_needed%'

@@ -1,0 +1,34 @@
+# The Glitch — raid party HUD listeners. Rewired from the "Parties" plugin +
+# MMOCore to GlitchRaid (via ParseOther chaining to %glitchraid_member_N_name%)
+# + Residual Glitch (glitchitems_stacks) in place of the original's mana bar.
+member1_health_p:
+  value: '%parseother_unsafe_{glitchraid_member_1_name}_{player_health_rounded}%'
+  max: '%parseother_unsafe_{glitchraid_member_1_name}_{player_max_health_rounded}%'
+
+member1_residual_p:
+  value: '%parseother_unsafe_{glitchraid_member_1_name}_{glitchitems_stacks}%'
+  max: '%parseother_unsafe_{glitchraid_member_1_name}_{glitchitems_max_stacks}%'
+#############################################################################################
+member2_health_p:
+  value: '%parseother_unsafe_{glitchraid_member_2_name}_{player_health_rounded}%'
+  max: '%parseother_unsafe_{glitchraid_member_2_name}_{player_max_health_rounded}%'
+
+member2_residual_p:
+  value: '%parseother_unsafe_{glitchraid_member_2_name}_{glitchitems_stacks}%'
+  max: '%parseother_unsafe_{glitchraid_member_2_name}_{glitchitems_max_stacks}%'
+#############################################################################################
+member3_health_p:
+  value: '%parseother_unsafe_{glitchraid_member_3_name}_{player_health_rounded}%'
+  max: '%parseother_unsafe_{glitchraid_member_3_name}_{player_max_health_rounded}%'
+
+member3_residual_p:
+  value: '%parseother_unsafe_{glitchraid_member_3_name}_{glitchitems_stacks}%'
+  max: '%parseother_unsafe_{glitchraid_member_3_name}_{glitchitems_max_stacks}%'
+#############################################################################################
+member4_health_p:
+  value: '%parseother_unsafe_{glitchraid_member_4_name}_{player_health_rounded}%'
+  max: '%parseother_unsafe_{glitchraid_member_4_name}_{player_max_health_rounded}%'
+
+member4_residual_p:
+  value: '%parseother_unsafe_{glitchraid_member_4_name}_{glitchitems_stacks}%'
+  max: '%parseother_unsafe_{glitchraid_member_4_name}_{glitchitems_max_stacks}%'

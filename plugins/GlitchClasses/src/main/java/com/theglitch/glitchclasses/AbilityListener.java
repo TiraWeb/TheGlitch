@@ -1148,6 +1148,11 @@ public class AbilityListener implements Listener {
         return Math.max(0, expiry - System.currentTimeMillis());
     }
 
+    /** Seconds remaining on {@code ability} (ceiling), for HUD/placeholder display. 0 if ready. */
+    public long getCooldownSeconds(UUID uuid, String ability) {
+        return (getCooldownRemaining(uuid, ability) + 999) / 1000;
+    }
+
     private int getUltimateLevel() {
         return ultimateLevel;
     }

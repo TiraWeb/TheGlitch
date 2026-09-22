@@ -1,0 +1,379 @@
+### THE GLITCH — RAID PARTY HUD (adapted from Volya's Party HUD, "Parties" FULL version) ###
+### Rewired from the third-party "Parties" plugin + MMOCore to GlitchRaid + GlitchClasses:
+###   %parties_members_total%        -> %glitchraid_party_size%
+###   %parseother_unsafe_{list_rank_leader_N}_{X}%  -> %parseother_unsafe_{glitchraid_member_N_name}_{X}%
+###   mmocore_class / mmocore_level  -> glitchclasses_class / glitchclasses_level
+### Slot 1 is always the party leader (RaidExpansion.resolveSlotName). No mana bar per
+### member (we have no mana resource) — replaced with each member's Residual Glitch stacks.
+### Requires the ParseOther PlaceholderAPI expansion (same as the original pack).
+###
+### NOTE: all 4 slots render unconditionally (no hide-if-empty-slot logic) since this
+### plugin's exact true/false condition-direction semantics couldn't be verified without
+### a live client — an empty slot should just show a blank name / 0 health rather than
+### risk an inverted "always hidden" or "never hidden" bug. Revisit once playtested.
+
+partymember_1_p:
+  layers:
+    leader_icon:
+      texture:
+        path: assets/partyhud/party_leader.png
+      offset:
+        x: 91
+        y: -2
+    class_icon:
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_1_name}_{glitchclasses_class}%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_1_name}_{glitchclasses_class}%;v=Warden} true texture assets/partyhud/class/party_class_cleric
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_1_name}_{glitchclasses_class}%;v=Specter} true texture assets/partyhud/class/party_class_assassin
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_1_name}_{glitchclasses_class}%;v=Operator} true texture assets/partyhud/class/party_class_artificier
+      offset:
+        x: 2
+        y: -2
+        z: 1
+    name:
+      text: "<#6cd71b>%glitchraid_member_1_name%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.6
+      offset:
+        x: 19
+        y: -2
+    hp_text:
+      text: "%parseother_unsafe_{glitchraid_member_1_name}_{player_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: left
+      scale: 0.6
+      offset:
+        x: 56
+        y: -8
+    hp_text_divider:
+      text: "/"
+      font: "volya"
+      outlined: true
+      align: center
+      scale: 0.6
+      offset:
+        x: 58
+        y: -8
+    hp_text_max:
+      text: "%parseother_unsafe_{glitchraid_member_1_name}_{player_max_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.6
+      offset:
+        x: 61
+        y: -8
+    hp_bar_fill:
+      texture:
+        path: assets/partyhud/party_bar_fill_health.png
+      offset:
+        x: 20
+        y: -9
+      function:
+        listener: member1_health_p
+        increment: 30
+        orientation: horizontal
+    hp_bar_outline:
+      texture:
+        path: assets/partyhud/party_bar_outline_health.png
+      offset:
+        x: 19
+        y: -8
+    residual_bar_fill:
+      texture:
+        path: assets/partyhud/party_bar_fill_mana.png
+      color: "#8a2be2"
+      offset:
+        x: 20
+        y: -13
+      function:
+        listener: member1_residual_p
+        increment: 30
+        orientation: horizontal
+    residual_bar_outline:
+      texture:
+        path: assets/partyhud/party_bar_outline_mana.png
+      offset:
+        x: 19
+        y: -12
+    background:
+      texture:
+        path: assets/partyhud/party_background.png
+      offset:
+        x: 0
+        y: -14
+
+partymember_2_p:
+  layers:
+    class_icon:
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_2_name}_{glitchclasses_class}%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_2_name}_{glitchclasses_class}%;v=Warden} true texture assets/partyhud/class/party_class_cleric
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_2_name}_{glitchclasses_class}%;v=Specter} true texture assets/partyhud/class/party_class_assassin
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_2_name}_{glitchclasses_class}%;v=Operator} true texture assets/partyhud/class/party_class_artificier
+      offset:
+        x: 2
+        y: -2
+        z: 1
+    name:
+      text: "<#cccccc>%glitchraid_member_2_name%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.6
+      offset:
+        x: 19
+        y: -2
+    hp_text:
+      text: "%parseother_unsafe_{glitchraid_member_2_name}_{player_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: left
+      scale: 0.6
+      offset:
+        x: 56
+        y: -8
+    hp_text_divider:
+      text: "/"
+      font: "volya"
+      outlined: true
+      align: center
+      scale: 0.6
+      offset:
+        x: 58
+        y: -8
+    hp_text_max:
+      text: "%parseother_unsafe_{glitchraid_member_2_name}_{player_max_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.6
+      offset:
+        x: 61
+        y: -8
+    hp_bar_fill:
+      texture:
+        path: assets/partyhud/party_bar_fill_health.png
+      offset:
+        x: 20
+        y: -9
+      function:
+        listener: member2_health_p
+        increment: 30
+        orientation: horizontal
+    hp_bar_outline:
+      texture:
+        path: assets/partyhud/party_bar_outline_health.png
+      offset:
+        x: 19
+        y: -8
+    residual_bar_fill:
+      texture:
+        path: assets/partyhud/party_bar_fill_mana.png
+      color: "#8a2be2"
+      offset:
+        x: 20
+        y: -13
+      function:
+        listener: member2_residual_p
+        increment: 30
+        orientation: horizontal
+    residual_bar_outline:
+      texture:
+        path: assets/partyhud/party_bar_outline_mana.png
+      offset:
+        x: 19
+        y: -12
+    background:
+      texture:
+        path: assets/partyhud/party_background.png
+      offset:
+        x: 0
+        y: -14
+
+partymember_3_p:
+  layers:
+    class_icon:
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_3_name}_{glitchclasses_class}%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_3_name}_{glitchclasses_class}%;v=Warden} true texture assets/partyhud/class/party_class_cleric
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_3_name}_{glitchclasses_class}%;v=Specter} true texture assets/partyhud/class/party_class_assassin
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_3_name}_{glitchclasses_class}%;v=Operator} true texture assets/partyhud/class/party_class_artificier
+      offset:
+        x: 2
+        y: -2
+        z: 1
+    name:
+      text: "<#cccccc>%glitchraid_member_3_name%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.6
+      offset:
+        x: 19
+        y: -2
+    hp_text:
+      text: "%parseother_unsafe_{glitchraid_member_3_name}_{player_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: left
+      scale: 0.6
+      offset:
+        x: 56
+        y: -8
+    hp_text_divider:
+      text: "/"
+      font: "volya"
+      outlined: true
+      align: center
+      scale: 0.6
+      offset:
+        x: 58
+        y: -8
+    hp_text_max:
+      text: "%parseother_unsafe_{glitchraid_member_3_name}_{player_max_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.6
+      offset:
+        x: 61
+        y: -8
+    hp_bar_fill:
+      texture:
+        path: assets/partyhud/party_bar_fill_health.png
+      offset:
+        x: 20
+        y: -9
+      function:
+        listener: member3_health_p
+        increment: 30
+        orientation: horizontal
+    hp_bar_outline:
+      texture:
+        path: assets/partyhud/party_bar_outline_health.png
+      offset:
+        x: 19
+        y: -8
+    residual_bar_fill:
+      texture:
+        path: assets/partyhud/party_bar_fill_mana.png
+      color: "#8a2be2"
+      offset:
+        x: 20
+        y: -13
+      function:
+        listener: member3_residual_p
+        increment: 30
+        orientation: horizontal
+    residual_bar_outline:
+      texture:
+        path: assets/partyhud/party_bar_outline_mana.png
+      offset:
+        x: 19
+        y: -12
+    background:
+      texture:
+        path: assets/partyhud/party_background.png
+      offset:
+        x: 0
+        y: -14
+
+partymember_4_p:
+  layers:
+    class_icon:
+      texture:
+        path: assets/partyhud/class/party_class_empty.png
+      conditions:
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_4_name}_{glitchclasses_class}%;v=Vanguard} true texture assets/partyhud/class/party_class_warrior
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_4_name}_{glitchclasses_class}%;v=Warden} true texture assets/partyhud/class/party_class_cleric
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_4_name}_{glitchclasses_class}%;v=Specter} true texture assets/partyhud/class/party_class_assassin
+        - placeholder{ph=%parseother_unsafe_{glitchraid_member_4_name}_{glitchclasses_class}%;v=Operator} true texture assets/partyhud/class/party_class_artificier
+      offset:
+        x: 2
+        y: -2
+        z: 1
+    name:
+      text: "<#cccccc>%glitchraid_member_4_name%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.6
+      offset:
+        x: 19
+        y: -2
+    hp_text:
+      text: "%parseother_unsafe_{glitchraid_member_4_name}_{player_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: left
+      scale: 0.6
+      offset:
+        x: 56
+        y: -8
+    hp_text_divider:
+      text: "/"
+      font: "volya"
+      outlined: true
+      align: center
+      scale: 0.6
+      offset:
+        x: 58
+        y: -8
+    hp_text_max:
+      text: "%parseother_unsafe_{glitchraid_member_4_name}_{player_max_health_rounded}%"
+      font: "volya"
+      outlined: true
+      align: right
+      scale: 0.6
+      offset:
+        x: 61
+        y: -8
+    hp_bar_fill:
+      texture:
+        path: assets/partyhud/party_bar_fill_health.png
+      offset:
+        x: 20
+        y: -9
+      function:
+        listener: member4_health_p
+        increment: 30
+        orientation: horizontal
+    hp_bar_outline:
+      texture:
+        path: assets/partyhud/party_bar_outline_health.png
+      offset:
+        x: 19
+        y: -8
+    residual_bar_fill:
+      texture:
+        path: assets/partyhud/party_bar_fill_mana.png
+      color: "#8a2be2"
+      offset:
+        x: 20
+        y: -13
+      function:
+        listener: member4_residual_p
+        increment: 30
+        orientation: horizontal
+    residual_bar_outline:
+      texture:
+        path: assets/partyhud/party_bar_outline_mana.png
+      offset:
+        x: 19
+        y: -12
+    background:
+      texture:
+        path: assets/partyhud/party_background.png
+      offset:
+        x: 0
+        y: -14

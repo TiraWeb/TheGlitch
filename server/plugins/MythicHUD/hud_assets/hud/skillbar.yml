@@ -1,0 +1,128 @@
+### THE GLITCH — CLASS ABILITY BAR (fresh design, not adapted line-by-line from Volya's
+### Skill Casting HUD — that pack is built around MMOCore's hotbar-bound skill system
+### (1-8 keys, arbitrary skill names, mana cost). We have exactly 3 fixed abilities per
+### class, triggered by fixed keybinds (F / Sneak+F / Sneak+Q), no mana cost. Reused the
+### pack's visual assets (border, slot background, cooldown darken overlay) with a simple
+### 3-slot layout instead.
+###
+### Cooldown remaining comes from %glitchclasses_cooldown_prime/tactical/ultimate% (new
+### placeholders added 2026-09-22) — always shows the number (0 when ready); the darken
+### overlay is shown only while on cooldown.
+skillbar:
+  layers:
+    slot1_bg:
+      texture:
+        path: assets/skill_casting_bar/slot1.png
+      offset:
+        x: 0
+        y: 0
+    slot1_border:
+      texture:
+        path: assets/skill_casting_bar/border_skill.png
+      offset:
+        x: 0
+        y: 0
+    slot1_key:
+      text: "<#6cd71b>F"
+      font: "mmohud-font"
+      align: center
+      scale: 0.6
+      offset:
+        x: 8
+        y: 10
+    slot1_cooldown:
+      text: "%glitchclasses_cooldown_prime%"
+      font: "mmohud-font"
+      align: center
+      scale: 0.8
+      offset:
+        x: 8
+        y: -6
+      conditions:
+      - placeholder{ph=%glitchclasses_cooldown_prime%;v=0;o==} true hide
+    slot1_darken:
+      texture:
+        path: assets/skill_casting_bar/icon_cooldown.png
+      offset:
+        x: 2
+        y: -2
+      conditions:
+      - placeholder{ph=%glitchclasses_cooldown_prime%;v=0;o==} true hide
+
+    slot2_bg:
+      texture:
+        path: assets/skill_casting_bar/slot2.png
+      offset:
+        x: 27
+        y: 0
+    slot2_border:
+      texture:
+        path: assets/skill_casting_bar/border_skill.png
+      offset:
+        x: 27
+        y: 0
+    slot2_key:
+      text: "<#6cd71b>⇧F"
+      font: "mmohud-font"
+      align: center
+      scale: 0.6
+      offset:
+        x: 35
+        y: 10
+    slot2_cooldown:
+      text: "%glitchclasses_cooldown_tactical%"
+      font: "mmohud-font"
+      align: center
+      scale: 0.8
+      offset:
+        x: 35
+        y: -6
+      conditions:
+      - placeholder{ph=%glitchclasses_cooldown_tactical%;v=0;o==} true hide
+    slot2_darken:
+      texture:
+        path: assets/skill_casting_bar/icon_cooldown.png
+      offset:
+        x: 29
+        y: -2
+      conditions:
+      - placeholder{ph=%glitchclasses_cooldown_tactical%;v=0;o==} true hide
+
+    slot3_bg:
+      texture:
+        path: assets/skill_casting_bar/slot3.png
+      offset:
+        x: 54
+        y: 0
+    slot3_border:
+      texture:
+        path: assets/skill_casting_bar/border_skill.png
+      offset:
+        x: 54
+        y: 0
+    slot3_key:
+      text: "<#e5bc63>⇧Q"
+      font: "mmohud-font"
+      align: center
+      scale: 0.6
+      offset:
+        x: 62
+        y: 10
+    slot3_cooldown:
+      text: "%glitchclasses_cooldown_ultimate%"
+      font: "mmohud-font"
+      align: center
+      scale: 0.8
+      offset:
+        x: 62
+        y: -6
+      conditions:
+      - placeholder{ph=%glitchclasses_cooldown_ultimate%;v=0;o==} true hide
+    slot3_darken:
+      texture:
+        path: assets/skill_casting_bar/icon_cooldown.png
+      offset:
+        x: 56
+        y: -2
+      conditions:
+      - placeholder{ph=%glitchclasses_cooldown_ultimate%;v=0;o==} true hide
