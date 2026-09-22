@@ -1,13 +1,24 @@
 # GlitchDungeons Plugin Architecture
 
-> **Status:** Design/specification plus a source prototype. Party, slot, wave,
-> timer, reward, GUI, and extraction classes exist, but this plugin is not
-> complete or runtime-verified and is **deferred by operator decision
-> (2026-08-03)**. Current blockers include list-form mob config
-> parsing, extraction task startup, missing GlitchStash integration, and task
-> cleanup. A defensive config-parse fix (non-numeric keys) was added
-> 2026-08-10; the plugin must not be described as deployable. See
-> [`docs/STATUS.md`](STATUS.md).
+> **Status: RETIRED 2026-09-22.** GlitchDungeons was removed from the repo
+> entirely (module, source, and all `pom.xml`/`build-all.sh` wiring deleted;
+> live jar/data moved to `/opt/theglitch/removed-plugins-2026-09-22/` on the
+> host). Dungeons are being rebuilt on the already-installed **MythicDungeons**
+> plugin instead, configured via its own in-game GUI editor rather than this
+> design's YAML approach. This document is kept as design-intent reference for
+> that rebuild (slot grid, party rules, wave/reward shape), not as a spec for
+> anything currently running. See [`docs/STATUS.md`](STATUS.md) for the
+> removal record and [`ROADMAP.md`](../ROADMAP.md) Phase 5.4 for current status.
+>
+> <details><summary>Pre-removal status (2026-08-03 – 2026-09-22)</summary>
+>
+> Design/specification plus a source prototype. Party, slot, wave,
+> timer, reward, GUI, and extraction classes existed, but the plugin was never
+> complete or runtime-verified and was **deferred by operator decision
+> (2026-08-03)**. Blockers included list-form mob config parsing, extraction
+> task startup, missing GlitchStash integration, and task cleanup.
+>
+> </details>
 
 ## Overview
 GlitchDungeons is the dungeon system for "The Glitch" server. Players form parties, select a dungeon from the hub GUI, get assigned to a pre-built dungeon shell in `glitch_pve`, fight waves of MythicMobs, and extract for loot.

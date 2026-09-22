@@ -71,6 +71,11 @@ Resolved (2026-08-10):
 
 ## GlitchDungeons
 
+> **Retired 2026-09-22 — GlitchDungeons was removed from the repo entirely**
+> (replaced by the MythicDungeons plugin). All open items below reference
+> source files that no longer exist; kept as historical record only, not
+> an open bug list.
+
 | ID | Severity | Location | Status / Description |
 |---|---|---|---|
 | D1 | Warning | `DungeonCommand.java` | Queue flow does not fully validate party-member tier permissions. |
@@ -96,8 +101,8 @@ Resolved:
 
 - Mob type command input is sanitized before dispatch.
 - **2026-08-10:** `DungeonConfig` skips non-numeric `slots`/`dungeons` keys
-  instead of crashing startup (D18 list-vs-section parsing remains open — see
-  deferred GlitchDungeons repair).
+  instead of crashing startup (D18 list-vs-section parsing was never fixed —
+  moot now that GlitchDungeons is removed, see the note above).
 
 ## GlitchItems
 

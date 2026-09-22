@@ -8,12 +8,12 @@
 
 - [ ] `git pull && sudo ./bootstrap.sh` (seeds new MythicMobs SpawnAreas + Spawners subdirs)
 - [ ] Build all changed plugins:
-  - `sudo ./scripts/build-all.sh`  *(preferred: 14-module reactor, topological order — covers all 12 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents/GlitchLoot/GlitchHUD; also syncs `TAB/config.yml` + `negative_space.json`, Nexo `itemname:` config v3)*
-  - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules → GlitchHealthBar` (newer five are reactor-only)
+  - `sudo ./scripts/build-all.sh`  *(preferred: 10-module reactor, topological order — covers all 9 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents; also syncs Nexo `itemname:` config v3)*
+  - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules` (GlitchRaid/GlitchInsurance/GlitchEvents are reactor-only)
   - `sudo ./scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` for economy+armor (Nexo `itemname:`, config v3, `rift_vault=6`, RCON verified)
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./scripts/setup-mythicmobs.sh` (`mm reload` + verify mobs list)
-- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents / GlitchLoot / GlitchHUD (+ `TAB scoreboard.enabled: false` + `Nexo negative_space` sync lines)
+- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents (GlitchDungeons/GlitchHUD/GlitchHealthBar/GlitchLoot removed 2026-09-22 — see docs/STATUS.md; check MythicHUD/MythicDungeons instead once configured)
 - [ ] Model deploys (docs/MODELS.md): blueprint + mob yml copied live → `meg reload models` (`Importing <mid>.bbmodel` → `N models loaded`) → `mm reload` → pack merged to `10_modelengine.zip` → `nexo reload` → **relog** (pack changes need re-download)
 
 ## Custom mob models (ModelEngine, 2026-09-14)
@@ -22,7 +22,7 @@
 - [ ] Warden: `/spawnmythicmob GlitchWarden` → furnace golem faces you (geometric nose forward), feet on grass in idle AND mid-stride (no sinking, no floating)
 - [ ] Warden walks toward you playing the user's 2.4s walk cycle (legs/arms swing, body bob) — not gliding in idle pose
 - [ ] Wisp: `/spawnmythicmob GlitchWisp` → winged rig sweeps up behind it (no twisted/clipped wing slabs), glides while the vex base flies, hovers ~1 unit (no ground clip when it dips)
-- [ ] Both show name + HP bar above the model (GlitchHealthBar named-mob tracking)
+- [ ] Both show name + HP bar above the model (MythicMobs native `HealthBar` field, replaced GlitchHealthBar 2026-09-22 — offsets are unverified guesses, adjust `Offset:` in the mob yml if the bar floats wrong)
 - [ ] Note hitbox feel: warden hits like a golem, wisp like a vex — visuals are bigger than hitboxes by design; wisp scale (~4 blocks) gets an explicit keep/shrink call
 - [ ] Bedrock client check: base entity visible, rig not rendered (known MEG/Geyser limit — Java-only eye candy)
 
@@ -159,15 +159,15 @@
 - [ ] Auto-scheduler: temporarily set `min-interval-minutes: 1`, reload, confirm a random event fires within ~2 min, then restore config
 - [ ] `/glitchevents stop` cancels pending tasks; `/glitchevents reload` applies config changes
 
-## GlitchHUD (new, 2026-09-01)
+## HUD/sidebar (MythicHUD, replaced GlitchHUD 2026-09-22)
 
-> **Verified in-game 2026-09-01:** trimmed divider, hub `Ping`/`TPS` live. Remaining below: `/sb`, below-name, `NOTCHED_10`, per-world layouts.
+> GlitchHUD (per-world sidebar, below-name stacks, `/sb` toggle, `NOTCHED_10` boss bar,
+> TAB takeover) was removed 2026-09-22 — none of the checklist items below apply anymore.
+> MythicHUD now enables cleanly (a packaging bug that broke every enable was fixed live
+> the same day — see docs/STATUS.md), but has no sidebar/HUD content configured yet.
+> Write a fresh checklist here once the operator's MythicHUD config lands.
 
-- [ ] On join, `logs/latest.log` shows `GlitchHUD enabled (refresh=20 ticks, below-name=true)` and `HUD takeover: TAB scoreboard disabled`
-- [ ] In `hub`, `glitch_pve`, and `glitch_red`, sidebar shows no red numbers (`NumberFormat.blank`), per-world layout, dim `<dark_gray>DIVIDER</dark_gray>` only (no `────────` dashes), live `Ping: <ms> TPS: <x.x>` not `—` (hub), `◆ EXTRACTION ◆` pulses subtly (`tick%2` — not flashing), shard/class/next-cycle lines render, and `BELOW_NAME` stacks render under nametags
-- [ ] `/sb` toggle hides/shows the sidebar without needing a rejoin; below-name stacks also hide; re-join restores
-- [ ] Residual Glitch boss bar at cap is `NOTCHED_10` purple with `DARKEN_SCREEN`; otherwise level-based color
-- [ ] `/tab reload` + Nexo pack still loads and `negative_space.json` shifts are present (no glyph overlap)
+- [ ] `logs/latest.log` shows `[MythicHUD] Enabling MythicHUD ...` with no `NullPointerException` right after
 
 ## Economy & item balance (2026-09-02 — docs/ITEM_BALANCE.md)
 
@@ -209,15 +209,14 @@
 - [ ] `/nexo give rune_fragment <you>` lore sell line renders the shard glyph (Java client) and still reads as plain text without the pack
 - [ ] Chat/anvils unaffected by glyph codepoints (PUA E040-E049 not typeable)
 
-## GlitchLoot (smart loot)
+## Mob loot (plain MythicMobs DropTables, replaced GlitchLoot 2026-09-22)
 
-- [ ] On enable, log shows adaptive/budget/anti-funnel summary with correct worlds `[glitch_red, glitch_pve]`
-- [ ] `/glitchloot status` prints your dry streak, current bonus %, power remaining (400/400 fresh hour), cooldown state
-- [ ] Kill monsters without loot drops → dry streak climbs; bonus percent rises (+2% per roll, capped at 25%)
-- [ ] When a bonus roll hits: named bonus item drops (Glitch-touched EMERALD / AMETHYST_SHARD / DIAMOND), action-bar feedback fires, streak decays (50%)
-- [ ] Power budget drains by rarity cost (20/60/150); when exhausted, no bonus items until next hourly reset (log/action-bar says capped)
-- [ ] Anti-funnel: two qualifying kills within 120s → second one suppressed with "cooling down" message
-- [ ] Bonus drops never break normal death loot (vanilla + MythicMobs tables unaffected)
+> GlitchLoot's adaptive dry-streak bonus, hourly power budget, and anti-funnel
+> cooldown were removed entirely — none of the checklist items that used to be
+> here apply anymore. Mob loot is now just whatever each mob's own
+> `server/plugins/MythicMobs/DropTables/*.yml` entry gives, with no bonus layer.
+
+- [ ] Kill a few mobs of different tiers — loot matches each mob's DropTable weights directly, no adaptive bonus items or streak-based scaling
 
 ## Container keys regression (ByteTag PDC fix, 2026-09-01)
 

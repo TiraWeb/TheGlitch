@@ -34,7 +34,7 @@ jobs:
         with:
           scandir: "./scripts"
           # Scan additional top-level and per-plugin scripts (setup-*.sh now live under scripts/, covered by scandir)
-          additional_files: "bootstrap.sh console.sh recover-worlds.sh plugins/GlitchItems/build.sh plugins/GlitchShops/build.sh plugins/GlitchStash/build.sh plugins/GlitchClasses/build.sh plugins/GlitchHideout/build.sh plugins/GlitchDeathRules/build.sh plugins/GlitchHealthBar/build.sh plugins/GlitchDungeons/build.sh"
+          additional_files: "bootstrap.sh console.sh recover-worlds.sh plugins/GlitchItems/build.sh plugins/GlitchShops/build.sh plugins/GlitchStash/build.sh plugins/GlitchClasses/build.sh plugins/GlitchHideout/build.sh plugins/GlitchDeathRules/build.sh"
 
       - name: ShellCheck (fallback via apt-get)
         if: always()
