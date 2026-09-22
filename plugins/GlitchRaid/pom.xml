@@ -52,13 +52,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.alessiodp.parties</groupId>
-            <artifactId>parties-api</artifactId>
-            <version>3.2.17</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/Parties-API.jar</systemPath>
-        </dependency>
-        <dependency>
             <groupId>com.theglitch</groupId>
             <artifactId>GlitchCommon</artifactId>
             <version>1.0.0</version>

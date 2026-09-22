@@ -1,10 +1,11 @@
 generate-default-files: true
 generate-unicode-files: true
+# 2026-09-22 (round 5): removed the imported Volya HUD Bundle content entirely
+# (main resource bar, party HUD, skill bar) per operator request — the TAB
+# scoreboard is the one HUD element we're keeping. No layouts active, so
+# MythicHUD renders nothing; the plugin stays installed for a future config.
 layout:
-  default:
-  - mmohud-layout
-  - partyhud-p-layout
-  - skillbar-layout
+  default: []
 check-update: 5
 placeholder-update: 5
 decimal-format: '#.##'
