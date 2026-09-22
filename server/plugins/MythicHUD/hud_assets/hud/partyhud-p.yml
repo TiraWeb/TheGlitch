@@ -22,12 +22,16 @@
 ### Parties' list_rank_..._<placeholder> mechanism resolves either against the target
 ### member directly (see PartiesPlaceholder#parseListRank upstream).
 ###
-### NOTE: all 4 slots render unconditionally (no hide-if-empty-slot logic) since this
-### plugin's exact true/false condition-direction semantics couldn't be verified without
-### a live client — an empty slot should just show a blank name / 0 health rather than
-### risk an inverted "always hidden" or "never hidden" bug. Revisit once playtested.
+### 2026-09-22 (round 4, first live playtest): confirmed the "true X hide/texture"
+### condition direction works as expected elsewhere in this HUD (skill bar icons,
+### class-icon texture swaps above) — so each slot now hides in the hub (party HUD is
+### raid-only) and hides itself individually once the party doesn't have that many
+### members, using %parties_members_total%.
 
 partymember_1_p:
+  conditions:
+    - placeholder{ph=%world%;v=hub} true hide
+    - placeholder{ph=%parties_members_total%;v=1;o=<} true hide
   layers:
     leader_icon:
       texture:
@@ -124,6 +128,9 @@ partymember_1_p:
         y: -14
 
 partymember_2_p:
+  conditions:
+    - placeholder{ph=%world%;v=hub} true hide
+    - placeholder{ph=%parties_members_total%;v=2;o=<} true hide
   layers:
     class_icon:
       texture:
@@ -214,6 +221,9 @@ partymember_2_p:
         y: -14
 
 partymember_3_p:
+  conditions:
+    - placeholder{ph=%world%;v=hub} true hide
+    - placeholder{ph=%parties_members_total%;v=3;o=<} true hide
   layers:
     class_icon:
       texture:
@@ -304,6 +314,9 @@ partymember_3_p:
         y: -14
 
 partymember_4_p:
+  conditions:
+    - placeholder{ph=%world%;v=hub} true hide
+    - placeholder{ph=%parties_members_total%;v=4;o=<} true hide
   layers:
     class_icon:
       texture:

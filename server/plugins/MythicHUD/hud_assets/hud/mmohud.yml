@@ -331,47 +331,6 @@ residual:
         y: -1
 ####
 ####
-experience:
-  conditions:
-    - gamemode{gm=creative,spectator} false hide
-  layers:
-    textlevel:
-      text: "<#6cd71b>%glitchclasses_level%"
-      font: "mmohud-font-outline"
-      align: center
-      offset:
-        x: 89
-        y: 1
-    textprogress:
-      text: "%fill-value%/%fill-max%"
-      font: "mmohud-font"
-      align: left
-      scale: 0.70
-      offset:
-        x: 150
-        y: 0
-    fill:
-      texture:
-        path: assets/mmohud/bar_fill_exp.png
-      color: "#80ff20"
-      offset:
-        x: 1
-        y: -1
-      function:
-        listener: classxp
-        increment: 43
-        orientation: horizontal
-    outline:
-      texture:
-        path: assets/mmohud/bar_outline_exp.png
-    background:
-      texture:
-        path: assets/mmohud/background_level.png
-      offset:
-        x: 1
-        y: 10
-####
-####
 money:
   conditions:
     - gamemode{gm=creative,spectator} false hide

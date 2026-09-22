@@ -15,4 +15,7 @@ skillbar-layout:
         y: 0.0
       offset:
         x: 0
-        y: 65
+        # 2026-09-22 (round 4): bumped 65->85 — the bar was overlapping the
+        # main resource HUD cluster above it (health tops out around y:51-55
+        # once its icon/bar height is accounted for).
+        y: 85

@@ -1,5 +1,9 @@
 # The Glitch — main HUD layout (positions/offsets from Volya's MMORPG HUD,
 # Vanilla version — unchanged). "residual" replaces the original "mana" element.
+# 2026-09-22 (round 4): removed the "experience" element (class level/XP bar) —
+# its background graphic overlapped the residual/health row above it, and its
+# %fill-value%/%fill-max% text (0/350-style) read as a stray floating number
+# with no clear label. Class level is already shown on the TAB scoreboard.
 mmohud-layout:
   elements:
     health:
@@ -43,15 +47,6 @@ mmohud-layout:
       offset:
         x: 0
         y: -10
-    experience:
-      asset: 'experience'
-      align: center
-      position:
-        x: 50.0
-        y: 0
-      offset:
-        x: -1
-        y: 27
     money:
       asset: 'money'
       align: left

@@ -44,6 +44,12 @@ HEALTHBAR_GLOBAL_check_entity_health:
 
 
 HEALTHBAR_GLOBAL_set_bar:
+  # Note (2026-09-22, round 4): dropped the `mountme` vehicle-mount here — live
+  # testing showed the bar never actually tracked a moving mob even with a
+  # periodic re-mount safety net added the same day. Position is now driven
+  # entirely by a repeating teleportto in HEALTHBAR_ENTITY_determine_status
+  # (see below), which reads the mob's live location every tick instead of
+  # relying on Bukkit vehicle/passenger mechanics.
   Skills:
   - remove @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
   - setvariable{var=caster.hp_bar;type=STRING;value=A} @self
@@ -52,7 +58,6 @@ HEALTHBAR_GLOBAL_set_bar:
   - summon{t=HEALTHBAR_ENTITY} @SelfEyeLocation
   - delay 2
   - mountmodel{mid=<caster.mythic_type>;m=walking;p=hpbar;drive=false} @children{target=item_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
-  - mountme @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
 
 
 
@@ -101,27 +106,25 @@ HEALTHBAR_ENTITY_init:
   - variablesubtract{var=caster.parentlevel;val=" ";type=STRING} @parent{conditions=[ - isplayer false]} ?varequals{var=caster.display_level_on_health_bar;val=false}
   - setvar{var=caster.hpbartimeout;val=<caster.var.hide_timeout_length>;type=INTEGER} @parent
   - setvar{var=caster.hp_bar;val=A;type=STRING} @parent
-  # Note (2026-09-22): the pack's single vertical_offset default (0.25 above eye
-  # location) sits mid-body on mobs whose visual model (ModelEngine) is much
-  # taller than their vanilla hitbox/eye height — e.g. GlitchReaver is a
-  # VINDICATOR (eye height ~1.6) wearing the much taller "endermauler" model.
-  # Per-mob-type overrides live in HEALTHBAR_ENTITY_tall_mob_offsets below;
-  # add a line there for any other custom-modeled mob with the same problem.
+  # Note (2026-09-22, round 4): vertical_offset is now the bar's total height
+  # above the mob's FEET (it used to be a small extra offset added on top of
+  # eye location, back when the bar was mounted rather than teleported —
+  # see HEALTHBAR_ENTITY_determine_status). Default ~2.0 approximates a
+  # player-sized mob's eye height + clearance. Per-mob-type overrides live in
+  # HEALTHBAR_ENTITY_tall_mob_offsets below for custom-modeled mobs whose
+  # visual size doesn't match their vanilla hitbox — add a line there for any
+  # other mob with the same problem.
   - skill{s=HEALTHBAR_ENTITY_tall_mob_offsets} @parent
   - skill{s=HEALTHBAR_ENTITY_set_bar_text;sync=true;delay=1} @self
-  - displaytransformation{action=set;transformation=translation;value=0.0,<caster.var.vertical_offset>,0.0;delay=1} @self
+  - teleportto{location=@ParentLocation{y=<caster.var.vertical_offset>};delay=1} @self
 
 HEALTHBAR_ENTITY_tall_mob_offsets:
   TargetConditions:
   - mythicmobtype{t=GlitchReaver} true
   Skills:
-  - setvar{var=caster.vertical_offset;val=1.1;type=FLOAT} @self
+  - setvar{var=caster.vertical_offset;val=3.0;type=FLOAT} @self
 
-HEALTHBAR_ENTITY_do_remount:
-  Skills:
-  - mountme @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
 
-  
 HEALTHBAR_ENTITY_sudo_give_parent_name:
   Skills:
   - setvar{var=target.parentname;val="<caster.name>";type=STRING} @children
@@ -138,6 +141,7 @@ HEALTHBAR_ENTITY_set_bar_text: #this is the skill that updates every tick and ma
 
 HEALTHBAR_ENTITY_determine_status:
   Skills:
+  - teleportto{location=@ParentLocation{y=<caster.var.vertical_offset>}} @self
   - setvariable{var=target.has_a_health_bar;type=STRING;value=true;duration=10} @parent
   - skill{s=HEALTHBAR_ENTITY_get_owner_health_difference} @parent
   - skill{s=HEALTHBAR_ENTITY_hit_effect} @self ?variableInRange{var=caster.owner_diff_hp;val=>0}
@@ -182,7 +186,7 @@ HEALTHBAR_ENTITY_hit_effect:
   Skills:
   - setvar{var=caster.hidden;val=false;type=STRING} @self
   - setvar{var=target.hpbartimeout;val="<caster.var.hide_timeout_length>";type=FLOAT} @self
-  - displaytransformation{action=set;transformation=translation;value=0.0,<caster.var.vertical_offset>,0.0} @self
+  - displaytransformation{action=set;transformation=translation;value=0.0,0.0,0.0} @self
   - displaytransformation{transformation=LEFT_ROTATION;val=0,0,0.05,0.995} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
   - displaytransformation{transformation=LEFT_ROTATION;val=0,0,-0.05,0.995;delay=1} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
   - displaytransformation{transformation=LEFT_ROTATION;val=0,0,0.03,0.997;delay=2} @children{target=text_displays;conditions=[ - mythicmobtype{t=HEALTHBAR_ENTITY} ]}
@@ -235,7 +239,7 @@ HEALTHBAR_ENTITY_timeout_remove:
   - variableInRange{var=caster.hpbartimeout;val=<0} false
   Skills:
   - displaytransformation{action=set;transformation=SCALE;value=0,0,0} @self
-  - displaytransformation{action=set;transformation=translation;value=0.0,<caster.var.vertical_offset>+0.5,0.0} @self
+  - displaytransformation{action=set;transformation=translation;value=0.0,0.5,0.0} @self
   - setvar{var=caster.hidden;val=true;type=STRING} @self
 
 
