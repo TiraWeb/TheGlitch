@@ -323,7 +323,7 @@ residual:
         increment: 43
         orientation: horizontal
       conditions:
-      - placeholder{ph=%glitchitems_stacks%;v=5;o=>=} true color #ff3b3b
+      - 'placeholder{ph=%glitchitems_stacks%;v=5;o=>=} true color #ff3b3b'
     outline:
       texture:
         path: assets/mmohud/bar_outline.png
