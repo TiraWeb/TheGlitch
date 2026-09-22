@@ -398,43 +398,25 @@ def chest_window(rows):
         d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], fill=WOOD_GOLD)
         px(d, cx, cy, (255, 250, 235, 255))
 
-    # Player's own inventory (always shown below the container, fixed vanilla
-    # offset regardless of N): 4px gap, 3 rows main inv, 4px gap, 1 hotbar row.
-    # Previously left transparent, which rendered as a stray purple/black
-    # checkerboard in-game — now themed to match instead (round 9 follow-up).
-    inv_top = H + 4
-    inv_rows_end = inv_top + 3 * 18
-    hotbar_top = inv_rows_end + 4
-    hotbar_end = hotbar_top + 18
-
-    for y in range(inv_top, hotbar_end):
-        t = (y - inv_top) / (hotbar_end - inv_top)
+    # Player's own inventory (always shown below the container, at a fixed
+    # vanilla offset). Round 9 drew a precise 176px-wide grid here (matching
+    # the container's own coordinates) and it came out visibly WIDER and a
+    # different shape in-game than the container above it — this region isn't
+    # governed by the same 176px assumption we verified for the container
+    # part, and guessing at its real width a second time risks the same kind
+    # of mismatch. So: fill the full remaining canvas width (0..256, not just
+    # 176) with a smooth, borderless gradient instead of a hard-edged grid —
+    # whatever width vanilla actually samples here, a flat color has no edges
+    # to look "wrong shape", unlike grid lines or a border would.
+    for y in range(H, 256):
+        t = (y - H) / (256 - H)
         c = tuple(int(a + (b - a) * t) for a, b in zip(PLAYERINV_LIGHT, PLAYERINV_DARK))
-        d.line([(0, y), (W - 1, y)], fill=c)
+        d.line([(0, y), (255, y)], fill=c)
         if rng.random() < 0.35:
-            x = rng.randrange(W)
+            x = rng.randrange(256)
             n = rng.randint(-8, 8)
             r, g, b_, _ = img.getpixel((x, y))
             px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
-
-    inv_grid_line = (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 90)
-    for row in range(4):
-        gy = inv_top + row * 18
-        d.line([(7, gy), (W - 8, gy)], fill=inv_grid_line)
-    d.line([(7, hotbar_end), (W - 8, hotbar_end)], fill=inv_grid_line)
-    for col in range(10):
-        gx = 7 + col * 18
-        if gx < W - 7:
-            d.line([(gx, inv_top), (gx, inv_rows_end)], fill=inv_grid_line)
-            d.line([(gx, hotbar_top), (gx, hotbar_end)], fill=inv_grid_line)
-
-    for x in range(W):
-        px(d, x, inv_top - 1, WOOD_DARK)
-    for x in range(W):
-        px(d, x, hotbar_end - 1, WOOD_DARK)
-    for y in range(inv_top - 1, hotbar_end):
-        px(d, 0, y, WOOD_DARK)
-        px(d, W - 1, y, WOOD_DARK)
 
     return img
 
@@ -448,14 +430,20 @@ def gen_chest_windows():
 
 
 def inventory_background():
-    """Themed player inventory (E) — 176x166 window used by survival_inventory."""
+    """Themed player inventory (E) — 176x166 window used by survival_inventory.
+
+    Same wood/parchment palette as chest_window(); geometry (crafting-grid
+    hint box, corner accents) is unchanged from the original void-purple
+    version — that layout was already verified correct in-game, only the
+    colors needed to change to match the new chest-GUI theme.
+    """
     W, H = 176, 166
     img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
     rng = random.Random(0xC0FFEE + 1)
     d = ImageDraw.Draw(img)
     for y in range(H):
         t = y / H
-        c = tuple(int(a + (b - a) * t) for a, b in zip(VOID_TOP, VOID_BOT))
+        c = tuple(int(a + (b - a) * t) for a, b in zip(PARCHMENT_LIGHT, PARCHMENT_DARK))
         d.line([(0, y), (W - 1, y)], fill=c)
         if rng.random() < 0.20:
             x = rng.randrange(W)
@@ -464,26 +452,26 @@ def inventory_background():
             px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
     # outer frame
     for x in range(W):
-        px(d, x, 0, AMETHYST)
-        px(d, x, H - 1, AMETHYST)
+        px(d, x, 0, WOOD_DARK)
+        px(d, x, H - 1, WOOD_DARK)
     for y in range(H):
-        px(d, 0, y, AMETHYST)
-        px(d, W - 1, y, AMETHYST)
-    d.rectangle((1, 1, W - 2, H - 2), outline=(52, 24, 82, 255))
+        px(d, 0, y, WOOD_DARK)
+        px(d, W - 1, y, WOOD_DARK)
+    d.rectangle((1, 1, W - 2, H - 2), outline=(WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 255))
     # title underline where "Inventory" / crafting labels sit
-    d.line([(2, 15), (W - 3, 15)], fill=(59, 29, 94, 180))
+    d.line([(2, 15), (W - 3, 15)], fill=(WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 180))
     # slot area hints: subtle inner lines around crafting grid + armor column
     # crafting 2x2 at approx (88,28) in vanilla — hint border
     for x in range(88, 124):
-        px(d, x, 27, (68, 32, 112, 120))
-        px(d, x, 64, (68, 32, 112, 120))
+        px(d, x, 27, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
+        px(d, x, 64, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
     for y in range(27, 65):
-        px(d, 88, y, (68, 32, 112, 120))
-        px(d, 123, y, (68, 32, 112, 120))
+        px(d, 88, y, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
+        px(d, 123, y, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
     # corner runes like chest
     for cx, cy in [(4, 4), (W - 5, 4)]:
-        d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], fill=FUCHSIA)
-        px(d, cx, cy, (250, 240, 255, 255))
+        d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], fill=WOOD_GOLD)
+        px(d, cx, cy, (255, 250, 235, 255))
     return img
 
 
