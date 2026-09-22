@@ -10,22 +10,26 @@ Outputs into server/plugins/Nexo/pack/external_packs/Oraxen/assets/minecraft/tex
   gui/sprites/container/generic_{9,18,27,36,45,54}.png   themed chest windows (256x256 each, one per row count)
   gui/container/generic_{9,18,27,36,45,54}.png           legacy-path duplicates (pre-1.20.2)
 
-The chest-window art itself (2026-09-22 — "GUI pack" drop, ItemsAdder-format,
-adapted for Nexo) is pre-made, not procedural: source PNGs live in
-assets/ui-kits/medieval/ (tracked in git) and are copied byte-for-byte to
-every size Bukkit can open (9/18/27/36/45/54 slots) — previously only the
-54-slot window had a themed override, so Class Detail (45) and Select Red
-Zone (27) fell back to vanilla. assets/ui-kits/medieval/ also carries spare
-menu_template.png/jobs_template.png/profile_template.png/rewards_template.png
-(same 256x256 shape, distinct banner art) plus a buttons.png icon sheet and a
-two-tone bitmap font (typography_title.png/typography_button.png) staged for
-future custom GUIs (e.g. the planned Menu hub) — not wired into the pack yet
-since no size is reserved for them and no bitmap-font provider exists yet.
+The chest-window art is procedural (chest_window()), pinned to vanilla's real
+UV coordinates (176px wide, flush at x=0, 17px header, 18px/row) — round 9
+tried copying the operator-supplied "Medieval" kit's generic_N.png files
+byte-for-byte instead, and it looked fine standalone but was actually drawn
+CENTERED in its 256x256 canvas (content at x=29..226, not x=0..176), which
+vanilla doesn't account for; every item icon rendered scattered relative to
+the drawn grid in-game. Reverted to procedural generation and recolored it to
+the kit's wood/parchment palette (sampled, not copied) instead of the
+original void-purple one, so alignment stays correct by construction.
+assets/ui-kits/medieval/ (tracked in git) still holds the raw kit — the
+generic_N.png files there are NOT usable as direct vanilla overrides for the
+reason above, but menu_template.png/jobs_template.png/profile_template.png/
+rewards_template.png/buttons.png/typography_*.png are staged for a future
+custom GUI (e.g. the planned Menu hub) built via its own layout system
+(DeluxeMenus or a Nexo font-image glyph) rather than a generic_N swap.
 
 Glyph unicode mapping lives in server/plugins/Nexo/glyphs/oraxen_glyphs/theglitch.yml
 and is mirrored in plugins/GlitchItems/.../GlitchUI.java — keep in sync.
-Glyphs/rank badges/inventory.png stay procedural (Arcane Ruins void purple/
-amethyst/aqua palette) — only the chest window itself changed.
+Glyphs/rank badges/inventory.png stay on the original void-purple/amethyst/
+aqua palette — only the chest window itself changed.
 
 Usage:  python scripts/gen-ui-textures.py
 """
@@ -317,18 +321,84 @@ def rank_owner():
 # --------------------------------------------------- vanilla chest window ---
 CHEST_SIZES = (9, 18, 27, 36, 45, 54)
 
+# Wood/parchment palette sampled from assets/ui-kits/medieval/generic_54.png
+# (see docs/STATUS.md round 9 for why it's sampled, not copied wholesale).
+WOOD_DARK = (97, 51, 37, 255)
+WOOD_MID = (131, 74, 53, 255)
+PARCHMENT_LIGHT = (222, 197, 160, 255)
+PARCHMENT_DARK = (188, 158, 122, 255)
+WOOD_GOLD = (251, 185, 84, 255)
 
-def copy_chest_windows():
-    """Copy the pre-made Medieval GUI-kit chest windows to every chest size.
 
-    Each generic_N.png in assets/ui-kits/medieval/ is already 256x256 and
-    matches the vanilla container atlas layout, so this is a straight copy —
-    no per-size generation needed (unlike the old procedural single-texture
-    approach, this set has real art for all 6 row counts, not just 54).
+def chest_window(rows):
+    """Themed override for container/generic_{rows*9}.png (256x256).
+
+    Vanilla blits this texture starting at pixel (0,0) with a fixed 176px
+    width, a 17px header, and 18px-tall slot rows — it does NOT auto-detect
+    or center content, so those exact coordinates are load-bearing, not a
+    style choice. (Round 9: the operator-supplied "Medieval" kit PNGs looked
+    fine standalone but drew their panel centered in the 256x256 canvas
+    (content x=29..226) instead of flush at x=0 — vanilla then sampled a
+    misaligned crop, scattering every item icon relative to the drawn grid.
+    Reverted to procedural generation, which is pinned to vanilla's real
+    coordinates by construction, just recolored to the kit's wood/parchment
+    palette instead of the original void-purple one.)
     """
+    img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    rng = random.Random(0xC0FFEE)
+    d = ImageDraw.Draw(img)
+
+    W = 176
+    H = 17 + rows * 18
+    for y in range(H):
+        t = y / H
+        c = tuple(int(a + (b - a) * t) for a, b in zip(PARCHMENT_LIGHT, PARCHMENT_DARK))
+        d.line([(0, y), (W - 1, y)], fill=c)
+        if rng.random() < 0.35:
+            x = rng.randrange(W)
+            n = rng.randint(-8, 8)
+            r, g, b_, _ = img.getpixel((x, y))
+            px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
+
+    # per-cell grid — 18px squares starting at (7,17), matching vanilla's real slot pitch
+    grid_line = (WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 70)
+    for row in range(rows + 1):
+        gy = 17 + row * 18
+        if gy < H:
+            d.line([(7, gy), (W - 8, gy)], fill=grid_line)
+    for col in range(10):
+        gx = 7 + col * 18
+        if gx < W - 7:
+            d.line([(gx, 17), (gx, H - 2)], fill=grid_line)
+
+    # outer border
+    for y in range(H):
+        px(d, 0, y, WOOD_DARK)
+        px(d, W - 1, y, WOOD_DARK)
+    for x in range(W):
+        px(d, x, 0, WOOD_DARK)
+    by = H - 1
+    for x in range(W):
+        px(d, x, by, WOOD_DARK)
+    for x in range(1, W - 1):
+        px(d, x, by - 1, WOOD_MID)
+    d.line([(2, 15), (W - 3, 15)], fill=WOOD_MID)
+    d.line([(2, 16), (W - 3, 16)], fill=(WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 150))
+    for row in range(1, rows):
+        gy = 17 + row * 18 - 1
+        d.line([(2, gy), (W - 3, gy)], fill=(WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 110))
+
+    for cx, cy in [(4, 4), (W - 5, 4)]:
+        d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], fill=WOOD_GOLD)
+        px(d, cx, cy, (255, 250, 235, 255))
+
+    return img
+
+
+def gen_chest_windows():
+    """Generate the procedural wood/parchment chest window at every size."""
     for n in CHEST_SIZES:
-        src = UI_KIT / f"generic_{n}.png"
-        img = Image.open(src).convert("RGBA")
+        img = chest_window(n // 9)
         save(img, f"gui/sprites/container/generic_{n}.png")
         save(img.copy(), f"gui/container/generic_{n}.png")  # legacy path fallback
 
@@ -395,7 +465,7 @@ def main():
     save(rank_moderator(), f"{g}/rank_moderator.png")
     save(rank_admin(), f"{g}/rank_admin.png")
     save(rank_owner(), f"{g}/rank_owner.png")
-    copy_chest_windows()
+    gen_chest_windows()
     inv = inventory_background()
     save(inv, "gui/sprites/container/inventory.png")
     save(inv.copy(), "gui/container/inventory.png")
