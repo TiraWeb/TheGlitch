@@ -4,8 +4,12 @@
 
 
 HEALTHBAR_GLOBAL_init:
+  # Note (2026-09-22): the gamerule command{} line below threw a CommandSyntaxException
+  # ("Incorrect argument for command at position 9") every time this mob spawned — the
+  # MARKER entity type doesn't appear to be a valid command source for /gamerule on this
+  # server/version. It was purely cosmetic (silencing command feedback spam), so removed
+  # rather than chased further.
   Skills:
-  - command{c="gamerule sendCommandFeedback false"}
   - setchunkforceloaded @Location{location=0,0,0,0,0}
   - teleportto{location=0,0,0} @self
   - skill{s=HEALTHBAR_GLOBAL_purge_healthbars} @EIW

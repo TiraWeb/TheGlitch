@@ -10,10 +10,13 @@ HEALTHBAR_GLOBAL_LISTENER:
   Options:
     Collidable: false
     Despawn: PERSISTENT
+  # Note (2026-09-22): the pack's own skills/healthbar.yml never actually defines
+  # HEALTHBAR_GLOBAL_reset_player_vars (checked — it's not in that file at all), so
+  # this line threw "Could not find MetaSkill" on every ~onTimer:20 tick — removed.
+  # It was a maintenance/cleanup skill per the pack's readme, not core functionality.
   Skills:
   - skill{s=HEALTHBAR_GLOBAL_init} @self ~onSpawn
   - skill{s=HEALTHBAR_GLOBAL_check_entity_health;sync=true} @EIW ~onTimer:5
-  - skill{s=HEALTHBAR_GLOBAL_reset_player_vars} @EIW ~onTimer:20
 
 
 
