@@ -1,0 +1,734 @@
+# The Glitch — Mystic Arsenal: 25 curated weapons from the operator-supplied
+# "Fantasy Weapons" pack (Skulpt's Fantasy Arsenal, Nexo-native custom 3D
+# models under the skulpt: namespace). Sold in GlitchShops' Mystic category
+# only — deliberately above the Legendary gear tier: flat +6 ATTACK_DAMAGE,
+# +0.5 ATTACK_SPEED, and near-max vanilla enchant stack, priced far above
+# even a godroll Legendary (docs/ITEM_BALANCE.md: ~6100 shards) so it reads
+# as a genuine prestige/endgame chase purchase, not a routine upgrade.
+# See docs/STATUS.md round 11 for the full pick rationale + pricing tiers.
+
+colossal_sword:
+  itemname: <gradient:#a855f7:#f472b6><bold>Colossal Sword</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/colossal_sword
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>A blade too large for mortal hands, yet you wield it anyway.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+
+core_hammer:
+  itemname: <gradient:#a855f7:#f472b6><bold>Core Hammer</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/core_hammer
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Struck from the molten heart of a dying world.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+cursed_spear:
+  itemname: <gradient:#a855f7:#f472b6><bold>Cursed Spear</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/cursed_spear
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Every kill feeds the curse. The curse feeds you back.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+dark_destroyer:
+  itemname: <gradient:#a855f7:#f472b6><bold>Dark Destroyer</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/dark_destroyer
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Silence follows wherever this has been drawn.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+
+death_hand:
+  itemname: <gradient:#a855f7:#f472b6><bold>Death Hand</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/death_hand
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>It remembers every throat it has touched.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+
+void_sword:
+  itemname: <gradient:#a855f7:#f472b6><bold>Void Sword</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/void_sword
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Where it cuts, reality forgets to heal.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>20000 Shards</aqua></gray>"
+
+ktanazul:
+  itemname: <gradient:#a855f7:#f472b6><bold>Ktanazul</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/ktanazul
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>A name older than this server. Say it carefully.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>20000 Shards</aqua></gray>"
+
+hell_bringer:
+  itemname: <gradient:#a855f7:#f472b6><bold>Hell Bringer</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/hell_bringer
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Forged in a fire that never learned to stop.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>20000 Shards</aqua></gray>"
+
+moonlight:
+  itemname: <gradient:#a855f7:#f472b6><bold>Moonlight</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/moonlight
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Cold, quiet, and utterly merciless.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+
+jade_glaive:
+  itemname: <gradient:#a855f7:#f472b6><bold>Jade Glaive</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/jade_glaive
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Carved from a stone that was never meant to be sharp.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+lantern_scythe:
+  itemname: <gradient:#a855f7:#f472b6><bold>Lantern Scythe</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/lantern_scythe
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>It lights the way to wherever it sends you.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+great_scythe:
+  itemname: <gradient:#a855f7:#f472b6><bold>Great Scythe</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/great_scythe
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>The harvest is whatever stands in front of it.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+prismarine_greataxe:
+  itemname: <gradient:#a855f7:#f472b6><bold>Prismarine Greataxe</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/prismarine_greataxe
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Drowned kingdoms remember this edge.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+silver_halberd:
+  itemname: <gradient:#a855f7:#f472b6><bold>Silver Halberd</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/silver_halberd
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Polished by a thousand duels, dulled by none.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+storm_axe:
+  itemname: <gradient:#a855f7:#f472b6><bold>Storm Axe</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/storm_axe
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Thunder follows the swing, not the other way around.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+twisted_greatsword:
+  itemname: <gradient:#a855f7:#f472b6><bold>Twisted Greatsword</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/twisted_greatsword
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Its shape argues with the laws of steel.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+singularity_hammer_awakened:
+  itemname: <gradient:#a855f7:#f472b6><bold>Singularity Hammer (Awakened)</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/singularity_hammer_awakened
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Every swing bends the space around it.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>20000 Shards</aqua></gray>"
+
+duality:
+  itemname: <gradient:#a855f7:#f472b6><bold>Duality</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/duality
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Two edges. One truth. Choose wisely.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>20000 Shards</aqua></gray>"
+
+yin:
+  itemname: <gradient:#a855f7:#f472b6><bold>Yin</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/yin
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Half of something whole, devastating on its own.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+yang:
+  itemname: <gradient:#a855f7:#f472b6><bold>Yang</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/yang
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>The other half. Together, unstoppable.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
+
+blood_gladius_awakened:
+  itemname: <gradient:#a855f7:#f472b6><bold>Blood Gladius (Awakened)</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/blood_gladius_awakened
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>It drinks before you do.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+
+celestial_night_blade:
+  itemname: <gradient:#a855f7:#f472b6><bold>Celestial Night Blade</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/celestial_night_blade
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Cut from the dark between the stars.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+
+combustion_awakened:
+  itemname: <gradient:#a855f7:#f472b6><bold>Combustion (Awakened)</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/combustion_awakened
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>It doesn't burn. It detonates.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+
+resistance_greatsword_awakened:
+  itemname: <gradient:#a855f7:#f472b6><bold>Resistance Greatsword (Awakened)</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/resistance_greatsword_awakened
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>Nothing gets through. Nothing gets past.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+
+royal_greatsword_awakened:
+  itemname: <gradient:#a855f7:#f472b6><bold>Royal Greatsword (Awakened)</bold></gradient>
+  material: NETHERITE_SWORD
+  Pack:
+    generate_model: false
+    model: skulpt:arsenals/fantasy_arsenal/royal_greatsword_awakened
+  AttributeModifiers:
+    - attribute: ATTACK_DAMAGE
+      amount: 6
+      operation: ADD_NUMBER
+      slot: MAINHAND
+    - attribute: ATTACK_SPEED
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: MAINHAND
+  Enchantments:
+    sharpness: 7
+    fire_aspect: 3
+    looting: 4
+    sweeping_edge: 3
+    knockback: 2
+    unbreaking: 5
+    mending: 1
+  lore:
+  - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
+  - "<dark_gray><italic>A crown was melted down to forge this edge.</italic></dark_gray>"
+  - ''
+  - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
+

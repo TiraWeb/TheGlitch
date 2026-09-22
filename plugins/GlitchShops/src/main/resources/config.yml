@@ -6,8 +6,18 @@ config-version: 1
 bazaar-npc-names:
   - "Grand Bazaar"
 
-# Tab opened by default (materials, keys, alchemy, rifts, gear)
+# Tab opened by default (materials, keys, alchemy, rifts, gear, mystic)
 default-tab: materials
+
+# Category tab order (row 1, up to 6 shown) — falls back to the built-in
+# materials/keys/alchemy/rifts/gear order if this list is empty/missing.
+tab-order:
+  - materials
+  - keys
+  - alchemy
+  - rifts
+  - gear
+  - mystic
 
 # Gear vendor (rotating stock)
 gear:

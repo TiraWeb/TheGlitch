@@ -377,6 +377,23 @@ godroll for roughly double (numbers in docs/ITEM_BALANCE.md §3). Rift sell
 price ≈ 60% of the identify fee (selling skips the gamble). Buy price ≈ sell × 1.5–3
 (greater for low-tier, keeps vendor margins meaningful).
 
+### Mystic tier (2026-09-23, round 11)
+
+A 6th shop category, `mystic`, sells 25 fixed named weapons (`server/plugins/Nexo/items/oraxen_items/fantasy_weapons.yml`)
+deliberately priced **above** even a max-roll Legendary godroll (~6100 at the
+gear vendor). Individual prices are in `plugins/GlitchShops/src/main/resources/shops.yml`
+(source of truth, per rule 3 above); the tier bands:
+
+| Tier | Sell | Buy | Feel |
+|---|---|---|---|
+| Mystic I | 20000 | 35000 | the most "legendary-sounding" 5 names (Ktanazul, Void Sword, Hell Bringer, Duality, Singularity Hammer Awakened) |
+| Mystic II | 14000 | 25000 | 9 weapons |
+| Mystic III | 10000 | 18000 | 11 weapons |
+
+Not roll-based — every copy of a given Mystic weapon is identical (flat
+`ATTACK_DAMAGE +6` / `ATTACK_SPEED +0.5` plus a fixed high-tier vanilla
+enchant stack, see docs/STATUS.md round 11 for the exact list).
+
 ### Lore format
 
 Every custom item ends with the same line:

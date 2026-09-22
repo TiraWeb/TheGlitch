@@ -48,7 +48,7 @@ public final class ShopManager {
     private volatile Map<String, Integer> rarityWeights = new LinkedHashMap<>();
     private volatile List<String> rarityNames = List.of();
     private volatile int rarityTotalWeight = 0;
-    private volatile List<String> tabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear");
+    private volatile List<String> tabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear", "mystic");
     private volatile String defaultTab = "materials";
     private volatile int buyStackSize = 64;
     private volatile Map<String, String> messageTemplates = new HashMap<>();
@@ -168,7 +168,7 @@ public final class ShopManager {
             if (cfgTabs != null && !cfgTabs.isEmpty()) {
                 tabOrder = List.copyOf(cfgTabs);
             } else {
-                tabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear");
+                tabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear", "mystic");
             }
             String def = plugin.getConfig().getString("default-tab", "materials");
             if (def == null || def.isBlank() || !tabOrder.contains(def)) {

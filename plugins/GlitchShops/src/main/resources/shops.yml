@@ -40,3 +40,32 @@ shops:
       unstable_rift_rare: { buy: 150, sell: 45 }
       unstable_rift_epic: { buy: 500, sell: 150 }
       unstable_rift_legendary: { buy: 1500, sell: 500 }
+  mystic:
+    title: "Mystic"
+    tab-icon: "void_sword"
+    stock:
+      colossal_sword: { buy: 25000, sell: 14000 }
+      core_hammer: { buy: 18000, sell: 10000 }
+      cursed_spear: { buy: 18000, sell: 10000 }
+      dark_destroyer: { buy: 25000, sell: 14000 }
+      death_hand: { buy: 25000, sell: 14000 }
+      void_sword: { buy: 35000, sell: 20000 }
+      ktanazul: { buy: 35000, sell: 20000 }
+      hell_bringer: { buy: 35000, sell: 20000 }
+      moonlight: { buy: 25000, sell: 14000 }
+      jade_glaive: { buy: 18000, sell: 10000 }
+      lantern_scythe: { buy: 18000, sell: 10000 }
+      great_scythe: { buy: 18000, sell: 10000 }
+      prismarine_greataxe: { buy: 18000, sell: 10000 }
+      silver_halberd: { buy: 18000, sell: 10000 }
+      storm_axe: { buy: 18000, sell: 10000 }
+      twisted_greatsword: { buy: 18000, sell: 10000 }
+      singularity_hammer_awakened: { buy: 35000, sell: 20000 }
+      duality: { buy: 35000, sell: 20000 }
+      yin: { buy: 18000, sell: 10000 }
+      yang: { buy: 18000, sell: 10000 }
+      blood_gladius_awakened: { buy: 25000, sell: 14000 }
+      celestial_night_blade: { buy: 25000, sell: 14000 }
+      combustion_awakened: { buy: 25000, sell: 14000 }
+      resistance_greatsword_awakened: { buy: 25000, sell: 14000 }
+      royal_greatsword_awakened: { buy: 25000, sell: 14000 }

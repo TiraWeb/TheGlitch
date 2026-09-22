@@ -49,7 +49,7 @@ public final class ShopGUI implements Listener {
     private static final Map<UUID, Session> sessions = new HashMap<>();
     private static final Set<UUID> switchingGui = new HashSet<>();
 
-    private record Session(String category, boolean sellMode) {
+    private record Session(String category, boolean sellMode, int page) {
     }
 
     private final GlitchShops plugin;
@@ -79,7 +79,7 @@ public final class ShopGUI implements Listener {
         this.dialogsEnabled = plugin.getConfig().getBoolean("modern-ui.dialogs", false);
         if (this.cachedTabOrder == null || this.cachedTabOrder.isEmpty()) {
             plugin.getLogger().warning("ShopGUI: cached tab order empty — using fallback.");
-            this.cachedTabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear");
+            this.cachedTabOrder = List.of("materials", "keys", "alchemy", "rifts", "gear", "mystic");
         }
         if (this.cachedDefaultTab == null || this.cachedDefaultTab.isBlank()) {
             this.cachedDefaultTab = this.cachedTabOrder.get(0);
@@ -94,10 +94,14 @@ public final class ShopGUI implements Listener {
     }
 
     public void open(Player player, String category) {
-        open(player, category, false);
+        open(player, category, false, 0);
     }
 
     public void open(Player player, String category, boolean sellMode) {
+        open(player, category, sellMode, 0);
+    }
+
+    public void open(Player player, String category, boolean sellMode, int page) {
         // No getConfig() — use cached default tab and cached tab order
         if (cachedTabOrder == null) refreshCache();
         if (!cachedTabOrder.contains(category)) {
@@ -126,6 +130,7 @@ public final class ShopGUI implements Listener {
             inv.setItem(11 + i, categoryTab(tab, tab.equals(category)));
         }
 
+        int effectivePage = 0;
         if (sellMode) {
             ItemStack sellingIcon = guiIcon("gui_coin", Material.GOLD_BLOCK,
                     "<gold><bold>SELLING</bold></gold>",
@@ -133,10 +138,10 @@ public final class ShopGUI implements Listener {
                     "<yellow>Left-click = 1 · Shift-click = stack</yellow>");
             ModernLayout.setStateIcon(inv, sellingIcon);
         } else {
-            fillStock(inv, player, category);
+            effectivePage = fillStock(inv, player, category, page);
         }
 
-        sessions.put(player.getUniqueId(), new Session(category, sellMode));
+        sessions.put(player.getUniqueId(), new Session(category, sellMode, effectivePage));
         switchingGui.add(player.getUniqueId());
         player.openInventory(inv);
         switchingGui.remove(player.getUniqueId());
@@ -146,7 +151,8 @@ public final class ShopGUI implements Listener {
         }
     }
 
-    private void fillStock(Inventory inv, Player player, String category) {
+    /** Returns the effective (clamped) page actually rendered. */
+    private int fillStock(Inventory inv, Player player, String category, int page) {
         final int[] STOCK_SLOTS = ModernLayout.STOCK_SLOTS;
         int idx = 0;
         if (category.equals("gear")) {
@@ -173,14 +179,25 @@ public final class ShopGUI implements Listener {
                         "<red>Out of stock</red>",
                         "<gray>The vendor will restock soon.</gray>"));
             }
-            return;
+            return 0;
         }
 
         ShopManager.Shop shop = shopManager.getShop(category);
-        if (shop == null) return;
+        if (shop == null) return 0;
+
+        List<Map.Entry<String, ShopManager.StockEntry>> entries = new java.util.ArrayList<>();
         for (Map.Entry<String, ShopManager.StockEntry> entry : shop.stock().entrySet()) {
-            if (idx >= STOCK_SLOTS.length) break;
-            if (entry.getValue().buy() <= 0) continue;
+            if (entry.getValue().buy() > 0) entries.add(entry);
+        }
+
+        int perPage = STOCK_SLOTS.length;
+        int totalPages = Math.max(1, (entries.size() + perPage - 1) / perPage);
+        int clampedPage = Math.max(0, Math.min(page, totalPages - 1));
+        int start = clampedPage * perPage;
+        int end = Math.min(start + perPage, entries.size());
+
+        for (int i = start; i < end; i++) {
+            Map.Entry<String, ShopManager.StockEntry> entry = entries.get(i);
             ItemStack item;
             try {
                 ItemBuilder builder = NexoItems.itemFromId(entry.getKey());
@@ -205,6 +222,29 @@ public final class ShopGUI implements Listener {
             });
             inv.setItem(STOCK_SLOTS[idx++], item);
         }
+
+        if (totalPages > 1) {
+            boolean hasPrev = clampedPage > 0;
+            boolean hasNext = clampedPage < totalPages - 1;
+            ItemStack prev = plainIcon(hasPrev ? Material.ARROW : Material.GRAY_DYE,
+                    hasPrev ? "<yellow>◀ Previous Page</yellow>" : "<dark_gray>◀ Previous Page</dark_gray>",
+                    "<gray>Page " + (clampedPage + 1) + " / " + totalPages + "</gray>");
+            ItemStack next = plainIcon(hasNext ? Material.ARROW : Material.GRAY_DYE,
+                    hasNext ? "<yellow>Next Page ▶</yellow>" : "<dark_gray>Next Page ▶</dark_gray>",
+                    "<gray>Page " + (clampedPage + 1) + " / " + totalPages + "</gray>");
+            if (hasPrev) {
+                prev.editMeta(ItemMeta.class, m ->
+                        m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "page_prev"));
+            }
+            if (hasNext) {
+                next.editMeta(ItemMeta.class, m ->
+                        m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "page_next"));
+            }
+            inv.setItem(45, prev);
+            inv.setItem(53, next);
+        }
+
+        return clampedPage;
     }
 
     private ItemStack guiIcon(String nexoId, Material fallback, String name, String... lore) {
@@ -225,6 +265,22 @@ public final class ShopGUI implements Listener {
                 if (line != null && !line.equals(" ")) {
                     lines.add(MM.deserialize(line));
                 }
+            }
+            meta.lore(lines);
+        }
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    /** Plain vanilla-material icon, no Nexo lookup — for GUI controls with no custom icon of their own. */
+    private ItemStack plainIcon(Material material, String name, String... lore) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (name != null) meta.customName(MM.deserialize(name));
+        if (lore != null && lore.length > 0) {
+            List<Component> lines = new java.util.ArrayList<>();
+            for (String line : lore) {
+                if (line != null) lines.add(MM.deserialize(line));
             }
             meta.lore(lines);
         }
@@ -272,6 +328,9 @@ public final class ShopGUI implements Listener {
             case "rifts":
                 fallback = Material.AMETHYST_SHARD;
                 break;
+            case "mystic":
+                fallback = Material.NETHERITE_SWORD;
+                break;
             default:
                 fallback = Material.DIAMOND_SWORD;
                 break;
@@ -295,6 +354,7 @@ public final class ShopGUI implements Listener {
             case "keys": return "Keys";
             case "alchemy": return "Alchemy";
             case "rifts": return "Rifts";
+            case "mystic": return "Mystic";
             default: return "Gear";
         }
     }
@@ -351,6 +411,12 @@ public final class ShopGUI implements Listener {
                 if (category != null) {
                     open(player, category, session.sellMode());
                 }
+                break;
+            case "page_prev":
+                if (!session.sellMode()) open(player, session.category(), false, session.page() - 1);
+                break;
+            case "page_next":
+                if (!session.sellMode()) open(player, session.category(), false, session.page() + 1);
                 break;
             case "buy": {
                 if (session.sellMode()) return;
