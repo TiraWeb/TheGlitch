@@ -72,17 +72,23 @@ mc "lp group dev parent add helper"
 mc "lp group moderator parent add helper"
 mc "lp group owner parent add admin"
 
-# --- prefixes (priority = weight; &l = bold glow look) ---------------------
+# --- prefixes (priority = weight) -------------------------------------------
+# Just the badge glyph, no more "&color&l[TAG]" text (2026-09-23, round 10
+# follow-up): the Mythic Ranks badges bake the rank name into the icon
+# itself, so the old bracket text was pure redundancy on Java clients.
+# Bedrock can't render the glyph at all and now shows nothing where the
+# rank used to be (an empty prefix) — operator explicitly accepted that
+# tradeoff over the redundant text. See docs/STATUS.md round 10.
 log "Setting prefixes"
-mc "lp group wisp meta setprefix 20 \"$I_WISP &f&l[WISP] \""
-mc "lp group stalker meta setprefix 30 \"$I_STALKER &5&l[STALKER] \""
-mc "lp group sentinel meta setprefix 40 \"$I_SENTINEL &6&l[SENTINEL] \""
-mc "lp group helper meta setprefix 400 \"$I_HELPER &9&l[HELPER] \""
-mc "lp group dev meta setprefix 600 \"$I_DEV &d&l[DEV] \""
-mc "lp group owner meta setprefix 1100 \"$I_OWNER &e&l[OWNER] \""
-mc "lp group default meta setprefix 1 \"$I_MEMBER &7[Member] \""
-mc "lp group moderator meta setprefix 500 \"$I_MODERATOR &a&l[MOD] \""
-mc "lp group admin meta setprefix 1000 \"$I_ADMIN &c&l[ADMIN] \""
+mc "lp group wisp meta setprefix 20 \"$I_WISP \""
+mc "lp group stalker meta setprefix 30 \"$I_STALKER \""
+mc "lp group sentinel meta setprefix 40 \"$I_SENTINEL \""
+mc "lp group helper meta setprefix 400 \"$I_HELPER \""
+mc "lp group dev meta setprefix 600 \"$I_DEV \""
+mc "lp group owner meta setprefix 1100 \"$I_OWNER \""
+mc "lp group default meta setprefix 1 \"$I_MEMBER \""
+mc "lp group moderator meta setprefix 500 \"$I_MODERATOR \""
+mc "lp group admin meta setprefix 1000 \"$I_ADMIN \""
 
 # --- TAB sorting membership (TAB groups.yml GROUPS list matches these) -----
 log "Setting TAB group membership flags"

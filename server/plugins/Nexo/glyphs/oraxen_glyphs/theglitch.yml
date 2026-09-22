@@ -90,9 +90,11 @@ title_rune:
 # copied in by scripts/gen-ui-textures.py) — wide (80x16) Hypixel-style
 # badges with the rank name baked into the art, hence ascent/height changed
 # from the old procedural icons' 8/9 to 9/13 to match. LuckPerms prefixes
-# still carry their own "&color&l[TAG]" text after the glyph unchanged, so
-# Bedrock clients (who can't render the glyph at all) keep a readable
-# plain-text tag — nothing lost but decoration.
+# (scripts/setup-ranks.sh) are now JUST the glyph, no "&color&l[TAG]" text
+# (round 10 follow-up, operator request) — the badge already spells the
+# rank out, so the bracket text was redundant on Java. Bedrock clients
+# can't render the glyph at all and now see an empty prefix (no rank tag);
+# operator explicitly accepted that tradeoff over the redundant text.
 rank_member:
   texture: glyphs/rank_member
   ascent: 9
