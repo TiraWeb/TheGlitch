@@ -357,10 +357,8 @@ def gen_chest_windows():
 def inventory_background():
     """Themed player inventory (E) — 176x166 window used by survival_inventory.
 
-    Same wood/parchment palette as chest_window(); geometry (crafting-grid
-    hint box, corner accents) is unchanged from the original void-purple
-    version — that layout was already verified correct in-game, only the
-    colors needed to change to match the new chest-GUI theme.
+    Same wood/parchment palette as chest_window(). No title underline (it
+    cut through the armor column); every slot gets a box at vanilla coords.
     """
     W, H = 176, 166
     img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
@@ -383,41 +381,34 @@ def inventory_background():
         px(d, 0, y, WOOD_DARK)
         px(d, W - 1, y, WOOD_DARK)
     d.rectangle((1, 1, W - 2, H - 2), outline=(WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 255))
-    # title underline where "Inventory" / crafting labels sit
-    d.line([(2, 15), (W - 3, 15)], fill=(WOOD_MID[0], WOOD_MID[1], WOOD_MID[2], 180))
-    # slot area hints: subtle inner lines around crafting grid + armor column
-    # crafting 2x2 at approx (88,28) in vanilla — hint border
-    for x in range(88, 124):
-        px(d, x, 27, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
-        px(d, x, 64, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
-    for y in range(27, 65):
-        px(d, 88, y, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
-        px(d, 123, y, (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 120))
-
-    # Per-slot grid for armor column (4 slots, x=7..25) and main inv + hotbar
-    # (standard vanilla survival_inventory coordinates — this screen's own
-    # geometry, unlike the chest window's player-inv strip, was never in
-    # question, only the missing grid art).
+    # Per-slot boxes at the exact vanilla survival_inventory coordinates:
+    # a box spans (x, y)..(x+18, y+18) and the item draws at (x+1, y+1).
     inv_grid_line = (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 110)
-    for row in range(5):
-        gy = 7 + row * 18
-        d.line([(7, gy), (25, gy)], fill=inv_grid_line)
-    for gx in (7, 25):
-        d.line([(gx, 7), (gx, 79)], fill=inv_grid_line)
 
-    inv_top = 83
-    for row in range(4):
-        gy = inv_top + row * 18
-        d.line([(7, gy), (W - 8, gy)], fill=inv_grid_line)
-    hotbar_top = inv_top + 3 * 18 + 4
-    hotbar_end = hotbar_top + 18
-    d.line([(7, hotbar_top), (W - 8, hotbar_top)], fill=inv_grid_line)
-    d.line([(7, hotbar_end), (W - 8, hotbar_end)], fill=inv_grid_line)
-    for col in range(10):
-        gx = 7 + col * 18
-        if gx < W - 7:
-            d.line([(gx, inv_top), (gx, inv_top + 3 * 18)], fill=inv_grid_line)
-            d.line([(gx, hotbar_top), (gx, hotbar_end)], fill=inv_grid_line)
+    def slot_box(x, y, size=18):
+        d.rectangle((x, y, x + size, y + size), outline=inv_grid_line)
+
+    for row in range(4):                      # armor column
+        slot_box(7, 7 + row * 18)
+    slot_box(76, 61)                          # offhand
+    for row in range(2):                      # 2x2 crafting grid
+        for col in range(2):
+            slot_box(97 + col * 18, 17 + row * 18)
+    slot_box(153, 27)                         # crafting output
+    # crafting arrow between grid and output
+    arrow = (WOOD_DARK[0], WOOD_DARK[1], WOOD_DARK[2], 150)
+    d.line([(137, 36), (147, 36)], fill=arrow)
+    d.polygon([(147, 33), (150, 36), (147, 39)], fill=arrow)
+
+    inv_top = 83                              # main inventory, 3 rows
+    hotbar_top = inv_top + 3 * 18 + 4         # hotbar, 1 row
+    for top, rows in ((inv_top, 3), (hotbar_top, 1)):
+        for row in range(rows + 1):
+            gy = top + row * 18
+            d.line([(7, gy), (7 + 9 * 18, gy)], fill=inv_grid_line)
+        for col in range(10):
+            gx = 7 + col * 18
+            d.line([(gx, top), (gx, top + rows * 18)], fill=inv_grid_line)
 
     # corner runes like chest
     for cx, cy in [(4, 4), (W - 5, 4)]:

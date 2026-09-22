@@ -67,13 +67,13 @@ core_hammer:
   - ''
   - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
 
-cursed_spear:
-  itemname: <gradient:#a855f7:#f472b6><bold>Cursed Spear</bold></gradient>
+violet_splitter:
+  itemname: <gradient:#a855f7:#f472b6><bold>Violet Splitter</bold></gradient>
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
     oversized_in_gui: true
-    model: skulpt:arsenals/fantasy_arsenal/cursed_spear
+    model: skulpt:arsenals/fantasy_arsenal/violet_splitter
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
       amount: 6
@@ -93,7 +93,7 @@ cursed_spear:
     mending: 1
   lore:
   - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
-  - "<dark_gray><italic>Every kill feeds the curse. The curse feeds you back.</italic></dark_gray>"
+  - "<dark_gray><italic>Splits armor, bone and certainty alike.</italic></dark_gray>"
   - ''
   - " <gray>Sell price: <aqua>10000 Shards</aqua></gray>"
 
@@ -637,13 +637,13 @@ blood_gladius_awakened:
   - ''
   - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
 
-celestial_night_blade:
-  itemname: <gradient:#a855f7:#f472b6><bold>Celestial Night Blade</bold></gradient>
+engine_blade:
+  itemname: <gradient:#a855f7:#f472b6><bold>Engine Blade</bold></gradient>
   material: NETHERITE_SWORD
   Pack:
     generate_model: false
     oversized_in_gui: true
-    model: skulpt:arsenals/fantasy_arsenal/celestial_night_blade
+    model: skulpt:arsenals/fantasy_arsenal/engine_blade
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
       amount: 6
@@ -663,7 +663,7 @@ celestial_night_blade:
     mending: 1
   lore:
   - "<gradient:#a855f7:#f472b6>✦ MYSTIC ✦</gradient>"
-  - "<dark_gray><italic>Cut from the dark between the stars.</italic></dark_gray>"
+  - "<dark_gray><italic>Every swing turns the gears faster.</italic></dark_gray>"
   - ''
   - " <gray>Sell price: <aqua>14000 Shards</aqua></gray>"
 

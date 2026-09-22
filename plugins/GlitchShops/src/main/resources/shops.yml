@@ -46,7 +46,7 @@ shops:
     stock:
       colossal_sword: { buy: 25000, sell: 14000 }
       core_hammer: { buy: 18000, sell: 10000 }
-      cursed_spear: { buy: 18000, sell: 10000 }
+      violet_splitter: { buy: 18000, sell: 10000 }
       dark_destroyer: { buy: 25000, sell: 14000 }
       death_hand: { buy: 25000, sell: 14000 }
       void_sword: { buy: 35000, sell: 20000 }
@@ -65,7 +65,7 @@ shops:
       yin: { buy: 18000, sell: 10000 }
       yang: { buy: 18000, sell: 10000 }
       blood_gladius_awakened: { buy: 25000, sell: 14000 }
-      celestial_night_blade: { buy: 25000, sell: 14000 }
+      engine_blade: { buy: 25000, sell: 14000 }
       combustion_awakened: { buy: 25000, sell: 14000 }
       resistance_greatsword_awakened: { buy: 25000, sell: 14000 }
       royal_greatsword_awakened: { buy: 25000, sell: 14000 }
