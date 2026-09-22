@@ -8,6 +8,16 @@
 ### Cooldown remaining comes from %glitchclasses_cooldown_prime/tactical/ultimate% (new
 ### placeholders added 2026-09-22) — always shows the number (0 when ready); the darken
 ### overlay is shown only while on cooldown.
+###
+### Slot icons (icon_skill1/2/3.png, from the original bundle's generic "classname" set)
+### are GENERIC placeholders, not per-class ability art — we don't have 12 real icons
+### (4 classes x 3 abilities) yet. Swap these for real art whenever it exists; layered
+### above the border, below the cooldown darken so dimming still reads during cooldown.
+###
+### The "⇧" (U+21E7) character used for the Sneak+F/Sneak+Q key labels does NOT exist in
+### mmohud-font's glyph tables (checked hud_assets/font/mmohud-fonts.yml — only the plain
+### arrows ←-↓ are mapped, not ⇧), so it silently rendered as nothing,
+### leaving just "F"/"Q" — replaced with ↑ (↑, confirmed present) — fixed 2026-09-22.
 skillbar:
   layers:
     slot1_bg:
@@ -22,6 +32,12 @@ skillbar:
       offset:
         x: 0
         y: 0
+    slot1_icon:
+      texture:
+        path: assets/skill_casting_bar/classname/icon_skill1.png
+      offset:
+        x: 2
+        y: -2
     slot1_key:
       text: "<#6cd71b>F"
       font: "mmohud-font"
@@ -61,8 +77,14 @@ skillbar:
       offset:
         x: 27
         y: 0
+    slot2_icon:
+      texture:
+        path: assets/skill_casting_bar/classname/icon_skill2.png
+      offset:
+        x: 29
+        y: -2
     slot2_key:
-      text: "<#6cd71b>⇧F"
+      text: "<#6cd71b>↑F"
       font: "mmohud-font"
       align: center
       scale: 0.6
@@ -100,8 +122,14 @@ skillbar:
       offset:
         x: 54
         y: 0
+    slot3_icon:
+      texture:
+        path: assets/skill_casting_bar/classname/icon_skill3.png
+      offset:
+        x: 56
+        y: -2
     slot3_key:
-      text: "<#e5bc63>⇧Q"
+      text: "<#e5bc63>↑Q"
       font: "mmohud-font"
       align: center
       scale: 0.6
