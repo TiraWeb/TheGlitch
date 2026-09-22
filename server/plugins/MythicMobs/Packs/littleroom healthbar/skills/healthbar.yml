@@ -119,8 +119,40 @@ HEALTHBAR_ENTITY_init:
   - teleportto{location=@ParentLocation{y=<caster.var.vertical_offset>};delay=1} @self
 
 HEALTHBAR_ENTITY_tall_mob_offsets:
+  # 2026-09-22 (round 7, live report: bar sits inside the head/body on "most
+  # mobs"): round 4's single GlitchReaver-only override wasn't nearly enough —
+  # all 10 roster mobs now wear custom Enderman-scale ModelEngine rigs
+  # (docs/MODELS.md) on a variety of short vanilla base types. Grouped by base
+  # eye height instead of listing every mob individually:
+  #   tier_tall (ZOMBIE/VINDICATOR/SKELETON base, ~1.6-1.7 eye height under a
+  #     much taller custom model): CorruptedCrawler, GlitchBrute,
+  #     GlitchHarrower, GlitchReaver, GlitchSentinel, GlitchSniper, GlitchWarden
+  #   tier_enderman (ENDERMAN base, already tall — needs less extra height):
+  #     GlitchStalker, GlitchWisp
+  #   tier_phantom (PHANTOM base, flat flying hitbox under a humanoid caster
+  #     model): GlitchPhantom
+  # All three values are still estimates, not measured against the live
+  # models — expect another tuning pass once actually visible in-game.
+  Skills:
+  - skill{s=HEALTHBAR_ENTITY_offset_tier_tall} @parent
+  - skill{s=HEALTHBAR_ENTITY_offset_tier_enderman} @parent
+  - skill{s=HEALTHBAR_ENTITY_offset_tier_phantom} @parent
+
+HEALTHBAR_ENTITY_offset_tier_tall:
   TargetConditions:
-  - mythicmobtype{t=GlitchReaver} true
+  - ( mythicmobtype{t=CorruptedCrawler} true || mythicmobtype{t=GlitchBrute} true || mythicmobtype{t=GlitchHarrower} true || mythicmobtype{t=GlitchReaver} true || mythicmobtype{t=GlitchSentinel} true || mythicmobtype{t=GlitchSniper} true || mythicmobtype{t=GlitchWarden} true )
+  Skills:
+  - setvar{var=caster.vertical_offset;val=3.0;type=FLOAT} @self
+
+HEALTHBAR_ENTITY_offset_tier_enderman:
+  TargetConditions:
+  - ( mythicmobtype{t=GlitchStalker} true || mythicmobtype{t=GlitchWisp} true )
+  Skills:
+  - setvar{var=caster.vertical_offset;val=2.6;type=FLOAT} @self
+
+HEALTHBAR_ENTITY_offset_tier_phantom:
+  TargetConditions:
+  - mythicmobtype{t=GlitchPhantom} true
   Skills:
   - setvar{var=caster.vertical_offset;val=3.0;type=FLOAT} @self
 
