@@ -135,14 +135,16 @@ new mobs (Glitch Reaver, Glitch Harrower) got full-adopt ModelEngine rigs
 sourced from three downloaded packs — Type, AI, and full multi-stage attack
 kits replaced, not just a cosmetic model swap (two exceptions: Phantom kept
 its native flying AI, Warden kept its vortex-pull layered on top of the new
-kit). GlitchCore stayed vanilla (Warden) — no pack had a matching boss-scale
-rig. **2026-09-22: TheGlitchKing (Ender Dragon) removed entirely** — its
-repeating summon skills weren't phase-gated, so it kept spawning adds for as
-long as it stayed alive, contributing to a mob-density crash. GlitchCore was
-pulled from the open-world random-spawn pool for the same reason but its mob
-file/drop table are kept — GlitchDungeons' wave-based dungeon boss rooms
-still spawn it by type. Live stats below are current as of the 2026-09-21
-model pass; mob yml is authoritative, retune here when combat data lands.
+kit). **2026-09-22: both TheGlitchKing (Ender Dragon) and GlitchCore (Warden)
+removed entirely.** TheGlitchKing's repeating summon skills weren't
+phase-gated, so it kept spawning adds for as long as it stayed alive,
+contributing to a mob-density crash; GlitchCore was first pulled from the
+open-world random-spawn pool for the same density reasoning, then removed
+outright at the operator's request, including from GlitchDungeons' wave-based
+boss rooms (now use GlitchReaver instead — GlitchDungeons itself is slated
+to be replaced by the MythicDungeons plugin later). Live stats below are
+current as of the 2026-09-21 model pass; mob yml is authoritative, retune
+here when combat data lands.
 Visual/animation sign-off pending (needs a client, can't be verified by an agent).
 
 **Zone distribution:**
@@ -191,24 +193,27 @@ Visual/animation sign-off pending (needs a client, can't be verified by an agent
 |---|---|---|---|---|---|
 | **Glitch Reaver** *(new)* | Vindicator (`endermauler` rig) | 350 | 16 | Hollow | The most complex kit in the roster: right/left slash, a dash-bite gap-closer, teleport-maul (repositions behind the target twice), and a scream-of-ender cone AOE. Has its own boss bar. |
 
-Unlike GlitchCore's dungeon boss fight, the Reaver isn't a scheduled event —
-it's a rare open-world spawn in `glitch_red` (own `randomspawns` group, long
-cooldown), meant to be a dangerous surprise rather than an announced fight.
+The Reaver isn't a scheduled event — it's a rare open-world spawn in
+`glitch_red` (own `randomspawns` group, long cooldown), meant to be a
+dangerous surprise rather than an announced fight. It also doubles as
+GlitchDungeons' wave-boss mob (§5), since GlitchCore was removed 2026-09-22.
 
 **Drops:** between Tier 3 and Tier 4 — bigger shard payout than a T3 elite,
 small Legendary Relic chance (see `GlitchReaverLoot.yml`).
 
 ---
 
-### Tier 4 — Boss (Dungeon-only, 2026-09-22)
+### Tier 4 — Boss (removed 2026-09-22)
 
-**The Glitch King (Ender Dragon) was removed entirely** — its repeating
-summon skills had no phase gating, so it kept spawning Glitch Stalker adds
-for as long as it stayed alive un-killed, contributing to a reported
-mob-density crash. `GlitchCore.yml` (Warden, 600 HP — see the actual mob
-file, not the legacy "Corrupted Core/Wither" draft this table used to
-describe) is no longer a Red Zone random spawn either; it now only appears
-as GlitchDungeons' scripted wave-based dungeon boss (§5).
+**Both The Glitch King (Ender Dragon) and Glitch Core (Warden) were removed
+entirely**, per operator request. The Glitch King's repeating summon skills
+had no phase gating, so it kept spawning Glitch Stalker adds for as long as
+it stayed alive un-killed, contributing to a reported mob-density crash;
+Glitch Core was pulled from the Red Zone random spawn for the same reason,
+then removed outright including from GlitchDungeons' wave-based boss rooms
+(§5), which now spawn Glitch Reaver instead as an interim substitute —
+GlitchDungeons itself is slated to be replaced by the MythicDungeons plugin
+later. There is currently no Tier 4 mob in the roster.
 
 **Drops:** Void Essence (guaranteed), Legendary Relic (10%), Epic/Legendary loot (30%), guaranteed high-rarity Unstable Rifts, Shards (40-80).
 

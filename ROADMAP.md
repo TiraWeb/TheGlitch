@@ -83,6 +83,14 @@ configuration section; dungeon extraction is not fully started or integrated
 with GlitchStash. **Deferred by operator decision (2026-08-03)** — the dungeon
 PvE world is not the current focus._
 
+_**2026-09-22: operator decided to replace this custom plugin with the
+MythicDungeons plugin instead** (already installed on the server, currently
+unconfigured/unused) rather than continuing to build out GlitchDungeons —
+timing not yet decided. In the meantime, GlitchDungeons' wave-boss config
+(`plugins/GlitchDungeons/src/main/resources/config.yml`) was patched to spawn
+`GlitchReaver` instead of the now-deleted `GlitchCore` as a stopgap, not a
+rebalance — don't invest further tuning here._
+
 - [ ] **5.4.1** Project setup — Maven/Gradle, Paper API + MythicMobs API dependencies
 - [ ] **5.4.2** Party system — create/invite/accept/leave/disband, max 4 players
 - [ ] **5.4.3** Slot management — 8-slot grid tracking (available/occupied/cooldown)

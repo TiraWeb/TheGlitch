@@ -1,6 +1,6 @@
 # The Glitch — MythicMobs DropTable: Glitch Reaver (mini-boss) loot
-# Tier 3.5 — sits between the T3 elites (GlitchWardenLoot) and the T4 bosses
-# (GlitchCoreLoot): bigger shard payout, higher rift chances, small relic chance.
+# Tier 3.5 — sits between the T3 elites (GlitchWardenLoot) and a T4 boss:
+# bigger shard payout, higher rift chances, small relic chance.
 
 GlitchReaverLoot:
   TotalItems: 9

@@ -287,7 +287,7 @@ dungeons:
           - type: GlitchStalker
             count: 4
         boss:
-          type: GlitchCore
+          type: GlitchReaver
           count: 1
         delay-after: 0
     rewards:

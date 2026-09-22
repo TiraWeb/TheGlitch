@@ -61,18 +61,21 @@ RZ_T35_Reaver:
   PositionType: LAND
   Cooldown: 600
 
-# --- T4 bosses: REMOVED from open-world random spawn 2026-09-22, per operator
-# request — TheGlitchKing (Ender Dragon) had unconditional (non-phase-gated)
-# repeating summon skills that kept spawning GlitchStalkers for as long as it
-# stayed alive un-killed, which combined with no random-spawn density cap
-# (see config-spawning.yml SpawningLimit/LocalSpawningLimit fix, same date)
-# to produce the reported "50-100 mobs in one spot." TheGlitchKing's mob file
-# and drop table were deleted outright (nothing else references it).
-# GlitchCore's mob file (server/plugins/MythicMobs/Mobs/GlitchCore.yml) and
-# drop table were KEPT, not deleted — GlitchDungeons' wave-based dungeon boss
-# rooms (plugins/GlitchDungeons/src/main/resources/config.yml, 4 dungeons)
-# spawn it by type name for their scripted instanced boss fight. It simply no
-# longer appears via this open-world random-spawn system.
+# --- T4 bosses: REMOVED entirely 2026-09-22, per operator request.
+# TheGlitchKing (Ender Dragon) had unconditional (non-phase-gated) repeating
+# summon skills that kept spawning GlitchStalkers for as long as it stayed
+# alive un-killed, which combined with no random-spawn density cap (see
+# config-spawning.yml SpawningLimit/LocalSpawningLimit fix, same date) to
+# produce the reported "50-100 mobs in one spot." Mob file + drop table
+# deleted outright (nothing else referenced it). GlitchCore was pulled from
+# this open-world pool the same day for the same density reasoning but its
+# mob file/drop table were initially kept since GlitchDungeons' wave-based
+# boss rooms spawned it by type name — the operator then asked to remove it
+# from there too (plugins/GlitchDungeons/src/main/resources/config.yml now
+# uses GlitchReaver instead), so GlitchCore's mob file + drop table were
+# deleted as well. GlitchDungeons itself is slated to be replaced by the
+# MythicDungeons plugin later, so this is an interim substitute, not a
+# permanent design choice.
 # --- Legacy note: old SpawnAreas/RedZone_SpawnAreas.yml kept for reference but not loaded by Mythic 5.13.
 # If you see "Loaded 0 random spawns" after mm reload, check:
 #   /plugins/MythicMobs/config/config-spawning.yml -> RandomSpawning.GenerateSpawnPoints: true

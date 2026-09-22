@@ -198,25 +198,11 @@ REAVER_HUNTER:
     - 175 EXPERIENCE
     Skills: []
 
-# --- Tier 4 boss ---
-CORE_BREAKER:
-  Display: 'Core Breaker'
-  Description: 'Defeat the Glitch Core'
-  Category: MONSTER_HUNTING
-  Frame: CHALLENGE
-  Icon:
-    Material: SCULK_CATALYST
-  Criteria:
-    KILL:
-      Type: KILL_MYTHIC_MOB
-      MobType: GlitchCore
-      Amount: 1
-      Conditions: []
-  Reward:
-    Message: 'You have broken the Glitch Core!'
-    Drops:
-    - 250 EXPERIENCE
-    Skills: []
+# CORE_BREAKER removed 2026-09-22 — GlitchCore was removed from the game
+# entirely (was already pulled from open-world random spawn same day; operator
+# then asked to remove it from GlitchDungeons' boss rooms too, since that
+# plugin is being replaced by MythicDungeons later anyway). No longer
+# obtainable.
 
 # KING_SLAYER removed 2026-09-22 — TheGlitchKing (Ender Dragon) was removed
 # from the game (unbounded repeating summon skill contributed to a mob-density
@@ -271,10 +257,6 @@ GLITCH_BESTIARY:
     REAVER:
       Type: KILL_MYTHIC_MOB
       MobType: GlitchReaver
-      Amount: 1
-    CORE:
-      Type: KILL_MYTHIC_MOB
-      MobType: GlitchCore
       Amount: 1
   Reward:
     Message: 'You have completed the Glitch Bestiary!'

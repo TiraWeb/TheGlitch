@@ -100,7 +100,7 @@ public class WaveManager {
         // Spawn boss
         ConfigurationSection bossSection = waveSection.getConfigurationSection("boss");
         if (bossSection != null) {
-            String bossType = bossSection.getString("type", "GlitchCore");
+            String bossType = bossSection.getString("type", "GlitchReaver");
             int bossCount = bossSection.getInt("count", 1);
             spawnMobs(world, slot, bossType, bossCount, 8);
         }

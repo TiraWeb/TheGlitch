@@ -2,7 +2,8 @@
 # Custom model: "endermauler" rig (EndMobsVol1 pack) kept near-verbatim — the
 # pack's most polished asset (boss bar, segmented tail render, teleport-maul,
 # scream-of-ender AOE). A rare standing Red Zone threat, not a scheduled
-# server event like GlitchCore/TheGlitchKing. Resonates Hollow.
+# server event. Also used as GlitchDungeons' wave-boss mob (2026-09-22, after
+# GlitchCore was removed). Resonates Hollow.
 # Design: GAME_DESIGN §2 (new, between T3 elite and T4 boss),
 # Resonance: ITEM_SYSTEM §5.
 
