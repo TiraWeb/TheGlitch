@@ -41,6 +41,13 @@ public final class GlitchQuests extends JavaPlugin implements TabCompleter {
             if (c != null) { c.setExecutor(this); c.setTabCompleter(this); }
         }
 
+        // MythicDungeons also registers /rewards (its own alias /drewards stays
+        // intact); claim the bare label once every plugin has registered.
+        Bukkit.getScheduler().runTask(this, () -> {
+            var ours = getCommand("rewards");
+            if (ours != null) Bukkit.getCommandMap().getKnownCommands().put("rewards", ours);
+        });
+
         Bukkit.getScheduler().runTaskTimer(this, listener::tickMinute, 1200L, 1200L);
         Bukkit.getScheduler().runTaskTimer(this, quests::saveDirty, 6000L, 6000L);
         // players already online after a /reload
