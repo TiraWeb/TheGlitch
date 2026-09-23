@@ -100,6 +100,15 @@ done
 # MythicAchievements' /achievements (alias /achieve) needs this; op-only otherwise.
 mc "lp group default permission set mythicachievements.command.base true"
 
+# GrimAC anticheat: staff see alerts (auto-on at join); senior staff get verbose.
+for g in helper dev moderator admin owner; do
+  mc "lp group $g permission set grim.alerts true"
+  mc "lp group $g permission set grim.alerts.enable-on-join true"
+done
+for g in moderator admin owner; do
+  mc "lp group $g permission set grim.verbose true"
+done
+
 # --- paid perks (cosmetic / show-off only) ----------------------------------
 log "Setting paid-rank perks"
 # Wisp: hat + fly in hub only (Essentials grounds you when you leave hub)
