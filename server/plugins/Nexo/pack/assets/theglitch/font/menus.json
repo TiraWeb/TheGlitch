@@ -1,0 +1,28 @@
+{
+  "providers": [
+    {
+      "type": "space",
+      "advances": {
+        "\uf000": -48
+      }
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/rewards_bg.png",
+      "height": 256,
+      "ascent": 96,
+      "chars": [
+        "\uf001"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/quests_bg.png",
+      "height": 256,
+      "ascent": 96,
+      "chars": [
+        "\uf002"
+      ]
+    }
+  ]
+}

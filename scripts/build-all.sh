@@ -39,6 +39,7 @@ TRACK1_ORDER=(
   "GlitchRaid"
   "GlitchInsurance"
   "GlitchEvents"
+  "GlitchQuests"
 )
 
 log()  { echo -e "\033[1;36m[build-all]\033[0m $*"; }
@@ -176,6 +177,11 @@ for plugin in "${SELECTED[@]}"; do
           }
         fi
       done
+      ;;
+    GlitchQuests)
+      if [[ ! -f "${REPO_DIR}/plugins/GlitchQuests/lib/VaultUnlocked.jar" ]]; then
+        seed_lib GlitchQuests VaultUnlocked || warn "Missing VaultUnlocked.jar for GlitchQuests"
+      fi
       ;;
     GlitchHideout)
       if [[ ! -f "${REPO_DIR}/plugins/GlitchHideout/lib/VaultUnlocked.jar" ]]; then

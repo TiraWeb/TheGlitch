@@ -1,0 +1,178 @@
+# GlitchQuests — daily/weekly/monthly rewards + rotating quests.
+#
+# Periods roll over at midnight in `timezone` ("system" = the host's zone).
+# Daily quests: `daily-quest-count` are drawn from the daily pool each day
+# (same set for every player, seeded by the date). Weekly quests likewise per
+# ISO week. Progress is per player and resets when the period changes.
+#
+# Reward block format (used everywhere below):
+#   shards: <int>                     # Vault deposit
+#   items: { <nexo_id>: <amount> }    # Nexo items; overflow drops at feet
+#   commands: [ "lp user {player} ..." ]   # console commands, {player} = name
+timezone: system
+
+daily-quest-count: 5
+weekly-quest-count: 3
+
+# Login streak — one claim per day from /rewards. Missing a day resets the
+# streak to day 1; after day 7 it cycles back to day 1 (streak count keeps going).
+login-streak:
+  - { shards: 100 }
+  - { shards: 150 }
+  - { shards: 200, items: { cache_key: 1 } }
+  - { shards: 250 }
+  - { shards: 300, items: { cache_key: 1 } }
+  - { shards: 400 }
+  - { shards: 750, items: { vault_key: 1 } }
+
+weekly-reward: { shards: 1000, items: { vault_key: 1 } }
+monthly-reward: { shards: 5000, items: { rift_key: 1 } }
+
+# Bonus for finishing every daily quest in one day.
+daily-bonus: { shards: 300, items: { cache_key: 2 } }
+
+# Quest types:
+#   KILL_MOB       hostile mobs (any)          KILL_GLITCH_MOB  MythicMobs mobs only
+#   KILL_PLAYER    player kills                EXTRACT          successful extractions
+#   MINE_BLOCK     any block broken            MINE_ORE         ores / ancient debris
+#   LOOT_CONTAINER distinct containers opened  PLAYTIME         minutes online
+#   TRAVEL         blocks travelled            FISH             fish caught
+#   EAT            food eaten                  CRAFT            items crafted
+#   COMPLETE_DAILY daily quests completed (weekly pool only)
+quests:
+  daily:
+    mob_hunter:
+      name: "Mob Hunter"
+      description: "Slay hostile mobs anywhere."
+      type: KILL_MOB
+      amount: 25
+      icon: IRON_SWORD
+      reward: { shards: 150 }
+    glitch_purge:
+      name: "Glitch Purge"
+      description: "Destroy corrupted Glitch creatures."
+      type: KILL_GLITCH_MOB
+      amount: 8
+      icon: ECHO_SHARD
+      reward: { shards: 250 }
+    extractor:
+      name: "Get Out Alive"
+      description: "Extract successfully from a raid."
+      type: EXTRACT
+      amount: 1
+      icon: ENDER_PEARL
+      reward: { shards: 300, items: { cache_key: 1 } }
+    scavenger:
+      name: "Scavenger"
+      description: "Loot different containers."
+      type: LOOT_CONTAINER
+      amount: 12
+      icon: BARREL
+      reward: { shards: 200 }
+    ore_seeker:
+      name: "Ore Seeker"
+      description: "Mine ore blocks."
+      type: MINE_ORE
+      amount: 16
+      icon: IRON_PICKAXE
+      reward: { shards: 200 }
+    digger:
+      name: "Tunnel Rat"
+      description: "Break any blocks."
+      type: MINE_BLOCK
+      amount: 200
+      icon: STONE_SHOVEL
+      reward: { shards: 120 }
+    duelist:
+      name: "Duelist"
+      description: "Take down other players."
+      type: KILL_PLAYER
+      amount: 2
+      icon: NETHERITE_SWORD
+      reward: { shards: 300 }
+    dedicated:
+      name: "Dedicated"
+      description: "Play for 30 minutes."
+      type: PLAYTIME
+      amount: 30
+      icon: CLOCK
+      reward: { shards: 150 }
+    trekker:
+      name: "Trekker"
+      description: "Travel 1,500 blocks."
+      type: TRAVEL
+      amount: 1500
+      icon: LEATHER_BOOTS
+      reward: { shards: 150 }
+    angler:
+      name: "Angler"
+      description: "Catch fish."
+      type: FISH
+      amount: 6
+      icon: FISHING_ROD
+      reward: { shards: 120 }
+    well_fed:
+      name: "Well Fed"
+      description: "Eat food."
+      type: EAT
+      amount: 10
+      icon: COOKED_BEEF
+      reward: { shards: 80 }
+    artisan:
+      name: "Artisan"
+      description: "Craft items."
+      type: CRAFT
+      amount: 32
+      icon: CRAFTING_TABLE
+      reward: { shards: 100 }
+
+  weekly:
+    glitch_slayer:
+      name: "Glitch Slayer"
+      description: "Destroy Glitch creatures this week."
+      type: KILL_GLITCH_MOB
+      amount: 80
+      icon: WITHER_SKELETON_SKULL
+      reward: { shards: 1500, items: { vault_key: 1 } }
+    veteran_extractor:
+      name: "Veteran Extractor"
+      description: "Extract successfully this week."
+      type: EXTRACT
+      amount: 7
+      icon: ENDER_EYE
+      reward: { shards: 2000, items: { rift_key: 1 } }
+    scavenger_king:
+      name: "Scavenger King"
+      description: "Loot different containers this week."
+      type: LOOT_CONTAINER
+      amount: 80
+      icon: CHEST
+      reward: { shards: 1200 }
+    headhunter:
+      name: "Headhunter"
+      description: "Take down players this week."
+      type: KILL_PLAYER
+      amount: 15
+      icon: PLAYER_HEAD
+      reward: { shards: 2000, items: { vault_key: 1 } }
+    marathon:
+      name: "Marathon"
+      description: "Play for 5 hours this week."
+      type: PLAYTIME
+      amount: 300
+      icon: RECOVERY_COMPASS
+      reward: { shards: 1500 }
+    devotee:
+      name: "Devotee"
+      description: "Complete daily quests this week."
+      type: COMPLETE_DAILY
+      amount: 20
+      icon: WRITABLE_BOOK
+      reward: { shards: 2500, items: { rift_key: 1 } }
+    exterminator:
+      name: "Exterminator"
+      description: "Slay hostile mobs this week."
+      type: KILL_MOB
+      amount: 250
+      icon: DIAMOND_SWORD
+      reward: { shards: 1200 }

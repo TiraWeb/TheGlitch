@@ -39,6 +39,7 @@
         <module>plugins/GlitchDeathRules</module>
         <module>plugins/GlitchInsurance</module>
         <module>plugins/GlitchEvents</module>
+        <module>plugins/GlitchQuests</module>
     </modules>
 
     <repositories>

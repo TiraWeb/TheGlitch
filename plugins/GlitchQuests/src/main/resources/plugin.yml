@@ -1,0 +1,28 @@
+name: GlitchQuests
+version: '${project.version}'
+main: com.theglitch.glitchquests.GlitchQuests
+api-version: '1.21'
+description: Daily/weekly/monthly rewards, login streaks, and rotating daily + weekly quests
+softdepend: [VaultUnlocked, Vault, Nexo, VelKoth, MythicMobs]
+
+commands:
+  quests:
+    description: Open the quest board
+    usage: /quests
+    aliases: [quest, dailyquests]
+    permission: glitchquests.use
+  rewards:
+    description: Open the daily/weekly/monthly rewards menu
+    usage: /rewards
+    aliases: [daily, reward]
+    permission: glitchquests.use
+  questadmin:
+    description: GlitchQuests admin commands
+    usage: /questadmin <reload|reset <player>|progress <player> <questId> <amount>>
+    permission: glitchquests.admin
+
+permissions:
+  glitchquests.use:
+    default: true
+  glitchquests.admin:
+    default: op
