@@ -283,11 +283,10 @@ def chest_window(rows):
     for row in range(rows + 1):
         gy = 17 + row * 18
         if gy < H:
-            d.line([(7, gy), (W - 8, gy)], fill=grid_line)
+            d.line([(7, gy), (7 + 9 * 18, gy)], fill=grid_line)
     for col in range(10):
         gx = 7 + col * 18
-        if gx < W - 7:
-            d.line([(gx, 17), (gx, H - 2)], fill=grid_line)
+        d.line([(gx, 17), (gx, H - 2)], fill=grid_line)
 
     # outer border
     for y in range(H):
@@ -310,38 +309,36 @@ def chest_window(rows):
         d.polygon([(cx, cy - 3), (cx + 3, cy), (cx, cy + 3), (cx - 3, cy)], fill=WOOD_GOLD)
         px(d, cx, cy, (255, 250, 235, 255))
 
-    # Player's own inventory (always shown below the container, at a fixed
-    # vanilla offset). Round 9 drew a precise 176px-wide grid here (matching
-    # the container's own coordinates) and it came out visibly WIDER and a
-    # different shape in-game than the container above it, so that follow-up
-    # dropped the grid entirely (flat fill, no edges to look "wrong shape").
-    # Round 11: the operator wants the boxes back. Compromise — draw the grid
-    # at the same 18px pitch (starting x=7, matching real slot spacing) but
-    # tile it across the FULL 0..256 width instead of stopping at column 9.
-    # A repeating pattern has no "this is where it should end" edge to be
-    # wrong about, so wherever vanilla actually crops this region, the real
-    # slots still land on grid-lined cells instead of a hard mismatched border.
-    for y in range(H, 256):
-        t = (y - H) / (256 - H)
+    # Player's own inventory strip. ContainerScreen blits it from a FIXED
+    # texture region — (0,126) size 176x96 — directly under the container
+    # part, whatever the row count. Slot frames inside that region sit at
+    # x=7+18c, main rows from y=139, hotbar from y=197 (vanilla generic_54).
+    # Earlier rounds tiled a grid starting at y=H instead, so rows landed
+    # between the real slots.
+    top, bottom = 126, 126 + 96
+    for y in range(top, bottom):
+        t = (y - top) / (bottom - top)
         c = tuple(int(a + (b - a) * t) for a, b in zip(PLAYERINV_LIGHT, PLAYERINV_DARK))
-        d.line([(0, y), (255, y)], fill=c)
+        d.line([(0, y), (W - 1, y)], fill=c)
         if rng.random() < 0.35:
-            x = rng.randrange(256)
+            x = rng.randrange(W)
             n = rng.randint(-8, 8)
             r, g, b_, _ = img.getpixel((x, y))
             px(d, x, y, (max(0, r + n), max(0, g + n), max(0, b_ + n), 255))
+    for y in range(top, bottom):
+        px(d, 0, y, WOOD_DARK)
+        px(d, W - 1, y, WOOD_DARK)
+    d.line([(0, bottom - 1), (W - 1, bottom - 1)], fill=WOOD_DARK)
+    d.line([(1, bottom - 2), (W - 2, bottom - 2)], fill=WOOD_MID)
 
-    playerinv_grid = (PLAYERINV_DARK[0] - 30, PLAYERINV_DARK[1] - 20, PLAYERINV_DARK[2] - 15, 140)
-    row = 0
-    gy = H
-    while gy < 256:
-        d.line([(0, gy), (255, gy)], fill=playerinv_grid)
-        gy += 18
-        row += 1
-    gx = 7
-    while gx < 256:
-        d.line([(gx, H), (gx, 255)], fill=playerinv_grid)
-        gx += 18
+    playerinv_grid = (PLAYERINV_DARK[0] - 30, PLAYERINV_DARK[1] - 20, PLAYERINV_DARK[2] - 15, 170)
+    for gtop, grows in ((139, 3), (197, 1)):
+        for r in range(grows + 1):
+            gy = gtop + r * 18
+            d.line([(7, gy), (7 + 9 * 18, gy)], fill=playerinv_grid)
+        for col in range(10):
+            gx = 7 + col * 18
+            d.line([(gx, gtop), (gx, gtop + grows * 18)], fill=playerinv_grid)
 
     return img
 
