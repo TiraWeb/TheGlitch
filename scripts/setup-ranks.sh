@@ -96,6 +96,10 @@ for g in default wisp stalker sentinel helper dev moderator admin owner donor; d
   mc "lp group $g permission set tab.group.$g true"
 done
 
+# --- player commands from third-party plugins ------------------------------
+# MythicAchievements' /achievements (alias /achieve) needs this; op-only otherwise.
+mc "lp group default permission set mythicachievements.command.base true"
+
 # --- paid perks (cosmetic / show-off only) ----------------------------------
 log "Setting paid-rank perks"
 # Wisp: hat + fly in hub only (Essentials grounds you when you leave hub)
