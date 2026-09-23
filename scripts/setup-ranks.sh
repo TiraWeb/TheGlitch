@@ -109,6 +109,21 @@ for g in moderator admin owner; do
   mc "lp group $g permission set grim.verbose true"
 done
 
+# CoreProtect: helpers inspect/look up, moderators also roll back/restore,
+# admin+owner get everything (purge, reload, consumer...).
+for g in helper dev; do
+  mc "lp group $g permission set coreprotect.inspect true"
+  mc "lp group $g permission set coreprotect.lookup true"
+done
+mc "lp group moderator permission set coreprotect.inspect true"
+mc "lp group moderator permission set coreprotect.lookup true"
+mc "lp group moderator permission set coreprotect.rollback true"
+mc "lp group moderator permission set coreprotect.restore true"
+mc "lp group moderator permission set coreprotect.teleport true"
+for g in admin owner; do
+  mc "lp group $g permission set coreprotect.* true"
+done
+
 # --- paid perks (cosmetic / show-off only) ----------------------------------
 log "Setting paid-rank perks"
 # Wisp: hat + fly in hub only (Essentials grounds you when you leave hub)
