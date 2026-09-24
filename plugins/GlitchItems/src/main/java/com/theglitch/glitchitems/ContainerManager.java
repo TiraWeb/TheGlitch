@@ -359,16 +359,20 @@ public final class ContainerManager {
      * @return number of containers cleared
      */
     public int clearAll(String worldName) {
-        if (worldName == null) return 0;
-        List<Location> toClear = new ArrayList<>();
-        for (ContainerRecord record : byLocation.values()) {
-            if (!worldName.equals(record.world)) continue;
-            World w = Bukkit.getWorld(record.world);
-            if (w == null) continue;
-            toClear.add(new Location(w, record.x, record.y, record.z));
-        }
+        List<Location> toClear = trackedLocations(worldName);
         for (Location loc : toClear) clear(loc);
         return toClear.size();
+    }
+
+    /** Every tracked container location in {@code worldName} (snapshot). */
+    public List<Location> trackedLocations(String worldName) {
+        List<Location> out = new ArrayList<>();
+        World w = worldName == null ? null : Bukkit.getWorld(worldName);
+        if (w == null) return out;
+        for (ContainerRecord record : byLocation.values()) {
+            if (worldName.equals(record.world)) out.add(new Location(w, record.x, record.y, record.z));
+        }
+        return out;
     }
 
     /**

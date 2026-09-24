@@ -16,7 +16,11 @@ HEALTHBAR_GLOBAL_LISTENER:
   # It was a maintenance/cleanup skill per the pack's readme, not core functionality.
   Skills:
   - skill{s=HEALTHBAR_GLOBAL_init} @self ~onSpawn
-  - skill{s=HEALTHBAR_GLOBAL_check_entity_health;sync=true} @EIW ~onTimer:5
+  # 2026-09-24: was `check_entity_health @EIW ~onTimer:5` — a synchronous pass over
+  # every entity in the world 4x a second, per world. Bars only render within 32
+  # blocks (ViewRange 0.5) and mobs only spawn near players, so scan around
+  # players instead (see HEALTHBAR_GLOBAL_scan_player).
+  - skill{s=HEALTHBAR_GLOBAL_scan_player} @PlayersInWorld ~onTimer:5
 
 
 
@@ -27,7 +31,7 @@ HEALTHBAR_ENTITY:
     Collidable: false
     Despawn: PERSISTENT
   Variables:
-    hide_bar_on_sneak: string/true            
+    hide_bar_on_sneak: string/false           # 2026-09-24: feature removed, see skills/healthbar.yml
     hide_bar_on_sneak_opacity: integer/128    # 255 is max opacity
     show_entity_name: string/true             # show entity nametag above the healthbar
     display_level_on_health_bar: string/true  # show entity level next to the nametag
@@ -58,7 +62,6 @@ HEALTHBAR_ENTITY:
   # teleportto that reads the mob's live location every 2 ticks instead;
   # positioning no longer depends on Bukkit vehicle/passenger mechanics at all.
   - skill{s=HEALTHBAR_ENTITY_determine_status} @parent ~onTimer:2
-  - skill{s=HEALTHBAR_ENTITY_detect_sneak} @parent ~onTimer:10
   - remove @self ~onTimer:1 ?!isparentalive
 
   

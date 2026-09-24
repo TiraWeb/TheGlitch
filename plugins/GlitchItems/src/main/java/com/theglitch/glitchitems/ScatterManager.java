@@ -581,6 +581,19 @@ public final class ScatterManager {
             plugin.getLogger().warning("[Scatter] scatterNow() already running — skipping concurrent invocation.");
             return;
         }
+        if (!FoliaScheduler.isFolia()) {
+            // Paper/Purpur: the synchronous path below loaded ~2500 chunks on the
+            // main thread per cycle and froze the server 10-15s every 31 minutes
+            // (Watchdog dumps in ScatterManager#placeNew, 2026-09-24). The async
+            // job does the same work chunk-by-chunk as they load off-thread.
+            try {
+                new AsyncScatter().start();
+            } catch (RuntimeException e) {
+                scatterLock.set(false);
+                throw e;
+            }
+            return;
+        }
         try {
             long start = System.currentTimeMillis();
             List<World> worlds = loadedWorlds();
@@ -1096,6 +1109,318 @@ public final class ScatterManager {
                 diagYNullQuad[0], diagYNullQuad[1], diagYNullQuad[2], diagYNullQuad[3],
                 diagSampleYNull, diagSampleNotAir));
         return totalPlaced;
+    }
+
+    // ------------------------------------------------------------------------
+    // Async scatter (Paper/Purpur)
+    // ------------------------------------------------------------------------
+
+    /** Chunk loads in flight at once — the host only has 2 cores. */
+    private static final int MAX_INFLIGHT_CHUNKS = 8;
+    /** Already-loaded chunks handled per tick before yielding to the next tick. */
+    private static final int LOADED_CHUNKS_PER_TICK = 32;
+
+    /**
+     * Runs work against a set of chunks once each is loaded. Unloaded chunks go
+     * through Paper's async loader ({@code gen=false}: never generates), and
+     * each chunk's tasks run on the main thread inside its load callback, while
+     * the chunk is guaranteed loaded — no chunk tickets needed. Tasks receive
+     * {@code false} when the chunk doesn't exist on disk.
+     */
+    private final class ChunkPump {
+        private final World world;
+        private final java.util.Iterator<Map.Entry<Long, List<java.util.function.Consumer<Boolean>>>> it;
+        private final Runnable done;
+        private int inFlight;
+        private boolean finished;
+        private boolean resumeScheduled;
+
+        ChunkPump(World world, Map<Long, List<java.util.function.Consumer<Boolean>>> byChunk, Runnable done) {
+            this.world = world;
+            this.it = byChunk.entrySet().iterator();
+            this.done = done;
+        }
+
+        void pump() {
+            if (finished || !plugin.isEnabled()) return;
+            int budget = LOADED_CHUNKS_PER_TICK;
+            while (inFlight < MAX_INFLIGHT_CHUNKS && it.hasNext()) {
+                if (budget <= 0) {
+                    resumeNextTick();
+                    return;
+                }
+                Map.Entry<Long, List<java.util.function.Consumer<Boolean>>> e = it.next();
+                int cx = (int) (e.getKey() >> 32);
+                int cz = (int) (long) e.getKey();
+                List<java.util.function.Consumer<Boolean>> tasks = e.getValue();
+                if (world.isChunkLoaded(cx, cz)) {
+                    budget--;
+                    run(tasks, true);
+                    continue;
+                }
+                inFlight++;
+                world.getChunkAtAsync(cx, cz, false).whenComplete((chunk, ex) -> onMain(() -> {
+                    inFlight--;
+                    run(tasks, chunk != null);
+                    pump();
+                }));
+            }
+            if (!finished && inFlight == 0 && !it.hasNext()) {
+                finished = true;
+                done.run();
+            }
+        }
+
+        private void resumeNextTick() {
+            if (resumeScheduled) return;
+            resumeScheduled = true;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                resumeScheduled = false;
+                pump();
+            });
+        }
+
+        private void run(List<java.util.function.Consumer<Boolean>> tasks, boolean loaded) {
+            for (java.util.function.Consumer<Boolean> t : tasks) {
+                try {
+                    t.accept(loaded);
+                } catch (Exception ex) {
+                    plugin.getLogger().log(Level.WARNING, "[Scatter] Chunk task failed", ex);
+                }
+            }
+        }
+    }
+
+    private void onMain(Runnable r) {
+        if (!plugin.isEnabled()) return;
+        if (Bukkit.isPrimaryThread()) r.run();
+        else Bukkit.getScheduler().runTask(plugin, r);
+    }
+
+    private static long chunkKey(int cx, int cz) {
+        return (((long) cx) << 32) | (cz & 0xFFFFFFFFL);
+    }
+
+    /**
+     * One scatter cycle: clear every tracked container, then place new ones
+     * world by world. Same rules as the synchronous {@link #placeNew}, but each
+     * attempt runs when its chunk has loaded and failed attempts retry in rounds
+     * (up to max-attempts-per-container) instead of immediately.
+     */
+    private final class AsyncScatter {
+        private final long start = System.currentTimeMillis();
+        private final List<World> worlds = loadedWorlds();
+        private int worldIdx;
+        private int cleared;
+        private int totalPlaced;
+
+        void start() {
+            if (worlds.isEmpty()) {
+                plugin.getLogger().warning("[Scatter] No enabled world found among " + enabledWorlds + " — aborting scatter.");
+                scatterLock.set(false);
+                return;
+            }
+            if (!clearPrevious) {
+                plugin.getLogger().info("[Scatter] clearPrevious=false — keeping " + scattered.size() + " previous.");
+                nextWorld();
+                return;
+            }
+            // Union of scattered.json and ContainerManager's own records (see
+            // ContainerManager#clearAll for why both), deduped per block.
+            List<ScatteredPos> snapshot;
+            synchronized (scattered) {
+                snapshot = new ArrayList<>(scattered);
+                scattered.clear();
+            }
+            Map<World, Map<Long, List<java.util.function.Consumer<Boolean>>>> byWorld = new LinkedHashMap<>();
+            Set<String> seen = new java.util.HashSet<>();
+            List<Location> targets = new ArrayList<>();
+            for (ScatteredPos pos : snapshot) {
+                World w = pos == null || pos.world == null ? null : Bukkit.getWorld(pos.world);
+                if (w == null || pos.y < w.getMinHeight() || pos.y >= w.getMaxHeight()) continue;
+                targets.add(new Location(w, pos.x, pos.y, pos.z));
+            }
+            for (World w : worlds) targets.addAll(containers.trackedLocations(w.getName()));
+            for (Location loc : targets) {
+                if (!seen.add(loc.getWorld().getName() + ":" + loc.getBlockX() + ":" + loc.getBlockY() + ":" + loc.getBlockZ())) continue;
+                byWorld.computeIfAbsent(loc.getWorld(), k -> new LinkedHashMap<>())
+                        .computeIfAbsent(chunkKey(loc.getBlockX() >> 4, loc.getBlockZ() >> 4), k -> new ArrayList<>())
+                        .add(loaded -> {
+                            // Unloadable chunk: the record is dropped either way, as before.
+                            if (containers.isContainer(loc)) {
+                                containers.clear(loc);
+                                cleared++;
+                            }
+                        });
+            }
+            clearWorlds(new ArrayList<>(byWorld.entrySet()), 0);
+        }
+
+        private void clearWorlds(List<Map.Entry<World, Map<Long, List<java.util.function.Consumer<Boolean>>>>> list, int i) {
+            if (i >= list.size()) {
+                plugin.getLogger().info("[Scatter] Cleared " + cleared + " previous containers.");
+                containers.flush();
+                saveData();
+                nextWorld();
+                return;
+            }
+            var e = list.get(i);
+            guard(() -> new ChunkPump(e.getKey(), e.getValue(), () -> guard(() -> clearWorlds(list, i + 1))).pump());
+        }
+
+        private void nextWorld() {
+            if (worldIdx >= worlds.size()) {
+                finish();
+                return;
+            }
+            World world = worlds.get(worldIdx++);
+            Placement p = new Placement(world, boundsFor(world));
+            p.round();
+        }
+
+        private void finish() {
+            scatterLock.set(false);
+            long elapsed = System.currentTimeMillis() - start;
+            plugin.getLogger().info("[Scatter] Scatter complete in " + elapsed + "ms (async) — cleared=" + cleared + " placed=" + totalPlaced
+                    + " totalTracked=" + scattered.size() + " worlds=" + worlds.stream().map(World::getName).toList() + ".");
+        }
+
+        /** Runs a step; any exception ends the cycle and frees the lock instead of wedging it. */
+        private void guard(Runnable step) {
+            try {
+                step.run();
+            } catch (Exception ex) {
+                scatterLock.set(false);
+                plugin.getLogger().log(Level.SEVERE, "[Scatter] Async scatter aborted", ex);
+            }
+        }
+
+        private final class Placement {
+            final World world;
+            final Map<Long, Boolean> regionCache = new java.util.HashMap<>();
+            final Map<String, int[]> placedByType = new LinkedHashMap<>();
+            final List<ScatteredPos> newlyPlaced = new ArrayList<>();
+            List<String> pending = new ArrayList<>();
+            final List<Integer> cells = new ArrayList<>();
+            final WorldBounds bounds;
+            final int grid, cellSizeX, cellSizeZ, maxRounds;
+            int cursor, round, placed;
+            int diagAttempts, diagChunkFail, diagYNull, diagNotAir, diagWgReject;
+
+            Placement(World world, WorldBounds bounds) {
+                this.world = world;
+                this.bounds = bounds;
+                Map<String, Integer> toPlace = resolveCounts(bounds);
+                for (Map.Entry<String, Integer> entry : toPlace.entrySet()) {
+                    int needed = entry.getValue() == null ? 0 : entry.getValue();
+                    if (needed <= 0) continue;
+                    if (containers.getType(entry.getKey()) == null) {
+                        plugin.getLogger().warning("[Scatter] Skipping unknown container type '" + entry.getKey() + "' — no ContainerType found.");
+                        continue;
+                    }
+                    placedByType.put(entry.getKey(), new int[]{0, needed});
+                    for (int i = 0; i < needed; i++) pending.add(entry.getKey());
+                }
+                ThreadLocalRandom rand = ThreadLocalRandom.current();
+                Collections.shuffle(pending, rand);
+                // Same stratified grid as placeNew: one cell per attempt, jittered.
+                grid = Math.max(1, (int) Math.ceil(Math.sqrt(Math.max(1, pending.size()))));
+                cellSizeX = Math.max(1, bounds.width() / grid);
+                cellSizeZ = Math.max(1, bounds.length() / grid);
+                for (int i = 0; i < grid * grid; i++) cells.add(i);
+                Collections.shuffle(cells, rand);
+                maxRounds = Math.max(1, maxAttemptsPerContainer);
+            }
+
+            void round() {
+                if (pending.isEmpty() || round >= maxRounds) {
+                    done();
+                    return;
+                }
+                round++;
+                ThreadLocalRandom rand = ThreadLocalRandom.current();
+                List<String> retry = new ArrayList<>();
+                Map<Long, List<java.util.function.Consumer<Boolean>>> byChunk = new LinkedHashMap<>();
+                for (String typeId : pending) {
+                    int x, z;
+                    if (evenSpread) {
+                        int cellIdx = cells.get(cursor++ % cells.size());
+                        x = bounds.minX() + (cellIdx % grid) * cellSizeX + rand.nextInt(cellSizeX);
+                        z = bounds.minZ() + (cellIdx / grid) * cellSizeZ + rand.nextInt(cellSizeZ);
+                    } else {
+                        x = rand.nextInt(bounds.minX(), bounds.maxX() + 1);
+                        z = rand.nextInt(bounds.minZ(), bounds.maxZ() + 1);
+                    }
+                    int cx = x >> 4, cz = z >> 4;
+                    if (!world.isChunkLoaded(cx, cz) && !regionFileExists(world, cx, cz, regionCache)) {
+                        diagAttempts++;
+                        diagChunkFail++;
+                        retry.add(typeId);
+                        continue;
+                    }
+                    byChunk.computeIfAbsent(chunkKey(cx, cz), k -> new ArrayList<>())
+                            .add(loaded -> {
+                                if (!attempt(typeId, x, z, loaded)) retry.add(typeId);
+                            });
+                }
+                pending = retry;
+                guard(() -> new ChunkPump(world, byChunk, () -> guard(this::round)).pump());
+            }
+
+            /** One placement attempt; the chunk is loaded when {@code loaded} is true. */
+            boolean attempt(String typeId, int x, int z, boolean loaded) {
+                diagAttempts++;
+                ContainerManager.ContainerType type = containers.getType(typeId);
+                if (type == null) return true; // type vanished on reload — drop it
+                if (!loaded) {
+                    diagChunkFail++;
+                    return false;
+                }
+                Integer targetY = findValidTargetY(world, x, z);
+                if (targetY == null) {
+                    diagYNull++;
+                    return false;
+                }
+                Block target = world.getBlockAt(x, targetY, z);
+                if (!target.getType().isAir()) {
+                    diagNotAir++;
+                    return false;
+                }
+                if (containers.isContainer(target)) return false;
+                if (isProtectedRegion(new Location(world, x + 0.5, targetY, z + 0.5))) {
+                    diagWgReject++;
+                    return false;
+                }
+                if (!placeBlock(target, type)) return false;
+                placed++;
+                int[] tally = placedByType.get(typeId);
+                if (tally != null) tally[0]++;
+                newlyPlaced.add(new ScatteredPos(world.getName(), x, targetY, z, type.name(), System.currentTimeMillis()));
+                return true;
+            }
+
+            void done() {
+                for (Map.Entry<String, int[]> tally : placedByType.entrySet()) {
+                    int got = tally.getValue()[0];
+                    int want = tally.getValue()[1];
+                    if (got < want) {
+                        plugin.getLogger().warning("[Scatter] Could only place " + got + "/" + want + " of type '" + tally.getKey() + "' in " + world.getName() + ".");
+                    }
+                }
+                synchronized (scattered) {
+                    scattered.addAll(newlyPlaced);
+                }
+                plugin.getLogger().info(String.format(
+                        "[Scatter] %s: placed=%d rounds=%d attempts=%d chunkFail=%d yNull=%d notAir=%d wgReject=%d",
+                        world.getName(), placed, round, diagAttempts, diagChunkFail, diagYNull, diagNotAir, diagWgReject));
+                totalPlaced += placed;
+                // Persist per world — see the per-world flush comment in scatterNow().
+                containers.flush();
+                saveData();
+                if (broadcastEnabled && placed > 0) broadcastScatter(world, placed);
+                nextWorld();
+            }
+        }
     }
 
     /**

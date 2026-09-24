@@ -32,6 +32,16 @@ HEALTHBAR_GLOBAL_purge_healthbars:
   - varunset{var=target.healthbarvalue}
 
   
+HEALTHBAR_GLOBAL_scan_player:
+  # Runs as the player so the radius targeter is centred on them.
+  Skills:
+  - sudoskill{skill=HEALTHBAR_GLOBAL_scan_around}
+
+HEALTHBAR_GLOBAL_scan_around:
+  Skills:
+  - skill{s=HEALTHBAR_GLOBAL_check_entity_health;sync=true} @LivingInRadius{r=32}
+  - skill{s=HEALTHBAR_GLOBAL_check_entity_health;sync=true} @self
+
 HEALTHBAR_GLOBAL_check_entity_health:
   TargetConditions:
   - ( isplayer true || ( isMythicMob true && hasAI true )) true
@@ -95,8 +105,10 @@ HEALTHBAR_ENTITY_init:
   - sudoskill{s=HEALTHBAR_ENTITY_sudo_give_parent_name;repeat=5;repeati=1} @parent ?varequals{var=caster.show_entity_name;val=true}
   - setvar{var=caster.statuseffects;val="V";type=STRING} @self
   - variablesubtract{var=caster.statuseffects;val="V";type=STRING} @self
-  - setvar{var=caster.owner_diff_hp;val=0;type=INTEGER} @self
-  - setvar{var=caster.owner_prev_hp;val=0;type=INTEGER} @parent
+  # 2026-09-24: both were INTEGER, but get_owner_health_difference writes FLOATs
+  # into them — that skill failed ~10x/s per bar ("Couldn't execute skill").
+  - setvar{var=caster.owner_diff_hp;val=0;type=FLOAT} @self
+  - setvar{var=caster.owner_prev_hp;val=<target.hp>;type=FLOAT} @parent
   - setvar{var=caster.parentlevel;val=" ";type=STRING} @self ?varequals{var=caster.display_level_on_health_bar;val=false}
   - setvar{var=caster.parentlevel_integer;val=<target.level>;type=INTEGER} @parent{conditions=[ - isplayer false]} ?varequals{var=caster.display_level_on_health_bar;val=true}
   - setvar{var=caster.parentlevel;val="Lv.<caster.var.parentlevel_integer> ";type=STRING} @parent{conditions=[ - isplayer false]} ?varequals{var=caster.display_level_on_health_bar;val=true}
@@ -464,39 +476,6 @@ HEALTHBAR_ENTITY_check_owner_health_1:
   - setvariable{var=caster.healthbarvalue;type=INTEGER;value=1} @self
   - setvar{var=target.hp_bar;val=P;type=STRING} @parent
 
-
-
-
-
-
-
-
-
-
-
-
-
-HEALTHBAR_ENTITY_detect_sneak:
-  Conditions:
-  - varequals{var=caster.hide_bar_on_sneak;val=true} true
-  Skills:
-  - skill{s=HEALTHBAR_ENTITY_detect_sneak_show} @parent
-  - skill{s=HEALTHBAR_ENTITY_detect_sneak_hide} @parent
-  
-HEALTHBAR_ENTITY_detect_sneak_show:
-  Conditions:
-  - varequals{var=caster.OWNERsneaking;val=false} false
-  TargetConditions:
-  - ( isplayer && crouching false )
-  Skills:
-  - setvar{var=caster.OWNERsneaking;val=false;type=STRING} @self
-  - command{c="data merge entity @s {text_opacity:255}";ac=true} @self
-  
-HEALTHBAR_ENTITY_detect_sneak_hide:
-  Conditions:
-  - varequals{var=caster.OWNERsneaking;val=true} false
-  TargetConditions:
-  - ( isplayer && crouching true )
-  Skills:
-  - setvar{var=caster.OWNERsneaking;val=true;type=STRING} @self
-  - command{c="data merge entity @s {text_opacity:<caster.var.hide_bar_on_sneak_opacity>}";ac=true} @self
+# 2026-09-24: HEALTHBAR_ENTITY_detect_sneak(_show/_hide) removed — they faded the bar
+# with command{c="data merge entity @s ..."} run as the text display, and Minecraft
+# broadcasts every such command to ops ("[Text Display: Modified entity data ...]").

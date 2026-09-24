@@ -49,7 +49,7 @@ public record ContainerCommand(GlitchItems plugin, ContainerManager manager, Sca
                 // Run scatter off the command thread? Command is already on global region, safe to run direct
                 try {
                     scatter.scatterNow();
-                    sender.sendMessage(Component.text("Scatter complete — " + scatter.getTrackedCount() + " containers now tracked.", NamedTextColor.GREEN));
+                    sender.sendMessage(Component.text("Scatter started — chunks load in the background; see console for the result.", NamedTextColor.GREEN));
                 } catch (Exception e) {
                     sender.sendMessage(Component.text("Scatter failed: " + e.getMessage(), NamedTextColor.RED));
                 }
