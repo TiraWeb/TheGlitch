@@ -7,8 +7,9 @@
 # Creates the ajLeaderboards boards and one DecentHolograms hologram per board
 # near the hub warp. Place each in-game with: /dh hologram movehere <name>
 # Holograms that already exist are skipped (so placed ones aren't reset).
-# ajLeaderboards only records a player's value while they are online, so
-# boards fill in as people join.
+# glitchclasses_level only resolves for online players, so that board fills in
+# as people join; the others also refresh offline players hourly.
+# The interval change needs a server restart to take effect.
 
 set -euo pipefail
 
@@ -29,6 +30,20 @@ if [[ ! -f /opt/theglitch/server/plugins/PlaceholderAPI/expansions/Expansion-sta
   sleep 5
   mc "papi reload"
 fi
+
+# --- ajLeaderboards config ----------------------------------------------------
+# Ops (and anyone with *) get ajleaderboards.dontupdate.<board> implicitly and
+# would never be added — turn that check off. Statistic + Vault placeholders
+# work for offline players, so refresh those boards hourly for everyone.
+AJ_CFG="/opt/theglitch/server/plugins/ajLeaderboards/config.yml"
+[[ -f "${AJ_CFG}" ]] || die "ajLeaderboards config not found at ${AJ_CFG}"
+sed -i -E \
+  -e 's/^enable-dontupdate-permission:.*/enable-dontupdate-permission: false/' \
+  -e 's/^offline-update-boards:.*/offline-update-boards: [vault_eco_balance, statistic_mob_kills, statistic_player_kills, statistic_hours_played]/' \
+  -e 's/^offline-update-interval-hours:.*/offline-update-interval-hours: 1/' \
+  -e 's/^offline-update-run-on-startup:.*/offline-update-run-on-startup: true/' \
+  "${AJ_CFG}"
+mc "ajlb reload" >/dev/null
 
 DIVIDER='&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬'
 
