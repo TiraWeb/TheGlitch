@@ -231,6 +231,8 @@ install_modrinth_plugin "TAB.jar"                tab-was-taken
 install_modrinth_plugin "PlaceholderAPI.jar"     placeholderapi
 install_modrinth_plugin "VelKoth.jar"             velkoth
 install_modrinth_plugin "eco.jar"                eco-plugin
+install_modrinth_plugin "DecentHolograms.jar"     decentholograms
+install_modrinth_plugin "ajLeaderboards.jar"      ajleaderboards
 
 # GlitchStash is built from source (custom plugin) — not on Modrinth.
 # Built separately via: sudo ./plugins/GlitchStash/build.sh
