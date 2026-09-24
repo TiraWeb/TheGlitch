@@ -206,4 +206,4 @@ echo "$LOG_PREFIX Done. List:"
 ls -lh "${BACKUP_DIR}"/theglitch-worlds+data-*.tar.gz 2>/dev/null | tail -n 10 || true
 echo "$LOG_PREFIX To pull to your PC when online, run on PC:"
 echo "  powershell -ExecutionPolicy Bypass -File C:\\opencode\\MCproject\\scripts\\pull-backup.ps1"
-echo "  # or: scp -i C:\\opencode\\MCproject\\try2.key ubuntu@217.142.189.253:${BACKUP_DIR}/<file> C:\\opencode\\MCproject\\backups\\"
+echo "  # or: scp -i C:\\opencode\\MCproject\\try2.key ubuntu@94.249.187.125:${BACKUP_DIR}/<file> C:\\opencode\\MCproject\\backups\\"

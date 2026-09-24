@@ -2,7 +2,7 @@
 # Host retains every-2-days backups at /opt/theglitch/backups (PC may be offline, so host is source of truth)
 # This script pulls via scp (try2.key) - safe to run anytime, skips existing files
 param(
-  [string]$HostAddr = "217.142.189.253",
+  [string]$HostAddr = "94.249.187.125",
   [string]$User = "ubuntu",
   [string]$KeyPath = "C:\opencode\MCproject\try2.key",
   [string]$RemoteDir = "/opt/theglitch/backups",

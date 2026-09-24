@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
 # The Glitch — server launcher.
-# Aikar's flags, tuned for Oracle Ampere A1 (2 OCPU / 12GB RAM):
-# 8GB heap leaves ~4GB for JVM off-heap memory, Geyser's translation
+# Aikar's flags, tuned for the Skrime Ryzen KVM (4 vCPU / 16GB RAM):
+# 10GB heap leaves ~6GB for JVM off-heap memory, Geyser's translation
 # buffers, and the OS itself — the margin that prevents OOM kills.
 #
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 
-HEAP="${HEAP:-8G}"
+HEAP="${HEAP:-10G}"
 
 # Minecraft 26.x requires Java 25; pick it explicitly in case the distro
 # 'java' alternative points at an older JDK.
