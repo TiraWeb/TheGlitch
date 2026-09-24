@@ -7,16 +7,24 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
-public final class GlitchQuests extends JavaPlugin implements TabCompleter {
+public final class GlitchQuests extends JavaPlugin implements TabCompleter, Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static GlitchQuests instance;
+    /** Bare labels MythicDungeons also claims; always routed to our rewards menu. */
+    private static final Set<String> REWARD_LABELS = Set.of("rewards", "reward", "daily");
 
     private QuestManager quests;
     private Menus menus;
@@ -42,16 +50,24 @@ public final class GlitchQuests extends JavaPlugin implements TabCompleter {
         }
 
         // MythicDungeons also registers /rewards (its own alias /drewards stays
-        // intact); claim the bare label once every plugin has registered.
-        Bukkit.getScheduler().runTask(this, () -> {
-            var ours = getCommand("rewards");
-            if (ours != null) Bukkit.getCommandMap().getKnownCommands().put("rewards", ours);
-        });
+        // intact). Swapping the CommandMap entry doesn't stick on 26.x (Brigadier
+        // keeps MythicDungeons' node), so reroute the typed command instead.
+        Bukkit.getPluginManager().registerEvents(this, this);
 
         Bukkit.getScheduler().runTaskTimer(this, listener::tickMinute, 1200L, 1200L);
         Bukkit.getScheduler().runTaskTimer(this, quests::saveDirty, 6000L, 6000L);
         // players already online after a /reload
         Bukkit.getOnlinePlayers().forEach(quests::data);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onRewardsCommand(PlayerCommandPreprocessEvent event) {
+        String msg = event.getMessage();
+        int end = msg.indexOf(' ');
+        String label = (end < 0 ? msg.substring(1) : msg.substring(1, end)).toLowerCase(Locale.ROOT);
+        if (REWARD_LABELS.contains(label)) {
+            event.setMessage("/glitchquests:rewards" + (end < 0 ? "" : msg.substring(end)));
+        }
     }
 
     @Override
