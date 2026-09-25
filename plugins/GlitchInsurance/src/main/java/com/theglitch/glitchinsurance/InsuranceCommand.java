@@ -86,26 +86,12 @@ public final class InsuranceCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "claim": {
-                var claimed = manager.claim(player.getUniqueId());
-                if (claimed.isEmpty()) {
-                    player.sendMessage(plugin.getComponent("no-insurance"));
-                    return true;
-                }
-                int given = 0;
-                for (ItemStack stack : claimed) {
-                    var leftover = player.getInventory().addItem(stack);
-                    if (!leftover.isEmpty()) {
-                        for (ItemStack drop : leftover.values()) {
-                            player.getWorld().dropItemNaturally(player.getLocation(), drop);
-                            player.sendMessage(plugin.getComponent("inventory-full"));
-                        }
-                    }
-                    given++;
-                }
-                player.sendMessage(plugin.getComponent("claimed",
-                        "<count>", String.valueOf(given)));
-                // Also send generic claim message
-                player.sendMessage(plugin.getComponent("claim"));
+                // Claiming handed out a stored COPY of the insured item while the player
+                // still held the original — an item dupe. Insured gear is kept
+                // automatically when you die (InsuranceListener), so there is nothing to claim.
+                player.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                        "<gray>Insured items are <green>kept automatically</green> when you die — there's nothing to claim. "
+                                + "Use <white>/insurance list</white> to see your active policies.</gray>"));
                 return true;
             }
             default: {

@@ -175,6 +175,14 @@ public final class GlitchInsurance extends JavaPlugin {
             player.sendMessage(getComponent("no-insurance"));
             return false;
         }
+        // Claims are disabled: they returned a stored copy of an item the player could
+        // still be holding (dupe). Insured gear is kept automatically on death.
+        if (index >= 0) {
+            player.sendMessage(net.kyori.adventure.text.Component.text(
+                    "Insured items are kept automatically when you die — there's nothing to claim.",
+                    net.kyori.adventure.text.format.NamedTextColor.GRAY));
+            return false;
+        }
         ItemStack claimedItem;
         try {
             claimedItem = manager.claimOrdinal(player.getUniqueId(), index);

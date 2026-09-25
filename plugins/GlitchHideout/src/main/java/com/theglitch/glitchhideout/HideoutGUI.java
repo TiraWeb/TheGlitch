@@ -255,7 +255,14 @@ public final class HideoutGUI implements Listener {
 
         event.setCancelled(true);
         if (event.getClickedInventory() == null) return;
-        if (event.getClickedInventory() != event.getView().getTopInventory()) return;
+        if (event.getClickedInventory() != event.getView().getTopInventory()) {
+            // Clicking your own inventory while the stash/armory is open stores the item
+            // (there was previously no way to put anything in).
+            if (session.type().equals("stash") || session.type().equals("armory")) {
+                depositFromInventory(player, session, event.getSlot());
+            }
+            return;
+        }
 
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= event.getView().getTopInventory().getSize()) return;
@@ -403,6 +410,22 @@ public final class HideoutGUI implements Listener {
         }
         if (index < 0 || index >= recipes.size()) return;
         plugin.getHideoutManager().craft(player, recipes.get(index));
+    }
+
+    private void depositFromInventory(Player player, Session session, int invSlot) {
+        ItemStack item = player.getInventory().getItem(invSlot);
+        if (item == null || item.getType().isAir()) return;
+        Inventory top = player.getOpenInventory().getTopInventory();
+        for (int i = session.from(); i <= session.to(); i++) {
+            ItemStack current = top.getItem(i);
+            if (current == null || current.getType().isAir()) {
+                top.setItem(i, item.clone());
+                player.getInventory().setItem(invSlot, null);
+                saveStorage(player, session);
+                return;
+            }
+        }
+        player.sendMessage(Component.text("Storage is full — upgrade the station for more slots.", NamedTextColor.RED));
     }
 
     private void handleStorageClick(Player player, int slot, boolean isArmory) {

@@ -117,11 +117,13 @@ public final class RaidListener implements Listener {
                 plugin.getLogger().info("Raid world->hub for " + player.getName() + " ignored (recent death, not extraction)");
                 return;
             }
-            // Give GlitchStash a moment to have saved the stash on KothWinEvent; delay raid end slightly
+            // Real extractions (KOTH capture) end the raid before the hub teleport, so a
+            // player still in a raid here left some other way (admin tp / bypass). That is
+            // NOT an extraction: no payout — it used to pay out for a plain /spawn.
             FoliaScheduler.runLaterGlobal(plugin, () -> {
                 if (manager.isInRaid(player.getUniqueId())) {
-                    manager.handleExtraction(player);
-                    plugin.getLogger().info("Raid extraction detected for " + player.getName() + " (" + from + " -> " + to + ")");
+                    manager.endRaid(player.getUniqueId(), RaidEndReason.MANUAL);
+                    plugin.getLogger().info("Raid abandoned by " + player.getName() + " (" + from + " -> " + to + ", no extraction)");
                 }
             }, 10L);
         }
@@ -331,6 +333,26 @@ public final class RaidListener implements Listener {
         plugin.getLogger().info("Raid cancelled for " + player.getName() + " (disconnected in " + raidWorld + ")");
     }
 
+    /**
+     * In-raid players may only leave a red world by extracting (the KOTH capture ends
+     * the raid before its hub teleport), dying, or being moved by the raid system.
+     * Without this, /spawn, /warp or an accepted /tpahere carried the whole inventory
+     * out and counted as an extraction.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onLeaveRedWorld(org.bukkit.event.player.PlayerTeleportEvent event) {
+        Player player = event.getPlayer();
+        org.bukkit.Location to = event.getTo();
+        if (to == null || to.getWorld() == null) return;
+        String from = event.getFrom().getWorld() == null ? "" : event.getFrom().getWorld().getName();
+        if (!manager.isRedWorld(from) || to.getWorld().getName().equalsIgnoreCase(from)) return;
+        java.util.UUID id = player.getUniqueId();
+        if (!manager.isInRaid(id) || manager.isExitAllowed(id) || manager.isTimeoutVictim(id)) return;
+        if (player.hasPermission("glitchraid.admin")) return;
+        event.setCancelled(true);
+        player.sendMessage(MM.deserialize("<red>You can't leave the Red Zone mid-raid — <gray>reach an extraction point to get out with your loot.</gray></red>"));
+    }
+
     // ---- Loot accounting ----
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -349,7 +371,7 @@ public final class RaidListener implements Listener {
         } else if (event.getEntity() instanceof org.bukkit.entity.Monster) {
             value = 10;
         }
-        manager.addLoot(killer.getUniqueId(), value);
+        manager.addBounty(killer.getUniqueId(), value);
         String lootRaw = plugin.getConfig().getString("messages.loot-added", "<gold>+<amount> loot value</gold>");
         killer.sendActionBar(MM.deserialize(lootRaw.replace("<amount>", String.valueOf(value))));
     }
@@ -361,6 +383,9 @@ public final class RaidListener implements Listener {
         // Only count if the item has sell value (avoid counting junk like dirt)
         org.bukkit.inventory.ItemStack stack = event.getItem().getItemStack();
         if (stack == null || stack.getType().isAir()) return;
+        // Items a player threw on the ground aren't new loot (carried-in gear dropped and
+        // re-picked, or handed between teammates). Mob / container / death drops have no thrower.
+        if (event.getItem().getThrower() != null) return;
         // Anti-farm: skip items already counted (drop/re-pickup of the same stack must not re-add loot)
         org.bukkit.persistence.PersistentDataType<Byte, Byte> tagType = org.bukkit.persistence.PersistentDataType.BYTE;
         if (event.getItem().getPersistentDataContainer().has(manager.getLootCountedKey(), tagType)) {

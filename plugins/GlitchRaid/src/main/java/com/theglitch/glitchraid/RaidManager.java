@@ -45,6 +45,12 @@ public final class RaidManager {
     private final Map<UUID, Long> lastDeathMillis = new ConcurrentHashMap<>();
     // Players extracted during the current global cycle — prevents party pull re-abducting them
     private final Set<UUID> extractedThisRaid = ConcurrentHashMap.newKeySet();
+    // Players currently being moved out of a red world by the raid system itself
+    // (buffer bounce, creative timeout, party pull). RaidListener blocks every other
+    // exit while a player is in a raid — otherwise /spawn or /warp was a free extraction.
+    private final Set<UUID> exitAllowed = ConcurrentHashMap.newKeySet();
+    // Shards actually deposited on each player's last extraction (summary display).
+    private final Map<UUID, Integer> paidOnExtract = new ConcurrentHashMap<>();
     // Stored solo-raid end timestamps (solo-new mode) so quit/relog cannot reset the timer
     private final Map<UUID, Long> soloRaidEnds = new ConcurrentHashMap<>();
     // PDC tag marking item entities/stacks already counted for loot (anti drop/re-pickup farming)
@@ -306,6 +312,10 @@ public final class RaidManager {
 
     public boolean hasExtractedThisRaid(UUID uuid) {
         return extractedThisRaid.contains(uuid);
+    }
+
+    public boolean isExitAllowed(UUID uuid) {
+        return exitAllowed.contains(uuid);
     }
 
     // ---- Solo raid end persistence (solo-new quit/relog timer restore) ----
@@ -1047,19 +1057,18 @@ public final class RaidManager {
                     for (UUID mid : extracted) {
                         Player p = Bukkit.getPlayer(mid);
                         if (p == null) continue;
-                        int myLoot = parent.getLootValue(mid);
+                        int payout = paidOnExtract.getOrDefault(mid, 0);
                         int myDeaths = parent.getDeaths(mid);
-                        int payout = (int) Math.round(myLoot * payoutMultiplier);
                         try {
                             p.sendMessage(Component.empty());
                             p.sendMessage(title);
                             p.sendMessage(MM.deserialize("<gray>Duration: <white>" + durationStr + "</white>"));
                             p.sendMessage(MM.deserialize("<gray>Reason: <white>EXTRACTED</white>"));
-                            p.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>x" + payoutMultiplier + " = <green>" + payout + "</green>"));
+                            p.sendMessage(MM.deserialize("<gray>Kill bounty paid: <green>" + payout + " Shards</green> <dark_gray>· loot is in your stash — sell it at the Bazaar</dark_gray>"));
                             p.sendMessage(MM.deserialize("<gray>Your deaths: <red>" + myDeaths + "</red>"));
                             p.sendMessage(Component.empty());
                             Title.Times times = Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(2000), Duration.ofMillis(500));
-                            p.showTitle(Title.title(title, MM.deserialize("<green>extracted • Loot " + payout + " • Deaths " + myDeaths + "</green>"), times));
+                            p.showTitle(Title.title(title, MM.deserialize("<green>extracted • +" + payout + " Shards • Deaths " + myDeaths + "</green>"), times));
                         } catch (Exception ignored) {}
                     }
                 }, summaryDelayTicks);
@@ -1187,19 +1196,21 @@ public final class RaidManager {
                 toStash.add(winner.getUniqueId());
             }
             for (UUID mid : new HashSet<>(toStash)) {
+                // The winner is stashed + cleared by GlitchStash's own KothWinEvent listener —
+                // stashing them here too saved their gear twice (a straight dupe).
+                if (mid.equals(winner.getUniqueId())) continue;
                 Player p = Bukkit.getPlayer(mid);
                 if (p != null && p.getWorld().getName().equalsIgnoreCase(winner.getWorld().getName())) {
                     try {
                         com.theglitch.glitchstash.GlitchStash stashPlugin = com.theglitch.glitchstash.GlitchStash.getInstance();
                         if (stashPlugin != null) {
+                            // getStorageContents (36 slots) — getContents() also holds armor + offhand,
+                            // which are passed separately, so armor was stashed twice.
                             stashPlugin.getStashManager().saveStash(p.getUniqueId(), p.getName(),
-                                    p.getInventory().getContents(), p.getInventory().getArmorContents(), p.getInventory().getItemInOffHand());
-                            // Clear non-winner inventories here (winner will be cleared by GlitchStash listener)
-                            if (!mid.equals(winner.getUniqueId())) {
-                                p.getInventory().clear();
-                                p.getInventory().setArmorContents(new ItemStack[4]);
-                                p.getInventory().setItemInOffHand(null);
-                            }
+                                    p.getInventory().getStorageContents(), p.getInventory().getArmorContents(), p.getInventory().getItemInOffHand());
+                            p.getInventory().clear();
+                            p.getInventory().setArmorContents(new ItemStack[4]);
+                            p.getInventory().setItemInOffHand(null);
                         }
                     } catch (Exception e) {
                         plugin.getLogger().warning("Failed to stash party member " + mid + " on Koth win: " + e.getMessage());
@@ -1246,10 +1257,13 @@ public final class RaidManager {
         // Payout per-player before ending (so loot still available)
         if (session != null) {
             for (UUID mid : membersSnapshot) {
-                int myLoot = session.getLootValue(mid);
+                int myLoot = session.getBounty(mid);
+                session.resetLoot(mid);
+                paidOnExtract.put(mid, 0);
                 if (myLoot <= 0) continue;
                 int payout = (int) Math.round(myLoot * payoutMultiplier);
                 if (payout <= 0) continue;
+                paidOnExtract.put(mid, payout);
                 Player p = Bukkit.getPlayer(mid);
                 if (p != null) {
                     try {
@@ -1259,7 +1273,7 @@ public final class RaidManager {
                             if (econ != null) {
                                 EconomyResponse resp = econ.depositPlayer(p, payout);
                                 if (resp.transactionSuccess()) {
-                                    p.sendMessage(MM.deserialize("<green>+" + payout + " Shards payout for extraction! <gray>(loot " + myLoot + " ×" + payoutMultiplier + ")</gray></green>"));
+                                    p.sendMessage(MM.deserialize("<green>+" + payout + " Shards kill bounty for extracting! <gray>(" + myLoot + " ×" + payoutMultiplier + ")</gray></green>"));
                                 }
                             }
                         }
@@ -1385,6 +1399,14 @@ public final class RaidManager {
         RaidSession session = activeRaids.get(uuid);
         if (session == null) return;
         session.addLoot(uuid, amount);
+    }
+
+    /** Kill bounty: shown as loot and paid (× payout multiplier) on extraction. */
+    public void addBounty(UUID uuid, int amount) {
+        RaidSession session = activeRaids.get(uuid);
+        if (session == null) return;
+        session.addLoot(uuid, amount);
+        session.addBounty(uuid, amount);
     }
 
     /**
@@ -1840,13 +1862,19 @@ public final class RaidManager {
     }
 
     public void teleportToHub(Player player) {
+        final UUID id = player.getUniqueId();
+        exitAllowed.add(id);
         try {
             World hub = Bukkit.getWorld(hubWorld);
             if (hub != null) {
                 player.teleport(hub.getSpawnLocation());
                 return;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        } finally {
+            // mv tp below may complete a tick later — keep the pass briefly.
+            FoliaScheduler.runLaterGlobal(plugin, () -> exitAllowed.remove(id), 40L);
+        }
         try {
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "mv tp " + player.getName() + " " + hubWorld);
         } catch (Exception ignored) {}
@@ -1865,7 +1893,8 @@ public final class RaidManager {
             if (p == null) continue;
             int myLoot = session.getLootValue(memberId);
             int myDeaths = session.getDeaths(memberId);
-            int payout = lost ? 0 : (int) Math.round(myLoot * payoutMultiplier);
+            // Shards are only ever paid on extraction (handleExtraction) — show what was paid.
+            int payout = reason == RaidEndReason.EXTRACTED ? paidOnExtract.getOrDefault(memberId, 0) : 0;
             p.sendMessage(Component.empty());
             p.sendMessage(title);
             p.sendMessage(MM.deserialize("<gray>Duration: <white>" + durationStr + "</white>"));
@@ -1876,8 +1905,10 @@ public final class RaidManager {
             if (lost) {
                 p.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>→ <red>LOST</red> <gray>(not extracted)</gray>"));
                 p.sendMessage(MM.deserialize("<gray>Payout: <red>0</red> <gray>(stash safe)</gray>"));
+            } else if (reason == RaidEndReason.EXTRACTED) {
+                p.sendMessage(MM.deserialize("<gray>Kill bounty paid: <green>" + payout + " Shards</green> <dark_gray>· loot is in your stash — sell it at the Bazaar</dark_gray>"));
             } else {
-                p.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>x" + payoutMultiplier + " = <green>" + payout + "</green>"));
+                p.sendMessage(MM.deserialize("<gray>Payout: <red>0</red> <gray>(you didn't extract)</gray>"));
             }
             p.sendMessage(MM.deserialize("<gray>Your deaths: <red>" + myDeaths + "</red>"));
             if (myDeaths > 0) {
@@ -1896,9 +1927,9 @@ public final class RaidManager {
             if (lost) {
                 subtitle = MM.deserialize("<red>consumed • Loot lost</red>");
             } else if (reason == RaidEndReason.EXTRACTED) {
-                subtitle = MM.deserialize("<green>extracted • Loot " + payout + " • Deaths " + myDeaths + "</green>");
+                subtitle = MM.deserialize("<green>extracted • +" + payout + " Shards • Deaths " + myDeaths + "</green>");
             } else {
-                subtitle = MM.deserialize("<gray>" + reason.name().toLowerCase() + " • Loot " + payout + " • Deaths " + myDeaths + "</gray>");
+                subtitle = MM.deserialize("<gray>" + reason.name().toLowerCase() + " • no payout • Deaths " + myDeaths + "</gray>");
             }
             p.showTitle(Title.title(title, subtitle, times));
         }
@@ -1907,7 +1938,7 @@ public final class RaidManager {
             if (lp != null) {
                 int myLoot = session.getLootValue(session.getLeader());
                 int myDeaths = session.getDeaths(session.getLeader());
-                int payout = lost ? 0 : (int) Math.round(myLoot * payoutMultiplier);
+                int payout = reason == RaidEndReason.EXTRACTED ? paidOnExtract.getOrDefault(session.getLeader(), 0) : 0;
                 lp.sendMessage(Component.empty());
                 lp.sendMessage(title);
                 lp.sendMessage(MM.deserialize("<gray>Duration: <white>" + durationStr + "</white>"));
@@ -1915,7 +1946,7 @@ public final class RaidManager {
                 if (lost) {
                     lp.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>→ <red>LOST</red></gray>"));
                 } else {
-                    lp.sendMessage(MM.deserialize("<gray>Your loot: <gold>" + myLoot + "</gold> <gray>x" + payoutMultiplier + " = <green>" + payout + "</green>"));
+                    lp.sendMessage(MM.deserialize("<gray>Shards paid: <green>" + payout + "</green>"));
                 }
                 lp.sendMessage(MM.deserialize("<gray>Your deaths: <red>" + myDeaths + "</red>"));
                 lp.sendMessage(Component.empty());

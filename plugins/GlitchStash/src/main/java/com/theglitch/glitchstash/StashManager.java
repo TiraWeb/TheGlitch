@@ -82,6 +82,17 @@ public final class StashManager {
                     mergeStack(merged, item.clone());
                 }
             }
+            // Previously stashed armor/offhand move into the contents list. The old code
+            // REPLACED them whenever the new extraction carried armor, deleting the
+            // earlier pieces (the GUI shows everything as one flat list anyway).
+            if (existing.armor() != null) {
+                for (ItemStack item : existing.armor()) {
+                    if (item != null && item.getType() != Material.AIR) merged.add(item.clone());
+                }
+            }
+            if (existing.offhand() != null && existing.offhand().getType() != Material.AIR) {
+                merged.add(existing.offhand().clone());
+            }
             // Add new extraction items
             for (ItemStack item : contents) {
                 if (item != null && item.getType() != Material.AIR) {
@@ -90,27 +101,8 @@ public final class StashManager {
             }
 
             mergedContents = merged.toArray(new ItemStack[0]);
-
-            // Merge armor — keep existing if new extraction has empty slots
-            if (armor != null && armor.length > 0) {
-                boolean hasNewArmor = false;
-                for (ItemStack a : armor) {
-                    if (a != null && a.getType() != Material.AIR) {
-                        hasNewArmor = true;
-                        break;
-                    }
-                }
-                mergedArmor = hasNewArmor ? armor : existing.armor();
-            } else {
-                mergedArmor = existing.armor();
-            }
-
-            // Merge offhand — keep existing if new extraction has empty offhand
-            if (offhand != null && offhand.getType() != Material.AIR) {
-                mergedOffhand = offhand;
-            } else {
-                mergedOffhand = existing.offhand();
-            }
+            mergedArmor = deepCopy(armor);
+            mergedOffhand = offhand != null && offhand.getType() != Material.AIR ? offhand.clone() : null;
         } else {
             // No merge needed — filter null AIR but keep array as is for first save
             // Defensive copy to avoid external mutation
@@ -120,8 +112,8 @@ public final class StashManager {
                 else filtered.add(item);
             }
             mergedContents = filtered.toArray(new ItemStack[0]);
-            mergedArmor = armor;
-            mergedOffhand = offhand;
+            mergedArmor = deepCopy(armor);
+            mergedOffhand = offhand != null && offhand.getType() != Material.AIR ? offhand.clone() : null;
         }
 
         StashData data = new StashData(uuid, playerName, mergedContents, mergedArmor, mergedOffhand, System.currentTimeMillis());
@@ -142,6 +134,15 @@ public final class StashManager {
                 player.sendMessage(plugin.getComponent("stash-full"));
             }
         }
+    }
+
+    private static ItemStack[] deepCopy(ItemStack[] items) {
+        if (items == null) return new ItemStack[4];
+        ItemStack[] out = new ItemStack[items.length];
+        for (int i = 0; i < items.length; i++) {
+            out[i] = items[i] == null ? null : items[i].clone();
+        }
+        return out;
     }
 
     private static void mergeStack(List<ItemStack> target, ItemStack stack) {

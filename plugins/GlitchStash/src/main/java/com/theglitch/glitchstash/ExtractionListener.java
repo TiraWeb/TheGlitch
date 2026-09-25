@@ -104,6 +104,10 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
                 value += price * offhand.getAmount();
             }
         }
+        // Only loot gained THIS raid earns the bonus. Basing it on the whole inventory let
+        // players carry expensive shop gear in and out every raid for free shards.
+        Integer raidLoot = raidLootValue(player);
+        if (raidLoot != null) value = Math.min(value, raidLoot);
         int bonus = (int) Math.round(value * (multiplier - 1.0));
         if (variantBonusPct > 0) {
             bonus += (int) Math.round(value * variantBonusPct / 100.0);
@@ -122,6 +126,27 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
         player.sendMessage(MM.deserialize(raw
                 .replace("<multiplier>", String.format(java.util.Locale.ROOT, "%.1f", multiplier))
                 .replace("<amount>", String.valueOf(bonus))));
+    }
+
+    /**
+     * Loot value the player earned in their current GlitchRaid session (items looted +
+     * kills), or null if GlitchRaid isn't installed. 0 when not in a raid. GlitchStash's
+     * KothWinEvent listener runs before GlitchRaid ends the session, so it is still live.
+     */
+    private Integer raidLootValue(Player player) {
+        org.bukkit.plugin.Plugin raid = Bukkit.getPluginManager().getPlugin("GlitchRaid");
+        if (raid == null || !raid.isEnabled()) return null;
+        try {
+            Object manager = raid.getClass().getMethod("getRaidManager").invoke(raid);
+            Object session = manager.getClass().getMethod("getSession", java.util.UUID.class)
+                    .invoke(manager, player.getUniqueId());
+            if (session == null) return 0;
+            return (Integer) session.getClass().getMethod("getLootValue", java.util.UUID.class)
+                    .invoke(session, player.getUniqueId());
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            plugin.getLogger().log(Level.FINE, "Raid loot lookup failed", e);
+            return 0;
+        }
     }
 
     private int lootValue(ItemStack[] items) {

@@ -301,6 +301,7 @@ public final class QuestManager {
         if (progressOf(d, q) < q.amount()) return ClaimResult.NOT_READY;
         (q.period() == Period.DAILY ? d.dailyClaimed : d.weeklyClaimed).add(q.id());
         d.dirty = true;
+        saveAsync(p.getUniqueId(), d); // persist the claim now — a crash before the 5m autosave re-opened it
         q.reward().give(p, plugin.getEconomy());
         return ClaimResult.OK;
     }
@@ -316,6 +317,7 @@ public final class QuestManager {
         if (!allDailiesDone(d)) return ClaimResult.NOT_READY;
         d.dailyBonusClaimed = true;
         d.dirty = true;
+        saveAsync(p.getUniqueId(), d); // persist the claim now — a crash before the 5m autosave re-opened it
         dailyBonus.give(p, plugin.getEconomy());
         return ClaimResult.OK;
     }
@@ -352,6 +354,7 @@ public final class QuestManager {
         d.streak = day;
         d.lastDailyClaim = dayKey();
         d.dirty = true;
+        saveAsync(p.getUniqueId(), d); // persist the claim now — a crash before the 5m autosave re-opened it
         streakReward(day).give(p, plugin.getEconomy());
         return ClaimResult.OK;
     }
@@ -361,6 +364,7 @@ public final class QuestManager {
         if (!canClaimWeekly(d)) return ClaimResult.ALREADY;
         d.lastWeeklyClaim = weekKey();
         d.dirty = true;
+        saveAsync(p.getUniqueId(), d); // persist the claim now — a crash before the 5m autosave re-opened it
         weeklyReward.give(p, plugin.getEconomy());
         return ClaimResult.OK;
     }
@@ -370,6 +374,7 @@ public final class QuestManager {
         if (!canClaimMonthly(d)) return ClaimResult.ALREADY;
         d.lastMonthlyClaim = monthKey();
         d.dirty = true;
+        saveAsync(p.getUniqueId(), d); // persist the claim now — a crash before the 5m autosave re-opened it
         monthlyReward.give(p, plugin.getEconomy());
         return ClaimResult.OK;
     }
