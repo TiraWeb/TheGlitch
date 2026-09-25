@@ -58,3 +58,8 @@ backups/*.sha256
 /Beyond Mob Pack*/
 /EndMobsVol1*/
 /the_voids/
+
+# Purchased dungeon maps/boss packs — licensed, never commit (public repo)
+/Dungeon_bosses/
+/Dungeon_maps.zip
+/dungeon-private/
