@@ -55,8 +55,20 @@ tar czf "${BK}" -C "${PLUGINS}" \
   MythicMobs ModelEngine/blueprints Nexo/glyphs Nexo/pack/assets MythicDungeons/config.yml MythicDungeons/maps 2>/dev/null || true
 
 # --- boss assets -------------------------------------------------------------
+# ModelEngine R4.1 only imports blueprints at the top of blueprints/ (the
+# packs' own sub-folders were skipped), so they go in flat. Model ids are the
+# file names and the skills reference them, so names are kept; the manifest
+# lists what this script owns (textures are embedded in every .bbmodel).
 log "Installing ModelEngine blueprints"
-install_tree "${STAGE}/meg" "${PLUGINS}/ModelEngine/blueprints/dungeon_bosses"
+BP="${PLUGINS}/ModelEngine/blueprints"
+rm -rf "${BP}/dungeon_bosses"
+: > "${BP}/.dungeon_bosses.manifest"
+while IFS= read -r -d '' f; do
+  name=$(basename "$f")
+  install -o "${MC_USER}" -g "${MC_USER}" -m 644 "$f" "${BP}/${name}"
+  echo "${name}" >> "${BP}/.dungeon_bosses.manifest"
+done < <(find "${STAGE}/meg" -name '*.bbmodel' -print0)
+log "  $(wc -l < "${BP}/.dungeon_bosses.manifest") blueprints"
 log "Installing MythicMobs pack GlitchDungeonBosses"
 install_tree "${STAGE}/mm/Packs/GlitchDungeonBosses" "${PLUGINS}/MythicMobs/Packs/GlitchDungeonBosses"
 log "Installing Nexo sounds, textures and glyphs"
@@ -91,7 +103,9 @@ sleep 15
 for _ in $(seq 1 60); do  # RCON answers once the new boot is up
   mc "list" >/dev/null 2>&1 && break; sleep 5
 done
-sleep 30  # ModelEngine finishes generating its pack after startup
+for _ in $(seq 1 60); do  # ModelEngine zips its pack asynchronously after startup
+  grep -q 'Resource pack zipped' "${SERVER_DIR}/logs/latest.log" && break; sleep 5
+done
 MEG_ZIP="${PLUGINS}/ModelEngine/resource pack.zip"
 [[ -f "${MEG_ZIP}" ]] || die "ModelEngine pack not generated — check logs for ModelEngine errors"
 install -o "${MC_USER}" -g "${MC_USER}" -m 644 "${MEG_ZIP}" "${PLUGINS}/Nexo/pack/uploads/10_modelengine.zip"
