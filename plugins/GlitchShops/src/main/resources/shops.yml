@@ -21,6 +21,9 @@ shops:
       vault_key: { buy: 120, sell: 60 }
       rift_key: { buy: 800, sell: 400 }
       fast_extract_key: { buy: 75, sell: 40 }
+      dungeon_key_t1: { buy: 250, sell: 125 }
+      dungeon_key_t2: { buy: 700, sell: 350 }
+      dungeon_key_t3: { buy: 1500, sell: 750 }
   alchemy:
     title: "Alchemy"
     tab-icon: "healing_potion"

@@ -1,0 +1,14 @@
+dungeon_key_t2:
+  itemname: <gold>Golden Dungeon Key</gold>
+  material: TRIPWIRE_HOOK
+  Pack:
+    parent_model: item/generated
+    # icon from the licensed key1 pack — installed on the host by
+    # scripts/setup-dungeons.sh (not in git)
+    texture: key1:items/golden_key1
+  lore:
+  - <gold>Opens one Tier 2 dungeon run for your party.</gold>
+  - <gray>Temple of Moldar, Crimson Keep,</gray>
+  - <gray>Ember Depths, Wreck of the Tide</gray>
+  - <dark_gray>Use it from /dungeons. Consumed on entry.</dark_gray>
+  - ' <gray>Sell price: <aqua>350 Shards</aqua></gray>'

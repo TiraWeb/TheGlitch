@@ -29,6 +29,11 @@ commands:
     description: Opens the Red Zone world picker GUI
     usage: /redzone
     permission: glitchraid.raid
+  dungeons:
+    description: Opens the boss dungeon picker (entry costs a dungeon key)
+    usage: /dungeons
+    aliases: [dungeonmenu]
+    permission: glitchraid.raid
 permissions:
   glitchraid.raid:
     description: Use raid commands

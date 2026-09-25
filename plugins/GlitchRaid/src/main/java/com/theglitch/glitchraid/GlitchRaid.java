@@ -30,6 +30,8 @@ public final class GlitchRaid extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new RaidListener(this, raidManager), this);
         Bukkit.getPluginManager().registerEvents(new RedPortalListener(this, raidManager, portalManager), this);
         Bukkit.getPluginManager().registerEvents(redZoneSelectGui, this);
+        com.theglitch.glitchraid.gui.DungeonSelectGUI dungeonGui = new com.theglitch.glitchraid.gui.DungeonSelectGUI(this);
+        Bukkit.getPluginManager().registerEvents(dungeonGui, this);
         // VelKoth bridge — only if VelKoth present, to avoid NoClassDefFoundError when hard import missing
         if (Bukkit.getPluginManager().getPlugin("VelKoth") != null) {
             try {
@@ -66,6 +68,17 @@ public final class GlitchRaid extends JavaPlugin {
             getCommand("redzone").setExecutor(new RedZoneUICommand(redZoneSelectGui));
         } else {
             getLogger().warning("Command 'redzone' not found in plugin.yml — check registration.");
+        }
+
+        if (getCommand("dungeons") != null) {
+            getCommand("dungeons").setExecutor((sender, command, label, args) -> {
+                if (sender instanceof org.bukkit.entity.Player player) {
+                    dungeonGui.open(player);
+                } else {
+                    sender.sendMessage("Players only.");
+                }
+                return true;
+            });
         }
 
         // PlaceholderAPI expansion

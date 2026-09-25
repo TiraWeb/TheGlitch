@@ -59,16 +59,28 @@ tar czf "${BK}" -C "${PLUGINS}" \
 # packs' own sub-folders were skipped), so they go in flat. Model ids are the
 # file names and the skills reference them, so names are kept; the manifest
 # lists what this script owns (textures are embedded in every .bbmodel).
-log "Installing ModelEngine blueprints"
+# The FREE ModelEngine build caps the number of registered models: with the
+# boss blueprints added it silently imported only the first 12 (alphabetical)
+# and dropped the Red Zone mobs' own models from the pack. Only install them
+# on ModelEngine Premium:  sudo DUNGEON_MODELS=1 ./scripts/setup-dungeons.sh
 BP="${PLUGINS}/ModelEngine/blueprints"
-rm -rf "${BP}/dungeon_bosses"
-: > "${BP}/.dungeon_bosses.manifest"
-while IFS= read -r -d '' f; do
-  name=$(basename "$f")
-  install -o "${MC_USER}" -g "${MC_USER}" -m 644 "$f" "${BP}/${name}"
-  echo "${name}" >> "${BP}/.dungeon_bosses.manifest"
-done < <(find "${STAGE}/meg" -name '*.bbmodel' -print0)
-log "  $(wc -l < "${BP}/.dungeon_bosses.manifest") blueprints"
+if [[ "${DUNGEON_MODELS:-0}" == "1" ]]; then
+  log "Installing ModelEngine blueprints"
+  rm -rf "${BP}/dungeon_bosses"
+  : > "${BP}/.dungeon_bosses.manifest"
+  while IFS= read -r -d '' f; do
+    name=$(basename "$f")
+    install -o "${MC_USER}" -g "${MC_USER}" -m 644 "$f" "${BP}/${name}"
+    echo "${name}" >> "${BP}/.dungeon_bosses.manifest"
+  done < <(find "${STAGE}/meg" -name '*.bbmodel' -print0)
+  log "  $(wc -l < "${BP}/.dungeon_bosses.manifest") blueprints"
+else
+  warn "Skipping boss blueprints (DUNGEON_MODELS=1 needs ModelEngine Premium) — bosses spawn without models"
+  if [[ -f "${BP}/.dungeon_bosses.manifest" ]]; then
+    while read -r n; do rm -f "${BP}/${n}"; done < "${BP}/.dungeon_bosses.manifest"
+    rm -f "${BP}/.dungeon_bosses.manifest"
+  fi
+fi
 log "Installing MythicMobs pack GlitchDungeonBosses"
 install_tree "${STAGE}/mm/Packs/GlitchDungeonBosses" "${PLUGINS}/MythicMobs/Packs/GlitchDungeonBosses"
 log "Installing Nexo sounds, textures and glyphs"

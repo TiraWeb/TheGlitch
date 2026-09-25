@@ -1,0 +1,14 @@
+dungeon_key_t1:
+  itemname: <gray>Iron Dungeon Key</gray>
+  material: TRIPWIRE_HOOK
+  Pack:
+    parent_model: item/generated
+    # icon from the licensed key1 pack — installed on the host by
+    # scripts/setup-dungeons.sh (not in git)
+    texture: key1:items/iron_key1
+  lore:
+  - <gray>Opens one Tier 1 dungeon run for your party.</gray>
+  - <gray>Goblin Hollow, Haunted Crypt,</gray>
+  - <gray>Illusion Vault, Sunken Sands</gray>
+  - <dark_gray>Use it from /dungeons. Consumed on entry.</dark_gray>
+  - ' <gray>Sell price: <aqua>125 Shards</aqua></gray>'

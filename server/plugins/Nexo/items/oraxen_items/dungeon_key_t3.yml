@@ -1,0 +1,14 @@
+dungeon_key_t3:
+  itemname: <light_purple>Mythic Dungeon Key</light_purple>
+  material: TRIPWIRE_HOOK
+  Pack:
+    parent_model: item/generated
+    # icon from the licensed key1 pack — installed on the host by
+    # scripts/setup-dungeons.sh (not in git)
+    texture: key1:items/mythic_key1
+  lore:
+  - <light_purple>Opens one Tier 3 dungeon run for your party.</light_purple>
+  - <gray>Moonlit Sanctum, Hollow Town,</gray>
+  - <gray>Mythic Spire</gray>
+  - <dark_gray>Use it from /dungeons. Consumed on entry.</dark_gray>
+  - ' <gray>Sell price: <aqua>750 Shards</aqua></gray>'

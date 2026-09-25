@@ -95,6 +95,15 @@
       "chars": [
         "\uf00a"
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/dungeons_bg.png",
+      "height": 256,
+      "ascent": 42,
+      "chars": [
+        "\uf00b"
+      ]
     }
   ]
 }

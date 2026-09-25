@@ -52,6 +52,11 @@ portal:
   region:
     world: ""
 
+# Boss dungeons (/dungeons -> MythicDungeons, see docs/DUNGEONS.md). Off until
+# the boss models can load (ModelEngine Premium); admins can always enter.
+dungeons:
+  enabled: false
+
 messages:
   raid-started: "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>"
   raid-auto-started: "<green><bold>Raid started!</bold> <gray>You entered the Glitch — 30:00 to extract!</gray>"

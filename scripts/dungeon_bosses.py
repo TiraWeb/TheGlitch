@@ -285,6 +285,13 @@ def main():
     with open(os.path.join(MM_OUT, "packinfo.yml"), "w", encoding="utf-8") as f:
         f.write("Name: GlitchDungeonBosses\nVersion: 1.0.0\nAuthor: licensed packs (see docs/DUNGEONS.md)\n"
                 "Description: Dungeon bosses for The Glitch MythicDungeons\n")
+    # Dungeon key icons (licensed key1.zip icon pack, nexo-type textures);
+    # the key items themselves are in the repo and reference key1:items/<name>.
+    kz = zipfile.ZipFile(os.path.join(REPO, "key1.zip"))
+    for n in kz.namelist():
+        m = re.match(r"en/nexo-type/plugins/Nexo/pack/assets/key1/(textures/items/(iron|golden|mythic)_key1\.png)$", n)
+        if m:
+            copy_file(kz.read(n), os.path.join(NEXO_ASSETS, "key1", *m.group(1).split("/")))
     with open(os.path.join(NEXO_ASSETS, NS, "sounds.json"), "w", encoding="utf-8") as f:
         json.dump(sounds, f, indent=1)
     os.makedirs(os.path.dirname(GLYPH_FILE), exist_ok=True)

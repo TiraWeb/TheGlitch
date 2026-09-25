@@ -13,6 +13,10 @@ game-worlds:
   - glitch_red_eleria
   - glitch_red_horizons
 
+# Also active in worlds matching this regex: the MythicDungeons boss dungeon
+# instances, named <dungeon id>_<n> (ids from scripts/dungeon_md.py).
+game-world-pattern: "^(small|haunted|puzzle|desert|aztec|crimson|nether|pirate|medium|town|mythic)_[0-9]+$"
+
 # Cost in shards to reset class (0 = free)
 reset-cost: 500
 

@@ -48,6 +48,8 @@ public class AbilityListener implements Listener {
     private volatile int cooldownFloor = 12;
     private volatile int ultimateLevel = 10;
     private volatile Set<String> gameWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
+    /** MythicDungeons instance worlds are named "<dungeon>_<n>" (e.g. small_0). */
+    private volatile java.util.regex.Pattern gameWorldPattern = null;
     private volatile Component lastVigilanceBar = Component.empty();
 
     // Cooldown tracking: UUID -> ability name -> expiry timestamp
@@ -95,6 +97,12 @@ public class AbilityListener implements Listener {
         reloadConfig();
     }
 
+    private boolean isGameWorld(String world) {
+        if (gameWorlds.contains(world)) return true;
+        java.util.regex.Pattern p = gameWorldPattern;
+        return p != null && p.matcher(world).matches();
+    }
+
     public void reloadConfig() {
         cooldownReduction = plugin.getConfig().getInt("cooldown-reduction-per-level", 2);
         cooldownFloor = plugin.getConfig().getInt("cooldown-floor", 12);
@@ -102,6 +110,13 @@ public class AbilityListener implements Listener {
         List<String> worlds = plugin.getConfig().getStringList("game-worlds");
         if (worlds == null || worlds.isEmpty()) worlds = List.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
         gameWorlds = Set.copyOf(worlds);
+        String regex = plugin.getConfig().getString("game-world-pattern", "");
+        try {
+            gameWorldPattern = regex == null || regex.isBlank() ? null : java.util.regex.Pattern.compile(regex);
+        } catch (java.util.regex.PatternSyntaxException e) {
+            plugin.getLogger().warning("Invalid game-world-pattern '" + regex + "': " + e.getMessage());
+            gameWorldPattern = null;
+        }
         baseCooldowns.clear();
         keyHintCache.clear();
         lastVigilanceBar = Component.empty();
@@ -157,7 +172,7 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onSwapHands(PlayerSwapHandItemsEvent event) {
         Player player = event.getPlayer();
-        if (!gameWorlds.contains(player.getWorld().getName())) return;
+        if (!isGameWorld(player.getWorld().getName())) return;
         event.setCancelled(true);
         tryActivate(player, player.isSneaking() ? "tactical" : "prime");
     }
@@ -165,7 +180,7 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onDrop(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
-        if (!gameWorlds.contains(player.getWorld().getName())) return;
+        if (!isGameWorld(player.getWorld().getName())) return;
         if (!player.isSneaking()) return;
         event.setCancelled(true);
         tryActivate(player, "ultimate");
@@ -174,7 +189,7 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
-        if (!gameWorlds.contains(player.getWorld().getName())) return;
+        if (!isGameWorld(player.getWorld().getName())) return;
         ClassData data = classManager.getClassData(player.getUniqueId());
         if (data.className().equals("none")) return;
         player.sendActionBar(keyHint(data.className()));
@@ -1035,7 +1050,7 @@ public class AbilityListener implements Listener {
 
                 // Vigilance — warden sees ally health through walls (level 3+)
                 if (!data.className().equals("warden") || data.level() < 3) continue;
-                if (!gameWorlds.contains(player.getWorld().getName())) continue;
+                if (!isGameWorld(player.getWorld().getName())) continue;
 
                 List<Player> allies = new ArrayList<>();
                 for (Entity entity : player.getNearbyEntities(20, 20, 20)) {

@@ -29,6 +29,7 @@ public final class MenuTitles {
     public static final char ARMORY = '';
     public static final char BAZAAR = '';
     public static final char CLASSES = '';
+    public static final char DUNGEONS = '';
 
     private MenuTitles() {
     }

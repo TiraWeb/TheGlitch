@@ -77,6 +77,7 @@ GENERIC = [
     ("", "generic_54", "ARMORY"),
     ("", "generic_54", "BAZAAR"),
     ("", "generic_54", "CLASSES"),
+    ("", "generic_54", "DUNGEONS"),
 ]
 GEOMETRY = {"generic_27": (96, 76), "generic_45": (60, 40), "generic_54": (42, 22)}  # ascent, letter top
 
