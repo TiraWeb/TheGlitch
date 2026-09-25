@@ -47,7 +47,7 @@ auto-extract:
   # Buffer between scatter loot and next cycle (interval = raidDuration + buffer)
   buffer-minutes: 1
   # RED worlds — each gets its OWN independent 31m cycle, 3 dynamic extraction
-  # points, and timeout kill (only that world is killed at t0+30m, not hub/pve).
+  # points, and timeout kill (only that world is killed at t0+30m, not hub).
   # (Legacy: the old singular "red-world" key is still read as a fallback if
   # this list is empty/absent.)
   red-worlds:

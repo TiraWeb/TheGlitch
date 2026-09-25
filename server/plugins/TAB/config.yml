@@ -105,20 +105,6 @@ scoreboard:
         - ""
         - "<gray><italic>Warp NPCs to deploy</italic></gray>"
         - ""
-    glitch-pve:
-      display-condition: "%world%=glitch_pve"
-      title: "<font:minecraft:default></font> <gradient:#C084FC:#F0ABFC><bold>THE GLITCH</bold></gradient> <font:minecraft:default></font>"
-      lines:
-        - ""
-        - "<gray>Zone:</gray> <white>Standard Glitch</white>"
-        - "<gray>Mode:</gray> <green>PvE Instance</green>"
-        - "<gray>Shards:</gray> <white> %vault_eco_balance%</white>"
-        - "<gray>Class:</gray> <white>%glitchclasses_class% <gray>Lv</gray>%glitchclasses_level%</white>"
-        - ""
-        - "<dark_gray></dark_gray>"
-        - "<green>✓ Keep Inventory</green>"
-        - "<yellow>⚠ Shards drop on death</yellow>"
-        - ""
     glitch-red:
       display-condition: "%world%=glitch_red"
       title: "<font:minecraft:default></font> <gradient:#FF2A2A:#FF6A00><bold>RED ZONE</bold></gradient> <font:minecraft:default></font>"

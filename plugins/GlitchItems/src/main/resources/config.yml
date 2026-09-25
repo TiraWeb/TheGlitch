@@ -192,7 +192,7 @@ elite-hunt:
 # required key, and applies the Residual Glitch loot-luck consumer
 # (per-roll rarity surge chance + surge drop chance = lootLuckBonus%).
 containers:
-  enabled-worlds: [glitch_red, glitch_red_eleria, glitch_red_horizons, glitch_pve]
+  enabled-worlds: [glitch_red, glitch_red_eleria, glitch_red_horizons]
   # Extra container rolls for Specters with the Scavenge trait (GlitchClasses
   # keeps the specter_scavenge scoreboard tag in sync)
   scavenge-bonus-rolls: 1

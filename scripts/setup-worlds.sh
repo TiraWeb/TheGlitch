@@ -72,21 +72,21 @@ ensure_world() {
   mc "mv load ${name}" >/dev/null 2>&1 || true   # no-op if already loaded
 }
 
-ensure_world glitch_pve normal --world-type flat --no-structures --no-adjust-spawn
 # Only the first (originally seed-generated) red world uses `mv create` with a
 # seed — additional red worlds are external map imports, so ensure_world's
 # "import if region/ exists, else create fresh" branch handles them the same
-# way glitch_pve/glitch_red always worked.
+# way glitch_red always worked. (glitch_pve was removed 2026-09-25 —
+# dungeons now run as MythicDungeons instances.)
 ensure_world "${RED_WORLDS[0]}" normal --seed "${RED_SEED}"
 for RW in "${RED_WORLDS[@]:1}"; do
   ensure_world "${RW}" normal
 done
 
 # --- per-world Paper override (into the REAL dimension folder) --------------
-# glitch_pve's dungeon-trash fast-despawn tuning, placed at the actual world
+# Per-world Paper tuning (if any), placed at the actual world
 # path. Takes effect on the next server restart (Paper reads paper-world.yml
 # at world load).
-for PW_NAME in glitch_pve "${RED_WORLDS[@]}"; do
+for PW_NAME in "${RED_WORLDS[@]}"; do
   PW_SRC="${REPO_DIR}/server/world-overrides/${PW_NAME}/paper-world.yml"
   if [[ -f "${PW_SRC}" && -d "${DIM_DIR}/${PW_NAME}" ]]; then
     install -o "${MC_USER}" -g "${MC_USER}" -m 644 \
@@ -106,7 +106,6 @@ done
 # apply_world_gamerules() also live in scripts/lib/gamerules.sh.
 #   Source:  source "${REPO_DIR}/scripts/lib/gamerules.sh"
 #   Then:    apply_world_gamerules "overworld" "GAMERULES_HUB_SNAKE"
-#            apply_world_gamerules "glitch_pve" "GAMERULES_PVE_SNAKE"
 #            apply_world_gamerules "glitch_red" "GAMERULES_RED_SNAKE"
 # This file keeps inline definitions as the reference source (values below
 # are the canonical ones copied into the lib). scripts/reapply-world-config.sh
@@ -150,15 +149,6 @@ done
 mc "execute in minecraft:overworld run time set midnight" >/dev/null
 mc "execute in minecraft:overworld run weather clear" >/dev/null
 
-# glitch_pve — keep_inventory ON (design), no natural spawns (MythicMobs only;
-# spawn_mobs false blocks NATURAL spawns but not plugin/command/egg spawns)
-for rule in "keep_inventory true" "spawn_mobs false" "advance_time false" \
-            "advance_weather false" "mob_griefing false" \
-            "fire_spread_radius_around_player 0" "spawn_wandering_traders false"; do
-  apply_rule ${rule} glitch_pve
-done
-mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null
-mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
 
 # Every red world (dim glitch_red / glitch_red_eleria / glitch_red_horizons) —
 # full-loot PvP, MythicMobs-only via RandomSpawns ADD. spawn_mobs MUST be true
@@ -174,12 +164,12 @@ for RW in "${RED_WORLDS[@]}"; do
 done
 
 # --- clear leftover hostile mobs (one-time cleanup, safe to repeat) ---------
-# Mobs that spawned in hub/glitch_pve before spawn_mobs was correctly set to
+# Mobs that spawned in hub before spawn_mobs was correctly set to
 # false persist until removed. This kills only hostile types, never players,
 # villagers (future NPCs), armor stands, or animals. Scoped via 'execute in'.
-log "Clearing leftover hostile mobs from hub and glitch_pve"
+log "Clearing leftover hostile mobs from hub"
 HOSTILES="zombie husk zombie_villager skeleton stray bogged creeper spider cave_spider enderman witch slime phantom drowned silverfish"
-for dim in overworld glitch_pve; do
+for dim in overworld; do
   for mob in ${HOSTILES}; do
     mc "execute in minecraft:${dim} run kill @e[type=minecraft:${mob}]" >/dev/null
   done
@@ -191,7 +181,6 @@ mc "execute in minecraft:overworld run setworldspawn 0 -60 0" >/dev/null
 # Multiverse tracks its own per-world spawn for respawns, independently of
 # the vanilla level spawn above — set both so they can't silently diverge.
 mc "mv setspawn hub:0,-60,0" >/dev/null
-mc "mv setspawn glitch_pve:0,-60,0" >/dev/null
 
 # --- WorldGuard zone protection ---------------------------------------------
 # 'passthrough deny' on __global__ is the docs-recommended way to make a world
@@ -220,28 +209,6 @@ flag hub item-drop deny
 flag hub enderpearl deny
 flag hub chorus-fruit-teleport deny
 flag hub use allow
-
-# glitch_pve — no PvP, no world edits; interactions and loot allowed.
-# NO mob-spawning flag here: it would also block MythicMobs spawns.
-# World is indestructible (adventure-like) — blocks/environment cannot be altered,
-# but players can still interact with doors/buttons (use) and open chests.
-# damage-animals allow ensures MythicMobs stay hittable; mob-damage NOT denied.
-flag glitch_pve passthrough deny
-flag glitch_pve pvp deny
-flag glitch_pve use allow
-flag glitch_pve chest-access allow
-flag glitch_pve damage-animals allow
-flag glitch_pve block-break deny
-flag glitch_pve block-place deny
-flag glitch_pve leaf-decay deny
-flag glitch_pve ice-form deny
-flag glitch_pve ice-melt deny
-flag glitch_pve snow-fall deny
-flag glitch_pve snow-melt deny
-flag glitch_pve grass-spread deny
-flag glitch_pve mycelium-spread deny
-flag glitch_pve vine-growth deny
-flag glitch_pve enderpearl deny
 
 # Every red world — full-loot PvP on a curated, non-editable map (RED WORLDS only)
 # Indestructible adventure-like: deny all world modification, allow chest-access
@@ -275,11 +242,11 @@ done
 # --- verify the gamerules that actually matter for safety -------------------
 # Read back the two gameplay-critical rules per world via Multiverse's filtered
 # listing (--filter avoids pagination). Expected: spawn_mobs false in ALL worlds
-# (hub+glitch_pve+glitch_red MythicMobs-only); keep_inventory true in hub+glitch_pve /
+# (hub+glitch_red MythicMobs-only); keep_inventory true in hub /
 # false in glitch_red. (Primary safety net is apply_rule's rejection warning
 # above — this is the visible confirmation.)
 log "Verifying critical gamerules (paste this back):"
-for w in hub glitch_pve "${RED_WORLDS[@]}"; do
+for w in hub "${RED_WORLDS[@]}"; do
   echo "  == ${w} =="
   mc "mv gamerule list ${w} --filter spawn_mobs"     2>/dev/null | grep -i "spawn_mobs:"     || echo "     spawn_mobs: (unreadable)"
   mc "mv gamerule list ${w} --filter keep_inventory" 2>/dev/null | grep -i "keep_inventory:" || echo "     keep_inventory: (unreadable)"
@@ -361,7 +328,7 @@ cat <<'EOF'
   Phase 4 world architecture applied.
 ============================================================
 
-  Worlds:  hub (main, border 512) | glitch_pve (border 4096)
+  Worlds:  hub (main, border 512)
            glitch_red (border 2000, seed 20260719)
            glitch_red_eleria, glitch_red_horizons (external map imports)
 
@@ -375,8 +342,8 @@ cat <<'EOF'
 
   Recommended after pre-gen finishes:
     sudo systemctl restart theglitch   # applies per-world paper-world.yml
-  then confirm all five worlds are registered across the restart:
-    scripts/mc-cmd.py 'mv list'        # expect hub, glitch_pve, glitch_red(_eleria/_horizons)
+  then confirm all four worlds are registered across the restart:
+    scripts/mc-cmd.py 'mv list'        # expect hub, glitch_red(_eleria/_horizons)
   (Paper 26.x stores them as dimensions of hub, so there is no per-world
    level.dat — 'mv list' is the right check, not a find for level.dat.)
 

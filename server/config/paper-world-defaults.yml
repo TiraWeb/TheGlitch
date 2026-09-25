@@ -20,9 +20,8 @@ entities:
   spawning:
     # alt-item-despawn-rate deliberately NOT set here: it keys off material,
     # not drop source, so a global rule can't distinguish dungeon trash from
-    # a dead player's dropped inventory. Scoped to glitch_pve only, in
-    # server/world-overrides/glitch_pve/paper-world.yml — hub and the
-    # full-loot Red Zone keep the standard 5-minute despawn for everything.
+    # a dead player's dropped inventory. Hub and the full-loot Red Zone keep
+    # the standard 5-minute despawn for everything.
     #
     # Hard despawn range must stay <= simulation-distance's tick radius (4
     # chunks = 64 blocks): a mob beyond that radius is in an unticked chunk

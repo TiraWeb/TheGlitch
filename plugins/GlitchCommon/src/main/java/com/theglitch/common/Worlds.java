@@ -13,13 +13,10 @@ import java.util.Set;
 public final class Worlds {
 
     /** All game worlds where abilities, shops, extraction, etc. are active. */
-    public static final Set<String> GAME_WORLDS = Set.of("glitch_pve", "glitch_red");
+    public static final Set<String> GAME_WORLDS = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
 
     /** Open-world PvE/PvP extraction zone. */
     public static final String GLITCH_RED = "glitch_red";
-
-    /** Dungeon/instanced PvE world. */
-    public static final String GLITCH_PVE = "glitch_pve";
 
     /** Hub / spawn world (if needed). */
     public static final String HUB = "world";

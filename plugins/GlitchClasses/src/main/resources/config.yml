@@ -9,7 +9,6 @@ ultimate-level: 10
 
 # Worlds where class abilities are active
 game-worlds:
-  - glitch_pve
   - glitch_red
   - glitch_red_eleria
   - glitch_red_horizons

@@ -63,7 +63,7 @@ cat <<'EOF'
     T3: GlitchSentinel (res_ward) / GlitchSniper (res_ward) / GlitchWarden (res_aegis) — elite materials, good rift chance
     T4: GlitchCore (res_hollow) / TheGlitchKing (Ender Dragon, res_hollow) — boss tables, guaranteed high-rarity rifts
 
-  Spawners: block-based spawners in setup-dungeon-regions.sh (dungeon slots)
+  Spawners: MythicDungeons functions (per-dungeon)
   Spawn areas: glitch_red population seeded from repo (RedZone_SpawnAreas.yml)
                — T1 fodder everywhere, T2 mid cross-ring, T3 elites at
                Core (0,0) + the extraction sites (operator-placed in-game)

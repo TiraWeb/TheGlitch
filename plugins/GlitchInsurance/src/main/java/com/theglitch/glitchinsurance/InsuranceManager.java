@@ -91,7 +91,7 @@ public final class InsuranceManager {
     private volatile int maxInsuredItems = 3;
     private volatile int claimWindowSeconds = 300;
     private volatile int cooldownSeconds = 60;
-    private volatile Set<String> enabledWorlds = Set.of("glitch_red", "glitch_pve");
+    private volatile Set<String> enabledWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
 
     public InsuranceManager(GlitchInsurance plugin) {
         this.plugin = plugin;

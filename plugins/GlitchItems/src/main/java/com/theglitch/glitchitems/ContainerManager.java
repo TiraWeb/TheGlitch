@@ -199,7 +199,7 @@ public final class ContainerManager {
     private volatile Map<String, ContainerType> furnitureTypes = new HashMap<>();
 
     // Cached config
-    private volatile Set<String> enabledWorlds = Set.of("glitch_red", "glitch_pve");
+    private volatile Set<String> enabledWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
     private volatile int scavengeBonusRolls = 1;
     private volatile Map<String, String> messagesRaw = new HashMap<>();
 
@@ -294,7 +294,7 @@ public final class ContainerManager {
         }
         furnitureTypes = furnIndex;
         enabledWorlds = Set.copyOf(plugin.getConfig().getStringList("containers.enabled-worlds"));
-        if (enabledWorlds.isEmpty()) enabledWorlds = Set.of("glitch_red", "glitch_pve");
+        if (enabledWorlds.isEmpty()) enabledWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
         scavengeBonusRolls = plugin.getConfig().getInt("containers.scavenge-bonus-rolls", 1);
         Map<String, String> msgs = new HashMap<>();
         ConfigurationSection msgSec = plugin.getConfig().getConfigurationSection("containers.messages");

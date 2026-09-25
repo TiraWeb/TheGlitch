@@ -255,7 +255,7 @@ sync_cfg spigot.yml                        spigot.yml
 sync_cfg purpur.yml                        purpur.yml
 sync_cfg config/paper-global.yml           config/paper-global.yml
 sync_cfg config/paper-world-defaults.yml   config/paper-world-defaults.yml
-# NOTE: per-world overrides (e.g. glitch_pve/paper-world.yml) are intentionally
+# NOTE: per-world overrides (server/world-overrides/<world>/paper-world.yml) are intentionally
 # NOT synced here — 'install -D' would create the world folder before the world
 # exists, producing a phantom folder that confuses Multiverse. scripts/setup-worlds.sh
 # places those into the real world folder AFTER creating the world.

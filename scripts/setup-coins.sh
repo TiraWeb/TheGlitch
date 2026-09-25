@@ -65,7 +65,7 @@ cat <<'EOF'
   Currency:     Glitch Shards (Echo Shard item, enchanted glow)
   Drop type:    MythicMobs loot tables via COINS type
   Disabled in:  hub (world filter active)
-  Drop on death: Yes (glitch_pve + glitch_red)
+  Drop on death: Yes (Red Zone worlds)
 
   Economy chain:
     VaultUnlocked → EssentialsX Economy → Coins

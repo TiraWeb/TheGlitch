@@ -11,7 +11,6 @@ insurance:
     - glitch_red
     - glitch_red_eleria
     - glitch_red_horizons
-    - glitch_pve
 
 messages:
   insured: "<green>Insured <gray><item></gray> for <gold><premium> Shards</gold> (<count>/<max> slots).</green>"

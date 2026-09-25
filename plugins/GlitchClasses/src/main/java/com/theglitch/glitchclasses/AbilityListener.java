@@ -47,7 +47,7 @@ public class AbilityListener implements Listener {
     private volatile int cooldownReduction = 2;
     private volatile int cooldownFloor = 12;
     private volatile int ultimateLevel = 10;
-    private volatile Set<String> gameWorlds = Set.of("glitch_pve", "glitch_red");
+    private volatile Set<String> gameWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
     private volatile Component lastVigilanceBar = Component.empty();
 
     // Cooldown tracking: UUID -> ability name -> expiry timestamp
@@ -100,7 +100,7 @@ public class AbilityListener implements Listener {
         cooldownFloor = plugin.getConfig().getInt("cooldown-floor", 12);
         ultimateLevel = plugin.getConfig().getInt("ultimate-level", 10);
         List<String> worlds = plugin.getConfig().getStringList("game-worlds");
-        if (worlds == null || worlds.isEmpty()) worlds = List.of("glitch_pve", "glitch_red");
+        if (worlds == null || worlds.isEmpty()) worlds = List.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
         gameWorlds = Set.copyOf(worlds);
         baseCooldowns.clear();
         keyHintCache.clear();

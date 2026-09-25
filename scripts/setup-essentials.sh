@@ -44,9 +44,6 @@ mc "setspawn default"
 # --- zone warps ------------------------------------------------------------
 log "Creating zone-transition warps..."
 
-# PvE staging area — center of the 8-slot dungeon grid
-mc "setwarp pve_staging 0 -60 0 glitch_pve"
-
 # Red Zone entry points — radius 700, 60 degrees apart
 mc "setwarp red_e1 700 -60 0 glitch_red"
 mc "setwarp red_e2 350 -60 606 glitch_red"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Re-apply gamerules, WorldGuard flags, and world borders to imported worlds.
-# Run after: mv import glitch_red / glitch_pve
+# Run after: mv import glitch_red
 #
 set -euo pipefail
 
@@ -24,7 +24,6 @@ log "Setting world difficulties..."
 for RW in "${RED_WORLDS[@]}"; do
   mc "mv modify ${RW} set difficulty hard" >/dev/null
 done
-mc "mv modify glitch_pve set difficulty hard" >/dev/null
 
 # ---- gamerules (canonical 26.x snake_case — see scripts/lib/gamerules.sh) ----
 # Source the shared gamerule tables so reapply-world-config.sh can never drift
@@ -49,12 +48,6 @@ log "Applying gamerules (canonical 26.x snake_case via scripts/lib/gamerules.sh)
 # Apply the canonical tables via shared helper (handles unknown detection + warn).
 # Replaces the old hardcoded GAMERULES_PVE / GAMERULES_RED camelCase arrays
 # (legacy names rejected as "unknown" on 26.x) with shared snake_case tables.
-if declare -p GAMERULES_PVE_SNAKE >/dev/null 2>&1; then
-  apply_world_gamerules "glitch_pve" "GAMERULES_PVE_SNAKE"
-else
-  warn "GAMERULES_PVE_SNAKE not loaded — skipping glitch_pve gamerules"
-fi
-
 if declare -p GAMERULES_RED_SNAKE >/dev/null 2>&1; then
   for RW in "${RED_WORLDS[@]}"; do
     apply_world_gamerules "${RW}" "GAMERULES_RED_SNAKE"
@@ -69,9 +62,6 @@ else
   warn "GAMERULES_HUB_SNAKE not loaded — skipping hub gamerules"
 fi
 
-# glitch_pve — dark always
-mc "execute in minecraft:glitch_pve run time set midnight" >/dev/null
-mc "execute in minecraft:glitch_pve run weather clear" >/dev/null
 for RW in "${RED_WORLDS[@]}"; do
   mc "execute in minecraft:${RW} run weather clear" >/dev/null || true
 done
@@ -82,7 +72,7 @@ log "World borders skipped (removed per operator request — using vanilla defau
 
 # ---- clear mobs ----
 log "Clearing leftover mobs..."
-for dim in overworld glitch_pve; do
+for dim in overworld; do
   # Kill only actual mobs: keep armor stands, item frames, paintings, dropped
   # items, displays, XP orbs, interaction entities, and villagers (shop/NPC
   # infrastructure and hub trades must survive this cleanup).
@@ -116,25 +106,6 @@ flag overworld sleep allow
 flag overworld enderpearl deny
 flag overworld feed-delay deny
 flag overworld heal-delay deny
-
-# glitch_pve — indestructible adventure-like (same protection as hub, but pvp deny)
-# damage-animals allow keeps MythicMobs hittable; mob-damage NOT denied.
-flag glitch_pve passthrough deny
-flag glitch_pve pvp deny
-flag glitch_pve use allow
-flag glitch_pve chest-access allow
-flag glitch_pve damage-animals allow
-flag glitch_pve block-break deny
-flag glitch_pve block-place deny
-flag glitch_pve leaf-decay deny
-flag glitch_pve ice-form deny
-flag glitch_pve ice-melt deny
-flag glitch_pve snow-fall deny
-flag glitch_pve snow-melt deny
-flag glitch_pve grass-spread deny
-flag glitch_pve mycelium-spread deny
-flag glitch_pve vine-growth deny
-flag glitch_pve enderpearl deny
 
 # Every red world — indestructible adventure-like, full-loot PvP (RED WORLDS only)
 # Block/world modification denied; use/chest-access allowed so players can loot;
