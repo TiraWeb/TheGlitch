@@ -64,21 +64,22 @@ tar czf "${BK}" -C "${PLUGINS}" \
 # and dropped the Red Zone mobs' own models from the pack. Only install them
 # on ModelEngine Premium:  sudo DUNGEON_MODELS=1 ./scripts/setup-dungeons.sh
 BP="${PLUGINS}/ModelEngine/blueprints"
+MANIFEST="${PLUGINS}/ModelEngine/.dungeon_bosses.manifest"  # outside blueprints/: MEG tries to import every file there
 if [[ "${DUNGEON_MODELS:-0}" == "1" ]]; then
   log "Installing ModelEngine blueprints"
   rm -rf "${BP}/dungeon_bosses"
-  : > "${BP}/.dungeon_bosses.manifest"
+  : > "${MANIFEST}"
   while IFS= read -r -d '' f; do
     name=$(basename "$f")
     install -o "${MC_USER}" -g "${MC_USER}" -m 644 "$f" "${BP}/${name}"
-    echo "${name}" >> "${BP}/.dungeon_bosses.manifest"
+    echo "${name}" >> "${MANIFEST}"
   done < <(find "${STAGE}/meg" -name '*.bbmodel' -print0)
-  log "  $(wc -l < "${BP}/.dungeon_bosses.manifest") blueprints"
+  log "  $(wc -l < "${MANIFEST}") blueprints"
 else
   warn "Skipping boss blueprints (DUNGEON_MODELS=1 needs ModelEngine Premium) — bosses spawn without models"
-  if [[ -f "${BP}/.dungeon_bosses.manifest" ]]; then
-    while read -r n; do rm -f "${BP}/${n}"; done < "${BP}/.dungeon_bosses.manifest"
-    rm -f "${BP}/.dungeon_bosses.manifest"
+  if [[ -f "${MANIFEST}" ]]; then
+    while read -r n; do rm -f "${BP}/${n}"; done < "${MANIFEST}"
+    rm -f "${MANIFEST}"
   fi
 fi
 log "Installing MythicMobs pack GlitchDungeonBosses"

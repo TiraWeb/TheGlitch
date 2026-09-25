@@ -52,10 +52,10 @@ portal:
   region:
     world: ""
 
-# Boss dungeons (/dungeons -> MythicDungeons, see docs/DUNGEONS.md). Off until
-# the boss models can load (ModelEngine Premium); admins can always enter.
+# Boss dungeons (/dungeons -> MythicDungeons, see docs/DUNGEONS.md). Needs
+# ModelEngine Premium for the boss models; admins can always enter.
 dungeons:
-  enabled: false
+  enabled: true
 
 messages:
   raid-started: "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>"

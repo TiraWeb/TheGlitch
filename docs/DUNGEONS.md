@@ -5,15 +5,16 @@ The maps (BreadBuilds "Mega Dungeon Bundle") and the boss packs are **licensed p
 
 ## Status (2026-09-26)
 
-- **Live but closed.** All 11 dungeons load, and `GlitchRaid` `dungeons.enabled: false` keeps `/dungeons` closed for players. Admins (`glitchraid.admin`) can enter for testing.
-- **Blocker: ModelEngine Premium.** The server runs the *free* ModelEngine build, which caps the number of registered models. With the 117 boss blueprints added, it imported only the first 12 alphabetically and dropped the Red Zone mobs' own models.
-  - Boss blueprints are therefore **not installed**. Bosses would spawn as their plain base entity (husk, spider, …) with no model.
-  - Once Premium is installed, run `sudo DUNGEON_MODELS=1 ./scripts/setup-dungeons.sh`, check the models in-game, then set `dungeons.enabled: true` in `plugins/GlitchRaid/config.yml` and run `/raidadmin reload`.
+- **Open.** ModelEngine **Premium R4.1.1** is installed. The free R4.1.0 jar is kept at `/opt/theglitch/backups/ModelEngine-R4.1.0-free.jar`; it capped registered models at about 12.
+  - All 128 blueprints import (117 boss + 11 Red Zone). The 2.4 MB ModelEngine pack is merged into Nexo.
+  - `dungeons.enabled: true`.
+  - Smoke test: every boss spawned (`mm mobs spawn`) with no log warnings or errors.
+  - A full in-game run (arena positions, fights, rewards) is still to be played.
 - **Archer pack incomplete.** The samus2002 archer is the BOSS_ONLY edition. Its skills summon about 25 `VFX_AwakenedArcher_*` mobs and meta-skills, and use `awakened_archer_sounds`, all of which ship only in the FULL edition.
   - It is left out of the build. The Pirate dungeon uses `Dungeon_GlitchReaver` (Glitch Reaver template, 1500 HP) as a stand-in.
   - To restore it, re-enable `archer` in `scripts/dungeon_bosses.py` once the FULL pack is in `Dungeon_bosses/`.
-- **Mage** has one skill line using `PlayersInRingNearOrigin`, a custom targeter this server doesn't have. That one attack variant won't target; everything else loads.
-- **Parties:** the Parties plugin jar is missing on the Skrime host (only its data folder came across), so MythicDungeons uses its own `/party`.
+- **Mage** has one skill line using `PlayersInRingNearOrigin`, a custom targeter this server doesn't have. That one attack variant won't target.
+- **Parties:** MythicDungeons' own party system (`/party`). The Parties plugin and its HUD are gone.
 
 ## Dungeons
 
@@ -82,5 +83,6 @@ sudo ./scripts/setup-dungeons.sh [ids…]                    # on the host; rest
 
 **`setup-dungeons.sh`**
 - Backs up to `/opt/theglitch/backups/pre-dungeons-*.tar.gz`.
-- Copies only (never deletes), except that boss blueprints listed in `blueprints/.dungeon_bosses.manifest` are removed when `DUNGEON_MODELS` isn't set.
+- Run it as `sudo DUNGEON_MODELS=1 ./scripts/setup-dungeons.sh`. Without `DUNGEON_MODELS=1` it removes the boss blueprints; that mode is only for a free ModelEngine.
+- Copies only (never deletes), except that boss blueprints listed in `ModelEngine/.dungeon_bosses.manifest` are removed when `DUNGEON_MODELS` isn't set.
 - Installs blueprints flat, because ModelEngine skipped the packs' sub-folders.
