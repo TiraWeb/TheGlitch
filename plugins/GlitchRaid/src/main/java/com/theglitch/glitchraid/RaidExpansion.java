@@ -72,6 +72,8 @@ public final class RaidExpansion extends PlaceholderExpansion {
         // Offline player: limited placeholders (in_raid false, others 0)
         String id = identifier.toLowerCase(java.util.Locale.ROOT);
         switch (id) {
+            case "player":
+                return offlinePlayer.getName();
             case "in_raid":
                 return String.valueOf(manager.isInRaid(offlinePlayer.getUniqueId()));
             case "time_left":
@@ -93,6 +95,11 @@ public final class RaidExpansion extends PlaceholderExpansion {
         }
         String id = identifier.toLowerCase(java.util.Locale.ROOT);
         switch (id) {
+            // Plain player name. MythicDungeons' command functions only expand
+            // PlaceholderAPI, and PAPI's own "player" expansion isn't installed;
+            // the dungeon clear rewards use %glitchraid_player%.
+            case "player":
+                return player.getName();
             case "in_raid":
                 return String.valueOf(manager.isInRaid(player.getUniqueId()));
             case "time_left": {

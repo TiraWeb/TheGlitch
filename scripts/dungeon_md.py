@@ -124,18 +124,20 @@ def functions_yml(did, layout):
     ], arena, trigger_block("TriggerDistance", {"radius": ARENA_RADIUS, "count": 1, "forEachPlayer": "false"}, 4))
 
     finish = multi([
+        # first: MD aborts the rest of a trigger when one of its functions throws
+        fn(f"{F}.meta.FunctionDelayed", {"delay": 160, "function": "\n" + fn_map(
+            f"{F}.FunctionFinishDungeon", {"leave": "true"}, arena, ci + 4)}, arena, ci),
         fn(f"{F}.FunctionTitle", {"title": q("&a&lDungeon Cleared"),
                                   "subtitle": q(f"&7+{shards} Shards &8| &7returning to the hub..."),
                                   "fadeIn": 10, "stay": 70, "fadeOut": 20}, arena, ci),
         fn(f"{F}.FunctionPlaySound", {"sound": q("minecraft:ui.toast.challenge_complete"),
                                       "soundCategory": q("MASTER"), "volume": 1.0, "pitch": 1.0,
                                       "playAtLocation": "false"}, arena, ci),
-        fn(f"{F}.FunctionCommand", {"command": q(f"eco give %player_name% {shards}"),
+        fn(f"{F}.FunctionCommand", {"command": q(f"eco give %glitchraid_player% {shards}"),
                                     "commandType": 1, "forEachPlayer": "true"}, arena, ci),
-        fn(f"{F}.FunctionCommand", {"command": q(f"nexo give {item} 1 %player_name%"),
+        fn(f"{F}.FunctionCommand", {"command": q(f"nexo give {item} 1 %glitchraid_player%"),
                                     "commandType": 1, "forEachPlayer": "true"}, arena, ci),
-        fn(f"{F}.meta.FunctionDelayed", {"delay": 160, "function": "\n" + fn_map(
-            f"{F}.FunctionFinishDungeon", {"leave": "true"}, arena, ci + 4)}, arena, ci),
+
     ], clear_at, trigger_block("TriggerMythicMobDeath", {"mob": q(final_id), "radius": 0.0, "count": 1}, 4))
 
     return f"Version: 1\nFunctions:\n{start_fight}\n{finish}\n"

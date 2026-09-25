@@ -68,6 +68,7 @@ STAND_INS = """Dungeon_GlitchReaver:
   Health: 1500
   Options:
     Despawn: false
+    PreventOtherDrops: true
 """
 # Obvious vendor typos that stop a skill line from loading (old -> new).
 FIXES = {"ember_claw": [("<random.float-.30to-50>", "<random.float.-30to-50>")]}
@@ -189,6 +190,15 @@ def adjust_mobs(text, health):
             if not n:
                 raise SystemExit(f"{key}: no Health line to set")
             block = re.sub(r"(?m)^(\s+Despawn:\s*)\S+", r"\1false", block)
+            # No vanilla loot (Akaza is a zombie -> rotten flesh); rewards come from the dungeon.
+            if re.search(r"(?m)^\s+PreventOtherDrops:", block):
+                block = re.sub(r"(?m)^(\s+PreventOtherDrops:\s*)\S+", r"\1true", block)
+            else:
+                m = re.search(r"(?m)^(\s+)Options:\s*$", block)
+                if m:
+                    block = block[:m.end()] + "\n" + m.group(1) + "  PreventOtherDrops: true" + block[m.end():]
+                else:
+                    block = block.rstrip("\n") + "\n  Options:\n    PreventOtherDrops: true\n\n"
         out.append(block)
     return "".join(out)
 
