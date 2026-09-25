@@ -75,20 +75,23 @@ for id in "${IDS[@]}"; do
   fi
   install -o "${MC_USER}" -g "${MC_USER}" -m 644 "${STAGE}/md/${id}/config.yml" "${MD}/maps/${id}/config.yml"
   install -o "${MC_USER}" -g "${MC_USER}" -m 644 "${STAGE}/md/${id}/functions.yml" "${MD}/maps/${id}/functions.yml"
+  install -o "${MC_USER}" -g "${MC_USER}" -m 644 "${STAGE}/md/${id}/gamerules.yml" "${MD}/maps/${id}/gamerules.yml"
 done
 
-# Global MD settings: reuse the Parties plugin party (GlitchRaid mirrors into
-# it), cap concurrent instances for a 4 vCPU host. Instances are created on
-# demand and deleted after — no dungeon world is loaded while nobody plays.
-sed -i -E 's/^(  PartyPlugin: ).*/\1Parties/; s/^(  MaxInstances: ).*/\16/' "${MD}/config.yml"
+# Global MD settings: cap concurrent instances for a 4 vCPU host. Instances are
+# created on demand and deleted after — no dungeon world is loaded while nobody
+# plays. Parties: MD's own (/party). Switch PartyPlugin to Parties only once
+# that plugin's jar is installed (only its data folder is on the Skrime host).
+sed -i -E 's/^(  PartyPlugin: ).*/\1Default/; s/^(  MaxInstances: ).*/\16/' "${MD}/config.yml"
 
 # --- restart + resource pack -------------------------------------------------------
 log "Restarting the server to load the new mobs, models and dungeons"
 systemctl restart theglitch
-for _ in $(seq 1 60); do
-  grep -q 'Done (' "${SERVER_DIR}/logs/latest.log" 2>/dev/null && break; sleep 5
+sleep 15
+for _ in $(seq 1 60); do  # RCON answers once the new boot is up
+  mc "list" >/dev/null 2>&1 && break; sleep 5
 done
-sleep 20  # ModelEngine finishes generating its pack after 'Done'
+sleep 30  # ModelEngine finishes generating its pack after startup
 MEG_ZIP="${PLUGINS}/ModelEngine/resource pack.zip"
 [[ -f "${MEG_ZIP}" ]] || die "ModelEngine pack not generated — check logs for ModelEngine errors"
 install -o "${MC_USER}" -g "${MC_USER}" -m 644 "${MEG_ZIP}" "${PLUGINS}/Nexo/pack/uploads/10_modelengine.zip"

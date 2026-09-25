@@ -35,7 +35,8 @@ DUNGEONS = {
     "aztec":   ("Temple of Moldar",    2, "hv_moldar_spawner", "hv_moldar",   "Moldar"),
     "crimson": ("Crimson Keep",        2, "Boss-Akaza",     "Boss-Akaza",     "Akaza, Upper Moon"),
     "nether":  ("Ember Depths",        2, "mf_ember_claw",  "mf_ember_claw",  "Ember Claw"),
-    "pirate":  ("Wreck of the Tide",   2, "Archer",         "Archer",         "The Archer"),
+    # stand-in until the FULL samus2002 archer pack is available (see dungeon_bosses.py)
+    "pirate":  ("Wreck of the Tide",   2, "Dungeon_GlitchReaver", "Dungeon_GlitchReaver", "Glitch Reaver"),
     "medium":  ("Moonlit Sanctum",     3, "hv_selenia",     "hv_selenia",     "Selenia"),
     "town":    ("Hollow Town",         3, "Hanashiguro",    "Hanashiguro2",   "The Lovers"),
     "mythic":  ("Mythic Spire",        3, "Mage",           "Mage",           "The Awakened Mage"),
@@ -186,6 +187,20 @@ def config_yml(did, layout, template):
     return t
 
 
+# Dungeon worlds: keep inventory on death (lives are the penalty), only the
+# boss spawns, nothing grows/burns, fixed time. MD reads one key per GameRule;
+# both the legacy camelCase and the 26.x snake_case names are written.
+GAMERULES = {
+    "keepInventory": "true", "keep_inventory": "true",
+    "doMobSpawning": "false", "spawn_mobs": "false",
+    "mobGriefing": "false", "mob_griefing": "false",
+    "doDaylightCycle": "false", "advance_time": "false",
+    "doWeatherCycle": "false", "advance_weather": "false",
+    "doFireTick": "false", "fire_spread_radius_around_player": "0",
+    "randomTickSpeed": "0", "random_tick_speed": "0",
+}
+
+
 def main(only=None):
     layout = json.load(open(os.path.join(PRIV, "layout.json")))
     template = open(os.path.join(PRIV, "default-config.yml"), encoding="utf-8").read()
@@ -198,6 +213,8 @@ def main(only=None):
             f.write(functions_yml(did, layout[did]))
         with open(os.path.join(out, "config.yml"), "w", encoding="utf-8") as f:
             f.write(config_yml(did, layout[did], template))
+        with open(os.path.join(out, "gamerules.yml"), "w", encoding="utf-8") as f:
+            f.write("Version: 3\n" + "".join(f"{k}: {v}\n" for k, v in GAMERULES.items()))
         print(f"[{did}] {DUNGEONS[did][0]} (T{DUNGEONS[did][1]}) start={layout[did]['spawn']} "
               f"arena={layout[did]['arena']}")
 

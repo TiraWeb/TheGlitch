@@ -50,13 +50,27 @@ PACKS = {
     "moldar":    ("hv_moldar", {"hv_moldar": 1400}, []),
     "akaza":     ("Akaza/Akaza v1.0/For Nexo/plugins", {"Boss-Akaza": 1400}, []),
     "ember_claw": ("ModelFoundry's Ember Claw Sub-hitbox 1.0.0/plugins", {"mf_ember_claw": 1500}, []),
-    "archer":    ("samus2002_RPG_CLASS_BOSS_ARCHER_BOSS_ONLY/samus2002_RPG_CLASS_BOSS_ARCHER_BOSS_ONLY",
-                  {"Archer": 1500}, ["Changetarget", "Cancelattack", "BOSS_BLOCK"]),
+    # The archer pack is the BOSS_ONLY edition: its skills summon ~25
+    # VFX_AwakenedArcher_* mobs, meta-skills and awakened_archer_sounds that
+    # only ship in the FULL edition, so it is left out until that is supplied
+    # (the Pirate dungeon uses STAND_INS meanwhile). Re-enable with:
+    # "archer": ("samus2002_RPG_CLASS_BOSS_ARCHER_BOSS_ONLY/samus2002_RPG_CLASS_BOSS_ARCHER_BOSS_ONLY",
+    #            {"Archer": 1500}, ["Changetarget", "Cancelattack", "BOSS_BLOCK"]),
     "selenia":   ("hv_selenia/hv_selenia", {"hv_selenia": 2200}, []),
     "lovers":    ("TheLoversBossfight/The Lovers, Samurai Bossfight/plugins",
                   {"Hanashiguro": 700, "The_Lovers": 700, "Hanashiguro2": 900}, []),
     "mage":      ("samus2002_RPG_CLASS_BOSS_MAGE_FULL/samus2002_RPG_CLASS_BOSS_MAGE_FULL", {"Mage": 2200}, []),
 }
+# Dungeon versions of existing server mobs, used where a pack is unavailable.
+STAND_INS = """Dungeon_GlitchReaver:
+  Template: GlitchReaver
+  Display: '&4&lGlitch Reaver'
+  Health: 1500
+  Options:
+    Despawn: false
+"""
+# Obvious vendor typos that stop a skill line from loading (old -> new).
+FIXES = {"ember_claw": [("<random.float-.30to-50>", "<random.float.-30to-50>")]}
 SKIP_FILES = {"mf_ember_claw_pet.yml", "packinfo.yml"}  # pet needs MCPets; packinfo rewritten
 
 _next_char = [0xE9A0]
@@ -245,6 +259,8 @@ def main():
                 text = rewrite_sound_refs(text, sound_keys)
             for old, new in char_map.items():
                 text = text.replace(old, new)
+            for old, new in FIXES.get(pid, []):
+                text = text.replace(old, new)
             if pid == "akaza":
                 text = text.replace("%nexo_bossbar-akaza%", char_map["\U00010148"])
             if kind == "Mobs":
@@ -264,6 +280,8 @@ def main():
         print(f"[{pid}] {megs} blueprints, {files} MM files, {len(sound_keys)} sounds moved, "
               f"{len(char_map)} glyphs remapped")
 
+    with open(os.path.join(MM_OUT, "Mobs", "glitch__stand_ins.yml"), "w", encoding="utf-8") as f:
+        f.write(STAND_INS)
     with open(os.path.join(MM_OUT, "packinfo.yml"), "w", encoding="utf-8") as f:
         f.write("Name: GlitchDungeonBosses\nVersion: 1.0.0\nAuthor: licensed packs (see docs/DUNGEONS.md)\n"
                 "Description: Dungeon bosses for The Glitch MythicDungeons\n")
