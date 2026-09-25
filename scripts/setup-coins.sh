@@ -49,8 +49,8 @@ mc "lp group default permission set essentials.balance true"
 mc "lp group default permission set essentials.balance.others true"
 mc "lp group default permission set essentials.pay true"
 
-# Allow coin drops in game worlds
-mc "lp group default permission set coins.command.drop true"
+# /coins drop spawns coins (= shards) — admin only (default: op). Never grant to players.
+mc "lp group default permission unset coins.command.drop"
 
 # Verify economy is detected by Vault
 log "Verifying Vault economy detection..."

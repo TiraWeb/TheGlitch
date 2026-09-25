@@ -90,17 +90,14 @@ log "Setting default player permissions"
 
 # Basic gameplay permissions
 mc "lp group default permission set essentials.spawn true"
-mc "lp group default permission set essentials.warp true"
 mc "lp group default permission set essentials.balance true"
 mc "lp group default permission set essentials.pay true"
 
 # Chat and social
 mc "lp group default permission set essentials.chat.color true"
-mc "lp group default permission set essentials.chat.format true"
 
 # Inventory and movement
 mc "lp group default permission set essentials.workbench true"
-mc "lp group default permission set essentials.back.ondeath true"
 
 # --- verify ----------------------------------------------------------------
 log "Verifying groups (paste this back):"

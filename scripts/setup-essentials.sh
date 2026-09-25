@@ -91,23 +91,19 @@ mc "essentials setnewbieskit glitch-starter"
 # --- permissions -----------------------------------------------------------
 log "Granting default player permissions..."
 
-# Warp access
-mc "lp group default permission set essentials.warp true"
-mc "lp group default permission set essentials.warp.list true"
-mc "lp group default permission set essentials.warp.pve_staging true"
-mc "lp group default permission set essentials.warp.red_e1 true"
-mc "lp group default permission set essentials.warp.red_e2 true"
-mc "lp group default permission set essentials.warp.red_e3 true"
-mc "lp group default permission set essentials.warp.red_e4 true"
-mc "lp group default permission set essentials.warp.red_e5 true"
-mc "lp group default permission set essentials.warp.red_e6 true"
+# Warp access — none for players (2026-09-25 alpha hardening): per-warp-permission is
+# on and no NPC uses warps; /warp red + /warp mobtest dropped players straight into
+# glitch_red, skipping the portal/buffer flow.
+for w in "" .list .pve_staging .red_e1 .red_e2 .red_e3 .red_e4 .red_e5 .red_e6 .extract_x1 .extract_x2 .extract_x3; do
+  mc "lp group default permission unset essentials.warp${w}"
+done
 
 # Spawn access
 mc "lp group default permission set essentials.spawn true"
 
-# Kit access
-mc "lp group default permission set essentials.kit.glitch-starter true"
-mc "lp group default permission set essentials.kit true"
+# Kit access — none: the starter kit is given via newbies (no permission needed).
+mc "lp group default permission unset essentials.kit.glitch-starter"
+mc "lp group default permission unset essentials.kit"
 
 # Basic economy
 mc "lp group default permission set essentials.balance true"
@@ -116,12 +112,21 @@ mc "lp group default permission set essentials.balance.others true"
 
 # Chat
 mc "lp group default permission set essentials.chat.color true"
-mc "lp group default permission set essentials.chat.format true"
+# chat.format (bold/magic &k) removed for alpha — colour only.
+mc "lp group default permission unset essentials.chat.format"
 
 # Movement
 mc "lp group default permission set essentials.workbench true"
-mc "lp group default permission set essentials.back.ondeath true"
-mc "lp group default permission set essentials.tpahere true"
+# back.ondeath let players /back onto their own corpse in the Red Zone; tpahere pulled
+# players into/out of raids around the portal flow. Both removed (2026-09-25).
+mc "lp group default permission unset essentials.back.ondeath"
+mc "lp group default permission unset essentials.tpahere"
+
+# Economy / warp hardening in Essentials config (no negative balances, audit log).
+ESS_CFG="/opt/theglitch/server/plugins/Essentials/config.yml"
+if [[ -f "${ESS_CFG}" ]]; then
+  sed -i -E "s/^min-money: .*/min-money: 0/; s/^economy-log-enabled: .*/economy-log-enabled: true/; s/^per-warp-permission: .*/per-warp-permission: true/" "${ESS_CFG}"
+fi
 
 # --- verify ----------------------------------------------------------------
 log "Reloading EssentialsX..."

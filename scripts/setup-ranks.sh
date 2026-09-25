@@ -145,6 +145,18 @@ mc "lp group helper permission set essentials.tp true"
 mc "lp group helper permission set essentials.seen true"
 mc "lp group helper permission set essentials.fly true"
 mc "lp group helper permission set essentials.fly.safelogin true"
+# Alpha moderation kit (2026-09-25): helpers kick/mute/tempban and see
+# punishments; no flying in the PvP Red Zones. Moderators get full bans,
+# invsee and vanish on top.
+for p in essentials.kick.notify essentials.mute.notify essentials.tempban essentials.tempban.notify          essentials.ban.notify essentials.vanish essentials.vanish.see; do
+  mc "lp group helper permission set ${p} true"
+done
+for w in glitch_red glitch_red_eleria glitch_red_horizons; do
+  mc "lp group helper permission set essentials.fly false world=${w}"
+done
+for p in essentials.ban essentials.tempban.unlimited essentials.unban essentials.banip essentials.unbanip          essentials.invsee essentials.enderchest.others essentials.socialspy essentials.tphere essentials.fly grim.spectate; do
+  mc "lp group moderator permission set ${p} true"
+done
 mc "lp group helper meta set meta.class.staff true"
 mc "lp group helper meta set meta.zone.staff true"
 # Dev: creative tools + all Glitch admin commands (inherits helper powers)

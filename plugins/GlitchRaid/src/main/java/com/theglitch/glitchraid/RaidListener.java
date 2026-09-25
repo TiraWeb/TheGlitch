@@ -353,6 +353,16 @@ public final class RaidListener implements Listener {
         player.sendMessage(MM.deserialize("<red>You can't leave the Red Zone mid-raid — <gray>reach an extraction point to get out with your loot.</gray></red>"));
     }
 
+    /** Ender chests in a red world would let loot skip extraction (stash it, die, open one in the hub). */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEnderChestInRed(org.bukkit.event.inventory.InventoryOpenEvent event) {
+        if (event.getInventory().getType() != org.bukkit.event.inventory.InventoryType.ENDER_CHEST) return;
+        if (!(event.getPlayer() instanceof Player player)) return;
+        if (!manager.isRedWorld(player.getWorld().getName()) || player.hasPermission("glitchraid.admin")) return;
+        event.setCancelled(true);
+        player.sendMessage(MM.deserialize("<red>Ender chests don't work in the Red Zone — extract to keep your loot.</red>"));
+    }
+
     // ---- Loot accounting ----
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
