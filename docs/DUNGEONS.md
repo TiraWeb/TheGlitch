@@ -53,6 +53,11 @@ The maps (BreadBuilds "Mega Dungeon Bundle") and the boss packs are **licensed p
 
 ## Pipeline
 
+The original purchases are archived on the host, in `/opt/theglitch/private-assets/originals/`: `Dungeon_maps.zip`, `Dungeon_bosses/`, and both ModelEngine jars. The local copies were removed on 2026-09-26.
+To re-run the local scripts, copy them back into the repo root first:
+`scp -r root@HOST:/opt/theglitch/private-assets/originals/{Dungeon_maps.zip,Dungeon_bosses} .`
+The staged outputs live in `/opt/theglitch/private-assets/dungeons/`. Locally, `dungeon-private/` keeps only `layout*.json` and `default-config.yml`; the arena picks are in `layout-overrides.json`.
+
 ```
 python scripts/dungeon_maps.py [--preview] [--only id,…]   # extract worlds, rank arenas -> dungeon-private/maps, layout.json
 python scripts/dungeon_bosses.py                           # boss packs -> dungeon-private/{meg,mm,nexo}
