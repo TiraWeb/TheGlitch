@@ -23,6 +23,78 @@
       "chars": [
         "\uf002"
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/hideout_bg.png",
+      "height": 256,
+      "ascent": 96,
+      "chars": [
+        "\uf003"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/red_zone_bg.png",
+      "height": 256,
+      "ascent": 96,
+      "chars": [
+        "\uf004"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/class_bg.png",
+      "height": 256,
+      "ascent": 60,
+      "chars": [
+        "\uf005"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/crafting_bg.png",
+      "height": 256,
+      "ascent": 42,
+      "chars": [
+        "\uf006"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/stash_bg.png",
+      "height": 256,
+      "ascent": 42,
+      "chars": [
+        "\uf007"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/armory_bg.png",
+      "height": 256,
+      "ascent": 42,
+      "chars": [
+        "\uf008"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/bazaar_bg.png",
+      "height": 256,
+      "ascent": 42,
+      "chars": [
+        "\uf009"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/classes_bg.png",
+      "height": 256,
+      "ascent": 42,
+      "chars": [
+        "\uf00a"
+      ]
     }
   ]
 }

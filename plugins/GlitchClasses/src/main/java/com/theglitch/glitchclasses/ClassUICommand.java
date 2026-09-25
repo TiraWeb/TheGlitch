@@ -60,7 +60,7 @@ public final class ClassUICommand implements CommandExecutor {
         }
         String mode = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
         switch (mode) {
-            case "here" -> placeHere(player);
+            case "here" -> placeHere(player, args.length > 2 && args[2].equalsIgnoreCase("force"));
             case "undo" -> {
                 plugin.getConfig().set("modern-ui.class-panel.enabled", false);
                 plugin.saveConfig();
@@ -78,8 +78,14 @@ public final class ClassUICommand implements CommandExecutor {
         }
     }
 
-    private void placeHere(Player player) {
+    private void placeHere(Player player, boolean force) {
         Location loc = player.getLocation();
+        var clash = com.theglitch.common.PanelFootprint.overlaps(loc, 6 * 1.35 + 1.0, 5.0, "glitchclasses");
+        if (clash.isPresent() && !force) {
+            player.sendMessage(Component.text("That overlaps the " + clash.get()
+                    + " panel — step a few blocks away, or use /classui panel here force.", NamedTextColor.RED));
+            return;
+        }
         float yawNorm = ((loc.getYaw() % 360.0F) + 360.0F) % 360.0F;
         String facing;
         if (yawNorm >= 315.0F || yawNorm < 45.0F) {
@@ -93,9 +99,9 @@ public final class ClassUICommand implements CommandExecutor {
         }
         plugin.getConfig().set("modern-ui.class-panel.world",
                 loc.getWorld() != null ? loc.getWorld().getName() : "hub");
-        plugin.getConfig().set("modern-ui.class-panel.x", Math.floor(loc.getX()) + 0.5D);
+        plugin.getConfig().set("modern-ui.class-panel.x", loc.getX());
         plugin.getConfig().set("modern-ui.class-panel.y", loc.getY() + 1.0D);
-        plugin.getConfig().set("modern-ui.class-panel.z", Math.floor(loc.getZ()) + 0.5D);
+        plugin.getConfig().set("modern-ui.class-panel.z", loc.getZ());
         plugin.getConfig().set("modern-ui.class-panel.facing", facing);
         plugin.getConfig().set("modern-ui.class-panel.enabled", true);
         plugin.saveConfig();

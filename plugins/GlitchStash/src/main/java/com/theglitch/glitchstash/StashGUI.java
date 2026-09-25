@@ -46,19 +46,6 @@ public class StashGUI implements Listener {
 
     private static final Map<UUID, openSession> openSessions = new ConcurrentHashMap<>();
 
-    // Cached border — themed to match void-purple window (subtle, readable)
-    private static final ItemStack CACHED_BORDER;
-    static {
-        ItemStack b = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta m = b.getItemMeta();
-        if (m != null) {
-            m.customName(Component.empty());
-            m.lore(List.of(MM.deserialize("<dark_gray>Stashed loot — click to retrieve</dark_gray>")));
-            b.setItemMeta(m);
-        }
-        CACHED_BORDER = b;
-    }
-
     private record openSession(int page) {}
 
     public static void open(Player player, StashManager stashManager, GlitchStash plugin) {
@@ -71,12 +58,9 @@ public class StashGUI implements Listener {
 
         // Use cached display-name — no getConfig() polling per open
         String titleRaw = plugin.getCachedDisplayName();
-        Inventory inv = Bukkit.createInventory(null, SIZE, MM.deserialize(titleRaw));
-
-        // Header row — subtle border but with info/close controls
-        for (int i = 0; i < 9; i++) {
-            inv.setItem(i, CACHED_BORDER.clone());
-        }
+        // Textured STASH background (shared Glitch menu look); header row left empty except close.
+        Inventory inv = Bukkit.createInventory(null, SIZE,
+                com.theglitch.common.MenuTitles.title(player, com.theglitch.common.MenuTitles.STASH, titleRaw));
         inv.setItem(8, stashCloseItem());
 
         openSessions.put(uuid, new openSession(0));
@@ -125,9 +109,9 @@ public class StashGUI implements Listener {
 
         inv.setItem(4, stashInfoItem(flat.size(), current + 1, pages));
         inv.setItem(SLOT_PREV, current > 0
-                ? stashNavItem("<yellow>\u00ab Previous page") : CACHED_BORDER.clone());
+                ? stashNavItem("<yellow>\u00ab Previous page") : null);
         inv.setItem(SLOT_NEXT, current < pages - 1
-                ? stashNavItem("<yellow>Next page \u00bb") : CACHED_BORDER.clone());
+                ? stashNavItem("<yellow>Next page \u00bb") : null);
     }
 
     private static int contentIndexOf(int slot) {

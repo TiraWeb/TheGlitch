@@ -102,20 +102,31 @@ public final class InsurancePanel implements Listener {
     }
 
     public static synchronized boolean placeHere(Player player) {
+        return placeHere(player, false);
+    }
+
+    public static synchronized boolean placeHere(Player player, boolean force) {
         try {
             if (plugin == null || player == null) {
                 return false;
             }
             Location loc = player.getLocation();
+            var clash = com.theglitch.common.PanelFootprint.overlaps(loc, 3 * configSpacing() + 1.0, 5.0, "glitchinsurance");
+            if (clash.isPresent() && !force) {
+                player.sendMessage(net.kyori.adventure.text.Component.text("That overlaps the " + clash.get()
+                        + " panel — step a few blocks away, or use /insureui panel here force.",
+                        net.kyori.adventure.text.format.NamedTextColor.RED));
+                return false;
+            }
             World w = loc.getWorld();
             String face = facingFromYaw(loc.getYaw());
             if (w == null || face == null) {
                 return false;
             }
             plugin.getConfig().set("modern-ui.world-panel.world", w.getName());
-            plugin.getConfig().set("modern-ui.world-panel.x", loc.getBlockX() + 0.5D);
+            plugin.getConfig().set("modern-ui.world-panel.x", loc.getX());
             plugin.getConfig().set("modern-ui.world-panel.y", loc.getBlockY() + 1.0D);
-            plugin.getConfig().set("modern-ui.world-panel.z", loc.getBlockZ() + 0.5D);
+            plugin.getConfig().set("modern-ui.world-panel.z", loc.getZ());
             plugin.getConfig().set("modern-ui.world-panel.facing", face);
             plugin.getConfig().set("modern-ui.world-panel.enabled", true);
             plugin.saveConfig();
@@ -472,13 +483,13 @@ public final class InsurancePanel implements Listener {
                 try {
                     disp.setItemStack(stack);
                     disp.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-                    disp.setBillboard(Display.Billboard.FIXED);
+                    disp.setBillboard(Display.Billboard.CENTER); // face the viewer, like the labels
                     disp.setPersistent(true);
                     disp.setRotation(yaw, 0.0F);
                     disp.setTeleportDuration(1);
                     disp.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
-                            new Quaternionf().rotationY(-(float) Math.toRadians(yaw)),
+                            new Quaternionf(),
                             new Vector3f(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE),
                             new Quaternionf()));
                 } catch (Throwable err) {
@@ -622,10 +633,27 @@ public final class InsurancePanel implements Listener {
         }
         switch (act) {
             case "buy" -> enqueue(() -> {
-                try {
-                    Bukkit.dispatchCommand(player, "insurance buy");
-                } catch (Throwable ignored) {
+                // Chat [YES]/[NO] first so a stray click can't spend shards (2026-09-25).
+                org.bukkit.inventory.ItemStack held = player.getInventory().getItemInMainHand();
+                if (held.getType().isAir()) {
+                    player.performCommand("insurance buy"); // prints the "hold an item" hint
+                    return;
                 }
+                String name = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
+                        ? net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().serialize(held.getItemMeta().displayName())
+                        : held.getType().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
+                com.theglitch.common.ChatConfirm.ask(player,
+                        net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                                "<gray>Insure <white>" + name + "</white> for <aqua>"
+                                        + plugin.getManager().getPremiumPerItem() + " shards</aqua>?"),
+                        () -> {
+                            if (!player.getInventory().getItemInMainHand().isSimilar(held)) {
+                                player.sendMessage(net.kyori.adventure.text.Component.text(
+                                        "You're no longer holding that item.", net.kyori.adventure.text.format.NamedTextColor.RED));
+                                return;
+                            }
+                            Bukkit.dispatchCommand(player, "insurance buy");
+                        });
             });
             case "list", "claims" -> enqueue(() -> {
                 try {

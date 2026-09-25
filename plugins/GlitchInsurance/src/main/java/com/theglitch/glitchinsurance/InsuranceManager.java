@@ -233,7 +233,7 @@ public final class InsuranceManager {
         if (premium > 0) {
             if (economy == null) return InsureResult.NO_ECONOMY;
             if (!economy.has(player, premium)) return InsureResult.NOT_ENOUGH_SHARDS;
-            economy.withdrawPlayer(player, premium);
+            if (!economy.withdrawPlayer(player, premium).transactionSuccess()) return InsureResult.NOT_ENOUGH_SHARDS;
         }
 
         long now = System.currentTimeMillis();

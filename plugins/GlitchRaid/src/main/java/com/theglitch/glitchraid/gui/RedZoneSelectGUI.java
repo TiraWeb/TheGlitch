@@ -22,7 +22,16 @@ import java.util.List;
  */
 public class RedZoneSelectGUI implements Listener {
 
-    private static final String TITLE = "<red><bold>SELECT RED ZONE</bold></red>";
+    /** Identifies this menu (the title is a background glyph now, so it can't be matched by text). */
+    private static final class Holder implements org.bukkit.inventory.InventoryHolder {
+        private Inventory inventory;
+
+        @Override
+        public Inventory getInventory() {
+            return inventory;
+        }
+    }
+
     private static final MiniMessage MM = MiniMessage.miniMessage();
     // Centered slots for up to 5 worlds on a 27-slot chest; extra worlds beyond
     // this are simply not shown rather than crashing — operators should keep
@@ -42,7 +51,10 @@ public class RedZoneSelectGUI implements Listener {
     }
 
     public void open(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 27, MM.deserialize(TITLE));
+        Holder holder = new Holder();
+        Inventory gui = Bukkit.createInventory(holder, 27, com.theglitch.common.MenuTitles.title(player,
+                com.theglitch.common.MenuTitles.RED_ZONE, "<red>Select Red Zone</red>"));
+        holder.inventory = gui;
         List<String> worlds = manager.getAutoStartWorlds();
 
         for (int i = 0; i < worlds.size() && i < OPTION_SLOTS.length; i++) {
@@ -51,18 +63,12 @@ public class RedZoneSelectGUI implements Listener {
             Material mat = OPTION_MATERIALS[i % OPTION_MATERIALS.length];
             gui.setItem(OPTION_SLOTS[i], createItem(mat, "<red><bold>" + display + "</bold></red>",
                     "<gray>Full-loot PvPvE extraction.</gray>",
-                    "",
+                    " ",
                     "<yellow>Click to enter</yellow>"));
         }
 
         gui.setItem(22, createItem(Material.BARRIER, "<red><bold>Close</bold></red>",
                 "<gray>Close this menu.</gray>"));
-
-        for (int i = 0; i < 27; i++) {
-            if (gui.getItem(i) == null) {
-                gui.setItem(i, createItem(Material.BLACK_STAINED_GLASS_PANE, " "));
-            }
-        }
 
         player.openInventory(gui);
     }
@@ -70,8 +76,7 @@ public class RedZoneSelectGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        String title = event.getView().getTitle();
-        if (!title.contains("SELECT RED ZONE")) return;
+        if (!(event.getView().getTopInventory().getHolder() instanceof Holder)) return;
         event.setCancelled(true);
 
         if (event.getRawSlot() == 22) {

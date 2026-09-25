@@ -58,7 +58,7 @@ public final class BazaarPanel implements Listener {
     // shifted down by HITBOX_DY_OFFSET so one box covers both the item icon (row anchor) and its
     // label below, plus margin, for easy 3-4 block clicks.
     private static final float PANEL_PITCH = 0.0F;
-    private static final Display.Billboard PANEL_BILLBOARD = Display.Billboard.FIXED;
+    private static final Display.Billboard PANEL_BILLBOARD = Display.Billboard.CENTER; // text + icons face the viewer
     private static final float HEADER_SCALE = 1.1F;
     private static final float TAB_TEXT_SCALE = 0.75F;
     private static final float ROW_TEXT_SCALE = 0.5F;
@@ -704,9 +704,12 @@ public final class BazaarPanel implements Listener {
                 refreshContents();
                 return;
             }
-            // Always buy directly from the floating panel — no chest-GUI confirm step,
-            // regardless of price (2026-09-20).
-            enqueueBuy(() -> gui.buyGearFromDialog(player, gearId));
+            // Chat [YES]/[NO] first so a stray click can't spend shards (2026-09-25).
+            String gearName = entry.item().hasItemMeta() && entry.item().getItemMeta().hasCustomName()
+                    ? net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                            .serialize(entry.item().getItemMeta().customName())
+                    : gearId;
+            confirmBuy(player, gearName, entry.price(), () -> gui.buyGearFromDialog(player, gearId));
             return;
         }
         Integer price = gui.buyPriceFor(category, rest);
@@ -715,7 +718,17 @@ public final class BazaarPanel implements Listener {
             return;
         }
         final String itemId = rest;
-        enqueueBuy(() -> gui.buyFromDialog(player, category, itemId, 1));
+        confirmBuy(player, gui.displayNameOf(itemId), price, () -> gui.buyFromDialog(player, category, itemId, 1));
+    }
+
+    private void confirmBuy(Player player, String name, int price, Runnable buy) {
+        com.theglitch.common.ChatConfirm.ask(player,
+                net.kyori.adventure.text.Component.text("Buy ", net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                        .append(net.kyori.adventure.text.Component.text(name, net.kyori.adventure.text.format.NamedTextColor.WHITE))
+                        .append(net.kyori.adventure.text.Component.text(" for ", net.kyori.adventure.text.format.NamedTextColor.GRAY))
+                        .append(net.kyori.adventure.text.Component.text(price + " shards", net.kyori.adventure.text.format.NamedTextColor.AQUA))
+                        .append(net.kyori.adventure.text.Component.text("?", net.kyori.adventure.text.format.NamedTextColor.GRAY)),
+                () -> enqueueBuy(buy));
     }
 
     private void enqueueBuy(Runnable action) {

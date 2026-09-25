@@ -6,11 +6,13 @@ import org.bukkit.inventory.ItemStack;
 
 public final class ModernLayout {
 
-    public static final int STATE_SLOT = 31;
+    /** Footer centre: "SELLING" / "Out of stock" state. */
+    public static final int STATE_SLOT = 49;
 
+    /** Inner columns 1-7 of rows 2-4 on the BAZAAR background. */
     public static final int[] STOCK_SLOTS = {
             19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 32, 33, 34,
+            28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
     };
 

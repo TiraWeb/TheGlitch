@@ -10,7 +10,8 @@ with the painted grid at the bottom.
 They are shown by putting a single bitmap glyph in the chest title
 (font theglitch:menus). The title is drawn at window (8, 6); a space glyph
 shifts left 48px and the bitmap's ascent 96 lifts it 89px, which puts
-template (40, 83) exactly on the window corner. See GlitchQuests MenuTitles.
+template (40, 83) exactly on the window corner. Glyph chars are mirrored in
+GlitchCommon com.theglitch.common.MenuTitles.
 
 Edits vs the stock templates:
   * jobs  -> quests: banner re-lettered "QUESTS" (Q and T drawn in the same
@@ -36,12 +37,48 @@ LETTERS = {
     "E": ["######", "######", "##....", "####..", "####..", "##....", "######", "######"],
     "S": ["######", "######", "##....", "######", "######", "....##", "######", "######"],
     "T": ["######", "######", "..##..", "..##..", "..##..", "..##..", "..##..", "..##.."],
+    "A": ["######", "######", "##..##", "##..##", "######", "######", "##..##", "##..##"],
+    "B": ["#####.", "######", "##..##", "#####.", "######", "##..##", "######", "#####."],
+    "C": ["######", "######", "##....", "##....", "##....", "##....", "######", "######"],
+    "D": ["#####.", "######", "##..##", "##..##", "##..##", "##..##", "######", "#####."],
+    "F": ["######", "######", "##....", "####..", "####..", "##....", "##....", "##...."],
+    "G": ["######", "######", "##....", "##.###", "##.###", "##..##", "######", "######"],
+    "H": ["##..##", "##..##", "##..##", "######", "######", "##..##", "##..##", "##..##"],
+    "I": ["##", "##", "##", "##", "##", "##", "##", "##"],
+    "K": ["##..##", "##.##.", "####..", "###...", "####..", "##.##.", "##..##", "##..##"],
+    "L": ["##....", "##....", "##....", "##....", "##....", "##....", "######", "######"],
+    "M": ["##...##", "###.###", "#######", "##.#.##", "##...##", "##...##", "##...##", "##...##"],
+    "N": ["##..##", "###.##", "######", "######", "##.###", "##..##", "##..##", "##..##"],
+    "O": ["######", "######", "##..##", "##..##", "##..##", "##..##", "######", "######"],
+    "P": ["######", "######", "##..##", "######", "######", "##....", "##....", "##...."],
+    "R": ["######", "######", "##..##", "######", "#####.", "##.##.", "##..##", "##..##"],
+    "V": ["##..##", "##..##", "##..##", "##..##", "##..##", ".####.", ".####.", "..##.."],
+    "W": ["##...##", "##...##", "##...##", "##...##", "##.#.##", "#######", "###.###", "##...##"],
+    "Y": ["##..##", "##..##", "##..##", "######", ".####.", "..##..", "..##..", "..##.."],
+    "Z": ["######", "######", "...##.", "..##..", ".##...", "##....", "######", "######"],
+    " ": ["...", "...", "...", "...", "...", "...", "...", "..."],
 }
 
 # Glyph codepoints (private use, separate font so they can't collide with Nexo's).
 SHIFT_BACK = ""   # space glyph, advance -48
 REWARDS_BG = ""
 QUESTS_BG = ""
+
+# Generic chest backgrounds: stock kit window + banner lettered with the menu
+# name. Char, template, banner word. Ascent puts the window corner on the
+# painted grid: 3-row corner at template y=83 (ascent 96), 5-row y=47 (60),
+# 6-row y=29 (42); the banner letters sit 6px below the banner's top edge.
+GENERIC = [
+    ("", "generic_27", "HIDEOUT"),
+    ("", "generic_27", "RED ZONE"),
+    ("", "generic_45", "CLASS"),
+    ("", "generic_54", "CRAFTING"),
+    ("", "generic_54", "STASH"),
+    ("", "generic_54", "ARMORY"),
+    ("", "generic_54", "BAZAAR"),
+    ("", "generic_54", "CLASSES"),
+]
+GEOMETRY = {"generic_27": (96, 76), "generic_45": (60, 40), "generic_54": (42, 22)}  # ascent, letter top
 
 
 def reletter(img, word, text_top, center_x, erase_box):
@@ -87,9 +124,17 @@ def main():
              "height": 256, "ascent": 96, "chars": [QUESTS_BG]},
         ]
     }
+    for char, template, word in GENERIC:
+        ascent, letter_top = GEOMETRY[template]
+        name = word.lower().replace(" ", "_") + "_bg.png"
+        img = Image.open(KIT / f"{template}.png").convert("RGBA")
+        reletter(img, word, letter_top, 127, (96, letter_top, 158, letter_top + 7))
+        img.save(tex / name)
+        font["providers"].append({"type": "bitmap", "file": f"theglitch:gui/{name}",
+                                  "height": 256, "ascent": ascent, "chars": [char]})
     (OUT / "font").mkdir(parents=True, exist_ok=True)
     (OUT / "font" / "menus.json").write_text(json.dumps(font, indent=2) + "\n", encoding="utf-8")
-    print("wrote", tex / "rewards_bg.png", tex / "quests_bg.png", OUT / "font" / "menus.json")
+    print("wrote", len(font["providers"]) - 1, "backgrounds to", tex, "and", OUT / "font" / "menus.json")
 
 
 if __name__ == "__main__":

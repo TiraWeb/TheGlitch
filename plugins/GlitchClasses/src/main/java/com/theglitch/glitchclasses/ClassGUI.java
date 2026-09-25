@@ -100,23 +100,9 @@ public class ClassGUI implements Listener {
     public void openMainMenu(Player player) {
         ClassData data = classManager.getClassData(player.getUniqueId());
 
-        String titleMini = UiKit.titleCustom(UiKit.classGradientFrom(data.className()),
-                UiKit.classGradientTo(data.className()), "CHOOSE YOUR CLASS");
-        if (holoEnabled) {
-            FloatingBanner.show(plugin, player, titleMini, 90L);
-        }
-        Inventory inv = Bukkit.createInventory(null, 54, UiKit.mm().deserialize(titleMini));
-
-        for (int col = 0; col < 9; col++) {
-            inv.setItem(col, UiKit.rampPane(col));
-        }
-        for (int slot = 45; slot < 54; slot++) {
-            inv.setItem(slot, UiKit.blankPane(Material.BLACK_STAINED_GLASS_PANE));
-        }
-        inv.setItem(18, UiKit.blankPane(UiKit.RAMP[4]));
-        inv.setItem(26, UiKit.blankPane(UiKit.RAMP[4]));
-        inv.setItem(27, UiKit.blankPane(UiKit.RAMP[4]));
-        inv.setItem(35, UiKit.blankPane(UiKit.RAMP[4]));
+        // Textured CLASSES background (shared Glitch menu look); empty slots show the art.
+        Inventory inv = Bukkit.createInventory(null, 54, com.theglitch.common.MenuTitles.title(player,
+                com.theglitch.common.MenuTitles.CLASSES, "<light_purple>Choose Your Class</light_purple>"));
 
         int[] cardSlots = {19, 21, 23, 25};
         for (int i = 0; i < CLASS_ORDER.length; i++) {
@@ -124,8 +110,6 @@ public class ClassGUI implements Listener {
         }
 
         inv.setItem(4, infoItem(data));
-        inv.setItem(9, UiKit.runeCorner());
-        inv.setItem(17, UiKit.runeCorner());
         inv.setItem(40, hintItem());
 
         if (!data.className().equals("none")) {
@@ -265,14 +249,8 @@ public class ClassGUI implements Listener {
         ClassData data = classManager.getClassData(player.getUniqueId());
         boolean selected = className.equals(data.className());
 
-        String titleMini = UiKit.titleCustom(UiKit.classGradientFrom(className),
-                UiKit.classGradientTo(className), className.toUpperCase(java.util.Locale.ROOT));
-        if (holoEnabled) {
-            FloatingBanner.show(plugin, player, titleMini, 90L);
-        }
-        Inventory inv = Bukkit.createInventory(null, 45, UiKit.mm().deserialize(titleMini));
-
-        paintBands45(inv);
+        Inventory inv = Bukkit.createInventory(null, 45, com.theglitch.common.MenuTitles.title(player,
+                com.theglitch.common.MenuTitles.CLASS, "<light_purple>" + capitalizeFirst(className) + "</light_purple>"));
         inv.setItem(4, UiKit.pipsItem(data.level(), classManager.getMaxLevel()));
 
         // Ability info — row 2, slots 10-14
@@ -671,30 +649,8 @@ public class ClassGUI implements Listener {
 
     // ==================== HELPERS ====================
 
-    /**
-     * Modern framing for the shared 45-slot class menu: gradient header row,
-     * BLUE side rails on the middle rows, BLACK footer row. Occupied
-     * (non-border) cells are skipped so controls always win.
-     */
-    private void paintBands45(Inventory inv) {
-        for (int col = 0; col < 9; col++) {
-            setPaneIfFree(inv, col, UiKit.rampPane(col));
-        }
-        int[] rails = {9, 17, 18, 26};
-        for (int slot : rails) {
-            setPaneIfFree(inv, slot, UiKit.blankPane(UiKit.RAMP[4]));
-        }
-        for (int slot = 36; slot < 45; slot++) {
-            setPaneIfFree(inv, slot, UiKit.blankPane(Material.BLACK_STAINED_GLASS_PANE));
-        }
-    }
-
-    private void setPaneIfFree(Inventory inv, int slot, ItemStack pane) {
-        ItemStack current = inv.getItem(slot);
-        if (current == null || current.getType() == Material.AIR
-                || current.getType() == Material.GRAY_STAINED_GLASS_PANE) {
-            inv.setItem(slot, pane);
-        }
+    private static String capitalizeFirst(String s) {
+        return s == null || s.isEmpty() ? "" : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private Material material(String name, Material fallback) {

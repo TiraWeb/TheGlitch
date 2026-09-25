@@ -36,8 +36,8 @@ import java.util.UUID;
 public final class ShopGUI implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
-    // \uE049 = glitch-diamond glyph (default font) + Inter UI font for readable title
-    private static final Component BAZAAR_TITLE = UiKit.deserialized(UiKit.title("GRAND BAZAAR"));
+    /** Nexo lore lines kept on stock items — the rest is noise in a shop grid. */
+    private static final int STOCK_LORE_LINES = 2;
 
     private static final int SIZE = 54;
 
@@ -110,9 +110,10 @@ public final class ShopGUI implements Listener {
                 category = cachedTabOrder.get(0);
             }
         }
-        Inventory inv = Bukkit.createInventory(null, SIZE, BAZAAR_TITLE);
-
-        ModernLayout.paintBands(inv, SIZE);
+        // Textured BAZAAR background (same look as every Glitch chest menu); empty slots show the art.
+        Inventory inv = Bukkit.createInventory(null, SIZE,
+                com.theglitch.common.MenuTitles.title(player, com.theglitch.common.MenuTitles.BAZAAR,
+                        "<gold>Grand Bazaar</gold>"));
 
         inv.setItem(0, balanceItem(player));
         inv.setItem(3, tabButton("tab_buy", "gui_buy", Material.EMERALD, "BUY",
@@ -145,10 +146,6 @@ public final class ShopGUI implements Listener {
         switchingGui.add(player.getUniqueId());
         player.openInventory(inv);
         switchingGui.remove(player.getUniqueId());
-        if (holoEnabled) {
-            FloatingBanner.show(plugin, player,
-                    sellMode ? UiKit.titleCustom("#FFD166", "#FFE9A8", "SELL MODE") : UiKit.title(categoryLabel(category)), 90L);
-        }
     }
 
     /** Returns the effective (clamped) page actually rendered. */
@@ -162,10 +159,10 @@ public final class ShopGUI implements Listener {
                 ItemStack display = entry.item().clone();
                 ItemMeta meta = display.getItemMeta();
                 List<Component> lore = meta.lore() == null ? new java.util.ArrayList<>() : meta.lore();
-                lore.add(MM.deserialize(
-                        entry.superRare() ? "<gold>SUPER RARE — max rolls</gold>" : ""));
+                if (entry.superRare()) lore.add(MM.deserialize("<!italic><gold>SUPER RARE — max rolls</gold>"));
                 lore.add(Component.empty());
-                lore.add(MM.deserialize("<aqua>Buy: " + entry.price() + " Shards</aqua>"));
+                lore.add(MM.deserialize("<!italic><gray>Price: <aqua>" + entry.price() + " Shards"));
+                lore.add(MM.deserialize("<!italic><green>Click <gray>to buy"));
                 meta.lore(lore);
                 display.setItemMeta(meta);
                 display.editMeta(ItemMeta.class, m -> {
@@ -175,7 +172,7 @@ public final class ShopGUI implements Listener {
                 inv.setItem(STOCK_SLOTS[idx++], display);
             }
             if (idx == 0) {
-                inv.setItem(31, guiIcon("gui_close", Material.BARRIER,
+                ModernLayout.setStateIcon(inv, guiIcon("gui_close", Material.BARRIER,
                         "<red>Out of stock</red>",
                         "<gray>The vendor will restock soon.</gray>"));
             }
@@ -211,9 +208,13 @@ public final class ShopGUI implements Listener {
                 continue;
             }
             ItemMeta meta = item.getItemMeta();
-            List<Component> lore = meta.lore() == null ? new java.util.ArrayList<>() : meta.lore();
+            List<Component> lore = new java.util.ArrayList<>();
+            if (meta.lore() != null) {
+                meta.lore().stream().limit(STOCK_LORE_LINES).forEach(lore::add);
+            }
             lore.add(Component.empty());
-            lore.add(MM.deserialize("<aqua>Buy: " + entry.getValue().buy() + " Shards</aqua>"));
+            lore.add(MM.deserialize("<!italic><gray>Price: <aqua>" + entry.getValue().buy() + " Shards"));
+            lore.add(MM.deserialize("<!italic><green>Click <gray>buy 1 · <green>Shift-click <gray>buy a stack"));
             meta.lore(lore);
             item.setItemMeta(meta);
             item.editMeta(ItemMeta.class, m -> {

@@ -49,6 +49,11 @@ public final class GlitchHideout extends JavaPlugin {
             getCommand("hideoutui").setExecutor(new HideoutUICommand(this));
         }
 
+        // Longer click reach for every floating hub panel (Hideout, Bazaar, Stash, ...).
+        com.theglitch.common.PanelReach.register(this,
+                java.util.Set.copyOf(getConfig().getStringList("modern-ui.panel-reach-worlds").isEmpty()
+                        ? java.util.List.of("hub") : getConfig().getStringList("modern-ui.panel-reach-worlds")));
+
         try {
             com.theglitch.glitchhideout.ui.HideoutPanel.init(this);
         } catch (Throwable t) {

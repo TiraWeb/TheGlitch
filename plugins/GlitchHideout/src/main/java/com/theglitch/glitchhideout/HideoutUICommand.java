@@ -94,6 +94,12 @@ public final class HideoutUICommand implements CommandExecutor {
         switch (mode) {
             case "here" -> {
                 Location loc = player.getLocation();
+                double width = 7 * cfg.getDouble("modern-ui.world-panel.spacing", 1.35D) + 1.0;
+                var clash = com.theglitch.common.PanelFootprint.overlaps(loc, width, 5.0, "glitchhideout");
+                if (clash.isPresent() && !(args.length > 2 && args[2].equalsIgnoreCase("force"))) {
+                    player.sendMessage(Component.text("That overlaps the " + clash.get() + " panel — step a few blocks away, or use /hideoutui panel here force.", NamedTextColor.RED));
+                    return;
+                }
                 cfg.set("modern-ui.world-panel.enabled", true);
                 cfg.set("modern-ui.world-panel.world", player.getWorld().getName());
                 cfg.set("modern-ui.world-panel.x", loc.getX());

@@ -370,13 +370,13 @@ public final class StashPanel implements Listener {
                 try {
                     disp.setItemStack(stack);
                     disp.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-                    disp.setBillboard(Display.Billboard.FIXED);
+                    disp.setBillboard(Display.Billboard.CENTER); // face the viewer, like the labels
                     disp.setPersistent(true);
                     disp.setRotation(yaw, 0.0F);
                     disp.setTeleportDuration(1);
                     disp.setTransformation(new Transformation(
                             new Vector3f(0.0F, 0.0F, 0.0F),
-                            new Quaternionf().rotationY(-(float) Math.toRadians(yaw)),
+                            new Quaternionf(),
                             new Vector3f(ITEM_SCALE, ITEM_SCALE, ITEM_SCALE),
                             new Quaternionf()));
                 } catch (Throwable err) {

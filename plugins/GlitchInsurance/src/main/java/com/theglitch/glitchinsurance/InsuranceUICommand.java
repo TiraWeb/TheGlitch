@@ -39,7 +39,7 @@ public final class InsuranceUICommand implements CommandExecutor {
         }
         String op = args.length > 1 ? args[1].toLowerCase(java.util.Locale.ROOT) : "";
         switch (op) {
-            case "here" -> InsurancePanel.placeHere(player);
+            case "here" -> InsurancePanel.placeHere(player, args.length > 2 && args[2].equalsIgnoreCase("force"));
             case "undo" -> InsurancePanel.undo();
             case "show" -> InsurancePanel.showAt();
             default -> InsurancePanel.showAt();

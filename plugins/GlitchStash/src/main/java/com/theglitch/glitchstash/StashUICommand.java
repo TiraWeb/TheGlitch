@@ -86,6 +86,12 @@ public final class StashUICommand implements CommandExecutor {
         String action = args.length < 2 ? "show" : args[1].toLowerCase();
         switch (action) {
             case "here": {
+                var clash = com.theglitch.common.PanelFootprint.overlaps(player.getLocation(), 4.0, 5.0, "glitchstash");
+                if (clash.isPresent() && !(args.length > 2 && args[2].equalsIgnoreCase("force"))) {
+                    player.sendMessage(MM.deserialize("<red>That overlaps the " + clash.get()
+                            + " panel — step a few blocks away, or use /stashui panel here force.</red>"));
+                    return;
+                }
                 if (!player.getWorld().getName()
                         .equals(plugin.getConfig().getString(PanelConfig.WORLD_KEY, PanelConfig.WORLD_DEFAULT))) {
                     plugin.getConfig().set(PanelConfig.WORLD_KEY, player.getWorld().getName());

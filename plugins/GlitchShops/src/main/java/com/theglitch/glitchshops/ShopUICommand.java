@@ -101,7 +101,7 @@ public final class ShopUICommand implements CommandExecutor {
                 switch (action) {
                     case "here": {
                         if (!panelAdmin(player)) return true;
-                        panelHere(player);
+                        panelHere(player, args.length > 2 && args[2].equalsIgnoreCase("force"));
                         return true;
                     }
                     case "undo": {
@@ -146,12 +146,19 @@ public final class ShopUICommand implements CommandExecutor {
         return false;
     }
 
-    private void panelHere(Player player) {
+    private void panelHere(Player player, boolean force) {
         Location loc = player.getLocation();
         World world = loc.getWorld();
-        double bx = Math.floor(loc.getX()) + 0.5D;
+        double bx = loc.getX();
         double by = loc.getY() + 1.0D;
-        double bz = Math.floor(loc.getZ()) + 0.5D;
+        double bz = loc.getZ();
+        double width = 7 * plugin.getConfig().getDouble("modern-ui.world-panel.spacing", 1.35D) + 1.0;
+        var clash = com.theglitch.common.PanelFootprint.overlaps(loc, width, 6.0, "glitchshops");
+        if (clash.isPresent() && !force) {
+            player.sendMessage(MM.deserialize("<red>That overlaps the " + clash.get()
+                    + " panel — step a few blocks away, or use /shopui panel here force.</red>"));
+            return;
+        }
         float normYaw = ((loc.getYaw() % 360F) + 360F) % 360F;
         String facing;
         if (normYaw >= 315F || normYaw < 45F) {
