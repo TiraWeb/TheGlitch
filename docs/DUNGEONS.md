@@ -33,8 +33,8 @@ The maps (BreadBuilds "Mega Dungeon Bundle") and the boss packs are **licensed p
 | mythic | Mythic Spire | 3 | Mage (2200) | samus2002 mage (FULL) |
 
 **Run flow**
-- Players start about 16 path blocks from the arena, facing it.
-- Stepping within 10 blocks of the arena centre shows the boss title and spawns the boss after 2 s.
+- On dungeon start the party is teleported to the start point, about 16 path blocks from the arena, and a "get ready" title shows.
+- The boss spawns at the arena centre 5 s later and comes for them. Players never have to find the arena: the old proximity trigger left Hollow Town's boss unfound.
 - Killing the final-phase boss gives every party member the reward, shows "Dungeon Cleared", and sends everyone to the hub after 8 s.
 - Rules: 3 lives, then spectate. Inventory is kept on entry and on death. No block edits, no item drops. 20-minute time limit.
 
