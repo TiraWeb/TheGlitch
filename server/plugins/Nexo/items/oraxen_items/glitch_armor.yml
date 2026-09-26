@@ -218,7 +218,7 @@ godslayer_helmet:
   Enchantments:
     protection: 8
     thorns: 4
-    unbreaking: 20
+    unbreaking: 10
     mending: 1
   lore:
   - "<gradient:#fde047:#f43f5e>✦ GODSLAYER AEGIS ✦</gradient>"
@@ -253,7 +253,7 @@ godslayer_chestplate:
   Enchantments:
     protection: 8
     thorns: 4
-    unbreaking: 20
+    unbreaking: 10
     mending: 1
   lore:
   - "<gradient:#fde047:#f43f5e>✦ GODSLAYER AEGIS ✦</gradient>"
@@ -288,7 +288,7 @@ godslayer_leggings:
   Enchantments:
     protection: 8
     thorns: 4
-    unbreaking: 20
+    unbreaking: 10
     mending: 1
   lore:
   - "<gradient:#fde047:#f43f5e>✦ GODSLAYER AEGIS ✦</gradient>"
@@ -323,7 +323,7 @@ godslayer_boots:
   Enchantments:
     protection: 8
     thorns: 4
-    unbreaking: 20
+    unbreaking: 10
     mending: 1
   lore:
   - "<gradient:#fde047:#f43f5e>✦ GODSLAYER AEGIS ✦</gradient>"

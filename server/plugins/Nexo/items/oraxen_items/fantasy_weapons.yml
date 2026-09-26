@@ -761,7 +761,7 @@ duality:
     model: skulpt:arsenals/fantasy_arsenal/duality
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
-      amount: 24.0
+      amount: 25.0
       operation: ADD_NUMBER
       slot: MAINHAND
     - attribute: ATTACK_SPEED
@@ -785,10 +785,10 @@ duality:
       operation: ADD_NUMBER
       slot: MAINHAND
   Enchantments:
-    sharpness: 12
+    sharpness: 10
     fire_aspect: 4
     looting: 5
-    unbreaking: 20
+    unbreaking: 10
     mending: 1
     sweeping_edge: 3
   lore:
@@ -806,7 +806,7 @@ singularity_hammer_awakened:
     model: skulpt:arsenals/fantasy_arsenal/singularity_hammer_awakened
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
-      amount: 31.2
+      amount: 32.5
       operation: ADD_NUMBER
       slot: MAINHAND
     - attribute: ATTACK_SPEED
@@ -834,10 +834,10 @@ singularity_hammer_awakened:
       operation: ADD_NUMBER
       slot: MAINHAND
   Enchantments:
-    sharpness: 12
+    sharpness: 10
     fire_aspect: 4
     looting: 5
-    unbreaking: 20
+    unbreaking: 10
     mending: 1
     knockback: 2
   lore:
@@ -855,7 +855,7 @@ void_sword:
     model: skulpt:arsenals/fantasy_arsenal/void_sword
   AttributeModifiers:
     - attribute: ATTACK_DAMAGE
-      amount: 24.0
+      amount: 25.0
       operation: ADD_NUMBER
       slot: MAINHAND
     - attribute: ATTACK_SPEED
@@ -879,10 +879,10 @@ void_sword:
       operation: ADD_NUMBER
       slot: MAINHAND
   Enchantments:
-    sharpness: 12
+    sharpness: 10
     fire_aspect: 4
     looting: 5
-    unbreaking: 20
+    unbreaking: 10
     mending: 1
     sweeping_edge: 3
   lore:

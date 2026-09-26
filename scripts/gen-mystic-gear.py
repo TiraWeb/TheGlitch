@@ -11,6 +11,13 @@ the tables below. Nexo AttributeModifiers REPLACE the item's vanilla stats, so
 ATTACK_DAMAGE here is the full bonus over the 1-damage fist and ATTACK_SPEED
 is relative to the base 4.0 attacks/second.
 
+Enchant levels stay <= 10: the client only has names up to X, higher levels
+show as a raw "enchantment.level.20" key in the tooltip.
+
+Armour ids end in _helmet/_chestplate/...; Nexo's CustomArmor
+auto_assign_settings must be false (live plugins/Nexo/settings.yml) or it
+gives them a custom equipment model with no textures (pink/black armour).
+
 Tiers sit above rolled Legendary gear (netherite sword +rolls) and top out
 around the Dream Eater chase item (30-45 dmg). Sell = 55% of buy.
 
@@ -35,11 +42,11 @@ TIERS = {
     3: ("MYTHIC", "#f59e0b:#ef4444", 20, [("MAX_HEALTH", 8, "ADD_NUMBER"),
                                          ("MOVEMENT_SPEED", 0.10, "ADD_SCALAR")],
         {"sharpness": 8, "fire_aspect": 3, "looting": 4, "unbreaking": 10, "mending": 1}),
-    4: ("GODSLAYER", "#fde047:#f43f5e", 24, [("MAX_HEALTH", 16, "ADD_NUMBER"),
+    4: ("GODSLAYER", "#fde047:#f43f5e", 25, [("MAX_HEALTH", 16, "ADD_NUMBER"),
                                             ("MOVEMENT_SPEED", 0.20, "ADD_SCALAR"),
                                             ("KNOCKBACK_RESISTANCE", 0.5, "ADD_NUMBER"),
                                             ("ARMOR_TOUGHNESS", 4, "ADD_NUMBER")],
-        {"sharpness": 12, "fire_aspect": 4, "looting": 5, "unbreaking": 20, "mending": 1}),
+        {"sharpness": 10, "fire_aspect": 4, "looting": 5, "unbreaking": 10, "mending": 1}),
 }
 
 # archetype: damage multiplier, attack speed (relative to 4.0), extra attributes, extra enchants
@@ -103,7 +110,7 @@ ARMOR_SETS = {
                   {"helmet": (6, 5), "chestplate": (12, 5), "leggings": (10, 5), "boots": (6, 5)},
                   [("MAX_HEALTH", 6, "ADD_NUMBER"), ("MOVEMENT_SPEED", 0.05, "ADD_SCALAR"),
                    ("KNOCKBACK_RESISTANCE", 0.25, "ADD_NUMBER")],
-                  {"protection": 8, "thorns": 4, "unbreaking": 20, "mending": 1},
+                  {"protection": 8, "thorns": 4, "unbreaking": 10, "mending": 1},
                   {"helmet": 150000, "chestplate": 250000, "leggings": 200000, "boots": 150000},
                   "Worn by whatever is left standing at the end."),
 }
