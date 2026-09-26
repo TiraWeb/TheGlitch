@@ -47,28 +47,44 @@ shops:
     title: "Mystic"
     tab-icon: "void_sword"
     stock:
-      colossal_sword: { buy: 25000, sell: 14000 }
-      core_hammer: { buy: 18000, sell: 10000 }
-      violet_splitter: { buy: 18000, sell: 10000 }
-      dark_destroyer: { buy: 25000, sell: 14000 }
-      death_hand: { buy: 25000, sell: 14000 }
-      void_sword: { buy: 35000, sell: 20000 }
-      ktanazul: { buy: 35000, sell: 20000 }
-      hell_bringer: { buy: 35000, sell: 20000 }
-      moonlight: { buy: 25000, sell: 14000 }
-      jade_glaive: { buy: 18000, sell: 10000 }
-      lantern_scythe: { buy: 18000, sell: 10000 }
-      great_scythe: { buy: 18000, sell: 10000 }
-      prismarine_greataxe: { buy: 18000, sell: 10000 }
-      silver_halberd: { buy: 18000, sell: 10000 }
-      storm_axe: { buy: 18000, sell: 10000 }
-      twisted_greatsword: { buy: 18000, sell: 10000 }
-      singularity_hammer_awakened: { buy: 35000, sell: 20000 }
-      duality: { buy: 35000, sell: 20000 }
-      yin: { buy: 18000, sell: 10000 }
-      yang: { buy: 18000, sell: 10000 }
-      blood_gladius_awakened: { buy: 25000, sell: 14000 }
-      engine_blade: { buy: 25000, sell: 14000 }
-      combustion_awakened: { buy: 25000, sell: 14000 }
-      resistance_greatsword_awakened: { buy: 25000, sell: 14000 }
-      royal_greatsword_awakened: { buy: 25000, sell: 14000 }
+      violet_splitter: { buy: 18000, sell: 9900 }
+      jade_glaive: { buy: 18000, sell: 9900 }
+      silver_halberd: { buy: 18000, sell: 9900 }
+      yin: { buy: 18000, sell: 9900 }
+      yang: { buy: 18000, sell: 9900 }
+      core_hammer: { buy: 20000, sell: 11000 }
+      prismarine_greataxe: { buy: 20000, sell: 11000 }
+      storm_axe: { buy: 20000, sell: 11000 }
+      twisted_greatsword: { buy: 20000, sell: 11000 }
+      great_scythe: { buy: 45000, sell: 24800 }
+      lantern_scythe: { buy: 45000, sell: 24800 }
+      death_hand: { buy: 50000, sell: 27500 }
+      engine_blade: { buy: 50000, sell: 27500 }
+      dark_destroyer: { buy: 55000, sell: 30300 }
+      moonlight: { buy: 55000, sell: 30300 }
+      colossal_sword: { buy: 60000, sell: 33000 }
+      resistance_greatsword_awakened: { buy: 60000, sell: 33000 }
+      combustion_awakened: { buy: 150000, sell: 82500 }
+      blood_gladius_awakened: { buy: 150000, sell: 82500 }
+      royal_greatsword_awakened: { buy: 180000, sell: 99000 }
+      ktanazul: { buy: 200000, sell: 110000 }
+      hell_bringer: { buy: 250000, sell: 137500 }
+      duality: { buy: 750000, sell: 412500 }
+      singularity_hammer_awakened: { buy: 850000, sell: 467500 }
+      void_sword: { buy: 1000000, sell: 550000 }
+  gear:
+    title: "Gear"
+    tab-icon: "voidforged_chestplate"
+    stock:
+      warden_helmet: { buy: 3000, sell: 1700 }
+      warden_chestplate: { buy: 5000, sell: 2800 }
+      warden_leggings: { buy: 4000, sell: 2200 }
+      warden_boots: { buy: 3000, sell: 1700 }
+      voidforged_helmet: { buy: 15000, sell: 8200 }
+      voidforged_chestplate: { buy: 25000, sell: 13800 }
+      voidforged_leggings: { buy: 20000, sell: 11000 }
+      voidforged_boots: { buy: 15000, sell: 8200 }
+      godslayer_helmet: { buy: 150000, sell: 82500 }
+      godslayer_chestplate: { buy: 250000, sell: 137500 }
+      godslayer_leggings: { buy: 200000, sell: 110000 }
+      godslayer_boots: { buy: 150000, sell: 82500 }

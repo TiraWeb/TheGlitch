@@ -33,10 +33,10 @@ gear:
     rare: 12
     epic: 6
     legendary: 1
-  # Which slots the vendor shows (weapons first, then armor)
+  # Which slots the vendor shows (weapons first, then armor); 7 = all of both
   weapon-slots: [blade, greatblade, arcane_staff]
   armor-slots: [helmet, chestplate, leggings, boots]
-  max-slots: 5
+  max-slots: 7
 
 # Click behavior: buy/sell 1 per click, whole stack on shift
 buy-stack-size: 64

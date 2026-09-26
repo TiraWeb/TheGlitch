@@ -38,6 +38,8 @@ public final class ShopGUI implements Listener {
     private static final MiniMessage MM = MiniMessage.miniMessage();
     /** Nexo lore lines kept on stock items — the rest is noise in a shop grid. */
     private static final int STOCK_LORE_LINES = 2;
+    /** Purchases at or above this many shards ask a chat [YES]/[NO] first. */
+    private static final long CONFIRM_THRESHOLD = 10_000;
 
     private static final int SIZE = 54;
 
@@ -148,6 +150,39 @@ public final class ShopGUI implements Listener {
         switchingGui.remove(player.getUniqueId());
     }
 
+    /** A buyable Nexo stock item for the GUI, or null if the id doesn't build. */
+    private ItemStack stockDisplay(String category, String id, int buy) {
+        ItemStack item;
+        try {
+            ItemBuilder builder = NexoItems.itemFromId(id);
+            if (builder == null) {
+                plugin.getLogger().warning("Unknown Nexo item in shop " + category + ": " + id);
+                return null;
+            }
+            item = builder.build().clone();
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to build Nexo item " + id + ": " + e.getMessage());
+            return null;
+        }
+        ItemMeta meta = item.getItemMeta();
+        List<Component> lore = new java.util.ArrayList<>();
+        if (meta.lore() != null) {
+            meta.lore().stream().limit(STOCK_LORE_LINES).forEach(lore::add);
+        }
+        lore.add(Component.empty());
+        lore.add(MM.deserialize("<!italic><gray>Price: <aqua>" + String.format("%,d", buy) + " Shards"));
+        lore.add(MM.deserialize(item.getMaxStackSize() > 1
+                ? "<!italic><green>Click <gray>buy 1 · <green>Shift-click <gray>buy a stack"
+                : "<!italic><green>Click <gray>to buy"));
+        meta.lore(lore);
+        item.setItemMeta(meta);
+        item.editMeta(ItemMeta.class, m -> {
+            m.getPersistentDataContainer().set(ITEM_KEY, PersistentDataType.STRING, id);
+            m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "buy");
+        });
+        return item;
+    }
+
     /** Returns the effective (clamped) page actually rendered. */
     private int fillStock(Inventory inv, Player player, String category, int page) {
         final int[] STOCK_SLOTS = ModernLayout.STOCK_SLOTS;
@@ -170,6 +205,16 @@ public final class ShopGUI implements Listener {
                     m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "buygear");
                 });
                 inv.setItem(STOCK_SLOTS[idx++], display);
+            }
+            // Fixed armour sets (shops.yml "gear" stock) after the rotating rolls.
+            ShopManager.Shop fixed = shopManager.getShop("gear");
+            if (fixed != null) {
+                for (Map.Entry<String, ShopManager.StockEntry> e : fixed.stock().entrySet()) {
+                    if (idx >= STOCK_SLOTS.length) break;
+                    if (e.getValue().buy() <= 0) continue;
+                    ItemStack item = stockDisplay(category, e.getKey(), e.getValue().buy());
+                    if (item != null) inv.setItem(STOCK_SLOTS[idx++], item);
+                }
             }
             if (idx == 0) {
                 ModernLayout.setStateIcon(inv, guiIcon("gui_close", Material.BARRIER,
@@ -195,33 +240,8 @@ public final class ShopGUI implements Listener {
 
         for (int i = start; i < end; i++) {
             Map.Entry<String, ShopManager.StockEntry> entry = entries.get(i);
-            ItemStack item;
-            try {
-                ItemBuilder builder = NexoItems.itemFromId(entry.getKey());
-                if (builder == null) {
-                    plugin.getLogger().warning("Unknown Nexo item in shop " + category + ": " + entry.getKey());
-                    continue;
-                }
-                item = builder.build().clone();
-            } catch (Exception e) {
-                plugin.getLogger().warning("Failed to build Nexo item " + entry.getKey() + ": " + e.getMessage());
-                continue;
-            }
-            ItemMeta meta = item.getItemMeta();
-            List<Component> lore = new java.util.ArrayList<>();
-            if (meta.lore() != null) {
-                meta.lore().stream().limit(STOCK_LORE_LINES).forEach(lore::add);
-            }
-            lore.add(Component.empty());
-            lore.add(MM.deserialize("<!italic><gray>Price: <aqua>" + entry.getValue().buy() + " Shards"));
-            lore.add(MM.deserialize("<!italic><green>Click <gray>buy 1 · <green>Shift-click <gray>buy a stack"));
-            meta.lore(lore);
-            item.setItemMeta(meta);
-            item.editMeta(ItemMeta.class, m -> {
-                m.getPersistentDataContainer().set(ITEM_KEY, PersistentDataType.STRING, entry.getKey());
-                m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "buy");
-            });
-            inv.setItem(STOCK_SLOTS[idx++], item);
+            ItemStack item = stockDisplay(category, entry.getKey(), entry.getValue().buy());
+            if (item != null) inv.setItem(STOCK_SLOTS[idx++], item);
         }
 
         if (totalPages > 1) {
@@ -424,7 +444,22 @@ public final class ShopGUI implements Listener {
                 String itemId = pdc.get(ITEM_KEY, PersistentDataType.STRING);
                 Integer price = shopManager.buyPrice(session.category(), itemId);
                 if (itemId != null && price != null && price > 0) {
-                    buyItem(player, itemId, price, click.isShiftClick() ? buyStackSize() : 1, null);
+                    // Unstackable items (weapons, armour) always buy one — a shift-click
+                    // used to charge 64x and hand out 64 separate swords.
+                    int maxStack = clicked.getMaxStackSize();
+                    int amount = click.isShiftClick() ? Math.min(buyStackSize(), maxStack) : 1;
+                    long total = (long) price * amount;
+                    if (total >= CONFIRM_THRESHOLD) {
+                        player.closeInventory();
+                        String name = clicked.getItemMeta().hasCustomName()
+                                ? MM.serialize(clicked.getItemMeta().customName()) : itemId;
+                        com.theglitch.common.ChatConfirm.ask(player,
+                                MM.deserialize("<gray>Buy " + (amount > 1 ? amount + "x " : "") + "</gray>" + name
+                                        + " <gray>for <aqua>" + String.format("%,d", total) + " Shards</aqua>?</gray>"),
+                                () -> buyItem(player, itemId, price, amount, null));
+                    } else {
+                        buyItem(player, itemId, price, amount, null);
+                    }
                 }
                 break;
             }
