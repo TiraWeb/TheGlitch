@@ -8,9 +8,9 @@ Inputs (gitignored, see scripts/dungeon_maps.py + dungeon_bosses.py):
 Output:
   dungeon-private/md/<id>/config.yml, functions.yml
 
-Each dungeon is boss-arena-only: players spawn a short walk from the arena;
-stepping within ARENA_RADIUS of its centre shows the boss title and spawns
-the boss once; killing the (final-phase) boss pays the tier reward to every
+Each dungeon is boss-arena-only: on dungeon start the party is teleported to
+a start point a short walk from the arena, a "get ready" title shows, and the
+boss spawns at the arena centre BOSS_DELAY ticks later; killing the (final-phase) boss pays the tier reward to every
 party member, shows "Cleared" and finishes the dungeon, returning everyone to
 the hub after a short delay.
 
@@ -44,7 +44,7 @@ DUNGEONS = {
 TIER_COLOUR = {1: "&a", 2: "&6", 3: "&c"}
 # per-player clear reward: shards + one Nexo item
 REWARDS = {1: (400, "vault_key"), 2: (900, "void_essence"), 3: (1800, "legendary_relic")}
-ARENA_RADIUS = 10.0
+BOSS_DELAY = 100  # ticks between dungeon start and the boss spawning
 EXIT = {"world": "hub", "x": 0.5, "y": -60.0, "z": 0.5, "yaw": 0.0, "pitch": 0.0}
 
 P = "net.playavalon.mythicdungeons"
@@ -114,14 +114,21 @@ def functions_yml(did, layout):
     F = f"{P}.dungeons.functions"
     ci = 4  # child indent inside FunctionMulti.functions
 
+    sx, sy, sz = layout["spawn"]
+    start = (sx, sy, sz)
+    # On dungeon start: pull the party to the start point next to the arena
+    # (don't rely on MD's StartLocation or on players finding the arena — a
+    # proximity trigger left Hollow Town's boss unfound), then the boss spawns
+    # after BOSS_DELAY ticks at the arena centre and comes for them.
     start_fight = multi([
-        fn(f"{F}.FunctionTitle", {"title": q(f"{col}&l{title}"), "subtitle": q("&7Defeat the boss!"),
-                                  "fadeIn": 10, "stay": 50, "fadeOut": 15}, arena, ci),
+        fn(f"{F}.FunctionTeleport", {"teleportTarget": "\n" + loc(sx, sy, sz, ci + 4)}, start, ci),
+        fn(f"{F}.FunctionTitle", {"title": q(f"{col}&l{title}"), "subtitle": q("&7Get ready - the boss arrives in 5s"),
+                                  "fadeIn": 10, "stay": 70, "fadeOut": 15}, arena, ci),
         fn(f"{F}.FunctionPlaySound", {"sound": q("minecraft:entity.wither.spawn"), "soundCategory": q("HOSTILE"),
                                       "volume": 1.0, "pitch": 0.8, "playAtLocation": "false"}, arena, ci),
         fn(f"{F}.FunctionSpawnMythicMob", {"mob": q(spawn_id), "levelString": q("1"), "maxCount": 1,
-                                           "delay": 40, "interval": 0, "yaw": 0.0}, arena, ci),
-    ], arena, trigger_block("TriggerDistance", {"radius": ARENA_RADIUS, "count": 1, "forEachPlayer": "false"}, 4))
+                                           "delay": BOSS_DELAY, "interval": 0, "yaw": 0.0}, arena, ci),
+    ], arena, trigger_block("TriggerDungeonStart", {}, 4))
 
     finish = multi([
         # first: MD aborts the rest of a trigger when one of its functions throws
