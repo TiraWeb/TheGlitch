@@ -18,6 +18,10 @@ warden_helmet:
   Enchantments:
     protection: 4
     unbreaking: 3
+  Components:
+    equippable:
+      slot: HEAD
+      asset_id: minecraft:diamond
   lore:
   - "<gradient:#94a3b8:#e2e8f0>✦ WARDEN'S BULWARK ✦</gradient>"
   - "<dark_gray><italic>Forged for the ones who hold the line.</italic></dark_gray>"
@@ -39,6 +43,10 @@ warden_chestplate:
   Enchantments:
     protection: 4
     unbreaking: 3
+  Components:
+    equippable:
+      slot: CHEST
+      asset_id: minecraft:diamond
   lore:
   - "<gradient:#94a3b8:#e2e8f0>✦ WARDEN'S BULWARK ✦</gradient>"
   - "<dark_gray><italic>Forged for the ones who hold the line.</italic></dark_gray>"
@@ -60,6 +68,10 @@ warden_leggings:
   Enchantments:
     protection: 4
     unbreaking: 3
+  Components:
+    equippable:
+      slot: LEGS
+      asset_id: minecraft:diamond
   lore:
   - "<gradient:#94a3b8:#e2e8f0>✦ WARDEN'S BULWARK ✦</gradient>"
   - "<dark_gray><italic>Forged for the ones who hold the line.</italic></dark_gray>"
@@ -81,6 +93,10 @@ warden_boots:
   Enchantments:
     protection: 4
     unbreaking: 3
+  Components:
+    equippable:
+      slot: FEET
+      asset_id: minecraft:diamond
   lore:
   - "<gradient:#94a3b8:#e2e8f0>✦ WARDEN'S BULWARK ✦</gradient>"
   - "<dark_gray><italic>Forged for the ones who hold the line.</italic></dark_gray>"
@@ -107,6 +123,10 @@ voidforged_helmet:
     protection: 5
     unbreaking: 5
     mending: 1
+  Components:
+    equippable:
+      slot: HEAD
+      asset_id: minecraft:netherite
   lore:
   - "<gradient:#38bdf8:#818cf8>✦ VOIDFORGED ✦</gradient>"
   - "<dark_gray><italic>Cold metal pulled from between the worlds.</italic></dark_gray>"
@@ -133,6 +153,10 @@ voidforged_chestplate:
     protection: 5
     unbreaking: 5
     mending: 1
+  Components:
+    equippable:
+      slot: CHEST
+      asset_id: minecraft:netherite
   lore:
   - "<gradient:#38bdf8:#818cf8>✦ VOIDFORGED ✦</gradient>"
   - "<dark_gray><italic>Cold metal pulled from between the worlds.</italic></dark_gray>"
@@ -159,6 +183,10 @@ voidforged_leggings:
     protection: 5
     unbreaking: 5
     mending: 1
+  Components:
+    equippable:
+      slot: LEGS
+      asset_id: minecraft:netherite
   lore:
   - "<gradient:#38bdf8:#818cf8>✦ VOIDFORGED ✦</gradient>"
   - "<dark_gray><italic>Cold metal pulled from between the worlds.</italic></dark_gray>"
@@ -185,6 +213,10 @@ voidforged_boots:
     protection: 5
     unbreaking: 5
     mending: 1
+  Components:
+    equippable:
+      slot: FEET
+      asset_id: minecraft:netherite
   lore:
   - "<gradient:#38bdf8:#818cf8>✦ VOIDFORGED ✦</gradient>"
   - "<dark_gray><italic>Cold metal pulled from between the worlds.</italic></dark_gray>"
@@ -220,6 +252,10 @@ godslayer_helmet:
     thorns: 4
     unbreaking: 10
     mending: 1
+  Components:
+    equippable:
+      slot: HEAD
+      asset_id: minecraft:netherite
   lore:
   - "<gradient:#fde047:#f43f5e>✦ GODSLAYER AEGIS ✦</gradient>"
   - "<dark_gray><italic>Worn by whatever is left standing at the end.</italic></dark_gray>"
@@ -255,6 +291,10 @@ godslayer_chestplate:
     thorns: 4
     unbreaking: 10
     mending: 1
+  Components:
+    equippable:
+      slot: CHEST
+      asset_id: minecraft:netherite
   lore:
   - "<gradient:#fde047:#f43f5e>✦ GODSLAYER AEGIS ✦</gradient>"
   - "<dark_gray><italic>Worn by whatever is left standing at the end.</italic></dark_gray>"
@@ -290,6 +330,10 @@ godslayer_leggings:
     thorns: 4
     unbreaking: 10
     mending: 1
+  Components:
+    equippable:
+      slot: LEGS
+      asset_id: minecraft:netherite
   lore:
   - "<gradient:#fde047:#f43f5e>✦ GODSLAYER AEGIS ✦</gradient>"
   - "<dark_gray><italic>Worn by whatever is left standing at the end.</italic></dark_gray>"
@@ -325,6 +369,10 @@ godslayer_boots:
     thorns: 4
     unbreaking: 10
     mending: 1
+  Components:
+    equippable:
+      slot: FEET
+      asset_id: minecraft:netherite
   lore:
   - "<gradient:#fde047:#f43f5e>✦ GODSLAYER AEGIS ✦</gradient>"
   - "<dark_gray><italic>Worn by whatever is left standing at the end.</italic></dark_gray>"

@@ -14,9 +14,9 @@ is relative to the base 4.0 attacks/second.
 Enchant levels stay <= 10: the client only has names up to X, higher levels
 show as a raw "enchantment.level.20" key in the tooltip.
 
-Armour ids end in _helmet/_chestplate/...; Nexo's CustomArmor
-auto_assign_settings must be false (live plugins/Nexo/settings.yml) or it
-gives them a custom equipment model with no textures (pink/black armour).
+Armour ids end in _helmet/_chestplate/..., which makes Nexo give them a
+custom nexo:<set> equipment model with no textures (pink/black armour); each
+piece therefore sets an explicit equippable asset_id (vanilla netherite/diamond).
 
 Tiers sit above rolled Legendary gear (netherite sword +rolls) and top out
 around the Dream Eater chase item (30-45 dmg). Sell = 55% of buy.
@@ -175,6 +175,10 @@ def armor_yaml():
             out += [f"{iid}:", f"  itemname: <gradient:{grad}><bold>{name} {piece.capitalize()}</bold></gradient>",
                     f"  material: {mat}_{piece.upper()}"]
             out += attr_lines(attrs, SLOT[piece]) + ench_lines(ench)
+            # Explicit vanilla look: without it Nexo assigns a nexo:<set> equipment
+            # model (ids end in _helmet/...) that has no textures -> pink/black armour.
+            out += ["  Components:", "    equippable:", f"      slot: {SLOT[piece]}",
+                    f"      asset_id: minecraft:{mat.lower()}"]
             out += ["  lore:", f'  - "<gradient:{grad}>✦ {name.upper()} ✦</gradient>"',
                     f'  - "<dark_gray><italic>{flavour}</italic></dark_gray>"', "  - ''",
                     f'  - " <gray>Sell price: <aqua>{sell(prices[piece]):,} Shards</aqua></gray>"', ""]
