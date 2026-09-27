@@ -450,8 +450,9 @@ consumption must still be created live. See GAME_DESIGN §7.
 
 Modelled on Arc Raiders' loot categories. Enemy-specific parts are not in this
 round. Every item is generated from one table in `scripts/gen-arc-loot.py`
-into `server/plugins/Nexo/items/oraxen_items/arc_loot.yml`. The items use
-vanilla looks; there are no custom textures yet.
+into `server/plugins/Nexo/items/oraxen_items/arc_loot.yml`. Textures are 16×16
+pixel art drawn by `scripts/gen-arc-loot-textures.py`; blueprints share four
+rarity-tinted icons.
 
 | Category | Items | Source | Use |
 |---|---|---|---|
