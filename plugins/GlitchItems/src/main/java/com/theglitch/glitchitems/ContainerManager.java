@@ -146,6 +146,7 @@ public final class ContainerManager {
             Map<Rarity, Integer> rarityWeights,
             int nothingWeight,
             Map<String, Integer> materialWeights,
+            List<LootPool> lootPools,
             int shardsMin,
             int shardsMax) {
 
@@ -155,6 +156,20 @@ public final class ContainerManager {
 
         public boolean isFurniture() {
             return furnitureId != null && !furnitureId.isEmpty();
+        }
+    }
+
+    /** Weighted extra-loot pool (containers.types.*.loot-pools): rolls x chance% of min-max of one pick. */
+    public record LootPool(int rolls, int chance, int min, int max, Map<String, Integer> items, int totalWeight) {
+
+        String pick(ThreadLocalRandom rand) {
+            if (totalWeight <= 0) return null;
+            int roll = rand.nextInt(totalWeight);
+            for (Map.Entry<String, Integer> e : items.entrySet()) {
+                roll -= e.getValue();
+                if (roll < 0) return e.getKey();
+            }
+            return null;
         }
     }
 
@@ -255,6 +270,24 @@ public final class ContainerManager {
                         materialWeights.put(id, Math.max(0, materials.getInt(id)));
                     }
                 }
+                List<LootPool> lootPools = new ArrayList<>();
+                for (Map<?, ?> raw : t.getMapList("loot-pools")) {
+                    Map<String, Integer> poolItems = new LinkedHashMap<>();
+                    int total = 0;
+                    if (raw.get("items") instanceof Map<?, ?> entries) {
+                        for (Map.Entry<?, ?> e : entries.entrySet()) {
+                            int w = e.getValue() instanceof Number n ? Math.max(0, n.intValue()) : 0;
+                            if (w > 0) {
+                                poolItems.put(String.valueOf(e.getKey()), w);
+                                total += w;
+                            }
+                        }
+                    }
+                    int min = Math.max(1, intOf(raw.get("min"), 1));
+                    lootPools.add(new LootPool(Math.max(0, intOf(raw.get("rolls"), 1)),
+                            Math.max(0, Math.min(100, intOf(raw.get("chance"), 100))),
+                            min, Math.max(min, intOf(raw.get("max"), min)), poolItems, total));
+                }
                 String keyId = t.getString("key-id", "");
                 String keyMatStr = t.getString("key-material", "");
                 Material keyMatResolved = null;
@@ -283,6 +316,7 @@ public final class ContainerManager {
                         rarityWeights,
                         nothingWeight,
                         materialWeights,
+                        List.copyOf(lootPools),
                         t.getInt("shards-min", 0),
                         t.getInt("shards-max", 0)));
             }
@@ -672,6 +706,18 @@ public final class ContainerManager {
             }
         }
 
+        for (LootPool pool : type.lootPools()) {
+            for (int i = 0; i < pool.rolls(); i++) {
+                if (rand.nextInt(100) >= pool.chance()) continue;
+                String id = pool.pick(rand);
+                if (id == null) continue;
+                ItemStack extra = NexoUtil.build(id);
+                if (extra == null) continue; // unknown Nexo id — skip rather than hand out a fake item
+                extra.setAmount(Math.min(extra.getMaxStackSize(), rand.nextInt(pool.min(), pool.max() + 1)));
+                loot.add(extra);
+            }
+        }
+
         boolean emptied = loot.isEmpty();
         if (type.requiresKey() && !emptied) {
             consumeKey(player, type);
@@ -722,6 +768,10 @@ public final class ContainerManager {
             player.sendMessage(msg("surge"));
         }
         return true;
+    }
+
+    private static int intOf(Object value, int def) {
+        return value instanceof Number n ? n.intValue() : def;
     }
 
     private Rarity rollRarity(ContainerType type, ThreadLocalRandom rand) {

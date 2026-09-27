@@ -50,7 +50,7 @@ public final class HideoutManager {
     }
 
     public record Recipe(String id, String display, String icon, String output,
-                          Map<String, Integer> materials) {
+                          Map<String, Integer> materials, boolean blueprint) {
     }
 
     public enum UpgradeResult {
@@ -60,11 +60,15 @@ public final class HideoutManager {
     private final GlitchHideout plugin;
     private volatile Map<String, Station> stations = new LinkedHashMap<>();
     private volatile Map<String, Recipe> recipes = new LinkedHashMap<>();
+    /** Recycler: junk item id -> salvage outputs (config "recycler"). */
+    private volatile Map<String, Map<String, Integer>> recycler = new LinkedHashMap<>();
 
     private final Map<UUID, Map<String, Integer>> levels = new ConcurrentHashMap<>();
     private final Map<UUID, List<ItemStack>> stash = new ConcurrentHashMap<>();
     private final Map<UUID, List<ItemStack>> armory = new ConcurrentHashMap<>();
     private final Map<UUID, Long> medCooldown = new ConcurrentHashMap<>();
+    /** Learned blueprint recipe ids per player (persisted as "blueprints"). */
+    private final Map<UUID, Set<String>> blueprints = new ConcurrentHashMap<>();
     private final Path dataDir;
     private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
     // Per-UUID save generation: each scheduled write captures its generation and
@@ -91,8 +95,9 @@ public final class HideoutManager {
         cachedEconomy = null;
         stations = loadStations();
         recipes = loadRecipes();
+        recycler = loadRecycler();
         plugin.getLogger().info("Hideout stations loaded: " + stations.size()
-                + ", recipes loaded: " + recipes.size());
+                + ", recipes loaded: " + recipes.size() + ", recyclables: " + recycler.size());
     }
 
     public void invalidateEconomy() {
@@ -176,9 +181,90 @@ public final class HideoutManager {
                     r.getString("display", id),
                     r.getString("icon", "STONE"),
                     r.getString("output", ""),
-                    materials));
+                    materials,
+                    r.getBoolean("blueprint", false)));
         }
         return loaded;
+    }
+
+    private Map<String, Map<String, Integer>> loadRecycler() {
+        Map<String, Map<String, Integer>> loaded = new LinkedHashMap<>();
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("recycler");
+        if (section == null) return loaded;
+        for (String id : section.getKeys(false)) {
+            ConfigurationSection out = section.getConfigurationSection(id);
+            if (out == null) continue;
+            Map<String, Integer> outputs = new LinkedHashMap<>();
+            for (String mat : out.getKeys(false)) {
+                int amt = out.getInt(mat);
+                if (amt > 0) outputs.put(mat, amt);
+            }
+            if (!outputs.isEmpty()) loaded.put(id, outputs);
+        }
+        return loaded;
+    }
+
+    public Map<String, Map<String, Integer>> getRecycler() {
+        return recycler;
+    }
+
+    // ------------------------------------------------------------ blueprints
+
+    public boolean knowsBlueprint(UUID uuid, String recipeId) {
+        getLevel(uuid, "workbench"); // ensures the player file is loaded
+        Set<String> known = blueprints.get(uuid);
+        return known != null && known.contains(recipeId);
+    }
+
+    /** True when the recipe needs a blueprint the player hasn't learned. */
+    public boolean isLocked(UUID uuid, Recipe recipe) {
+        return recipe.blueprint() && !knowsBlueprint(uuid, recipe.id());
+    }
+
+    /** Learns the blueprint for recipeId; false when already known. */
+    public boolean learnBlueprint(UUID uuid, String recipeId) {
+        getLevel(uuid, "workbench");
+        Set<String> known = blueprints.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet());
+        if (!known.add(recipeId)) return false;
+        savePlayer(uuid);
+        return true;
+    }
+
+    /** Recipe id a blueprint item teaches, or null when the item isn't a known blueprint. */
+    public String blueprintRecipe(ItemStack stack) {
+        String id = nexoIdOf(stack);
+        if (id == null || !id.startsWith("blueprint_")) return null;
+        Recipe recipe = recipes.get(id.substring("blueprint_".length()));
+        return recipe != null && recipe.blueprint() ? recipe.id() : null;
+    }
+
+    // -------------------------------------------------------------- recycler
+
+    /**
+     * Recycles the whole stack in the given player-inventory slot. Returns the
+     * outputs given (empty when the item isn't recyclable).
+     */
+    public Map<String, Integer> recycleSlot(Player player, int slot) {
+        ItemStack stack = player.getInventory().getItem(slot);
+        String id = nexoIdOf(stack);
+        Map<String, Integer> outputs = id == null ? null : recycler.get(id);
+        if (outputs == null) return Map.of();
+        int count = stack.getAmount();
+        Map<String, Integer> given = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> out : outputs.entrySet()) {
+            given.put(out.getKey(), out.getValue() * count);
+        }
+        player.getInventory().setItem(slot, null);
+        for (Map.Entry<String, Integer> out : given.entrySet()) {
+            plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(),
+                    "nexo give " + out.getKey() + " " + out.getValue() + " " + player.getName());
+        }
+        return given;
+    }
+
+    public boolean isRecyclable(ItemStack stack) {
+        String id = nexoIdOf(stack);
+        return id != null && recycler.containsKey(id);
     }
 
     public Station getStation(String id) {
@@ -310,6 +396,13 @@ public final class HideoutManager {
         if (getLevel(player.getUniqueId(), "workbench") < 1) {
             return plugin.getComponent("craft-locked");
         }
+        if (isLocked(player.getUniqueId(), recipe)) {
+            Component msg = GlitchHideout.mm().deserialize("<red>Locked. Find the <white>Blueprint: "
+                    + GlitchHideout.mm().stripTags(recipe.display())
+                    + "</white> in Red Zone loot and right-click it to learn.</red>");
+            player.sendMessage(msg);
+            return msg;
+        }
         List<String> missing = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : recipe.materials().entrySet()) {
             if (countItems(player, entry.getKey()) < entry.getValue()) {
@@ -413,7 +506,7 @@ public final class HideoutManager {
         return true;
     }
 
-    private String nexoIdOf(ItemStack stack) {
+    String nexoIdOf(ItemStack stack) {
         if (stack == null || !stack.hasItemMeta()) return null;
         org.bukkit.persistence.PersistentDataContainer pdc =
                 stack.getItemMeta().getPersistentDataContainer();
@@ -474,6 +567,7 @@ public final class HideoutManager {
         stash.remove(uuid);
         armory.remove(uuid);
         medCooldown.remove(uuid);
+        blueprints.remove(uuid);
         dirty.remove(uuid);
         // Tombstone: voids any in-flight async write so it cannot
         // re-create the file we are about to delete.
@@ -507,6 +601,9 @@ public final class HideoutManager {
                         }
                     }
                 }
+                Set<String> learned = ConcurrentHashMap.newKeySet();
+                learned.addAll(yaml.getStringList("blueprints"));
+                blueprints.putIfAbsent(uuid, learned);
                 List<?> armoryList = yaml.getList("armory");
                 if (armoryList != null) {
                     for (Object o : armoryList) {
@@ -540,6 +637,8 @@ public final class HideoutManager {
         Map<String, Integer> levelsSnapshot = new LinkedHashMap<>(playerLevels);
         List<ItemStack> stashSnapshot = stash.get(uuid) == null ? null : new ArrayList<>(stash.get(uuid));
         List<ItemStack> armorySnapshot = armory.get(uuid) == null ? null : new ArrayList<>(armory.get(uuid));
+        List<String> blueprintSnapshot = blueprints.get(uuid) == null ? List.of()
+                : blueprints.get(uuid).stream().sorted().toList();
 
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("uuid", uuid.toString());
@@ -554,6 +653,7 @@ public final class HideoutManager {
             yaml.set("armory", armorySnapshot.stream()
                     .filter(s -> s != null && s.getType() != org.bukkit.Material.AIR).toList());
         }
+        yaml.set("blueprints", blueprintSnapshot);
 
         Path file = dataDir.resolve(uuid + ".yml");
         dirty.add(uuid);
@@ -616,6 +716,8 @@ public final class HideoutManager {
             yaml.set("armory", playerArmory.stream()
                     .filter(s -> s != null && s.getType() != org.bukkit.Material.AIR).toList());
         }
+        Set<String> playerBlueprints = blueprints.get(uuid);
+        yaml.set("blueprints", playerBlueprints == null ? List.of() : playerBlueprints.stream().sorted().toList());
         Path file = dataDir.resolve(uuid + ".yml");
         try {
             Path parent = file.getParent();

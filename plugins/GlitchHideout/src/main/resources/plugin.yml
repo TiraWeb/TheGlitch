@@ -17,6 +17,11 @@ commands:
     description: Open the hideout
     usage: /hideout
     permission: glitchhideout.use
+  recycle:
+    description: Open the Recycler (break junk into salvage)
+    usage: /recycle
+    aliases: [recycler]
+    permission: glitchhideout.use
   hideoutui:
     description: Internal hideout dialog actions
     usage: /hideoutui <noop|root|station <id>|workbench|upgrade <id>|craft <recipeId>|panel <here|undo|show>>

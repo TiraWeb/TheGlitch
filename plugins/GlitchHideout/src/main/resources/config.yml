@@ -61,8 +61,9 @@ stations:
     costs: [250, 750]
     requires: { 1: "stash:2", 2: "core:1" }
 
-# Workbench recipes (ITEM_SYSTEM.md §7).
+# Workbench recipes (ITEM_SYSTEM.md §7, §14).
 # materials = Nexo item ids + counts; output = console command (<player> placeholder).
+# blueprint: true = locked until the player learns blueprint_<recipe id> (right-click it).
 recipes:
   healing_potion:
     display: "<green>Healing Potion"
@@ -86,31 +87,37 @@ recipes:
     materials: { rune_fragment: 3, rift_crystal: 1 }
   dream_eater:
     display: "<light_purple>The Glitch That Dreams (Legendary)"
+    blueprint: true
     icon: MACE
     output: "glitchitems give legendary dream_eater hollow <player>"
     materials: { legendary_relic: 3, void_essence: 8, rift_crystal: 16, void_infusion: 1 }
   targeted_weapon_aegis:
     display: "<gold>Aegis Blade (Uncommon)"
+    blueprint: true
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade aegis <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_veil:
     display: "<aqua>Veil Blade (Uncommon)"
+    blueprint: true
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade veil <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_bloom:
     display: "<green>Bloom Blade (Uncommon)"
+    blueprint: true
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade bloom <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_ward:
     display: "<red>Ward Blade (Uncommon)"
+    blueprint: true
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade ward <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_hollow:
     display: "<light_purple>Hollow Blade (Uncommon)"
+    blueprint: true
     icon: GOLD_SWORD
     output: "glitchitems give uncommon blade hollow <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
@@ -136,11 +143,92 @@ recipes:
     materials: { rift_crystal: 3, void_essence: 1 }
   rift_key:
     display: "<gold>Rift Key"
+    blueprint: true
     icon: TRIPWIRE_HOOK
     output: "nexo give rift_key 1 <player>"
     materials: { void_essence: 3, legendary_relic: 1 }
   void_infusion:
     display: "<light_purple>Void Infusion"
+    blueprint: true
     icon: BREWING_STAND
     output: "nexo give void_infusion 1 <player>"
     materials: { void_essence: 2, legendary_relic: 1 }
+  # --- Arc-style loot line (ITEM_SYSTEM.md §14) ---
+  circuit_core:
+    display: "<green>Circuit Core"
+    icon: ECHO_SHARD
+    output: "nexo give circuit_core 1 <player>"
+    materials: { frayed_wiring: 3, scrap_plating: 2 }
+  stabilizer_coil:
+    display: "<green>Stabilizer Coil"
+    icon: BREEZE_ROD
+    output: "nexo give stabilizer_coil 1 <player>"
+    materials: { coolant_cell: 2, rift_crystal: 1, scrap_plating: 1 }
+  rift_capacitor:
+    display: "<blue>Rift Capacitor"
+    icon: HEART_OF_THE_SEA
+    output: "nexo give rift_capacitor 1 <player>"
+    materials: { circuit_core: 2, stabilizer_coil: 1, void_essence: 1 }
+  bandage:
+    display: "<white>Bandage x3"
+    icon: WHITE_CARPET
+    output: "nexo give bandage 3 <player>"
+    materials: { glitch_cloth: 2, polymer_goo: 1 }
+  adrenaline_shot:
+    display: "<green>Adrenaline Shot x2"
+    icon: END_ROD
+    blueprint: true
+    output: "nexo give adrenaline_shot 2 <player>"
+    materials: { polymer_goo: 2, coolant_cell: 1, aether_shard: 1 }
+  frag_grenade:
+    display: "<green>Frag Grenade x2"
+    icon: FIRE_CHARGE
+    blueprint: true
+    output: "nexo give frag_grenade 2 <player>"
+    materials: { scrap_plating: 3, polymer_goo: 2, rune_fragment: 2 }
+  smoke_grenade:
+    display: "<green>Smoke Grenade x2"
+    icon: FIREWORK_STAR
+    blueprint: true
+    output: "nexo give smoke_grenade 2 <player>"
+    materials: { glitch_cloth: 2, coolant_cell: 1, polymer_goo: 1 }
+  lure_beacon:
+    display: "<green>Lure Beacon x2"
+    icon: BELL
+    blueprint: true
+    output: "nexo give lure_beacon 2 <player>"
+    materials: { circuit_core: 1, frayed_wiring: 2 }
+  snap_hook:
+    display: "<blue>Snap Hook x2"
+    icon: LEAD
+    blueprint: true
+    output: "nexo give snap_hook 2 <player>"
+    materials: { stabilizer_coil: 1, frayed_wiring: 3, scrap_plating: 2 }
+  barricade_kit:
+    display: "<blue>Barricade Kit"
+    icon: IRON_BARS
+    blueprint: true
+    output: "nexo give barricade_kit 1 <player>"
+    materials: { scrap_plating: 6, glitch_cloth: 2 }
+  pulse_mine:
+    display: "<blue>Pulse Mine x2"
+    icon: HEAVY_WEIGHTED_PRESSURE_PLATE
+    blueprint: true
+    output: "nexo give pulse_mine 2 <player>"
+    materials: { circuit_core: 1, stabilizer_coil: 1, aether_shard: 2 }
+  secure_pouch:
+    display: "<dark_purple>Secure Pouch"
+    icon: RABBIT_HIDE
+    blueprint: true
+    output: "nexo give secure_pouch 1 <player>"
+    materials: { glitch_cloth: 8, rift_capacitor: 1, legendary_relic: 1 }
+
+# Recycler (/recycle, or the button in the Workbench): breaks junk into salvage.
+# Needs Workbench Lv 1. item id -> outputs (Nexo id: amount).
+recycler:
+  rusted_gear: { scrap_plating: 3 }
+  cracked_screen: { scrap_plating: 1, frayed_wiring: 2 }
+  dead_battery: { frayed_wiring: 2, coolant_cell: 1 }
+  shattered_lens: { polymer_goo: 2, coolant_cell: 1 }
+  corrupted_drive: { frayed_wiring: 3, rune_fragment: 2 }
+  broken_drone: { scrap_plating: 3, frayed_wiring: 2, coolant_cell: 2, circuit_core: 1 }

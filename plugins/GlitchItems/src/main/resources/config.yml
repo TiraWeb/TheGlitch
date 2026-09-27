@@ -213,6 +213,13 @@ containers:
       materials: { rune_fragment: 40 }
       shards-min: 0
       shards-max: 0
+      # Extra weighted pools (Arc-style loot line, docs/ITEM_SYSTEM.md §14):
+      # each pool rolls `rolls` times, each roll hits with `chance`% and gives
+      # min-max of one weighted pick.
+      loot-pools:
+        - { rolls: 2, chance: 70, min: 1, max: 3, items: { scrap_plating: 30, frayed_wiring: 25, polymer_goo: 20, glitch_cloth: 20, coolant_cell: 10 } }
+        - { rolls: 1, chance: 45, min: 1, max: 1, items: { rusted_gear: 35, cracked_screen: 30, dead_battery: 25, shattered_lens: 10 } }
+        - { rolls: 1, chance: 12, min: 1, max: 1, items: { pixel_duck: 60, lost_floppy: 30, static_radio: 10 } }
     cache:
       display: "<green>Loot Cache"
       material: CHEST
@@ -226,6 +233,12 @@ containers:
       materials: { rune_fragment: 30, aether_shard: 15, rift_crystal: 5 }
       shards-min: 4
       shards-max: 10
+      loot-pools:
+        - { rolls: 2, chance: 80, min: 1, max: 3, items: { scrap_plating: 25, frayed_wiring: 25, polymer_goo: 20, glitch_cloth: 15, coolant_cell: 15 } }
+        - { rolls: 1, chance: 50, min: 1, max: 1, items: { rusted_gear: 25, cracked_screen: 25, dead_battery: 20, shattered_lens: 15, corrupted_drive: 10, broken_drone: 5 } }
+        - { rolls: 1, chance: 25, min: 1, max: 1, items: { pixel_duck: 35, lost_floppy: 30, static_radio: 20, frozen_clock: 15 } }
+        - { rolls: 1, chance: 25, min: 1, max: 1, items: { bandage: 60, frag_grenade: 15, smoke_grenade: 15, lure_beacon: 10 } }
+        - { rolls: 1, chance: 4, min: 1, max: 1, items: { blueprint_adrenaline_shot: 10, blueprint_frag_grenade: 10, blueprint_smoke_grenade: 10, blueprint_lure_beacon: 10, blueprint_targeted_weapon_aegis: 6, blueprint_targeted_weapon_veil: 6, blueprint_targeted_weapon_bloom: 6, blueprint_targeted_weapon_ward: 6, blueprint_targeted_weapon_hollow: 6, blueprint_snap_hook: 4, blueprint_barricade_kit: 4, blueprint_pulse_mine: 4 } }
     vault:
       display: "<blue>Vault"
       material: BLUE_SHULKER_BOX
@@ -239,6 +252,12 @@ containers:
       materials: { aether_shard: 20, rift_crystal: 15, void_essence: 8 }
       shards-min: 10
       shards-max: 30
+      loot-pools:
+        - { rolls: 2, chance: 80, min: 2, max: 4, items: { coolant_cell: 25, frayed_wiring: 25, scrap_plating: 20, polymer_goo: 15, glitch_cloth: 15 } }
+        - { rolls: 1, chance: 40, min: 1, max: 1, items: { corrupted_drive: 35, broken_drone: 25, shattered_lens: 25, dead_battery: 15 } }
+        - { rolls: 1, chance: 40, min: 1, max: 1, items: { frozen_clock: 30, static_radio: 25, glitched_snow_globe: 25, void_music_box: 15, cursed_crown: 5 } }
+        - { rolls: 1, chance: 30, min: 1, max: 2, items: { frag_grenade: 20, smoke_grenade: 20, lure_beacon: 15, snap_hook: 15, barricade_kit: 10, pulse_mine: 10, adrenaline_shot: 10 } }
+        - { rolls: 1, chance: 10, min: 1, max: 1, items: { blueprint_snap_hook: 12, blueprint_barricade_kit: 12, blueprint_pulse_mine: 12, blueprint_rift_key: 12, blueprint_adrenaline_shot: 8, blueprint_frag_grenade: 8, blueprint_smoke_grenade: 8, blueprint_lure_beacon: 8, blueprint_void_infusion: 5, blueprint_secure_pouch: 4, blueprint_targeted_weapon_aegis: 2, blueprint_targeted_weapon_veil: 2, blueprint_targeted_weapon_bloom: 2, blueprint_targeted_weapon_ward: 2, blueprint_targeted_weapon_hollow: 2 } }
     rift_vault:
       display: "<light_purple>Rift Vault"
       material: DECORATED_POT
@@ -252,6 +271,11 @@ containers:
       materials: { rift_crystal: 20, void_essence: 15, legendary_relic: 3 }
       shards-min: 25
       shards-max: 60
+      loot-pools:
+        - { rolls: 2, chance: 90, min: 2, max: 5, items: { coolant_cell: 30, frayed_wiring: 25, scrap_plating: 20, polymer_goo: 15, glitch_cloth: 10 } }
+        - { rolls: 1, chance: 60, min: 1, max: 1, items: { glitched_snow_globe: 30, void_music_box: 30, cursed_crown: 25, rift_idol: 15 } }
+        - { rolls: 1, chance: 40, min: 1, max: 2, items: { snap_hook: 25, barricade_kit: 20, pulse_mine: 20, adrenaline_shot: 20, frag_grenade: 15 } }
+        - { rolls: 1, chance: 22, min: 1, max: 1, items: { blueprint_void_infusion: 25, blueprint_secure_pouch: 25, blueprint_rift_key: 20, blueprint_snap_hook: 8, blueprint_barricade_kit: 8, blueprint_pulse_mine: 8, blueprint_dream_eater: 6 } }
   messages:
     not-container: "<gray>That is not a Glitch container."
     disabled-world: "<red>Containers are dormant here."
@@ -261,6 +285,21 @@ containers:
     looted: "<gold>You loot the <container>!"
     surge: "<light_purple>Residual Glitch surges — the container spits out extra loot!</light_purple>"
     shards: "<gold>+<amount> Shards</gold> <gray>cling to the loot.</gray>"
+
+# Arc-style gadgets + heals (GadgetListener, docs/ITEM_SYSTEM.md §14).
+# Throwables/traps only work in these worlds and in dungeon instances.
+gadgets:
+  worlds: [glitch_red, glitch_red_eleria, glitch_red_horizons]
+  world-pattern: "^(small|haunted|puzzle|desert|aztec|crimson|nether|pirate|medium|town|mythic)_[0-9]+$"
+  frag: { radius: 4.5, damage: 12.0 }
+  smoke: { radius: 4.0, seconds: 8 }
+  lure: { radius: 16.0, seconds: 8 }
+  snap-hook: { range: 24, cooldown-seconds: 3 }
+  barricade: { seconds: 20, block: PURPLE_STAINED_GLASS }
+  pulse-mine: { seconds: 120, max-per-player: 3, damage: 4.0 }
+  # Loot items with no use of their own: right-click/placing is blocked
+  # (generated by scripts/gen-arc-loot.py).
+  inert-items: [scrap_plating, frayed_wiring, polymer_goo, coolant_cell, glitch_cloth, circuit_core, stabilizer_coil, rift_capacitor, rusted_gear, cracked_screen, dead_battery, shattered_lens, corrupted_drive, broken_drone, pixel_duck, lost_floppy, static_radio, frozen_clock, glitched_snow_globe, void_music_box, cursed_crown, rift_idol]
 
 # Automatic loot scatter — RED WORLD only, sparse, on solid ground.
 # Fires right after extraction ends (AutoExtractCycleEndEvent at t0+30m+5s from GlitchStash).

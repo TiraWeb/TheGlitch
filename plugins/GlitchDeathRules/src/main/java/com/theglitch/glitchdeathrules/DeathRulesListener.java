@@ -1,6 +1,7 @@
 package com.theglitch.glitchdeathrules;
 
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -8,6 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Iterator;
 import java.util.Objects;
@@ -32,6 +34,18 @@ public record DeathRulesListener(GlitchDeathRules plugin) implements Listener {
         // matching backpack duplicates that are merely isSimilar.
         ItemStack leggings = inv.getLeggings();
         ItemStack boots = inv.getBoots();
+        // Secure Pouch (docs/ITEM_SYSTEM.md §14): carrying one keeps the pouch
+        // and whatever sits in hotbar slot 9.
+        boolean hasPouch = false;
+        for (ItemStack stack : inv.getContents()) {
+            if (POUCH_ID.equals(nexoId(stack))) {
+                hasPouch = true;
+                break;
+            }
+        }
+        ItemStack secured = hasPouch ? inv.getItem(POUCH_SLOT) : null;
+        boolean pouchKept = !hasPouch;
+        boolean securedKept = secured == null || secured.getType().isAir();
 
         boolean kept = false;
         boolean leggingsKept = false;
@@ -41,6 +55,18 @@ public record DeathRulesListener(GlitchDeathRules plugin) implements Listener {
             ItemStack drop = drops.next();
             boolean isLeggings = !leggingsKept && isMercyPiece(drop, leggings);
             boolean isBoots = !bootsKept && isMercyPiece(drop, boots);
+            if (!pouchKept && POUCH_ID.equals(nexoId(drop))) {
+                drops.remove();
+                event.getItemsToKeep().add(drop);
+                pouchKept = true;
+                continue;
+            }
+            if (!securedKept && (drop == secured || drop.isSimilar(secured) && drop.getAmount() == secured.getAmount())) {
+                drops.remove();
+                event.getItemsToKeep().add(drop);
+                securedKept = true;
+                continue;
+            }
             if (isLeggings || isBoots) {
                 drops.remove(); // Iterator removal — correct vs drops.remove(drop) ConcurrentModification
                 event.getItemsToKeep().add(drop);
@@ -52,6 +78,19 @@ public record DeathRulesListener(GlitchDeathRules plugin) implements Listener {
         if (kept) {
             player.sendMessage(plugin.getComponent("mercy-kept"));
         }
+        if (hasPouch) {
+            player.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                    "<dark_purple>Your Secure Pouch kept hotbar slot 9 safe.</dark_purple>"));
+        }
+    }
+
+    private static final String POUCH_ID = "secure_pouch";
+    private static final int POUCH_SLOT = 8;
+    private static final NamespacedKey NEXO_ID = new NamespacedKey("nexo", "id");
+
+    private static String nexoId(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) return null;
+        return stack.getItemMeta().getPersistentDataContainer().get(NEXO_ID, PersistentDataType.STRING);
     }
 
     /**

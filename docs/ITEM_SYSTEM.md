@@ -445,3 +445,29 @@ weapon. Keep-inventory PvE stays as the new-player training floor.
 Fast = 15s and Silent = 10s are implemented in source (GlitchStash key-requiring
 zones, arming, payout bonus, 2026-08-06); the separate VelKoth arenas with key
 consumption must still be created live. See GAME_DESIGN §7.
+
+## 14. Arc Raiders-style loot line (2026-09-27)
+
+Modelled on Arc Raiders' loot categories. Enemy-specific parts are not in this
+round. Every item is generated from one table in `scripts/gen-arc-loot.py`
+into `server/plugins/Nexo/items/oraxen_items/arc_loot.yml`. The items use
+vanilla looks; there are no custom textures yet.
+
+| Category | Items | Source | Use |
+|---|---|---|---|
+| Salvage | scrap_plating, frayed_wiring, polymer_goo, coolant_cell, glitch_cloth | every container (`loot-pools`), Recycler, Bazaar Materials tab | Workbench inputs |
+| Refined parts | circuit_core, stabilizer_coil, rift_capacitor | Workbench | advanced recipes |
+| Recyclables | rusted_gear, cracked_screen, dead_battery, shattered_lens, corrupted_drive, broken_drone | containers | `/recycle` (Workbench Lv 1) into salvage, or sell |
+| Trinkets | pixel_duck (60) … rift_idol (5000) | containers (better in vaults and rift vaults) | sell only |
+| Gadgets | frag_grenade, smoke_grenade, lure_beacon, snap_hook, barricade_kit, pulse_mine | caches, vaults, rift vaults, Workbench | right-click; Red Zone and dungeon instances only |
+| Heals | bandage (Bazaar 25), adrenaline_shot | containers, Workbench | right-click, usable anywhere |
+| Secure Pouch | secure_pouch | Workbench | carried: a Red Zone death keeps the pouch and hotbar slot 9 |
+| Blueprints | blueprint_<recipe> ×16 | caches 4%, vaults 10%, rift vaults 22% | right-click to unlock a Workbench recipe permanently |
+
+- **Code locations:**
+  - GlitchItems: `GadgetListener`, and `ContainerManager` for the `loot-pools` parsing.
+  - GlitchHideout: blueprint-locked recipes, which show "Locked" in the GUI; learned blueprints are saved in the player file as `blueprints`. It also has the Recycler: the button on the Workbench, and `/recycle`.
+  - GlitchDeathRules: the Secure Pouch.
+- **Blueprint-locked recipes:** the gadgets (except the bandage), the Secure Pouch, rift_key, void_infusion, dream_eater and the five resonance blades.
+- **Selling:** new items that aren't sold in the Bazaar can still be sold there, through the hidden `loot` shop section, which is not in `tab-order`.
+- **Tuning:** gadget settings are under `gadgets:` in the GlitchItems config.

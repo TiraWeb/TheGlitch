@@ -45,6 +45,11 @@ public final class GlitchHideout extends JavaPlugin {
 
         getCommand("hideout").setExecutor(this::onHideoutCommand);
         getCommand("hideoutadmin").setExecutor(this::onAdminCommand);
+        getCommand("recycle").setExecutor((sender, command, label, args) -> {
+            if (sender instanceof Player player) gui.openRecycler(player);
+            else sender.sendMessage(Component.text("Players only."));
+            return true;
+        });
         if (getCommand("hideoutui") != null) {
             getCommand("hideoutui").setExecutor(new HideoutUICommand(this));
         }

@@ -54,6 +54,11 @@ public final class HideoutGUI implements Listener {
             37, 38, 39, 40, 41, 42, 43};
     private static final int BACK_SLOT = 45;
     private static final int WORKBENCH_UPGRADE_SLOT = 49;
+    private static final int RECYCLER_SLOT = 53;
+    // Recycler: 3-row chest, recyclable reference cards in row 0, buttons in row 2.
+    private static final int RECYCLER_SIZE = 27;
+    private static final int RECYCLER_BACK_SLOT = 18;
+    private static final int RECYCLER_ALL_SLOT = 22;
 
     private record Session(String type, int from, int to, Inventory inventory) {}
 
@@ -145,23 +150,37 @@ public final class HideoutGUI implements Listener {
 
         inv.setItem(BACK_SLOT, useButton(Material.ARROW, "<gray>Back", "Back to the hideout"));
         inv.setItem(WORKBENCH_UPGRADE_SLOT, useButton(Material.ANVIL, "<yellow>Upgrade Held Armor", "Upgrade the armor piece you are holding"));
+        inv.setItem(RECYCLER_SLOT, useButton(Material.GRINDSTONE, "<aqua>Recycler", "Break junk down into salvage"));
 
         List<HideoutManager.Recipe> recipes = manager.getRecipes();
         for (int i = 0; i < recipes.size() && i < RECIPE_SLOTS.length; i++) {
-            inv.setItem(RECIPE_SLOTS[i], recipeItem(recipes.get(i)));
+            inv.setItem(RECIPE_SLOTS[i], recipeItem(player, recipes.get(i)));
         }
 
         sessions.put(player.getUniqueId(), new Session("workbench", 0, 0, inv));
         player.openInventory(inv);
     }
 
-    private ItemStack recipeItem(HideoutManager.Recipe recipe) {
+    private ItemStack recipeItem(Player player, HideoutManager.Recipe recipe) {
+        if (manager.isLocked(player.getUniqueId(), recipe)) {
+            ItemStack locked = new ItemStack(Material.GRAY_DYE);
+            ItemMeta meta = locked.getItemMeta();
+            meta.customName(MM.deserialize("<!italic><dark_gray>Locked: <gray>" + MM.stripTags(recipe.display())));
+            meta.lore(List.of(
+                    MM.deserialize("<!italic><gray>Needs <white>Blueprint: " + MM.stripTags(recipe.display())),
+                    MM.deserialize("<!italic><gray>Found in Red Zone caches, vaults and rift vaults."),
+                    MM.deserialize("<!italic><gray>Right-click the blueprint to learn it.")));
+            meta.addItemFlags(ItemFlag.values());
+            locked.setItemMeta(meta);
+            return locked;
+        }
         Material material = resolveIcon(recipe.icon());
         ItemStack item = new ItemStack(material == null ? Material.STONE : material);
         ItemMeta meta = item.getItemMeta();
         meta.customName(MM.deserialize("<!italic>" + recipe.display()));
 
         List<Component> lore = new ArrayList<>();
+        if (recipe.blueprint()) lore.add(MM.deserialize("<!italic><aqua>Blueprint learned"));
         for (Map.Entry<String, Integer> entry : recipe.materials().entrySet()) {
             lore.add(MM.deserialize("<!italic><gray>• " + entry.getKey() + " <white>x" + entry.getValue()));
         }
@@ -260,6 +279,8 @@ public final class HideoutGUI implements Listener {
             // (there was previously no way to put anything in).
             if (session.type().equals("stash") || session.type().equals("armory")) {
                 depositFromInventory(player, session, event.getSlot());
+            } else if (session.type().equals("recycler")) {
+                recycle(player, event.getSlot());
             }
             return;
         }
@@ -272,6 +293,7 @@ public final class HideoutGUI implements Listener {
             case "workbench" -> handleWorkbenchClick(player, slot);
             case "stash" -> handleStorageClick(player, slot, false);
             case "armory" -> handleStorageClick(player, slot, true);
+            case "recycler" -> handleRecyclerClick(player, slot);
         }
     }
 
@@ -399,6 +421,10 @@ public final class HideoutGUI implements Listener {
             openMain(player);
             return;
         }
+        if (slot == RECYCLER_SLOT) {
+            openRecycler(player);
+            return;
+        }
         if (slot == WORKBENCH_UPGRADE_SLOT) {
             plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), "armor upgrade " + player.getName());
             return;
@@ -410,6 +436,97 @@ public final class HideoutGUI implements Listener {
         }
         if (index < 0 || index >= recipes.size()) return;
         plugin.getHideoutManager().craft(player, recipes.get(index));
+    }
+
+    // --------------------------------------------------------------- recycler
+
+    public void openRecycler(Player player) {
+        if (manager.getLevel(player.getUniqueId(), "workbench") < 1) {
+            player.sendMessage(plugin.getComponent("craft-locked"));
+            return;
+        }
+        Inventory inv = Bukkit.createInventory(null, RECYCLER_SIZE, MM.deserialize("<dark_aqua>Recycler</dark_aqua>"));
+        int slot = 0;
+        for (Map.Entry<String, Map<String, Integer>> entry : manager.getRecycler().entrySet()) {
+            if (slot > 8) break;
+            inv.setItem(slot++, recyclerCard(entry.getKey(), entry.getValue()));
+        }
+        inv.setItem(13, useButton(Material.GRINDSTONE, "<aqua>Recycler",
+                "Click junk in your inventory to break the stack down."));
+        inv.setItem(RECYCLER_BACK_SLOT, useButton(Material.ARROW, "<gray>Back", "Back to the workbench"));
+        inv.setItem(RECYCLER_ALL_SLOT, useButton(Material.HOPPER, "<green>Recycle all junk",
+                "Recycles every recyclable item you carry"));
+        sessions.put(player.getUniqueId(), new Session("recycler", 0, 0, inv));
+        player.openInventory(inv);
+    }
+
+    private ItemStack recyclerCard(String id, Map<String, Integer> outputs) {
+        ItemStack item = com.theglitch.common.NexoUtil.build(id);
+        if (item == null) item = new ItemStack(Material.PAPER);
+        ItemMeta meta = item.getItemMeta();
+        List<Component> lore = new ArrayList<>();
+        lore.add(MM.deserialize("<!italic><gray>Recycles into:"));
+        for (Map.Entry<String, Integer> out : outputs.entrySet()) {
+            lore.add(MM.deserialize("<!italic><gray>• " + out.getKey().replace('_', ' ') + " <white>x" + out.getValue()));
+        }
+        meta.lore(lore);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private void handleRecyclerClick(Player player, int slot) {
+        if (slot == RECYCLER_BACK_SLOT) {
+            openWorkbench(player);
+        } else if (slot == RECYCLER_ALL_SLOT) {
+            int stacks = 0;
+            for (int i = 0; i < 36; i++) {
+                if (!manager.recycleSlot(player, i).isEmpty()) stacks++;
+            }
+            player.sendMessage(MM.deserialize(stacks == 0
+                    ? "<gray>You're not carrying anything recyclable.</gray>"
+                    : "<aqua>Recycled " + stacks + " stack" + (stacks == 1 ? "" : "s") + " of junk.</aqua>"));
+            if (stacks > 0) player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_GRINDSTONE_USE, 1f, 1f);
+        }
+    }
+
+    private void recycle(Player player, int invSlot) {
+        Map<String, Integer> given = manager.recycleSlot(player, invSlot);
+        if (given.isEmpty()) {
+            player.sendActionBar(MM.deserialize("<red>That can't be recycled.</red>"));
+            return;
+        }
+        List<String> parts = new ArrayList<>();
+        given.forEach((id, amt) -> parts.add(amt + "x " + id.replace('_', ' ')));
+        player.sendMessage(MM.deserialize("<aqua>Recycled →</aqua> <white>" + String.join(", ", parts)));
+        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_GRINDSTONE_USE, 1f, 1f);
+    }
+
+    // ------------------------------------------------------------ blueprints
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH)
+    public void onBlueprintUse(org.bukkit.event.player.PlayerInteractEvent event) {
+        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) return;
+        var action = event.getAction();
+        if (action != org.bukkit.event.block.Action.RIGHT_CLICK_AIR
+                && action != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
+        ItemStack item = event.getItem();
+        String recipeId = manager.blueprintRecipe(item);
+        if (recipeId == null) return;
+        event.setCancelled(true);
+        Player player = event.getPlayer();
+        HideoutManager.Recipe recipe = manager.getRecipe(recipeId);
+        String name = MM.stripTags(recipe.display());
+        if (!manager.learnBlueprint(player.getUniqueId(), recipeId)) {
+            player.sendMessage(MM.deserialize("<gray>You already know <white>" + name
+                    + "</white>. Sell spare blueprints at the Grand Bazaar.</gray>"));
+            return;
+        }
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        hand.setAmount(hand.getAmount() - 1);
+        player.sendMessage(MM.deserialize("<aqua>Blueprint learned:</aqua> <white>" + name
+                + "</white> <gray>— craft it at the Workbench.</gray>"));
+        player.playSound(player.getLocation(), org.bukkit.Sound.ITEM_BOOK_PAGE_TURN, 1f, 1f);
+        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.6f, 1.6f);
     }
 
     private void depositFromInventory(Player player, Session session, int invSlot) {

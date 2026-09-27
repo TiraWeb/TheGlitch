@@ -16,6 +16,7 @@ public final class GlitchItems extends JavaPlugin {
     private IdentifyManager identifyManager;
     private ContainerManager containerManager;
     private ScatterManager scatterManager;
+    private GadgetListener gadgetListener;
     private Economy economy;
     private boolean economyLookupDone;
     private long economyLookupFailedAt;
@@ -40,6 +41,8 @@ public final class GlitchItems extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CombatListener(gearManager, glitchManager), this);
         Bukkit.getPluginManager().registerEvents(new ContainerListener(containerManager), this);
         Bukkit.getPluginManager().registerEvents(new ConsumableListener(gearManager, identifyManager), this);
+        gadgetListener = new GadgetListener(this);
+        Bukkit.getPluginManager().registerEvents(gadgetListener, this);
         if (Bukkit.getPluginManager().getPlugin("Nexo") != null) {
             // Furniture-backed containers (Debris/Cache/Rift Vault crate models) —
             // references Nexo's event class directly, so only register when present.
@@ -81,6 +84,7 @@ public final class GlitchItems extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (gadgetListener != null) gadgetListener.shutdown();
         if (scatterManager != null) {
             try { scatterManager.shutdown(); } catch (Exception e) { getLogger().warning("Error shutting down ScatterManager: " + e.getMessage()); }
         }
