@@ -102,7 +102,7 @@ BLUEPRINTS = {
 
 def item(iid, name, material, rarity, lore, sell):
     c = RARITY[rarity]
-    out = [f"{iid}:", f"  itemname: <{c}>{name}</{c}>", f"  material: {material}", "  lore:"]
+    out = [f"{iid}:", "  itemname: '<" + c + ">" + name.replace("'", "''") + "</" + c + ">'", f"  material: {material}", "  lore:"]
     out += ["  - '<gray>" + line.replace("'", "''") + "</gray>'" for line in lore]
     out.append(f"  - '<dark_gray>{rarity.capitalize()}</dark_gray>'")
     out.append(f"  - ' <gray>Sell price: <aqua>{sell} Shards</aqua></gray>'")

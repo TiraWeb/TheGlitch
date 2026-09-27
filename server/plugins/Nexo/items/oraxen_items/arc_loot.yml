@@ -5,7 +5,7 @@
 # --- Salvage + refined parts ---
 
 scrap_plating:
-  itemname: <white>Scrap Plating</white>
+  itemname: '<white>Scrap Plating</white>'
   material: IRON_NUGGET
   lore:
   - '<gray>Bent hull plating from the old world.</gray>'
@@ -14,7 +14,7 @@ scrap_plating:
   - ' <gray>Sell price: <aqua>3 Shards</aqua></gray>'
 
 frayed_wiring:
-  itemname: <white>Frayed Wiring</white>
+  itemname: '<white>Frayed Wiring</white>'
   material: COPPER_NUGGET
   lore:
   - '<gray>Still carries a faint charge.</gray>'
@@ -23,7 +23,7 @@ frayed_wiring:
   - ' <gray>Sell price: <aqua>4 Shards</aqua></gray>'
 
 polymer_goo:
-  itemname: <white>Polymer Goo</white>
+  itemname: '<white>Polymer Goo</white>'
   material: SLIME_BALL
   lore:
   - '<gray>Sticky, flexible, useful.</gray>'
@@ -32,7 +32,7 @@ polymer_goo:
   - ' <gray>Sell price: <aqua>4 Shards</aqua></gray>'
 
 coolant_cell:
-  itemname: <white>Coolant Cell</white>
+  itemname: '<white>Coolant Cell</white>'
   material: PRISMARINE_CRYSTALS
   lore:
   - '<gray>Cold to the touch.</gray>'
@@ -41,7 +41,7 @@ coolant_cell:
   - ' <gray>Sell price: <aqua>6 Shards</aqua></gray>'
 
 glitch_cloth:
-  itemname: <white>Glitch Cloth</white>
+  itemname: '<white>Glitch Cloth</white>'
   material: PURPLE_WOOL
   lore:
   - '<gray>Fabric that flickers at the edges.</gray>'
@@ -50,7 +50,7 @@ glitch_cloth:
   - ' <gray>Sell price: <aqua>3 Shards</aqua></gray>'
 
 circuit_core:
-  itemname: <green>Circuit Core</green>
+  itemname: '<green>Circuit Core</green>'
   material: ECHO_SHARD
   lore:
   - '<gray>Refined from wiring and plating.</gray>'
@@ -59,7 +59,7 @@ circuit_core:
   - ' <gray>Sell price: <aqua>30 Shards</aqua></gray>'
 
 stabilizer_coil:
-  itemname: <green>Stabilizer Coil</green>
+  itemname: '<green>Stabilizer Coil</green>'
   material: BREEZE_ROD
   lore:
   - '<gray>Keeps rift energy from wandering.</gray>'
@@ -68,7 +68,7 @@ stabilizer_coil:
   - ' <gray>Sell price: <aqua>45 Shards</aqua></gray>'
 
 rift_capacitor:
-  itemname: <blue>Rift Capacitor</blue>
+  itemname: '<blue>Rift Capacitor</blue>'
   material: HEART_OF_THE_SEA
   lore:
   - '<gray>Stores a sliver of the Glitch.</gray>'
@@ -79,7 +79,7 @@ rift_capacitor:
 # --- Recyclables: break down at the Recycler (/recycle) ---
 
 rusted_gear:
-  itemname: <white>Rusted Gear</white>
+  itemname: '<white>Rusted Gear</white>'
   material: RAW_IRON
   lore:
   - '<gray>Junk. Recycle it at the hideout</gray>'
@@ -88,7 +88,7 @@ rusted_gear:
   - ' <gray>Sell price: <aqua>6 Shards</aqua></gray>'
 
 cracked_screen:
-  itemname: <white>Cracked Screen</white>
+  itemname: '<white>Cracked Screen</white>'
   material: BLACK_STAINED_GLASS_PANE
   lore:
   - '<gray>Junk. Recycle it at the hideout</gray>'
@@ -97,7 +97,7 @@ cracked_screen:
   - ' <gray>Sell price: <aqua>10 Shards</aqua></gray>'
 
 dead_battery:
-  itemname: <white>Dead Battery</white>
+  itemname: '<white>Dead Battery</white>'
   material: COPPER_BULB
   lore:
   - '<gray>Junk. Recycle it at the hideout</gray>'
@@ -106,7 +106,7 @@ dead_battery:
   - ' <gray>Sell price: <aqua>12 Shards</aqua></gray>'
 
 shattered_lens:
-  itemname: <green>Shattered Lens</green>
+  itemname: '<green>Shattered Lens</green>'
   material: TINTED_GLASS
   lore:
   - '<gray>Junk. Recycle it at the hideout</gray>'
@@ -115,7 +115,7 @@ shattered_lens:
   - ' <gray>Sell price: <aqua>15 Shards</aqua></gray>'
 
 corrupted_drive:
-  itemname: <green>Corrupted Drive</green>
+  itemname: '<green>Corrupted Drive</green>'
   material: OBSERVER
   lore:
   - '<gray>Junk. Recycle it at the hideout</gray>'
@@ -124,7 +124,7 @@ corrupted_drive:
   - ' <gray>Sell price: <aqua>25 Shards</aqua></gray>'
 
 broken_drone:
-  itemname: <blue>Broken Drone</blue>
+  itemname: '<blue>Broken Drone</blue>'
   material: HEAVY_CORE
   lore:
   - '<gray>Junk. Recycle it at the hideout</gray>'
@@ -135,7 +135,7 @@ broken_drone:
 # --- Trinkets: sell-only valuables ---
 
 pixel_duck:
-  itemname: <white>Pixel Duck</white>
+  itemname: '<white>Pixel Duck</white>'
   material: YELLOW_DYE
   lore:
   - '<gray>Squeaks in 8-bit.</gray>'
@@ -144,7 +144,7 @@ pixel_duck:
   - ' <gray>Sell price: <aqua>60 Shards</aqua></gray>'
 
 lost_floppy:
-  itemname: <white>Lost Floppy</white>
+  itemname: '<white>Lost Floppy</white>'
   material: MUSIC_DISC_CAT
   lore:
   - '<gray>Label reads: DO NOT OPEN.</gray>'
@@ -153,7 +153,7 @@ lost_floppy:
   - ' <gray>Sell price: <aqua>150 Shards</aqua></gray>'
 
 static_radio:
-  itemname: <green>Static Radio</green>
+  itemname: '<green>Static Radio</green>'
   material: JUKEBOX
   lore:
   - '<gray>Plays a station that no longer exists.</gray>'
@@ -162,7 +162,7 @@ static_radio:
   - ' <gray>Sell price: <aqua>250 Shards</aqua></gray>'
 
 frozen_clock:
-  itemname: <green>Frozen Clock</green>
+  itemname: '<green>Frozen Clock</green>'
   material: CLOCK
   lore:
   - '<gray>Stuck at the minute the Glitch began.</gray>'
@@ -171,7 +171,7 @@ frozen_clock:
   - ' <gray>Sell price: <aqua>400 Shards</aqua></gray>'
 
 glitched_snow_globe:
-  itemname: <blue>Glitched Snow Globe</blue>
+  itemname: '<blue>Glitched Snow Globe</blue>'
   material: LIGHT_BLUE_STAINED_GLASS
   lore:
   - '<gray>The snow falls upward.</gray>'
@@ -180,7 +180,7 @@ glitched_snow_globe:
   - ' <gray>Sell price: <aqua>700 Shards</aqua></gray>'
 
 void_music_box:
-  itemname: <blue>Void Music Box</blue>
+  itemname: '<blue>Void Music Box</blue>'
   material: NOTE_BLOCK
   lore:
   - '<gray>Its tune makes the rift hum back.</gray>'
@@ -189,7 +189,7 @@ void_music_box:
   - ' <gray>Sell price: <aqua>1200 Shards</aqua></gray>'
 
 cursed_crown:
-  itemname: <dark_purple>Cursed Crown</dark_purple>
+  itemname: '<dark_purple>Cursed Crown</dark_purple>'
   material: GOLDEN_HELMET
   lore:
   - '<gray>Heavy with someone else''s ambition.</gray>'
@@ -198,7 +198,7 @@ cursed_crown:
   - ' <gray>Sell price: <aqua>2500 Shards</aqua></gray>'
 
 rift_idol:
-  itemname: <gold>Rift Idol</gold>
+  itemname: '<gold>Rift Idol</gold>'
   material: END_CRYSTAL
   lore:
   - '<gray>Collectors will pay anything for it.</gray>'
@@ -209,7 +209,7 @@ rift_idol:
 # --- Gadgets, heals, Secure Pouch ---
 
 frag_grenade:
-  itemname: <green>Frag Grenade</green>
+  itemname: '<green>Frag Grenade</green>'
   material: FIRE_CHARGE
   lore:
   - '<gray>Throw: explodes on impact for heavy</gray>'
@@ -218,7 +218,7 @@ frag_grenade:
   - ' <gray>Sell price: <aqua>40 Shards</aqua></gray>'
 
 smoke_grenade:
-  itemname: <green>Smoke Grenade</green>
+  itemname: '<green>Smoke Grenade</green>'
   material: FIREWORK_STAR
   lore:
   - '<gray>Throw: a thick cloud for 8s that</gray>'
@@ -227,7 +227,7 @@ smoke_grenade:
   - ' <gray>Sell price: <aqua>30 Shards</aqua></gray>'
 
 lure_beacon:
-  itemname: <green>Lure Beacon</green>
+  itemname: '<green>Lure Beacon</green>'
   material: BELL
   lore:
   - '<gray>Throw: nearby mobs chase the</gray>'
@@ -236,7 +236,7 @@ lure_beacon:
   - ' <gray>Sell price: <aqua>35 Shards</aqua></gray>'
 
 snap_hook:
-  itemname: <blue>Snap Hook</blue>
+  itemname: '<blue>Snap Hook</blue>'
   material: LEAD
   lore:
   - '<gray>Aim at a block within 24m and</gray>'
@@ -245,7 +245,7 @@ snap_hook:
   - ' <gray>Sell price: <aqua>50 Shards</aqua></gray>'
 
 barricade_kit:
-  itemname: <blue>Barricade Kit</blue>
+  itemname: '<blue>Barricade Kit</blue>'
   material: IRON_BARS
   lore:
   - '<gray>Right-click a block: raises a 3x2</gray>'
@@ -254,7 +254,7 @@ barricade_kit:
   - ' <gray>Sell price: <aqua>60 Shards</aqua></gray>'
 
 pulse_mine:
-  itemname: <blue>Pulse Mine</blue>
+  itemname: '<blue>Pulse Mine</blue>'
   material: HEAVY_WEIGHTED_PRESSURE_PLATE
   lore:
   - '<gray>Right-click a block to arm. Stuns and</gray>'
@@ -263,7 +263,7 @@ pulse_mine:
   - ' <gray>Sell price: <aqua>60 Shards</aqua></gray>'
 
 bandage:
-  itemname: <white>Bandage</white>
+  itemname: '<white>Bandage</white>'
   material: WHITE_CARPET
   lore:
   - '<gray>Right-click: heals 3 hearts over 3s.</gray>'
@@ -271,7 +271,7 @@ bandage:
   - ' <gray>Sell price: <aqua>8 Shards</aqua></gray>'
 
 adrenaline_shot:
-  itemname: <green>Adrenaline Shot</green>
+  itemname: '<green>Adrenaline Shot</green>'
   material: END_ROD
   lore:
   - '<gray>Right-click: Speed III + Jump for 6s,</gray>'
@@ -280,7 +280,7 @@ adrenaline_shot:
   - ' <gray>Sell price: <aqua>40 Shards</aqua></gray>'
 
 secure_pouch:
-  itemname: <dark_purple>Secure Pouch</dark_purple>
+  itemname: '<dark_purple>Secure Pouch</dark_purple>'
   material: RABBIT_HIDE
   lore:
   - '<gray>Carry it: on a Red Zone death you keep</gray>'
@@ -291,7 +291,7 @@ secure_pouch:
 # --- Blueprints: right-click to learn the Workbench recipe ---
 
 blueprint_adrenaline_shot:
-  itemname: <white>Blueprint: Adrenaline Shot</white>
+  itemname: '<white>Blueprint: Adrenaline Shot</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -300,7 +300,7 @@ blueprint_adrenaline_shot:
   - ' <gray>Sell price: <aqua>200 Shards</aqua></gray>'
 
 blueprint_frag_grenade:
-  itemname: <white>Blueprint: Frag Grenade</white>
+  itemname: '<white>Blueprint: Frag Grenade</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -309,7 +309,7 @@ blueprint_frag_grenade:
   - ' <gray>Sell price: <aqua>200 Shards</aqua></gray>'
 
 blueprint_smoke_grenade:
-  itemname: <white>Blueprint: Smoke Grenade</white>
+  itemname: '<white>Blueprint: Smoke Grenade</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -318,7 +318,7 @@ blueprint_smoke_grenade:
   - ' <gray>Sell price: <aqua>200 Shards</aqua></gray>'
 
 blueprint_lure_beacon:
-  itemname: <white>Blueprint: Lure Beacon</white>
+  itemname: '<white>Blueprint: Lure Beacon</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -327,7 +327,7 @@ blueprint_lure_beacon:
   - ' <gray>Sell price: <aqua>200 Shards</aqua></gray>'
 
 blueprint_targeted_weapon_aegis:
-  itemname: <white>Blueprint: Aegis Blade</white>
+  itemname: '<white>Blueprint: Aegis Blade</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -336,7 +336,7 @@ blueprint_targeted_weapon_aegis:
   - ' <gray>Sell price: <aqua>250 Shards</aqua></gray>'
 
 blueprint_targeted_weapon_veil:
-  itemname: <white>Blueprint: Veil Blade</white>
+  itemname: '<white>Blueprint: Veil Blade</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -345,7 +345,7 @@ blueprint_targeted_weapon_veil:
   - ' <gray>Sell price: <aqua>250 Shards</aqua></gray>'
 
 blueprint_targeted_weapon_bloom:
-  itemname: <white>Blueprint: Bloom Blade</white>
+  itemname: '<white>Blueprint: Bloom Blade</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -354,7 +354,7 @@ blueprint_targeted_weapon_bloom:
   - ' <gray>Sell price: <aqua>250 Shards</aqua></gray>'
 
 blueprint_targeted_weapon_ward:
-  itemname: <white>Blueprint: Ward Blade</white>
+  itemname: '<white>Blueprint: Ward Blade</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -363,7 +363,7 @@ blueprint_targeted_weapon_ward:
   - ' <gray>Sell price: <aqua>250 Shards</aqua></gray>'
 
 blueprint_targeted_weapon_hollow:
-  itemname: <white>Blueprint: Hollow Blade</white>
+  itemname: '<white>Blueprint: Hollow Blade</white>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -372,7 +372,7 @@ blueprint_targeted_weapon_hollow:
   - ' <gray>Sell price: <aqua>250 Shards</aqua></gray>'
 
 blueprint_snap_hook:
-  itemname: <green>Blueprint: Snap Hook</green>
+  itemname: '<green>Blueprint: Snap Hook</green>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -381,7 +381,7 @@ blueprint_snap_hook:
   - ' <gray>Sell price: <aqua>450 Shards</aqua></gray>'
 
 blueprint_barricade_kit:
-  itemname: <green>Blueprint: Barricade Kit</green>
+  itemname: '<green>Blueprint: Barricade Kit</green>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -390,7 +390,7 @@ blueprint_barricade_kit:
   - ' <gray>Sell price: <aqua>450 Shards</aqua></gray>'
 
 blueprint_pulse_mine:
-  itemname: <green>Blueprint: Pulse Mine</green>
+  itemname: '<green>Blueprint: Pulse Mine</green>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -399,7 +399,7 @@ blueprint_pulse_mine:
   - ' <gray>Sell price: <aqua>450 Shards</aqua></gray>'
 
 blueprint_rift_key:
-  itemname: <green>Blueprint: Rift Key</green>
+  itemname: '<green>Blueprint: Rift Key</green>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -408,7 +408,7 @@ blueprint_rift_key:
   - ' <gray>Sell price: <aqua>600 Shards</aqua></gray>'
 
 blueprint_void_infusion:
-  itemname: <blue>Blueprint: Void Infusion</blue>
+  itemname: '<blue>Blueprint: Void Infusion</blue>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -417,7 +417,7 @@ blueprint_void_infusion:
   - ' <gray>Sell price: <aqua>1000 Shards</aqua></gray>'
 
 blueprint_secure_pouch:
-  itemname: <blue>Blueprint: Secure Pouch</blue>
+  itemname: '<blue>Blueprint: Secure Pouch</blue>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
@@ -426,7 +426,7 @@ blueprint_secure_pouch:
   - ' <gray>Sell price: <aqua>1200 Shards</aqua></gray>'
 
 blueprint_dream_eater:
-  itemname: <gold>Blueprint: The Glitch That Dreams</gold>
+  itemname: '<gold>Blueprint: The Glitch That Dreams</gold>'
   material: GLOBE_BANNER_PATTERN
   lore:
   - '<gray>Right-click to learn this recipe</gray>'
