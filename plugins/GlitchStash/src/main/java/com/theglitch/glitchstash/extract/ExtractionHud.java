@@ -98,8 +98,9 @@ public final class ExtractionHud {
                 String status = dist <= nearest.radiusBlocks() + 1
                         ? "<green><bold>IN ZONE</bold> — hold it to extract</green>"
                         : "<white>" + dist + "m</white> <yellow>" + arrow + " " + compass + "</yellow>";
+                // No close timer here — the GlitchRaid "Time left" bar right above shows the same window.
                 bar.name(MM.deserialize("<gold>⚡ Extraction</gold> " + status
-                        + " <dark_gray>|</dark_gray> <gray>" + points.size() + " open · closes in <white>" + mmss(left) + "</white></gray>"));
+                        + " <dark_gray>|</dark_gray> <gray>" + points.size() + " open</gray>"));
                 bar.color(BossBar.Color.YELLOW);
                 long total = Math.max(1L, plugin.getConfig().getInt("auto-extract.raid-duration-minutes", 30) * 60L);
                 bar.progress((float) Math.max(0.0, Math.min(1.0, left / (double) total)));
