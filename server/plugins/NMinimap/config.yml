@@ -86,7 +86,7 @@ markers:
     #Hide far away players?
     hide-outside-radius:
       #Set 0 to disable
-      xz: 100
+      xz: 16
       y: 0
     #Hide player with permission nminimap.hide-on-map?
     hide-permission: false
@@ -95,7 +95,7 @@ markers:
     enable: true
     hide-outside-radius:
       #Set 0 to disable
-      xz: 200
+      xz: 48
       y: 30
     #How frequent update mob list? In ticks. One second is 20 ticks
     update-interval: 10
@@ -119,7 +119,7 @@ markers:
     use-permission: false
     
     default-marker:
-      icon: red_marker
+      icon: hostile
       allow-rotation: true
     mob-markers:
       zombie:
@@ -135,6 +135,24 @@ markers:
   
   #You can enforce marker sizes for shader using this config section
   sizes:
+    crate_debris:
+      height: 4
+      width: 4
+    crate_cache:
+      height: 4
+      width: 4
+    crate_vault:
+      height: 5
+      width: 5
+    crate_rift_vault:
+      height: 6
+      width: 6
+    extract:
+      height: 7
+      width: 7
+    hostile:
+      height: 3
+      width: 3
     #NMinimap/markers/player.png
     player:
       #size in pixels
@@ -284,15 +302,7 @@ updates:
   #modrinth update checker
   check-for-updates: true
 #Static markers always displayed on map
-static-markers:
-  my-banner:
-    #Icon from ./markers directory
-    icon: white_banner
-    x: 0
-    z: 0
-    #marker rotation. From 0 to 360
-    yaw: 180
-    world: world
+static-markers: {}
 # Configuration for underground layers (caves)
 # It uses WorldGuard regions.
 underground-layers:
