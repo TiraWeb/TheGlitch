@@ -68,8 +68,15 @@
             <artifactId>NMinimap</artifactId>
             <version>1.0.8</version>
             <scope>system</scope>
-            <!-- not in git: copy the server's plugins/NMinimap.jar here (see docs/HUD.md) -->
+            <!-- not in git: copy the server's plugins/NMinimap.jar + AnvilORM.jar into lib/ -->
             <systemPath>${project.basedir}/lib/NMinimap.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>su.nezushin</groupId>
+            <artifactId>AnvilORM</artifactId>
+            <version>1.0.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/AnvilORM.jar</systemPath>
         </dependency>
     </dependencies>
 
