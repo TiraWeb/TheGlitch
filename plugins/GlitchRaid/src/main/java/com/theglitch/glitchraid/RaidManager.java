@@ -272,6 +272,61 @@ public final class RaidManager {
         return sb.toString();
     }
 
+    private final Map<String, org.bukkit.Location> safeEntryCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * A safe landing spot near the world spawn: solid dry ground, two blocks of air,
+     * and no lava/fire/magma/water within 4 blocks. Horizons' spawn sat in a lava
+     * valley (one step back = lava). Cached per world, re-validated on each use;
+     * returns the plain spawn when nothing within 96 blocks qualifies. Main thread.
+     */
+    public org.bukkit.Location findSafeEntry(org.bukkit.World world) {
+        String key = world.getName().toLowerCase(java.util.Locale.ROOT);
+        org.bukkit.Location cached = safeEntryCache.get(key);
+        if (cached != null && isSafeColumn(world, cached.getBlockX(), cached.getBlockZ()) != null) return cached.clone();
+        org.bukkit.Location spawn = world.getSpawnLocation();
+        int sx = spawn.getBlockX(), sz = spawn.getBlockZ();
+        for (int r = 0; r <= 96; r += 3) {
+            for (int dx = -r; dx <= r; dx += 3) {
+                for (int dz = -r; dz <= r; dz += 3) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue; // ring only
+                    org.bukkit.Location hit = isSafeColumn(world, sx + dx, sz + dz);
+                    if (hit != null) {
+                        hit.setYaw(spawn.getYaw());
+                        safeEntryCache.put(key, hit);
+                        if (r > 0) plugin.getLogger().info("Safe red entry for " + world.getName() + " at "
+                                + hit.getBlockX() + "," + hit.getBlockY() + "," + hit.getBlockZ() + " (spawn unsafe)");
+                        return hit.clone();
+                    }
+                }
+            }
+        }
+        plugin.getLogger().warning("No safe red entry within 96 blocks of " + world.getName() + " spawn — using raw spawn.");
+        return spawn;
+    }
+
+    private org.bukkit.Location isSafeColumn(org.bukkit.World world, int x, int z) {
+        if (!world.isChunkGenerated(x >> 4, z >> 4)) return null;
+        int y = world.getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        if (y <= world.getMinHeight() + 1 || y >= world.getMaxHeight() - 3) return null;
+        org.bukkit.block.Block ground = world.getBlockAt(x, y, z);
+        org.bukkit.Material g = ground.getType();
+        if (!g.isSolid() || org.bukkit.Tag.LEAVES.isTagged(g) || g == org.bukkit.Material.MAGMA_BLOCK
+                || g == org.bukkit.Material.CACTUS || g == org.bukkit.Material.POWDER_SNOW) return null;
+        if (!world.getBlockAt(x, y + 1, z).isPassable() || !world.getBlockAt(x, y + 2, z).isPassable()) return null;
+        if (world.getBlockAt(x, y + 1, z).isLiquid() || world.getBlockAt(x, y + 2, z).isLiquid()) return null;
+        for (int bx = -4; bx <= 4; bx++) {
+            for (int bz = -4; bz <= 4; bz++) {
+                for (int by = -2; by <= 2; by++) {
+                    org.bukkit.Material m = world.getBlockAt(x + bx, y + by, z + bz).getType();
+                    if (m == org.bukkit.Material.LAVA || m == org.bukkit.Material.FIRE || m == org.bukkit.Material.SOUL_FIRE
+                            || m == org.bukkit.Material.MAGMA_BLOCK || (m == org.bukkit.Material.WATER && by >= 0)) return null;
+                }
+            }
+        }
+        return new org.bukkit.Location(world, x + 0.5, y + 1, z + 0.5);
+    }
+
     /** Short per-world blurb for the Red Zone picker, or null when none is configured. */
     public String getWorldDescription(String world) {
         if (world == null) return null;

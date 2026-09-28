@@ -112,22 +112,28 @@ public class RedZoneSelectGUI implements Listener {
         dispatchJoin(player, world);
     }
 
-    /** Console-dispatched teleport — same mechanism the hub NPC used before this GUI existed. */
+    /** Teleports onto a verified-safe spot near the world spawn (console mv tp only as a fallback). */
     public void dispatchJoin(Player player, String world) {
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "mv tp " + player.getName() + " " + world);
+        org.bukkit.World w = Bukkit.getWorld(world);
+        if (w == null) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "mv tp " + player.getName() + " " + world);
+            return;
+        }
+        // Land on a verified-safe spot near spawn (not the raw spawn, which can border lava).
+        com.theglitch.common.FoliaScheduler.teleportEntity(player, plugin, manager.findSafeEntry(w));
     }
 
     private ItemStack createItem(Material material, String name, String... lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.customName(MM.deserialize(name));
+            meta.customName(MM.deserialize("<!italic>" + name));
             List<net.kyori.adventure.text.Component> loreList = new ArrayList<>();
             for (String line : lore) {
                 if (line == null || line.equals(" ")) {
                     loreList.add(net.kyori.adventure.text.Component.empty());
                 } else {
-                    loreList.add(MM.deserialize(line));
+                    loreList.add(MM.deserialize("<!italic>" + line));
                 }
             }
             meta.lore(loreList);

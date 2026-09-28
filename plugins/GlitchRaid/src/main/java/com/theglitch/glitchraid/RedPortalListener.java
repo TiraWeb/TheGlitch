@@ -105,7 +105,7 @@ public final class RedPortalListener implements Listener {
         }
         Location dest;
         try {
-            dest = red.getSpawnLocation();
+            dest = manager.findSafeEntry(red);
         } catch (Exception e) {
             player.sendMessage(MM.deserialize("<red>The rift is dormant (no spawn).</red>"));
             return false;
