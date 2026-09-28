@@ -339,6 +339,28 @@ public final class RaidListener implements Listener {
      * Without this, /spawn, /warp or an accepted /tpahere carried the whole inventory
      * out and counted as an extraction.
      */
+    /**
+     * The 1-minute buffer between extraction cycles is maintenance: the red world
+     * is re-scattered, so nobody may enter it (portal, /redzone, party pull, warps).
+     * Checked on the destination world, before the teleport happens.
+     */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onEnterRedWorldDuringBuffer(org.bukkit.event.player.PlayerTeleportEvent event) {
+        org.bukkit.Location to = event.getTo();
+        if (to == null || to.getWorld() == null) return;
+        String dest = to.getWorld().getName();
+        if (!manager.isRedWorld(dest) || dest.equalsIgnoreCase(event.getFrom().getWorld().getName())) return;
+        if (!manager.isInBufferPeriod(dest)) return;
+        Player player = event.getPlayer();
+        if (player.hasPermission("glitchraid.admin")) return;
+        event.setCancelled(true);
+        long ms = manager.getMillisUntilNextCycle(dest);
+        int secs = (int) Math.max(1, Math.ceil(Math.max(0, ms) / 1000.0));
+        player.sendMessage(MM.deserialize("<gold>⚠ Red Zone maintenance</gold> <gray>— the Glitch is reshuffling loot. "
+                + "Entry reopens in <white>" + secs + "s</white>.</gray>"));
+        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.6f);
+    }
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onLeaveRedWorld(org.bukkit.event.player.PlayerTeleportEvent event) {
         Player player = event.getPlayer();
