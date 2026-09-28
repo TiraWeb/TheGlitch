@@ -99,6 +99,23 @@ mc "lp group default permission set essentials.chat.color true"
 # Inventory and movement
 mc "lp group default permission set essentials.workbench true"
 
+# Social / QoL commands and MythicDungeons in-dungeon helpers (2026-09-28)
+for p in dungeons.stuck dungeons.party.recruit essentials.msg essentials.reply          essentials.mail essentials.mail.send essentials.afk essentials.list          essentials.help essentials.helpop essentials.ignore essentials.rules          essentials.motd essentials.realname tab.scoreboard.toggle; do
+  mc "lp group default permission set ${p} true"
+done
+
+# --- alpha: testers — member + cosmetic/QoL extras, nothing that affects raids
+# (no tpa/back/enderchest/warp: those would bypass extraction).
+log "Creating 'alpha' tester group"
+mc "lp creategroup alpha"
+mc "lp group alpha parent add default"
+mc "lp group alpha setweight 50"
+mc "lp group alpha meta setprefix 50 \"&d[Alpha] \""
+mc "lp group alpha permission set essentials.fly true world=hub"
+for p in essentials.fly.safelogin essentials.hat essentials.nick essentials.nick.color          essentials.seen essentials.ptime essentials.pweather essentials.msg.color          essentials.mail.attach tab.group.alpha; do
+  mc "lp group alpha permission set ${p} true"
+done
+
 # --- verify ----------------------------------------------------------------
 log "Verifying groups (paste this back):"
 mc "lp listgroups"

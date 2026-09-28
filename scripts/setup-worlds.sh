@@ -219,6 +219,9 @@ for RW in "${RED_WORLDS[@]}"; do
   flag "${RW}" pvp allow
   flag "${RW}" use allow
   flag "${RW}" chest-access allow
+  # Loot crates are Nexo furniture: WorldGuard treats clicking them as
+  # "interact", which passthrough-deny blocks for non-ops without this.
+  flag "${RW}" interact allow
   flag "${RW}" damage-animals allow
   flag "${RW}" block-break deny
   flag "${RW}" block-place deny
