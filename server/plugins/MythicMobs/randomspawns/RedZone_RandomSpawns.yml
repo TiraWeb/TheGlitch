@@ -4,6 +4,10 @@
 # Each entry spawns in glitch_red with a Chance per spawn point. Points are generated around survival players
 # within SpawnRadiusPerPlayer (64). Cooldown throttles per-entry.
 # Density target: ~90-110 concurrent (~1/150 chunks) with 4 tiers.
+#
+# Spawn safety (2026-09-28, operator: heavy mobs camped the entry point and
+# killed new players): each tier needs a minimum distance from the world spawn
+# (where raiders land) — T1 40, T2 120, T3 220, Reaver 320 blocks.
 
 # --- T1 fodder: spawns everywhere, most common — 2026-08-24: 0.25/30 was too
 # dense (150/min); 0.06/60 turned out too sparse (operator: "rarely see a mob,
@@ -20,6 +24,8 @@ RZ_T1_Wisp_Crawler:
   Priority: 1
   PositionType: LAND
   Cooldown: 45
+  Conditions:
+  - distanceFromSpawn{d=>40} true
 
 # --- T2 mid-tier: cross-ring and general — was 0.18/45 too dense, 0.04/90 too sparse ---
 RZ_T2_Stalker_Brute_Phantom:
@@ -33,6 +39,8 @@ RZ_T2_Stalker_Brute_Phantom:
   Priority: 2
   PositionType: LAND
   Cooldown: 70
+  Conditions:
+  - distanceFromSpawn{d=>120} true
 
 # --- T3 elites: Core and beacons (rarer, stronger) — was 0.08/90 too dense, 0.015/180 too sparse ---
 # GlitchHarrower (new 2026-09-21) added, weights rebalanced across 4 entries.
@@ -48,6 +56,8 @@ RZ_T3_Sentinel_Sniper_Warden:
   Priority: 3
   PositionType: LAND
   Cooldown: 140
+  Conditions:
+  - distanceFromSpawn{d=>220} true
 
 # --- T3.5 mini-boss: rare standing threat, not a scheduled server event
 # (unlike RZ_T4_Bosses below) — new 2026-09-21 ---
@@ -60,6 +70,8 @@ RZ_T35_Reaver:
   Priority: 5
   PositionType: LAND
   Cooldown: 600
+  Conditions:
+  - distanceFromSpawn{d=>320} true
 
 # --- T4 bosses: REMOVED entirely 2026-09-22, per operator request.
 # TheGlitchKing (Ender Dragon) had unconditional (non-phase-gated) repeating
