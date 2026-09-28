@@ -324,7 +324,7 @@ Rough order:
 3. **Source V1:** rarity tiers + stat-roll engine, 6 weapon archetypes, 4 armor pieces, attributes, `/identify`, Resonance math, and Residual Glitch source exist. Build and runtime testing are pending.
 4. Rift drops (mob loot tables emit rifts) — DONE in repo (2026-08-03, all T2-T4 tables); Identifier NPC flow — not complete.
 5. Resonance tags (MythicMobs metadata) + complete gear integration — DONE in repo (2026-08-03, ten mobs); live test pending.
-6. Residual Glitch timer/effects + extraction multiplier — source and payout hook exist; consumers DONE (2026-08-06 → 2026-08-10): identify loot luck (star-luck per roll, rarity surge per stack), elite hunt at 5+ stacks (console `mm spawn`, configurable), container loot luck (per-roll rarity surge + surge drop). Aggro-scaling consumer still open.
+6. Residual Glitch timer/effects + extraction multiplier — source and payout hook exist; consumers DONE (2026-08-06 → 2026-08-10): identify loot luck (star-luck per roll, rarity surge per stack), elite hunt at 5+ stacks (console `mm spawn`, configurable; 2026-09-28: 60s entry grace + 16–24 block ground ring), container loot luck (per-roll rarity surge + surge drop). Aggro-scaling consumer still open.
 7. World population (spawners, chests, regen) — DONE in repo (2026-08-10): glitch_red SpawnAreas seeded + GlitchItems container system (Debris/Cache/Vault/Rift Vault, key consumption, regen, loot luck). In-world marking/placement is operator work.
 8. Crafting recipes via Workbench — DONE in source (2026-08-10) + deployed 2026-09-02: GlitchHideout workbench implements the §7 recipes (Healing Potion 5R+1C, Ward Salve 3R+1A, Aether Tonic 2A+1C, Base 3R+1C, Targeted +1A, Rift Attunement Pack 5C+2A free any rarity, Vault/Rift Keys, Void Infusion); live verified via deploy scripts.
 9. Rename pass across runtime configs and menus — not complete.
@@ -389,6 +389,11 @@ gear vendor). Individual prices are in `plugins/GlitchShops/src/main/resources/s
 | Mystic I | 20000 | 35000 | the most "legendary-sounding" 5 names (Ktanazul, Void Sword, Hell Bringer, Duality, Singularity Hammer Awakened) |
 | Mystic II | 14000 | 25000 | 9 weapons |
 | Mystic III | 10000 | 18000 | 11 weapons |
+
+The Skulpt models are 30–60 units tall; `scripts/fix-fantasy-firstperson.py`
+(2026-09-28, idempotent) caps their first-person display at ~20 units and
+shifts the translation so the grip stays in the hand. Re-run it after
+re-importing the pack.
 
 Not roll-based — every copy of a given Mystic weapon is identical (flat
 `ATTACK_DAMAGE +6` / `ATTACK_SPEED +0.5` plus a fixed high-tier vanilla

@@ -70,7 +70,7 @@ The core loop is extraction via VelKoth zones in `glitch_red`:
 
 1. `AutoExtractScheduler` drives a 31-minute cycle: `raidTicks 36000` (30m open) + `+5s scatter`. On `AutoExtractCycleEndEvent`, `DynamicExtractionManager` picks **3 validated random spots** per cycle (`SpotPicker`: 250 attempts, 12-deep terrain scan, 9-point flatness tolerance 2, solid `isOccluding` ground, barrier/bedrock/shulker rejection, WorldGuard-aware, 30-block separation).
 2. Each point becomes a VelKoth arena (`extraction_dyn0/1/2`) via reflection (`ArenaManager.addArena/saveArenas`, `CuboidRegion p.y()-1 to p.y()+4` — 6 tall), with `ExtractionVariantManager.setRuntimeZones(...)` syncing payout keys, force-loaded chunks, locator-bar waypoints (`WaypointBridge` living-entity beacons) + particle ring (`END_ROD` column + `r*0.6` ring + flare) + `TextDisplay` labels.
-3. Player holds any dynamic zone for **30 seconds** (boss bar + capture). On completion: inventory auto-saved to GlitchStash (accumulates), Residual Glitch payout bonus credited, auto-teleport to hub via Multiverse-Core (`mv tp`), retrieval via `/stash`.
+3. Player holds any dynamic zone for **30 seconds** (VelKoth action-bar capture progress; VelKoth's own boss bar is off — GlitchStash `ExtractionHud` shows a per-world bar with distance/direction to the nearest open point, or the next-window countdown). On completion: inventory auto-saved to GlitchStash (accumulates), Residual Glitch payout bonus credited, auto-teleport to hub via Multiverse-Core (`mv tp`), retrieval via `/stash`.
 4. Keys are **universal**: one existing key works at all active points; variant zones auto-follow `extraction-variants.zones`. Fallback arenas exist if a cycle yields <3 valid spots.
 
 **Extraction variants (GlitchStash, deployed):** Fast (15s, Fast Extract Key) and Silent (10s, Rift Key) zones earn a payout bonus (+5% / +10%). Right-click the key inside the zone to consume and arm it (also works on dynamic points).
@@ -147,12 +147,15 @@ colon form `res:veil` is also accepted) for Resonance to apply. Stack HUD:
 boss bar (top of screen, turns purple when elites hunt you; optional vanilla
 XP bar mirror, off by default), plus `%glitchitems_stacks%` /
 `%glitchitems_payout%` / `%glitchitems_payout_multiplier%` /
-`%glitchitems_dmg_taken%` PlaceholderAPI placeholders for the TAB scoreboard.
+`%glitchitems_dmg_taken%` PlaceholderAPI placeholders for the TAB scoreboard
+(`%glitchitems_payout_pct%` / `%glitchitems_dmg_taken_pct%` include the `%`
+sign — use these in TAB, where a literal `%%` breaks placeholder parsing).
 
 **Residual Glitch consumers (source, 2026-08-06 → 08-10, retuned 2026-09-02, docs/ITEM_BALANCE.md):** loot luck applies
 at `/identify` (star-luck per roll + rarity-surge chance) and at loot
 containers (per-roll rarity surge + surge drop); at 5+ stacks a MythicMobs
-elite hunts the player (repeat spawns every 10 min).
+elite hunts the player (repeat spawns every 10 min; spawns on a 16–24 block
+ground ring, never in the first 60s after entering a red world).
 
 **Loot containers (source, 2026-08-10, retuned 2026-09-02, docs/ITEM_BALANCE.md):** Debris Pile (free) / Loot Cache
 (Cache Key) / Vault (Vault Key, +5% legendary rift roll 2026-09-02) / Rift Vault (Rift Key) — rarity-weighted

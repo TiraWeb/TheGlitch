@@ -39,12 +39,12 @@
 
 - [ ] Fresh account picks a class (GUI or `/class select`) → starter kit granted once (leather set, wooden sword, 3 bread, 5 rune fragments via `/nexo give`)
 - [ ] Kit items drop at feet if inventory is full
-- [ ] Reset class and pick again → **no second kit**
+- [ ] Reset class (TNT button, slot 53 → type the chat confirm) and pick again → **no second kit**
 
 ## Residual Glitch consumers (GlitchItems)
 
 - [ ] Stacks accumulate while in `glitch_red` (boss bar HUD updates)
-- [ ] At 5 stacks → "something elite is hunting you" message + a `GlitchSentinel` spawns within 12 blocks
+- [ ] At 5 stacks → "something elite is hunting you" message + a `GlitchSentinel` spawns on the ground 16–24 blocks away (never within 60s of entering the red world — `entry-grace-seconds`)
 - [ ] Elite re-spawns every 10 min while staying at 5+ stacks; stops after extract/death (stacks cleared)
 - [ ] Identify a rift with stacks → observe +1 star rolls and the rarity-surge message (`rarity-upgrade-percent-per-stack` chance)
 - [ ] `/glitchitems glitch` debug tools still work (stacks set/clear)
@@ -131,7 +131,10 @@
 - [ ] `/raid start` begins a raid: BossBar timer appears (default 1800s), party leader assigned
 - [ ] Invite up to 3 members (`max 4`) — invites work, declines/left players removed from party
 - [ ] Loot picked up and kills/deaths during the raid are counted (`/raid status` reflects them)
-- [ ] `/raid status` shows timer, party, loot, deaths
+- [ ] `/raid status` shows timer, party, loot, deaths (global auto-raid: `Zone | Raiders | Party`, no session UUID)
+- [ ] Mid-raid `/warp hub`, `/spawn`, `/redzone` are blocked unless the player has `glitchraid.bypass.exit` (default false; `*` grants it)
+- [ ] `/redzone` picker shows display names + blurbs + raider count + window timer; entry lands on dry ground (Horizons: not beside the lava lake)
+- [ ] Extraction boss bar (GlitchStash `ExtractionHud`) only in red worlds: nearest point `Nm ↗ NE | N open`, `IN ZONE` inside, `next window in mm:ss` between cycles; VelKoth's own boss bar stays off
 - [ ] Dying during the raid increments the death recap (no crash; mercy rules still apply)
 - [ ] Timer expiry ends the raid with a summary message (loot + deaths per member)
 - [ ] `/raid end` by the leader ends early with the same summary

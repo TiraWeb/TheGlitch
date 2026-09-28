@@ -80,7 +80,11 @@ Optional external map sources (not included in this repository):
   world link is needed) — but it has no world picker of its own.
 - **RedZoneGate NPC (live, supported entry point):** right-click opens the
   `/redzone` picker GUI (`RedZoneSelectGUI`, GlitchRaid) listing every configured
-  red world by its display name; picking one dispatches `mv tp <player> <world>`.
+  red world by its display name, blurb (`world-descriptions`), raider count and
+  extraction-window timer; picking one teleports to `RaidManager.findSafeEntry`
+  (dry ground near spawn, no lava within 4 blocks / surface lava within 10,
+  cached per world; `mv tp` only if the world isn't loaded). The picker refuses
+  to open mid-raid (2026-09-28); `RedPortalListener` uses the same safe spot.
   This is the actual live entry mechanism today (2026-09-21) — the NPC's FancyNpcs
   action was changed from a direct `mv tp glitch_red` to opening this GUI.
 
