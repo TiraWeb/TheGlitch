@@ -186,6 +186,23 @@ mc "mv setspawn hub:0,-60,0" >/dev/null
 # 'passthrough deny' on __global__ is the docs-recommended way to make a world
 # read-only for non-members (never 'build deny' — that breaks pistons etc).
 # Ops implicitly bypass protection; use '/rg bypass' to toggle when testing.
+# ---- world borders (2026-09-29) ----
+# Square borders enclosing each imported map's ORIGINAL generated area, so nothing of the
+# maps is ever cut off but vanilla can't generate endless terrain around them (NMinimap's
+# render chain once generated ~160 region files north of every red world). Derived from the
+# chunk bounding box of the pre-NMinimap backup; the playable rectangles (scatter bounds:
+# Eleria 3000x1500, Horizons 3200x1400, glitch_red 2000x2000) sit well inside.
+log "Setting red world borders..."
+border() { # world centerX centerZ diameter
+  mc "execute in minecraft:$1 run worldborder center $2 $3" >/dev/null
+  mc "execute in minecraft:$1 run worldborder set $4" >/dev/null
+  mc "execute in minecraft:$1 run worldborder warning distance 32" >/dev/null
+  mc "execute in minecraft:$1 run worldborder damage buffer 2" >/dev/null
+}
+border glitch_red 208 272 5000
+border glitch_red_eleria 256 560 4000
+border glitch_red_horizons 232 624 4000
+
 log "Applying WorldGuard flags"
 
 flag() { mc "rg flag -w $1 __global__ $2 $3" >/dev/null; }

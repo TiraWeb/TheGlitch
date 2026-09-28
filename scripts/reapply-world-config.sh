@@ -25,6 +25,23 @@ for RW in "${RED_WORLDS[@]}"; do
   mc "mv modify ${RW} set difficulty hard" >/dev/null
 done
 
+# ---- world borders (2026-09-29) ----
+# Square borders enclosing each imported map's ORIGINAL generated area, so nothing of the
+# maps is ever cut off but vanilla can't generate endless terrain around them (NMinimap's
+# render chain once generated ~160 region files north of every red world). Derived from the
+# chunk bounding box of the pre-NMinimap backup; the playable rectangles (scatter bounds:
+# Eleria 3000x1500, Horizons 3200x1400, glitch_red 2000x2000) sit well inside.
+log "Setting red world borders..."
+border() { # world centerX centerZ diameter
+  mc "execute in minecraft:$1 run worldborder center $2 $3" >/dev/null
+  mc "execute in minecraft:$1 run worldborder set $4" >/dev/null
+  mc "execute in minecraft:$1 run worldborder warning distance 32" >/dev/null
+  mc "execute in minecraft:$1 run worldborder damage buffer 2" >/dev/null
+}
+border glitch_red 208 272 5000
+border glitch_red_eleria 256 560 4000
+border glitch_red_horizons 232 624 4000
+
 # ---- gamerules (canonical 26.x snake_case — see scripts/lib/gamerules.sh) ----
 # Source the shared gamerule tables so reapply-world-config.sh can never drift
 # from scripts/setup-worlds.sh (previously used stale camelCase which is rejected as
