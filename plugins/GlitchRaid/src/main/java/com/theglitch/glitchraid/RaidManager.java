@@ -276,9 +276,9 @@ public final class RaidManager {
 
     /**
      * A safe landing spot near the world spawn: solid dry ground, two blocks of air,
-     * and no lava/fire/magma/water within 4 blocks. Horizons' spawn sat in a lava
+     * no lava/fire/magma/water within 4 blocks and no surface lava within 10. Horizons' spawn sat in a lava
      * valley (one step back = lava). Cached per world, re-validated on each use;
-     * returns the plain spawn when nothing within 96 blocks qualifies. Main thread.
+     * returns the plain spawn when nothing within 160 blocks qualifies. Main thread.
      */
     public org.bukkit.Location findSafeEntry(org.bukkit.World world) {
         String key = world.getName().toLowerCase(java.util.Locale.ROOT);
@@ -286,9 +286,9 @@ public final class RaidManager {
         if (cached != null && isSafeColumn(world, cached.getBlockX(), cached.getBlockZ()) != null) return cached.clone();
         org.bukkit.Location spawn = world.getSpawnLocation();
         int sx = spawn.getBlockX(), sz = spawn.getBlockZ();
-        for (int r = 0; r <= 96; r += 3) {
-            for (int dx = -r; dx <= r; dx += 3) {
-                for (int dz = -r; dz <= r; dz += 3) {
+        for (int r = 0; r <= 160; r += 4) {
+            for (int dx = -r; dx <= r; dx += 4) {
+                for (int dz = -r; dz <= r; dz += 4) {
                     if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue; // ring only
                     org.bukkit.Location hit = isSafeColumn(world, sx + dx, sz + dz);
                     if (hit != null) {
@@ -301,7 +301,7 @@ public final class RaidManager {
                 }
             }
         }
-        plugin.getLogger().warning("No safe red entry within 96 blocks of " + world.getName() + " spawn — using raw spawn.");
+        plugin.getLogger().warning("No safe red entry within 160 blocks of " + world.getName() + " spawn — using raw spawn.");
         return spawn;
     }
 
@@ -322,6 +322,16 @@ public final class RaidManager {
                     if (m == org.bukkit.Material.LAVA || m == org.bukkit.Material.FIRE || m == org.bukkit.Material.SOUL_FIRE
                             || m == org.bukkit.Material.MAGMA_BLOCK || (m == org.bukkit.Material.WATER && by >= 0)) return null;
                 }
+            }
+        }
+        // Surface lava anywhere within 10 blocks (a ledge above a lava lake passed the
+        // 4-block box check but one step off it was lava).
+        for (int bx = -10; bx <= 10; bx += 2) {
+            for (int bz = -10; bz <= 10; bz += 2) {
+                int px = x + bx, pz = z + bz;
+                if (!world.isChunkGenerated(px >> 4, pz >> 4)) return null;
+                org.bukkit.Material top = world.getHighestBlockAt(px, pz, org.bukkit.HeightMap.MOTION_BLOCKING).getType();
+                if (top == org.bukkit.Material.LAVA || top == org.bukkit.Material.MAGMA_BLOCK) return null;
             }
         }
         return new org.bukkit.Location(world, x + 0.5, y + 1, z + 0.5);
