@@ -63,6 +63,14 @@
             <artifactId>GlitchCommon</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>su.nezushin</groupId>
+            <artifactId>NMinimap</artifactId>
+            <version>1.0.8</version>
+            <scope>system</scope>
+            <!-- not in git: copy the server's plugins/NMinimap.jar here (see docs/HUD.md) -->
+            <systemPath>${project.basedir}/lib/NMinimap.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>

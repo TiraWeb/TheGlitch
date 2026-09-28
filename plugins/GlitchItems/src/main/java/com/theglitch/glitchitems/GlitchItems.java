@@ -43,6 +43,10 @@ public final class GlitchItems extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new ConsumableListener(gearManager, identifyManager), this);
         gadgetListener = new GadgetListener(this);
         Bukkit.getPluginManager().registerEvents(gadgetListener, this);
+        if (Bukkit.getPluginManager().getPlugin("NMinimap") != null) {
+            // Loot crates on the minimap + radar filter; class touches NMinimap types, so only load when present.
+            Bukkit.getPluginManager().registerEvents(new MinimapBridge(this), this);
+        }
         if (Bukkit.getPluginManager().getPlugin("Nexo") != null) {
             // Furniture-backed containers (Debris/Cache/Rift Vault crate models) —
             // references Nexo's event class directly, so only register when present.

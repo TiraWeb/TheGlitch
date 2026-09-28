@@ -10,6 +10,7 @@ softdepend:
   - GlitchStash
   - WorldGuard
   - WorldEdit
+  - NMinimap
 
 commands:
   identify:

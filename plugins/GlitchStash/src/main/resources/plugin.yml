@@ -12,6 +12,7 @@ softdepend:
   - VaultUnlocked
   - Coins
   - PlaceholderAPI
+  - NMinimap
 
 commands:
   stash:

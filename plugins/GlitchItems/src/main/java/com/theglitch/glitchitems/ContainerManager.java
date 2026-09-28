@@ -398,6 +398,33 @@ public final class ContainerManager {
         return toClear.size();
     }
 
+    /** A container as the minimap shows it. */
+    public record CrateView(Location location, String type, boolean ready) {}
+
+    /**
+     * Containers within {@code radius} blocks (XZ) of {@code center}, with whether
+     * they can be looted right now. Safe off the main thread (snapshot of the
+     * concurrent record map; no world access beyond Bukkit.getWorld).
+     */
+    public List<CrateView> nearby(Location center, double radius) {
+        List<CrateView> out = new ArrayList<>();
+        if (center == null || center.getWorld() == null) return out;
+        String worldName = center.getWorld().getName();
+        double r2 = radius * radius;
+        long now = System.currentTimeMillis();
+        for (ContainerRecord record : byLocation.values()) {
+            if (!worldName.equals(record.world)) continue;
+            double dx = record.x + 0.5 - center.getX();
+            double dz = record.z + 0.5 - center.getZ();
+            if (dx * dx + dz * dz > r2) continue;
+            ContainerType type = types.get(record.type);
+            if (type == null) continue;
+            boolean ready = record.lastOpened + type.regenSeconds() * 1000L <= now;
+            out.add(new CrateView(new Location(center.getWorld(), record.x + 0.5, record.y, record.z + 0.5), record.type, ready));
+        }
+        return out;
+    }
+
     /** Every tracked container location in {@code worldName} (snapshot). */
     public List<Location> trackedLocations(String worldName) {
         List<Location> out = new ArrayList<>();

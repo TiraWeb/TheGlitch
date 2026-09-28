@@ -32,6 +32,7 @@ public final class GlitchStash extends JavaPlugin {
     private final Map<String, DynamicExtractionManager> dynamicExtractionManagers = new ConcurrentHashMap<>();
     private com.theglitch.glitchstash.extract.ExtractionHud extractionHud;
     private Object hudExpansion;
+    private boolean minimapHooked;
 
     public com.theglitch.glitchstash.extract.ExtractionHud getExtractionHud() {
         return extractionHud;
@@ -113,6 +114,11 @@ public final class GlitchStash extends JavaPlugin {
     private void startExtractionCycles() {
         extractionHud = new com.theglitch.glitchstash.extract.ExtractionHud(this, dynamicExtractionManagers, autoExtractSchedulers);
         extractionHud.start();
+        if (!minimapHooked && getServer().getPluginManager().getPlugin("NMinimap") != null) {
+            getServer().getPluginManager().registerEvents(
+                    new com.theglitch.glitchstash.extract.MinimapExtractionMarkers(this, dynamicExtractionManagers), this);
+            minimapHooked = true;
+        }
         if (hudExpansion == null && getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             try {
                 var expansion = new com.theglitch.glitchstash.extract.StashExpansion(this);
