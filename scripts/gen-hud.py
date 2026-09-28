@@ -170,18 +170,35 @@ def textures():
     for k in ("todo", "active", "done"):
         out[f"box_{k}"] = checkbox(k)
     out["dot"] = dot()
+    out["line_bg"] = line_bg()
     return out
 
 
 # ----------------------------------------------------------------- layout
 
-TOP, LEFT = -6, 6          # card origin (GUI px from the top-left corner)
-BAR_X, BAR_Y = LEFT + 27, TOP - 5   # title text, right of the tile
+TOP, LEFT = -6, 8          # card origin (GUI px from the top-left corner)
+BAR_X, BAR_Y = LEFT + 29, TOP - 8   # title text, right of the tile
 LINE_X, ROW = LEFT + 4, 12          # tick-box column and line pitch
-QUEST_RED_TOP = TOP - 54            # contracts sit under the extraction card in the red zone
+QUEST_RED_TOP = TOP - 58            # contracts sit under the extraction card
+BAR_BG_Y, LINE_BG_Y = 6, 2          # nudge the text backgrounds up onto the text
 
-SHOW_RED = "placeholder{ph=%glitchstash_hud_show%;v=true} false hide"
-HIDE_RED = "placeholder{ph=%glitchstash_hud_show%;v=true} true hide"
+# MythicHUD condition lines read "<condition> <required result> <action>": the
+# action fires when the condition does NOT give the required result, so
+# "... true hide" means "show only while true" (its wiki example reads it the
+# other way round — the bundled vanilla-armor asset confirms this reading).
+SHOW_RED = "placeholder{ph=%glitchstash_hud_show%;v=true} true hide"
+
+
+def only_when(placeholder, value):
+    return f"placeholder{{ph={placeholder};v={value}}} true hide"
+
+
+def line_bg():
+    """3-slice translucent strip behind tracker lines (readable on bright terrain)."""
+    im = Image.new("RGBA", (8, 11), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((0, 0, 7, 10), radius=2, fill=(16, 16, 20, 150))
+    return im
 
 
 def tex_layer(path, x, y):
@@ -189,9 +206,13 @@ def tex_layer(path, x, y):
 
 
 def text_layer(text, x, y, bar=False):
-    layer = {"text": text, "font": "default", "outlined": True, "align": "right", "offset": {"x": x, "y": y}}
+    layer = {"text": text, "font": "default", "outlined": False, "align": "right", "offset": {"x": x, "y": y}}
     if bar:
-        layer["background"] = {"texture": "assets/glitch/title_bar.png", "cap": 5, "padding": 5}
+        layer["background"] = {"texture": "assets/glitch/title_bar.png", "cap": 5, "padding": 6,
+                               "offset": {"y": BAR_BG_Y}}
+    else:
+        layer["background"] = {"texture": "assets/glitch/line_bg.png", "cap": 3, "padding": 3,
+                               "offset": {"y": LINE_BG_Y}}
     return layer
 
 
@@ -199,7 +220,7 @@ def hud_assets():
     assets = {}
     for icon in [f"a{i}" for i in range(8)] + ["zone", "closed"]:
         assets[f"glitch-ext-icon-{icon}"] = {
-            "conditions": [f"placeholder{{ph=%glitchstash_hud_icon%;v={icon}}} false hide"],
+            "conditions": [only_when("%glitchstash_hud_icon%", icon)],
             "layers": {"tile": tex_layer(f"icon_{icon}", LEFT, TOP)},
         }
     assets["glitch-ext-body"] = {
@@ -212,7 +233,7 @@ def hud_assets():
             "line2": text_layer("%glitchstash_hud_line2%", LINE_X + 13, TOP - 28 - ROW),
         },
     }
-    for where, top, cond in (("red", QUEST_RED_TOP, SHOW_RED), ("hub", TOP, HIDE_RED)):
+    for where, top, cond in (("red", QUEST_RED_TOP, SHOW_RED),):
         assets[f"glitch-quest-head-{where}"] = {
             "conditions": [cond],
             "layers": {
@@ -224,7 +245,7 @@ def hud_assets():
             y = top - 28 - (n - 1) * ROW
             for state, box in (("todo", "box_todo"), ("done", "box_done")):
                 assets[f"glitch-quest-{where}-{n}-{state}"] = {
-                    "conditions": [cond, f"placeholder{{ph=%glitchquests_hud_{n}_state%;v={state}}} false hide"],
+                    "conditions": [cond, only_when(f"%glitchquests_hud_{n}_state%", state)],
                     "layers": {
                         "box": tex_layer(box, LINE_X, y),
                         "text": text_layer(f"%glitchquests_hud_{n}_text%", LINE_X + 13, y),
