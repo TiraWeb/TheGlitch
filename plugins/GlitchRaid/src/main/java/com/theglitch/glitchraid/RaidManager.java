@@ -49,6 +49,13 @@ public final class RaidManager {
     // (buffer bounce, creative timeout, party pull). RaidListener blocks every other
     // exit while a player is in a raid — otherwise /spawn or /warp was a free extraction.
     private final Set<UUID> exitAllowed = ConcurrentHashMap.newKeySet();
+    /**
+     * Extraction time per player. The extract teleport to hub happens a tick or
+     * more after the raid detaches the player, so without this grace tickGlobal
+     * re-added them (still standing in the red world) and the exit guard then
+     * cancelled the hub teleport for anyone without glitchraid.bypass.exit.
+     */
+    private final Map<UUID, Long> extractedAt = new ConcurrentHashMap<>();
     // Shards actually deposited on each player's last extraction (summary display).
     private final Map<UUID, Integer> paidOnExtract = new ConcurrentHashMap<>();
     // Stored solo-raid end timestamps (solo-new mode) so quit/relog cannot reset the timer
@@ -410,7 +417,16 @@ public final class RaidManager {
     }
 
     public boolean isExitAllowed(UUID uuid) {
-        return exitAllowed.contains(uuid);
+        return exitAllowed.contains(uuid) || isRecentlyExtracted(uuid);
+    }
+
+    public void markExtracted(UUID uuid) {
+        extractedAt.put(uuid, System.currentTimeMillis());
+    }
+
+    public boolean isRecentlyExtracted(UUID uuid) {
+        Long t = extractedAt.get(uuid);
+        return t != null && System.currentTimeMillis() - t < 15000L;
     }
 
     // ---- Solo raid end persistence (solo-new quit/relog timer restore) ----
@@ -1131,6 +1147,7 @@ public final class RaidManager {
                 BossBar gBar = globalBossBars.get(session.getWorldKey());
                 if (gBar == null && !globalBossBars.isEmpty()) gBar = globalBossBars.values().iterator().next();
                 for (UUID mid : new HashSet<>(toRemove)) {
+                    markExtracted(mid);
                     session.getMembers().remove(mid);
                     activeRaids.remove(mid);
                     if (gBar != null) {
@@ -1325,6 +1342,7 @@ public final class RaidManager {
      */
     public void handleExtraction(Player player) {
         if (!isInRaid(player.getUniqueId())) return;
+        markExtracted(player.getUniqueId());
         RaidSession session = activeRaids.get(player.getUniqueId());
         Set<UUID> membersSnapshot;
         // Global mode: extraction is per-player/per-party, NOT the whole 30m window
@@ -1781,6 +1799,8 @@ public final class RaidManager {
                 if (p.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
                 // Avoid adding players who just died recently (prevent death loop)
                 if (isRecentlyDead(p.getUniqueId(), 5000L)) continue;
+                // ...or who just extracted and are waiting for the hub teleport
+                if (isRecentlyExtracted(p.getUniqueId())) continue;
                 session.getMembers().add(p.getUniqueId());
                 activeRaids.put(p.getUniqueId(), session);
                 try { p.showBossBar(bar); } catch (Exception ignored) {}
