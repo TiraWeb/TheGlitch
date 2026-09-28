@@ -3,7 +3,7 @@ version: '${project.version}'
 main: com.theglitch.glitchquests.GlitchQuests
 api-version: '1.21'
 description: Daily/weekly/monthly rewards, login streaks, and rotating daily + weekly quests
-softdepend: [VaultUnlocked, Vault, Nexo, VelKoth, MythicMobs]
+softdepend: [VaultUnlocked, Vault, Nexo, VelKoth, MythicMobs, PlaceholderAPI]
 
 commands:
   quests:

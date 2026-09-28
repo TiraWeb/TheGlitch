@@ -31,6 +31,11 @@ public final class GlitchStash extends JavaPlugin {
     private final Map<String, ExtractionMarkers> extractionMarkersByWorld = new ConcurrentHashMap<>();
     private final Map<String, DynamicExtractionManager> dynamicExtractionManagers = new ConcurrentHashMap<>();
     private com.theglitch.glitchstash.extract.ExtractionHud extractionHud;
+    private Object hudExpansion;
+
+    public com.theglitch.glitchstash.extract.ExtractionHud getExtractionHud() {
+        return extractionHud;
+    }
     private volatile List<String> redWorlds = List.of("glitch_red");
     private FileConfiguration messagesConfig;
     private File messagesFile;
@@ -108,6 +113,15 @@ public final class GlitchStash extends JavaPlugin {
     private void startExtractionCycles() {
         extractionHud = new com.theglitch.glitchstash.extract.ExtractionHud(this, dynamicExtractionManagers, autoExtractSchedulers);
         extractionHud.start();
+        if (hudExpansion == null && getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            try {
+                var expansion = new com.theglitch.glitchstash.extract.StashExpansion(this);
+                expansion.register();
+                hudExpansion = expansion;
+            } catch (Throwable t) {
+                getLogger().warning("PlaceholderAPI expansion failed: " + t.getMessage());
+            }
+        }
         for (String world : redWorlds) {
             String key = world.toLowerCase(java.util.Locale.ROOT);
             try {

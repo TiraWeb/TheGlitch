@@ -43,6 +43,9 @@ public final class GlitchQuests extends JavaPlugin implements TabCompleter, List
         Bukkit.getPluginManager().registerEvents(listener, this);
         Bukkit.getPluginManager().registerEvents(menus, this);
         listener.hookExtraction();
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new QuestExpansion(this, quests).register(); // MythicHUD contract tracker
+        }
 
         for (String cmd : List.of("quests", "rewards", "questadmin")) {
             var c = getCommand(cmd);

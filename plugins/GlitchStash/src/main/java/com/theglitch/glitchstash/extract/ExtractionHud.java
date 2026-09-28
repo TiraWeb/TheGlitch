@@ -16,9 +16,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Per-player extraction boss bar, shown only inside the red world whose cycle it
+ * Per-player extraction guidance, shown only inside the red world whose cycle it
  * describes: nearest open point with distance + a turn arrow relative to where the
  * player is looking, or the countdown to the next window between cycles.
+ * <p>
+ * Java players see it as the MythicHUD top-left card (server/plugins/MythicHUD,
+ * scripts/gen-hud.py), fed by {@link #state(UUID)} through %glitchstash_hud_*%.
+ * The boss bar is kept for Bedrock (Geyser/Floodgate) players, whom MythicHUD
+ * skips, or for everyone when auto-extract.hud.bossbar is "all".
  * <p>
  * Replaces VelKoth's own idle boss bar, which was global (every online player saw
  * every world's arenas, hub included) and labelled with raw arena ids — VelKoth's
@@ -35,6 +40,18 @@ public final class ExtractionHud {
     private final Map<String, DynamicExtractionManager> managers;
     private final Map<String, AutoExtractScheduler> schedulers;
     private final Map<UUID, BossBar> bars = new ConcurrentHashMap<>();
+    private final Map<UUID, HudState> states = new ConcurrentHashMap<>();
+
+    /**
+     * Snapshot for the HUD card. icon: a0..a7 (turn arrow, 0 = straight ahead,
+     * clockwise), zone, closed. Texts are MiniMessage.
+     */
+    public record HudState(String icon, String title, String line1, String line2) {}
+
+    /** Current HUD snapshot for a player, or null outside red worlds. */
+    public HudState state(UUID id) {
+        return states.get(id);
+    }
     private FoliaScheduler.Cancellable task;
 
     public ExtractionHud(GlitchStash plugin, Map<String, DynamicExtractionManager> managers,
@@ -65,6 +82,7 @@ public final class ExtractionHud {
             DynamicExtractionManager manager = managers.get(world);
             if (manager == null) {
                 hide(player);
+                states.remove(player.getUniqueId());
                 continue;
             }
             BossBar bar = bars.computeIfAbsent(player.getUniqueId(),
@@ -77,6 +95,10 @@ public final class ExtractionHud {
                 bar.name(MM.deserialize("<gray>⚡ Extraction closed — next window " + when + "</gray>"));
                 bar.color(BossBar.Color.RED);
                 bar.progress(1f);
+                states.put(player.getUniqueId(), new HudState("closed",
+                        "<#9CA3AF>Extraction Closed",
+                        "<#D1D5DB>Survive until the next window",
+                        "<#9CA3AF>Opens " + (ms < 0 ? "soon" : "in <white>" + mmss(ms / 1000L))));
             } else {
                 ExtractionPoint nearest = null;
                 double best = Double.MAX_VALUE;
@@ -93,7 +115,8 @@ public final class ExtractionHud {
                 // Minecraft yaw: 0 = +Z (south), 90 = -X (west).
                 double targetYaw = Math.toDegrees(Math.atan2(-dx, dz));
                 String compass = COMPASS[Math.floorMod((int) Math.round(targetYaw / 45.0), 8)];
-                String arrow = ARROWS[Math.floorMod((int) Math.round((targetYaw - loc.getYaw()) / 45.0), 8)];
+                int turn = Math.floorMod((int) Math.round((targetYaw - loc.getYaw()) / 45.0), 8);
+                String arrow = ARROWS[turn];
                 long left = Math.max(0L, nearest.openUntilEpochMs() - System.currentTimeMillis()) / 1000L;
                 String status = dist <= nearest.radiusBlocks() + 1
                         ? "<green><bold>IN ZONE</bold> — hold it to extract</green>"
@@ -104,10 +127,26 @@ public final class ExtractionHud {
                 bar.color(BossBar.Color.YELLOW);
                 long total = Math.max(1L, plugin.getConfig().getInt("auto-extract.raid-duration-minutes", 30) * 60L);
                 bar.progress((float) Math.max(0.0, Math.min(1.0, left / (double) total)));
+                boolean inZone = dist <= nearest.radiusBlocks() + 1;
+                states.put(player.getUniqueId(), new HudState(inZone ? "zone" : "a" + turn,
+                        inZone ? "<#4ADE80>Extraction Zone" : "<#F5A742>Extraction Point",
+                        inZone ? "<white>Hold the zone to extract"
+                                : "<white>Reach extraction <#F5A742>" + dist + "m <#9CA3AF>" + compass,
+                        "<#9CA3AF>Closes in <white>" + mmss(left) + " <#6B7280>· <#9CA3AF>" + points.size() + " open"));
             }
-            player.showBossBar(bar);
+            if (showBossBar(player)) player.showBossBar(bar);
+            else player.hideBossBar(bar);
         }
         bars.keySet().removeIf(id -> Bukkit.getPlayer(id) == null);
+        states.keySet().removeIf(id -> Bukkit.getPlayer(id) == null);
+    }
+
+    /** Bedrock (Floodgate) players can't see MythicHUD, so they keep the bar. */
+    private boolean showBossBar(Player player) {
+        String mode = plugin.getConfig().getString("auto-extract.hud.bossbar", "bedrock-only");
+        if ("all".equalsIgnoreCase(mode)) return true;
+        if ("none".equalsIgnoreCase(mode)) return false;
+        return player.getUniqueId().getMostSignificantBits() == 0L; // Floodgate UUIDs: 00000000-0000-0000-...
     }
 
     private void hide(Player player) {

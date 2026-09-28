@@ -1,11 +1,11 @@
 generate-default-files: true
 generate-unicode-files: true
-# 2026-09-22 (round 5): removed the imported Volya HUD Bundle content entirely
-# (main resource bar, party HUD, skill bar) per operator request — the TAB
-# scoreboard is the one HUD element we're keeping. No layouts active, so
-# MythicHUD renders nothing; the plugin stays installed for a future config.
+# 2026-09-22: the imported Volya HUD bundle was removed.
+# 2026-09-28: "glitch-hud" — top-left extraction card + daily contract tracker
+# (scripts/gen-hud.py; data from %glitchstash_hud_*% / %glitchquests_hud_*%).
 layout:
-  default: []
+  default:
+    - glitch-hud
 check-update: 5
 placeholder-update: 5
 decimal-format: '#.##'
