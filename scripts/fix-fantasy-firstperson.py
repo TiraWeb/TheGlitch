@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MODELS = ROOT / "server/plugins/Nexo/pack/assets/skulpt/models/arsenals/fantasy_arsenal"
-TARGET = 28.0  # apparent first-person height in model units (vanilla sword ~11)
+TARGET = 20.0  # apparent first-person height in model units (vanilla sword ~11)
 GRIP_ABOVE_BOTTOM = 6.0
 
 
