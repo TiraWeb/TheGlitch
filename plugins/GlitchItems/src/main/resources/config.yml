@@ -181,7 +181,11 @@ residual-glitch:
 elite-hunt:
   mob: "GlitchSentinel"
   spawn-interval-minutes: 10
-  spawn-radius: 12
+  # Spawns on a ring min-spawn-radius..spawn-radius blocks away, never within
+  # entry-grace-seconds of entering a red world (entry protection is 30s).
+  spawn-radius: 24
+  min-spawn-radius: 16
+  entry-grace-seconds: 60
   announce: true
   message: "<dark_red><bold>An elite hunts you.</bold></dark_red> <gray>Something powerful is closing in.</gray>"
 

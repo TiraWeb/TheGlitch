@@ -264,6 +264,17 @@ public final class DynamicExtractionManager {
         }
     }
 
+    /** Open points of the running cycle (empty between cycles). */
+    public List<ExtractionPoint> getCurrentPoints() {
+        synchronized (cycleLock) {
+            return cycleActive ? currentPoints : List.of();
+        }
+    }
+
+    public String getRedWorld() {
+        return redWorld;
+    }
+
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(value, max));
     }

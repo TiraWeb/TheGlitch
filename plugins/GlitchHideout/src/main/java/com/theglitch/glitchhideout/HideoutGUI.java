@@ -99,6 +99,23 @@ public final class HideoutGUI implements Listener {
         };
     }
 
+    /** "station:level" -> "Requires Intel Center Lv 2", green with a tick once met. */
+    private String requirementLine(Player player, String req) {
+        String[] parts = req.trim().split(":", 2);
+        if (parts.length != 2) return "<red>Requires " + req;
+        String depId = parts[0].trim();
+        HideoutManager.Station dep = manager.getStation(depId);
+        String depName = dep != null ? MM.stripTags(dep.display()) : depId;
+        int needed;
+        try {
+            needed = Integer.parseInt(parts[1].trim());
+        } catch (NumberFormatException e) {
+            return "<red>Requires " + depName + " Lv " + parts[1].trim();
+        }
+        boolean met = manager.getLevel(player.getUniqueId(), depId) >= needed;
+        return (met ? "<green>✔ " : "<red>✘ ") + "Requires " + depName + " Lv " + needed;
+    }
+
     private ItemStack stationCard(Player player, HideoutManager.Station station) {
         int level = manager.getLevel(player.getUniqueId(), station.id());
         Material material = resolveIcon(station.icon());
@@ -115,7 +132,7 @@ public final class HideoutGUI implements Listener {
             lore.add(MM.deserialize("<!italic><gray>Next: <yellow>" + station.costs()[level] + " shards"));
             String req = station.requires().get(level + 1);
             if (req != null && !req.isEmpty()) {
-                lore.add(MM.deserialize("<!italic><red>Requires " + req.replace(":", " Lv ")));
+                lore.add(MM.deserialize("<!italic>" + requirementLine(player, req)));
             }
         } else {
             lore.add(MM.deserialize("<!italic><green>Fully upgraded"));

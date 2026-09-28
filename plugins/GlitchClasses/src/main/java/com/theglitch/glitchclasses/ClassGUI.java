@@ -112,12 +112,9 @@ public class ClassGUI implements Listener {
         inv.setItem(4, infoItem(data));
         inv.setItem(40, hintItem());
 
+        inv.setItem(49, closeItem());
         if (!data.className().equals("none")) {
-            inv.setItem(47, resetItem());
-            inv.setItem(49, closeItem());
-        } else {
-            inv.setItem(47, closeItem());
-            inv.setItem(49, closeItem());
+            inv.setItem(53, resetItem());
         }
 
         openSessions.put(player.getUniqueId(), "main54");
@@ -131,8 +128,9 @@ public class ClassGUI implements Listener {
     private static ItemStack buildHint() {
         ItemStack item = new ItemStack(Material.KNOWLEDGE_BOOK);
         ItemMeta meta = item.getItemMeta();
-        meta.customName(MM.deserialize("<gray><italic>Choose wisely — you can reset for shards later.</italic></gray>"));
+        meta.customName(MM.deserialize("<!italic><gold><bold>How classes work</bold></gold>"));
         meta.lore(List.of(
+                MM.deserialize("<gray><italic>Choose wisely — you can reset for shards later.</italic></gray>"),
                 MM.deserialize("<gray>Click a class above to view its abilities.</gray>"),
                 MM.deserialize("<dark_gray>First pick grants the starter kit.</dark_gray>")));
         item.setItemMeta(meta);
@@ -218,7 +216,9 @@ public class ClassGUI implements Listener {
                     .append(Component.text(data.level() + "/" + classManager.getMaxLevel(),
                             NamedTextColor.GOLD)));
             lore.add(Component.text("XP: ", NamedTextColor.GRAY)
-                    .append(Component.text(data.xp() + "/" + classManager.getXpForLevel(data.level() + 1),
+                    .append(data.level() >= classManager.getMaxLevel()
+                            ? Component.text("MAX", NamedTextColor.GOLD)
+                            : Component.text(data.xp() + "/" + classManager.getXpForLevel(data.level() + 1),
                             NamedTextColor.YELLOW)));
         } else {
             lore.add(Component.text("No class selected.", NamedTextColor.RED));
@@ -230,7 +230,8 @@ public class ClassGUI implements Listener {
     }
 
     private ItemStack resetItem() {
-        ItemStack item = new ItemStack(Material.BARRIER);
+        // TNT, not a barrier — it used to sit beside Close with the identical icon.
+        ItemStack item = new ItemStack(Material.TNT);
         ItemMeta meta = item.getItemMeta();
         meta.customName(Component.text("RESET CLASS", NamedTextColor.RED, TextDecoration.BOLD));
         meta.lore(List.of(
@@ -238,7 +239,7 @@ public class ClassGUI implements Listener {
                 Component.text("Cost: " + classManager.getResetCost() + " shards", NamedTextColor.GRAY),
                 Component.text("Resets your class and level to none.", NamedTextColor.RED),
                 Component.empty(),
-                Component.text("Click to reset.", NamedTextColor.YELLOW)));
+                Component.text("Click to reset (asks to confirm).", NamedTextColor.YELLOW)));
         item.setItemMeta(meta);
         return item;
     }
@@ -256,7 +257,7 @@ public class ClassGUI implements Listener {
         // Ability info — row 2, slots 10-14
         ConfigurationSection abilities = plugin.getConfig().getConfigurationSection("abilities." + className);
         if (abilities != null) {
-            int[] abilitySlots = {10, 11, 12, 13, 14};
+            int[] abilitySlots = {11, 12, 13, 14, 15};
             for (int i = 0; i < ABILITY_KEYS.length; i++) {
                 ConfigurationSection ability = abilities.getConfigurationSection(ABILITY_KEYS[i]);
                 if (ability == null) continue;
@@ -264,19 +265,19 @@ public class ClassGUI implements Listener {
             }
         }
 
-        // Upgrade path — row 3, slots 19-28
+        // Upgrade path — two centred rows of five: levels 1-5 at 20-24, 6-10 at 29-33
         List<String> upgrades = plugin.getConfig().getStringList("upgrades." + className);
         for (int level = 1; level <= 10; level++) {
-            int slot = 18 + level;
+            int slot = level <= 5 ? 19 + level : 23 + level;
             String upgradeText = level - 1 < upgrades.size() ? upgrades.get(level - 1) : "";
             inv.setItem(slot, upgradeItem(level, upgradeText, selected, data));
         }
 
-        // Controls — row 4: back (30), select (31), upgrade (32)
-        inv.setItem(30, backItem());
-        inv.setItem(31, selectItem(className, selected, data));
+        // Controls — bottom row: back (39), select (40), upgrade (41)
+        inv.setItem(39, backItem());
+        inv.setItem(40, selectItem(className, selected, data));
         if (selected) {
-            inv.setItem(32, buyUpgradeItem(className, data));
+            inv.setItem(41, buyUpgradeItem(className, data));
         }
 
         openSessions.put(player.getUniqueId(), "class:" + className);
@@ -347,7 +348,7 @@ public class ClassGUI implements Listener {
             lore.add(Component.text("UNLOCKED", NamedTextColor.GREEN));
         } else if (isNext) {
             lore.add(Component.text("NEXT UPGRADE", NamedTextColor.GOLD));
-            lore.add(Component.text("Buy it with the XP bottle to the right.", NamedTextColor.GRAY));
+            lore.add(Component.text("Buy it with the XP bottle below.", NamedTextColor.GRAY));
         } else {
             lore.add(Component.text("LOCKED", NamedTextColor.DARK_GRAY));
         }
@@ -400,7 +401,7 @@ public class ClassGUI implements Listener {
             meta.customName(Component.text("MAX LEVEL", NamedTextColor.GOLD, TextDecoration.BOLD));
             meta.lore(List.of(
                     Component.empty(),
-                    Component.text("You have mastered " + className + ".", NamedTextColor.GRAY)));
+                    Component.text("You have mastered " + capitalizeFirst(className) + ".", NamedTextColor.GRAY)));
             item.setItemMeta(meta);
             return item;
         }
@@ -442,11 +443,11 @@ public class ClassGUI implements Listener {
         ClassData data = classManager.getClassData(player.getUniqueId());
 
         if (session.equals("main54")) {
-            if (slot == 49 || (slot == 47 && data.className().equals("none"))) {
+            if (slot == 49) {
                 player.closeInventory();
                 return;
             }
-            if (slot == 47) {
+            if (slot == 53 && !data.className().equals("none")) {
                 handleClassReset(player);
                 return;
             }
@@ -463,16 +464,16 @@ public class ClassGUI implements Listener {
 
         if (session.startsWith("class:")) {
             String className = session.substring("class:".length());
-            if (slot == 30) {
+            if (slot == 39) {
                 switchingGui.add(player.getUniqueId());
                 openMainMenu(player);
                 return;
             }
-            if (slot == 31 && !className.equals(data.className())) {
+            if (slot == 40 && !className.equals(data.className())) {
                 handleClassSelect(player, className);
                 return;
             }
-            if (slot == 32 && className.equals(data.className())
+            if (slot == 41 && className.equals(data.className())
                     && data.level() < classManager.getMaxLevel()) {
                 handleUpgrade(player, data);
             }
@@ -507,10 +508,13 @@ public class ClassGUI implements Listener {
     }
 
     private void handleClassReset(Player player) {
-        if (!applyResetCore(player)) return;
-
         openSessions.remove(player.getUniqueId());
         player.closeInventory();
+        ClassData data = classManager.getClassData(player.getUniqueId());
+        com.theglitch.common.ChatConfirm.ask(player, MM.deserialize(
+                "<red><bold>Reset your class?</bold></red> <gray>You lose <white>" + capitalizeFirst(data.className())
+                        + " Lv " + data.level() + "</white> and pay <white>" + classManager.getResetCost() + " shards</white>.</gray>"),
+                () -> applyResetCore(player));
     }
 
     private boolean applyResetCore(Player player) {

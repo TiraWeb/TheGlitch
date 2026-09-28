@@ -48,6 +48,12 @@ public final class GlitchExpansion extends PlaceholderExpansion {
                 return String.format("%.1f", glitch.getPayoutMultiplier(player));
             case "dmg_taken":
                 return String.valueOf(glitch.getStacks(player) * glitch.getDamageTakenPerStack());
+            // "%"-suffixed variants: a literal "%%" after a placeholder in a TAB line
+            // desyncs TAB's %...% pairing and leaves the next placeholder unparsed.
+            case "payout_pct":
+                return (int) Math.round((glitch.getPayoutMultiplier(player) - 1.0) * 100) + "%";
+            case "dmg_taken_pct":
+                return (glitch.getStacks(player) * glitch.getDamageTakenPerStack()) + "%";
             default:
                 return null;
         }

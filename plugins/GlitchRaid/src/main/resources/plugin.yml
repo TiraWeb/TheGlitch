@@ -41,3 +41,6 @@ permissions:
   glitchraid.admin:
     description: Admin raid commands
     default: op
+  glitchraid.bypass.exit:
+    description: Leave a red world mid-raid without extracting / use ender chests there. Not granted to ops by default — admins leave with /raidadmin end <player>.
+    default: false

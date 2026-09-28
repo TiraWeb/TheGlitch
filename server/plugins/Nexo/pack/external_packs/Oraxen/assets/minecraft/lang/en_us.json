@@ -2,5 +2,6 @@
   "menu.disconnect": "<gray>See you soon!",
   "menu.returnToGame": "Back to the game",
   "menu.game": "",
-  "resourcePack.server.name": "The Glitch"
+  "resourcePack.server.name": "The Glitch",
+  "container.inventory": ""
 }

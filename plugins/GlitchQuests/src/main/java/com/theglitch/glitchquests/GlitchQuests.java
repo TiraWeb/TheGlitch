@@ -65,8 +65,11 @@ public final class GlitchQuests extends JavaPlugin implements TabCompleter, List
         String msg = event.getMessage();
         int end = msg.indexOf(' ');
         String label = (end < 0 ? msg.substring(1) : msg.substring(1, end)).toLowerCase(Locale.ROOT);
-        if (REWARD_LABELS.contains(label)) {
-            event.setMessage("/glitchquests:rewards" + (end < 0 ? "" : msg.substring(end)));
+        if (REWARD_LABELS.contains(label) || label.equals("glitchquests:rewards")) {
+            // Rewriting the message to /glitchquests:rewards still reached MythicDungeons'
+            // vanilla-chest rewards menu live, so open ours directly instead.
+            event.setCancelled(true);
+            menus.openRewards(event.getPlayer());
         }
     }
 

@@ -18,7 +18,9 @@ capture-defaults:
   contest-enabled: true
 
 display:
-  boss-bar-enabled: true
+  # Off: VelKoth shows every arena's idle bar to every online player (hub included, raw
+  # arena ids). GlitchStash's per-world ExtractionHud boss bar replaces it.
+  boss-bar-enabled: false
   action-bar-enabled: true
   titles-enabled: true
   sounds-enabled: true

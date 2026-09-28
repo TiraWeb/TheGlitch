@@ -37,6 +37,11 @@ raid:
     glitch_red: "The Glitch"
     glitch_red_eleria: "Eleria"
     glitch_red_horizons: "Horizons"
+  # One-line blurb per world in the picker (MiniMessage). Missing = generic line.
+  world-descriptions:
+    glitch_red: "<gray>Dense pine forest — close-quarters fights.</gray>"
+    glitch_red_eleria: "<gray>Snowy canyons and mesa ridges — long sightlines.</gray>"
+    glitch_red_horizons: "<gray>Crimson badlands riddled with lava — watch your step.</gray>"
 
 # Hub-to-Red walk-in portal (replaces the old red NPC).
 # Mark corners in-game with /redportal pos1|pos2, then /redportal set fills

@@ -44,7 +44,12 @@ public final class ResidualGlitchManager {
     private volatile boolean showBossBar = true;
     private volatile boolean showXpBar = false;
     private volatile String eliteMob = "GlitchSentinel";
-    private volatile int eliteSpawnRadius = 12;
+    private volatile int eliteSpawnRadius = 24;
+    private volatile int eliteMinRadius = 16;
+    private volatile long eliteEntryGraceMs = 60_000L;
+    // Last seen world + when the player entered it — the elite never spawns on arrival.
+    private final Map<UUID, String> lastWorld = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<UUID, Long> enteredAt = new java.util.concurrent.ConcurrentHashMap<>();
     private volatile boolean eliteAnnounce = true;
     private volatile Component eliteMessageComponent = MM.deserialize("<dark_red><bold>An elite hunts you.</bold></dark_red> <gray>Something powerful is closing in.</gray>");
     private volatile int rarityUpgradePercentPerStack = 2;
@@ -71,7 +76,9 @@ public final class ResidualGlitchManager {
         showXpBar = plugin.getConfig().getBoolean("residual-glitch.show-xp-bar", false);
         eliteMob = plugin.getConfig().getString("elite-hunt.mob", "GlitchSentinel");
         eliteSpawnIntervalMs = Math.max(1, plugin.getConfig().getInt("elite-hunt.spawn-interval-minutes", 10)) * 60_000L;
-        eliteSpawnRadius = plugin.getConfig().getInt("elite-hunt.spawn-radius", 12);
+        eliteSpawnRadius = Math.max(4, plugin.getConfig().getInt("elite-hunt.spawn-radius", 24));
+        eliteMinRadius = Math.max(0, Math.min(eliteSpawnRadius, plugin.getConfig().getInt("elite-hunt.min-spawn-radius", 16)));
+        eliteEntryGraceMs = Math.max(0, plugin.getConfig().getInt("elite-hunt.entry-grace-seconds", 60)) * 1000L;
         eliteAnnounce = plugin.getConfig().getBoolean("elite-hunt.announce", true);
         String msg = plugin.getConfig().getString("elite-hunt.message",
                 "<dark_red><bold>An elite hunts you.</bold></dark_red> <gray>Something powerful is closing in.</gray>");
@@ -96,8 +103,14 @@ public final class ResidualGlitchManager {
 
     private void tick() {
         bars.keySet().removeIf(id -> plugin.getServer().getPlayer(id) == null);
+        lastWorld.keySet().removeIf(id -> plugin.getServer().getPlayer(id) == null);
+        enteredAt.keySet().removeIf(id -> plugin.getServer().getPlayer(id) == null);
         for (Player player : plugin.getServer().getOnlinePlayers()) {
-            if (!isEnabledWorld(player.getWorld().getName())) {
+            String worldName = player.getWorld().getName();
+            if (!worldName.equals(lastWorld.put(player.getUniqueId(), worldName))) {
+                enteredAt.put(player.getUniqueId(), System.currentTimeMillis());
+            }
+            if (!isEnabledWorld(worldName)) {
                 hide(player);
                 continue;
             }
@@ -256,6 +269,9 @@ public final class ResidualGlitchManager {
 
     private void maybeSpawnElite(Player player) {
         if (getStacks(player) < eliteHuntStacks) return;
+        // Entry grace: covers the 30s entry protection plus time to get your bearings.
+        Long entered = enteredAt.get(player.getUniqueId());
+        if (entered != null && System.currentTimeMillis() - entered < eliteEntryGraceMs) return;
 
         long last = player.getPersistentDataContainer()
                 .getOrDefault(eliteKey, PersistentDataType.LONG, 0L);
@@ -270,11 +286,17 @@ public final class ResidualGlitchManager {
         String mob = eliteMob;
         int radius = eliteSpawnRadius;
         Location base = player.getLocation();
-        int x = base.getBlockX() + ThreadLocalRandom.current().nextInt(-radius, radius + 1);
-        int z = base.getBlockZ() + ThreadLocalRandom.current().nextInt(-radius, radius + 1);
+        // Ring between min-spawn-radius and spawn-radius so it hunts you instead of
+        // appearing in your face; Y snapped to the ground (canopy ignored).
+        double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
+        double dist = eliteMinRadius + ThreadLocalRandom.current().nextDouble() * Math.max(0, radius - eliteMinRadius);
+        int x = base.getBlockX() + (int) Math.round(Math.cos(angle) * dist);
+        int z = base.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
+        int y = base.getWorld().getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING_NO_LEAVES) + 1;
+        if (Math.abs(y - base.getBlockY()) > 24) y = base.getBlockY();
 
         String cmd = "mm spawn " + mob + " " + base.getWorld().getName()
-                + " " + x + " " + base.getBlockY() + " " + z;
+                + " " + x + " " + y + " " + z;
         boolean dispatched = plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), cmd);
         if (!dispatched) {
             plugin.getLogger().warning("Elite hunt: could not dispatch '" + cmd + "' — MythicMobs loaded?");

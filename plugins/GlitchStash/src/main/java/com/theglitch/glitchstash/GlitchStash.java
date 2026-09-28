@@ -30,6 +30,7 @@ public final class GlitchStash extends JavaPlugin {
     private final Map<String, AutoExtractScheduler> autoExtractSchedulers = new ConcurrentHashMap<>();
     private final Map<String, ExtractionMarkers> extractionMarkersByWorld = new ConcurrentHashMap<>();
     private final Map<String, DynamicExtractionManager> dynamicExtractionManagers = new ConcurrentHashMap<>();
+    private com.theglitch.glitchstash.extract.ExtractionHud extractionHud;
     private volatile List<String> redWorlds = List.of("glitch_red");
     private FileConfiguration messagesConfig;
     private File messagesFile;
@@ -105,6 +106,8 @@ public final class GlitchStash extends JavaPlugin {
 
     /** Constructs and starts one (ExtractionMarkers, DynamicExtractionManager, AutoExtractScheduler) triple per red world. */
     private void startExtractionCycles() {
+        extractionHud = new com.theglitch.glitchstash.extract.ExtractionHud(this, dynamicExtractionManagers, autoExtractSchedulers);
+        extractionHud.start();
         for (String world : redWorlds) {
             String key = world.toLowerCase(java.util.Locale.ROOT);
             try {
@@ -123,6 +126,10 @@ public final class GlitchStash extends JavaPlugin {
 
     /** Stops and clears every world's extraction-cycle instances. */
     private void stopExtractionCycles() {
+        if (extractionHud != null) {
+            try { extractionHud.stop(); } catch (Exception ignored) {}
+            extractionHud = null;
+        }
         for (AutoExtractScheduler scheduler : autoExtractSchedulers.values()) {
             try { scheduler.shutdown(); } catch (Exception e) { getLogger().warning("Error shutting down AutoExtractScheduler: " + e.getMessage()); }
         }

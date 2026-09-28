@@ -91,6 +91,17 @@ public final class RaidCommand implements CommandExecutor {
                         .replace("<loot>", String.valueOf(session.getLootValue(player.getUniqueId())))
                         .replace("<deaths>", String.valueOf(session.getDeaths(player.getUniqueId())));
                 player.sendMessage(MM.deserialize(out));
+                if (manager.isSessionGlobal(session)) {
+                    // The shared per-world session's "leader" is a synthetic id — show the
+                    // zone and the player's own party instead of leaking a UUID fragment.
+                    String zone = manager.getWorldDisplayName(session.getWorldKey());
+                    Party party = manager.getPartyManager().getParty(player.getUniqueId());
+                    String partyLine = party == null ? "<white>Solo</white>"
+                            : "<white>" + party.getSize() + "/" + manager.getPartyMaxSize() + "</white> <gray>| Leader: <white>" + getLeaderNameById(party.getLeader()) + "</white>";
+                    player.sendMessage(MM.deserialize("<gray>Zone: <white>" + zone + "</white> <gray>| Raiders: <white>" + session.getMembers().size()
+                            + "</white> <gray>| Party: " + partyLine));
+                    return true;
+                }
                 player.sendMessage(MM.deserialize("<gray>Party size: <white>" + session.getMembers().size() + "/" + manager.getPartyMaxSize() + "</white> <gray>| Leader: <white>" + getLeaderName(session) + "</white>"));
                 if (session.getMembers().size() > 1) {
                     for (java.util.UUID mid : session.getMembers()) {

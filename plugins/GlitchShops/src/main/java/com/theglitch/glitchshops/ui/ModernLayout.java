@@ -19,6 +19,34 @@ public final class ModernLayout {
     private ModernLayout() {
     }
 
+    /** Category tab slots on row 1, symmetric around the centre column (max 6). */
+    public static int[] tabSlots(int count) {
+        return switch (Math.max(0, Math.min(count, 6))) {
+            case 0 -> new int[0];
+            case 1 -> new int[]{13};
+            case 2 -> new int[]{12, 14};
+            case 3 -> new int[]{12, 13, 14};
+            case 4 -> new int[]{11, 12, 14, 15};
+            case 5 -> new int[]{11, 12, 13, 14, 15};
+            default -> new int[]{10, 11, 12, 14, 15, 16};
+        };
+    }
+
+    /** Fills {@link #STOCK_SLOTS} row by row (7 wide), centring the last partial row. */
+    public static void placeCentered(Inventory inv, java.util.List<ItemStack> items) {
+        int n = Math.min(items.size(), STOCK_SLOTS.length);
+        int fullRows = n / 7;
+        for (int i = 0; i < n; i++) {
+            int row = i / 7;
+            int col = i % 7;
+            if (row == fullRows) {
+                int rem = n - fullRows * 7;
+                col += (7 - rem) / 2;
+            }
+            inv.setItem(STOCK_SLOTS[row * 7 + col], items.get(i));
+        }
+    }
+
     public static void paintBands(Inventory inv, int size) {
         int cells = Math.min(size, inv.getSize());
         int rows = cells / 9;

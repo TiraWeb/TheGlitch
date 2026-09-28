@@ -348,7 +348,7 @@ public final class RaidListener implements Listener {
         if (!manager.isRedWorld(from) || to.getWorld().getName().equalsIgnoreCase(from)) return;
         java.util.UUID id = player.getUniqueId();
         if (!manager.isInRaid(id) || manager.isExitAllowed(id) || manager.isTimeoutVictim(id)) return;
-        if (player.hasPermission("glitchraid.admin")) return;
+        if (player.hasPermission("glitchraid.bypass.exit")) return;
         event.setCancelled(true);
         player.sendMessage(MM.deserialize("<red>You can't leave the Red Zone mid-raid — <gray>reach an extraction point to get out with your loot.</gray></red>"));
     }
@@ -358,7 +358,7 @@ public final class RaidListener implements Listener {
     public void onEnderChestInRed(org.bukkit.event.inventory.InventoryOpenEvent event) {
         if (event.getInventory().getType() != org.bukkit.event.inventory.InventoryType.ENDER_CHEST) return;
         if (!(event.getPlayer() instanceof Player player)) return;
-        if (!manager.isRedWorld(player.getWorld().getName()) || player.hasPermission("glitchraid.admin")) return;
+        if (!manager.isRedWorld(player.getWorld().getName()) || player.hasPermission("glitchraid.bypass.exit")) return;
         event.setCancelled(true);
         player.sendMessage(MM.deserialize("<red>Ender chests don't work in the Red Zone — extract to keep your loot.</red>"));
     }

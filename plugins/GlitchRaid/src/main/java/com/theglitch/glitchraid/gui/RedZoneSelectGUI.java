@@ -51,6 +51,11 @@ public class RedZoneSelectGUI implements Listener {
     }
 
     public void open(Player player) {
+        // Picking a zone from inside a raid would hop worlds and dodge a fight.
+        if (manager.isRedWorld(player.getWorld().getName()) && manager.isInRaid(player.getUniqueId())) {
+            player.sendMessage(MM.deserialize("<red>You're already in the Red Zone — <gray>extract first to pick another zone.</gray></red>"));
+            return;
+        }
         Holder holder = new Holder();
         Inventory gui = Bukkit.createInventory(holder, 27, com.theglitch.common.MenuTitles.title(player,
                 com.theglitch.common.MenuTitles.RED_ZONE, "<red>Select Red Zone</red>"));
@@ -61,8 +66,18 @@ public class RedZoneSelectGUI implements Listener {
             String world = worlds.get(i);
             String display = manager.getWorldDisplayName(world);
             Material mat = OPTION_MATERIALS[i % OPTION_MATERIALS.length];
+            String desc = manager.getWorldDescription(world);
+            org.bukkit.World w = Bukkit.getWorld(world);
+            int raiders = w == null ? 0 : w.getPlayers().size();
+            com.theglitch.glitchraid.RaidSession global = manager.findActiveGlobalSession(world);
+            String timer = global != null
+                    ? "<gray>Extraction window: <white>" + manager.formatTime(global.getRemainingSeconds()) + "</white> left</gray>"
+                    : "<gray>Extraction window: <white>starts when you enter</white></gray>";
             gui.setItem(OPTION_SLOTS[i], createItem(mat, "<red><bold>" + display + "</bold></red>",
-                    "<gray>Full-loot PvPvE extraction.</gray>",
+                    desc != null ? desc : "<gray>Full-loot PvPvE extraction.</gray>",
+                    " ",
+                    "<gray>Raiders inside: <white>" + raiders + "</white></gray>",
+                    timer,
                     " ",
                     "<yellow>Click to enter</yellow>"));
         }

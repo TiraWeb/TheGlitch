@@ -75,6 +75,7 @@ public final class RaidManager {
     private volatile String hubWorld = "hub";
     private volatile List<String> autoStartWorlds = List.of("glitch_red");
     private volatile Map<String, String> worldDisplayNames = Map.of();
+    private volatile Map<String, String> worldDescriptions = Map.of();
     private volatile String joinMode = "global-remaining";
 
     // Cached message templates (reloaded in cacheConfig) — avoids getConfig on hot tick paths
@@ -152,15 +153,8 @@ public final class RaidManager {
             if (normalizedAuto.isEmpty()) normalizedAuto.add("glitch_red");
             autoStartWorlds = List.copyOf(normalizedAuto);
 
-            Map<String, String> displayNames = new java.util.HashMap<>();
-            org.bukkit.configuration.ConfigurationSection namesSection = plugin.getConfig().getConfigurationSection("raid.world-display-names");
-            if (namesSection != null) {
-                for (String key : namesSection.getKeys(false)) {
-                    String val = namesSection.getString(key);
-                    if (val != null && !val.isBlank()) displayNames.put(key.toLowerCase(java.util.Locale.ROOT), val);
-                }
-            }
-            worldDisplayNames = Map.copyOf(displayNames);
+            worldDisplayNames = readWorldMap("raid.world-display-names");
+            worldDescriptions = readWorldMap("raid.world-descriptions");
 
             String jm = plugin.getConfig().getString("raid.join-mode", "global-remaining");
             if (jm != null && !jm.isBlank()) {
@@ -265,7 +259,43 @@ public final class RaidManager {
     public String getWorldDisplayName(String world) {
         if (world == null) return "";
         String display = worldDisplayNames.get(world.toLowerCase(java.util.Locale.ROOT));
-        return display != null ? display : world;
+        if (display != null) return display;
+        // Never show a raw world id: glitch_red_horizons -> "Horizons", glitch_red -> "The Glitch".
+        String base = world.replaceFirst("(?i)^glitch_red_?", "");
+        if (base.isEmpty()) return "The Glitch";
+        StringBuilder sb = new StringBuilder();
+        for (String part : base.split("_")) {
+            if (part.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return sb.toString();
+    }
+
+    /** Short per-world blurb for the Red Zone picker, or null when none is configured. */
+    public String getWorldDescription(String world) {
+        if (world == null) return null;
+        return worldDescriptions.get(world.toLowerCase(java.util.Locale.ROOT));
+    }
+
+    /**
+     * Reads a world->string map. Bukkit's getConfigurationSection() returns an EMPTY
+     * section (not the jar default) when a seeded-once live config lacks the key, so the
+     * jar defaults are merged in explicitly — live entries win.
+     */
+    private Map<String, String> readWorldMap(String path) {
+        Map<String, String> out = new java.util.HashMap<>();
+        org.bukkit.configuration.Configuration defaults = plugin.getConfig().getDefaults();
+        for (org.bukkit.configuration.ConfigurationSection section : new org.bukkit.configuration.ConfigurationSection[]{
+                defaults == null ? null : defaults.getConfigurationSection(path),
+                plugin.getConfig().isConfigurationSection(path) ? plugin.getConfig().getConfigurationSection(path) : null}) {
+            if (section == null) continue;
+            for (String key : section.getKeys(false)) {
+                String val = section.getString(key);
+                if (val != null && !val.isBlank()) out.put(key.toLowerCase(java.util.Locale.ROOT), val);
+            }
+        }
+        return Map.copyOf(out);
     }
 
     public String getJoinMode() {

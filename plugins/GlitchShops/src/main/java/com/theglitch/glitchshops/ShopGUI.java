@@ -127,10 +127,10 @@ public final class ShopGUI implements Listener {
         inv.setItem(8, closeButton());
 
         // Centered category tabs (row 1, slots 11-16 — clamped so extra tabs can't overwrite borders/stock)
-        int maxTabs = Math.min(cachedTabOrder.size(), 6);
-        for (int i = 0; i < maxTabs; i++) {
+        int[] tabSlots = ModernLayout.tabSlots(cachedTabOrder.size());
+        for (int i = 0; i < tabSlots.length; i++) {
             String tab = cachedTabOrder.get(i);
-            inv.setItem(11 + i, categoryTab(tab, tab.equals(category)));
+            inv.setItem(tabSlots[i], categoryTab(tab, tab.equals(category)));
         }
 
         int effectivePage = 0;
@@ -187,6 +187,8 @@ public final class ShopGUI implements Listener {
     private int fillStock(Inventory inv, Player player, String category, int page) {
         final int[] STOCK_SLOTS = ModernLayout.STOCK_SLOTS;
         int idx = 0;
+        // Collected first, then laid out with the last partial row centred.
+        List<ItemStack> placed = new java.util.ArrayList<>();
         if (category.equals("gear")) {
             for (int i = 0; i < shopManager.getGearStock().size() && idx < STOCK_SLOTS.length; i++) {
                 ShopManager.GearStockEntry entry = shopManager.getGearStock().get(i);
@@ -204,7 +206,7 @@ public final class ShopGUI implements Listener {
                     m.getPersistentDataContainer().set(GEAR_SLOT_KEY, PersistentDataType.STRING, entry.id());
                     m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "buygear");
                 });
-                inv.setItem(STOCK_SLOTS[idx++], display);
+                placed.add(display); idx++;
             }
             // Fixed armour sets (shops.yml "gear" stock) after the rotating rolls.
             ShopManager.Shop fixed = shopManager.getShop("gear");
@@ -213,9 +215,10 @@ public final class ShopGUI implements Listener {
                     if (idx >= STOCK_SLOTS.length) break;
                     if (e.getValue().buy() <= 0) continue;
                     ItemStack item = stockDisplay(category, e.getKey(), e.getValue().buy());
-                    if (item != null) inv.setItem(STOCK_SLOTS[idx++], item);
+                    if (item != null) { placed.add(item); idx++; }
                 }
             }
+            ModernLayout.placeCentered(inv, placed);
             if (idx == 0) {
                 ModernLayout.setStateIcon(inv, guiIcon("gui_close", Material.BARRIER,
                         "<red>Out of stock</red>",
@@ -241,8 +244,9 @@ public final class ShopGUI implements Listener {
         for (int i = start; i < end; i++) {
             Map.Entry<String, ShopManager.StockEntry> entry = entries.get(i);
             ItemStack item = stockDisplay(category, entry.getKey(), entry.getValue().buy());
-            if (item != null) inv.setItem(STOCK_SLOTS[idx++], item);
+            if (item != null) { placed.add(item); idx++; }
         }
+        ModernLayout.placeCentered(inv, placed);
 
         if (totalPages > 1) {
             boolean hasPrev = clampedPage > 0;
@@ -278,13 +282,13 @@ public final class ShopGUI implements Listener {
         }
         ItemMeta meta = item.getItemMeta();
         if (name != null && !name.equals(" ")) {
-            meta.customName(MM.deserialize(name));
+            meta.customName(MM.deserialize("<!italic>" + name));
         }
         if (lore != null && lore.length > 0 && !lore[0].equals(" ")) {
             List<Component> lines = new java.util.ArrayList<>();
             for (String line : lore) {
                 if (line != null && !line.equals(" ")) {
-                    lines.add(MM.deserialize(line));
+                    lines.add(MM.deserialize("<!italic>" + line));
                 }
             }
             meta.lore(lines);
@@ -297,7 +301,7 @@ public final class ShopGUI implements Listener {
     private ItemStack plainIcon(Material material, String name, String... lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        if (name != null) meta.customName(MM.deserialize(name));
+        if (name != null) meta.customName(MM.deserialize("<!italic>" + name));
         if (lore != null && lore.length > 0) {
             List<Component> lines = new java.util.ArrayList<>();
             for (String line : lore) {
@@ -361,6 +365,9 @@ public final class ShopGUI implements Listener {
         item.editMeta(ItemMeta.class, m -> {
             m.getPersistentDataContainer().set(ACTION_KEY, PersistentDataType.STRING, "tab");
             m.getPersistentDataContainer().set(CATEGORY_KEY, PersistentDataType.STRING, category);
+            // A sword fallback icon otherwise lists "When in Main Hand: 8 Attack Damage".
+            m.setAttributeModifiers(com.google.common.collect.ImmutableMultimap.of());
+            m.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
             if (active) {
                 m.addEnchant(Enchantment.UNBREAKING, 1, true);
                 m.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -690,6 +697,11 @@ public final class ShopGUI implements Listener {
 
     private String plainName(ItemStack item) {
         var meta = item.getItemMeta();
+        if (meta != null && !meta.hasCustomName() && meta.hasItemName()) {
+            // Nexo sets item_name (not custom_name) — without this, "Bought 1x Paper".
+            String plain = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
+            if (!plain.isEmpty()) return plain;
+        }
         if (meta != null && meta.hasCustomName()) {
             Component name = meta.customName();
             if (name != null) {
