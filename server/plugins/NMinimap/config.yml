@@ -15,7 +15,7 @@ cache:
   #You can use G for gigabytes, M for megabytes and K for Kilobytes.
   available-ram-threshold: 1G
   #Render chunk before it is needed? Useful if you are pre-generating your world using Chunky
-  render-new-chunks: true
+  render-new-chunks: false
   #Delay cache load (for cases where additional worlds not being loaded on enable).
   #0 for instant cache loading
   #In ticks. 1 second = 20 ticks
