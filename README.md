@@ -1,10 +1,10 @@
 # The Glitch
 
-A non-Pay-to-Win, EULA-compliant **rogue-lite extraction hybrid** Minecraft server with Java + Bedrock cross-play, built for Oracle Cloud Always Free (Ampere A1, ARM64, 2 OCPU / 12GB).
+A non-Pay-to-Win, EULA-compliant **rogue-lite extraction hybrid** Minecraft server with Java + Bedrock cross-play, running on **Purpur 26.2 (Java 25)** on a Skrime KVM VPS (x86_64, 4 vCPU / 16GB; migrated from Oracle Always Free 2026-09-24). Java + Bedrock, closed beta.
 
 This repo is the source for the server scripts, configuration, and custom plugin code. It does not contain external world saves, generated live files such as VelKoth `arenas.yml`, or deployed third-party jars. See [docs/STATUS.md](docs/STATUS.md) for the distinction between repository work and live-server verification.
 
-## Quick start (fresh Ubuntu 24.04 ARM instance)
+## Quick start (fresh Ubuntu 24.04 instance, x86_64 or ARM64)
 
 SSH into the instance, then:
 
@@ -49,6 +49,16 @@ it as `sudo bash <script>.sh` (bash doesn't need the exec bit).
 
 Live server data (worlds, edited configs) is never overwritten; `start.sh` and the systemd unit are treated as code and always synced from the repo.
 
+## Current live state (2026-09-29)
+
+- **Testing mode:** `online-mode=false` (offline UUIDs, so cracked friends can join) and the whitelist is **off** — both stay that way until the operator says otherwise. Owner accounts on offline UUIDs are given the `alpha` group, not op.
+- **Ranks:** default (member) has chest/loot-crate and QoL permissions; `alpha` (weight 50, `[Alpha]`) is the trusted-tester tier — more than member, nothing destructive (`scripts/setup-luckperms.sh`).
+- **Red worlds** (`glitch_red`, `glitch_red_eleria`, `glitch_red_horizons`) each have a square world border around the whole imported map, red-only HUD + minimap, and no heavy mobs near the entry spawn. During the 1-minute raid buffer nobody (except `glitchraid.admin`) can enter a red world — they get a "maintenance" message.
+- **Loot line:** salvage/refined parts, Recycler (`/recycle`), sell-only trinkets, 16 blueprints that unlock Workbench recipes, 6 gadgets, Secure Pouch (docs/ITEM_SYSTEM.md §14).
+- **Dungeons:** 11 MythicDungeons boss dungeons (licensed assets, live-only — docs/DUNGEONS.md).
+- **Client pack:** one resource pack authority (Nexo) merging ModelEngine, MythicHUD and NMinimap packs. The client needs the pack for the HUD/minimap; not compatible with Iris/OptiFine shaders or Bedrock.
+- Live-only (not in git): world saves, licensed maps/boss packs, third-party jars, player data, `plugins/*/lib/`.
+
 ## Day-to-day operations
 
 | Task | Command |
@@ -62,7 +72,7 @@ Live server data (worlds, edited configs) is never overwritten; `start.sh` and t
 | Update plugins | `UPDATE_PLUGINS=true sudo -E ./bootstrap.sh` then restart |
 | Console command from shell | `scripts/mc-cmd.py 'say hello'` (local RCON; auto-elevates via sudo if needed) |
 
-First join: open the console and run `whitelist add YourName`, then `op YourName`.
+First join (when the whitelist is on): `whitelist add YourName`, then `op YourName`. Currently the whitelist is off (see *Current live state*).
 
 ## The extraction loop (dynamic, deployed 2026-09-01)
 
@@ -131,7 +141,7 @@ item with random stat rolls. Power comes from rarity tiers (Common → Legendary
 stat rolls + the **Resonance system** (5 arcane frequencies, weapon +25% damage vs
 matching mobs), not item levels. See also [Armor upgrade](#armor-upgrade-deployed-2026-09-02-rcon-verified) (deployed 2026-09-02 f1da4d0/d847c69, config-version 3).
 
-**20 custom item definitions/assets exist:** 5 materials, 4 keys, 5 Unstable Rifts,
+**(Since 2026-09-26 the catalogue is much larger: 47 Arc-style loot items in `arc_loot.yml`, 25+ Mystic-tier weapons and Bazaar armour sets — see docs/ITEM_SYSTEM.md §14 and STATUS.)** **The original 20 custom item definitions/assets:** 5 materials, 4 keys, 5 Unstable Rifts,
 and 6 alchemy items (added Aether Tonic [2026-09-02] + Ward Salve [2026-09-02]) — every one ends with a `Sell price: N Shards` lore line. Nexo key is `itemname:` (migrated from `displayname:` in 6e2fba7, config-version 3).
 GlitchShops (`/shop`) buy/sell is deployed and live-tested (2026-08-03) (retuned 2026-09-02, docs/ITEM_BALANCE.md); prices
 come from the shop config, and buy prices appear only in the merchant GUI.
@@ -204,7 +214,10 @@ Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or vi
 | MythicCrucible | Skill-driven custom items/furniture add-on for Mythic (2026-09-20; jar live-only, gitignored) | `server/plugins/MythicMobs/items/GlitchCrucibleItems.yml` |
 | MythicDungeons | Instanced party dungeons (2026-09-20; needs **ProtocolLib**; jar live-only, gitignored) — **2026-09-22: replacing GlitchDungeons, config not yet written** | Built in-game via its own editor — no repo config |
 | MythicAchievements | Custom advancements add-on (**Premium**, 2026-09-20; jar live-only, gitignored) | `server/plugins/MythicAchievements/Achievements/GlitchHunting.yml` |
-| MythicHUD | Custom HUD, replacing GlitchHUD (2026-09-22). Both the 1.3.4 and 1.3.5-SNAPSHOT jars shipped with zero zip directory entries (a packaging bug, not a version issue), which made `Class.getResource("")` NPE on every enable; fixed live by re-packaging the jar with the standard `jar` tool (no bytecode changes) — now enables clean | Sidebar/HUD content not yet configured — pending operator's pre-built config |
+| MythicHUD | Custom HUD (replaced GlitchHUD 2026-09-22; jar live-only, gitignored). Since 2026-09-28: top-left extraction card + daily-contract tracker, **red worlds only**, generated by `scripts/gen-hud.py` (data from `%glitchstash_hud_*%` / `%glitchquests_hud_*%`). Its `core/text.vsh/fsh` is merged with NMinimap's (both replace that shader) — see docs/STATUS.md 2026-09-28 | `server/plugins/MythicHUD/` (`layouts/`, `hud_assets/`, `source-pack/`) |
+| NMinimap | Server-side round minimap (top-right, red worlds only) with ready-loot-crate, open-extraction and nearby-mob markers; jars live-only, gitignored. `render-new-chunks: false` is **mandatory** (a load-triggered render chain generates unbounded terrain) | `server/plugins/NMinimap/config.yml`, `markers/` (`scripts/gen-minimap-markers.py`) |
+| ViaVersion + ViaBackwards | Lets 26.x-adjacent clients join (jars live-only) | `server/plugins/ViaVersion/` |
+| GrimAC | Anticheat, log/alert only (26.2 clients only — it cannot parse ViaVersion-translated 26.3 packets) | `server/plugins/GrimAC/` |
 | MythicMobs native HealthBar | Per-mob floating HP-bar hologram (`HealthBar: {Enabled, Offset}` field), replacing GlitchHealthBar 2026-09-22 | Global styling in `server/plugins/MythicMobs/config/config-mobs.yml` (`Holograms.HealthBar`); per-mob in each `Mobs/*.yml` |
 | ProtocolLib | Packet library (dependency for MythicDungeons, 2026-09-20; jar live-only, gitignored) | N/A |
 | ModelEngine | Custom mob rigs (10/12 free-tier slots; jar live-only, gitignored) | `server/plugins/ModelEngine/blueprints/` — pipeline: `docs/MODELS.md` |
@@ -223,12 +236,13 @@ Armor pieces upgrade **+0..+5** at the hideout **Workbench** ANVIL slot 40 or vi
 | **GlitchRaid** | **Raid lifecycle** (custom: `/raid` timer, party, loot/death recap, `%glitchraid_*%`) | `plugins/GlitchRaid/` |
 | **GlitchInsurance** | **Gear insurance** (custom: shard premiums, claim window, `/insurance`) | `plugins/GlitchInsurance/` |
 | **GlitchEvents** | **World events** (custom: supply drops, roaming bosses, auto scheduler) | `plugins/GlitchEvents/` |
+| **GlitchQuests** | **Daily/weekly quests + login rewards** (custom: `/quests`, `/rewards`, `%glitchquests_*%`) | `plugins/GlitchQuests/` |
 | Multiverse-Core | Multi-world + teleport | `server/plugins/Multiverse-Core/` |
 | GeyserMC + Floodgate | Bedrock cross-play | `server/plugins/Geyser-Spigot/` |
 | WorldGuard | Region protection | `server/plugins/WorldGuard/` |
 | Chunky | World pre-generation | `server/plugins/Chunky/` |
 
-All **9** deployable custom plugins share the `com.theglitch` Maven reactor; `plugins/GlitchCommon/` is a shared library module (no plugin.yml — never deployed) — total 10 reactor modules. **2026-09-22: GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed** (see docs/STATUS.md) in favor of MythicDungeons, MythicHUD, MythicMobs' native HealthBar, and plain MythicMobs DropTables.
+All **10** deployable custom plugins (Stash, Classes, Items, Shops, DeathRules, Hideout, Raid, Insurance, Events, Quests) share the `com.theglitch` Maven reactor; `plugins/GlitchCommon/` is a shared library module (no plugin.yml — never deployed) — total 11 reactor modules. **2026-09-22: GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed** (see docs/STATUS.md) in favor of MythicDungeons, MythicHUD, MythicMobs' native HealthBar, and plain MythicMobs DropTables.
 
 ## The three zones (Phase 4)
 
@@ -240,8 +254,11 @@ source must be verified on the server:
 | World | Purpose | Source Map |
 |---|---|---|
 | `hub` | Safe lobby | Generated by default; an external TerraSpace save may be provisioned separately |
-| `glitch_pve` | Instanced dungeons, keep-inventory | Generated by default; an external CaveFree save may be provisioned separately |
-| `glitch_red` | Full-loot PvPvE extraction | Generated by default; an external MMORPG_Odyssey save may be provisioned separately |
+| `glitch_red` | Full-loot PvPvE extraction ("The Glitch") | Generated by default; an external MMORPG_Odyssey save may be provisioned separately |
+| `glitch_red_eleria` | Second Red Zone map ("Eleria") | External map import |
+| `glitch_red_horizons` | Third Red Zone map ("Horizons") | External map import |
+
+`glitch_pve` was removed 2026-09-25 (dungeons are MythicDungeons instances now). Each red world has a **square world border** sized to enclose the whole imported map (set by `setup-worlds.sh` / `reapply-world-config.sh`, `border()` helper): `glitch_red` centre (208.5,272.5) size 5000, Eleria (256.5,560.5) size 4000, Horizons (232.5,624.5) size 4000. Never shrink these to the playable rectangle — chunks outside the imported terrain are vanilla-generated filler (see `scripts/prune-generated-terrain.py`).
 
 Full blueprint with coordinates: [docs/ZONES.md](docs/ZONES.md).
 
@@ -256,7 +273,7 @@ Built from source on the server — **preferred: single reactor build** (Paper r
 
 ```bash
 cd ~/TheGlitch
-sudo ./scripts/build-all.sh              # all 9 deployable plugins in topological order (reactor, -T 1C)
+sudo ./scripts/build-all.sh              # all 10 deployable plugins in topological order (reactor, -T 1C)
 # sudo ./scripts/build-all.sh --clean    # full clean build
 sudo systemctl restart theglitch
 ```
@@ -304,6 +321,15 @@ recover-worlds.sh                   restore worlds from a backup
 scripts/setup-worlds.sh             Phase 4: creates/imports the three zones, rules, protections
 scripts/setup-imported-worlds.sh    Phase 4: import custom maps (glitch_red + glitch_pve) via Multiverse
 scripts/reapply-world-config.sh     Phase 4: re-apply gamerules/flags/borders after world import
+scripts/prune-generated-terrain.py  drop vanilla-generated chunks absent from a reference backup (server stopped)
+scripts/gen-hud.py                  MythicHUD textures + hud_assets + layouts (red-world card/quests)
+scripts/gen-minimap-markers.py      NMinimap marker icons (crates, extraction, hostile)
+scripts/gen-arc-loot.py             salvage/blueprint/gadget items -> Nexo + shops + GlitchItems config
+scripts/gen-arc-loot-textures.py    16x16 pixel-art textures for that loot line
+scripts/gen-mystic-gear.py          Mystic/Relic/Mythic/Godslayer weapon tiers + armour sets
+scripts/setup-dungeons.sh           MythicDungeons boss dungeons (licensed assets, never in git — docs/DUNGEONS.md)
+scripts/setup-leaderboards.sh       ajLeaderboards + DecentHolograms hub boards
+scripts/gen-motd.py, gen-server-icon.py   server-list MOTD + icon
 scripts/setup-luckperms.sh          Phase 5.1: LuckPerms groups, hierarchy
 scripts/setup-essentials.sh         Phase 5.2: spawn, warps, starter kit (INCOMPATIBLE)
 scripts/setup-tab.sh                Phase 5.7: TAB header/footer
@@ -333,12 +359,12 @@ plugins/GlitchCommon/     shared library module (no plugin.yml — reference/sha
 plugins/GlitchRaid/       GlitchRaid source (reactor-only build)
 plugins/GlitchInsurance/  GlitchInsurance source (reactor-only; needs lib/VaultUnlocked.jar)
 plugins/GlitchEvents/     GlitchEvents source (reactor-only build)
+plugins/GlitchQuests/     GlitchQuests source (reactor-only build)
 # GlitchDungeons, GlitchHUD, GlitchHealthBar, GlitchLoot removed 2026-09-22 — see docs/STATUS.md
 server/plugins/Nexo/      Nexo item/glyph configs + pack assets (migrated from Oraxen 2026-09-20)
 server/plugins/ModelEngine/blueprints/  MEG rig blueprints (generated, tracked — source zips at repo root)
 GlitchWardenV2.zip / GlitchWisp.zip  custom-model source packages (myrlin bundles, see docs/MODELS.md)
-server/plugins/TAB/config.yml  TAB config (scoreboard.enabled: false — HUD owns sidebar)
-server/plugins/Nexo/pack/assets/minecraft/font/negative_space.json  HUD shift glyphs
+server/plugins/TAB/config.yml  TAB config (scoreboard, header/footer)
 server/start.sh           JVM launcher — Aikar's flags for 2 OCPU / 12GB ARM
 server/*.yml              performance tuning configs (synced every bootstrap)
 docs/ZONES.md             zone architecture blueprint

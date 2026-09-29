@@ -1,6 +1,6 @@
 # The Glitch - Session Handoff
 
-Updated: 2026-09-22
+Updated: 2026-09-29
 
 This document is a concise handoff. The authoritative status is
 [docs/STATUS.md](docs/STATUS.md); this file must not contradict it.
@@ -16,6 +16,8 @@ assets. It does not contain uploaded world saves, generated VelKoth arenas,
 player data, or deployed third-party jars.
 
 ## Current Status
+
+**Latest (2026-09-27 → 09-29, all live; see docs/STATUS.md "Current Snapshot"):** Arc-style loot line (Recycler, blueprints, gadgets, Secure Pouch, custom textures); `alpha` tester rank + member chest perms; safer red-zone entry spawns + better starter kit; post-extraction grace fix; MythicHUD red-world card/quests and NMinimap minimap (merged shader); raid-buffer red-world lockout; NMinimap CPU/TPS fix (`render-new-chunks: false`, 2 render threads); vanilla-terrain prune + world borders around each red map. 10 deployable plugins + GlitchCommon = 11 reactor modules. Server is in testing mode (`online-mode=false`, whitelist off) until the operator says otherwise. Untested in-game: class icons for members, buffer maintenance message, hub-warp on extract, HUD card/minimap on a fresh client. The older bullets below are history and may be stale where they conflict.
 
 - Server bootstrap, Purpur, Java, firewall, systemd, and base plugin setup are scripted.
 - **2026-09-22: GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed from the reactor entirely** — replaced by MythicDungeons (config pending), MythicHUD (jar repackaged same day to fix a packaging bug — every zip directory entry was missing, breaking `Class.getResource("")` on enable — now enables clean; sidebar content still pending), MythicMobs' native per-mob `HealthBar` field, and plain MythicMobs DropTables respectively. The reactor is now **9 deployable plugins + `GlitchCommon` = 10 modules** (was 12+2=14 — the line below is the pre-2026-09-22 history, kept for record). See docs/STATUS.md's 2026-09-22 dated entries for the full removal record.
@@ -64,7 +66,7 @@ sudo ./scripts/deploy-balance-2026-09-02.sh  # 2026-09-02 balance: 20 items item
 sudo ./scripts/deploy-armor-2026-09-02.sh     # 2026-09-02 armor: +0..+5 ANVIL slot40 or /armor upgrade, per-slot identity, config v3 (f1da4d0/d847c69, RCON verified)
 
 # Preferred — single reactor build (correct topological order, Paper resolved once, parallel):
-sudo ./scripts/build-all.sh           # builds/deploys all 9 plugins (GlitchDungeons/HUD/HealthBar/Loot removed 2026-09-22)
+sudo ./scripts/build-all.sh           # builds/deploys all 10 plugins (GlitchDungeons/HUD/HealthBar/Loot removed 2026-09-22)
 # Or: sudo ./scripts/build-all.sh --clean   # full clean
 # Or: sudo ./scripts/build-all.sh --no-deploy  # validate only
 
@@ -88,7 +90,7 @@ sudo ./plugins/GlitchDeathRules/build.sh
 sudo systemctl restart theglitch
 ```
 
-Paper/Java versions are pinned once in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`) and inherited by all 10 modules — bump there, not per-plugin. `build-all.sh` no longer auto-syncs any TAB/Nexo HUD extras — that logic was GlitchHUD-specific and was removed with the plugin on 2026-09-22; re-add it once MythicHUD's config lands if still needed.
+Paper/Java versions are pinned once in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`) and inherited by all 11 modules — bump there, not per-plugin. `build-all.sh` no longer auto-syncs any TAB/Nexo HUD extras — that logic was GlitchHUD-specific and was removed with the plugin on 2026-09-22; re-add it once MythicHUD's config lands if still needed.
 
 The custom plugin build scripts deploy to the live server. `bootstrap.sh` does
 not build them automatically.

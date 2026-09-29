@@ -126,7 +126,7 @@ seed_velkoth() {
 for plugin in "${SELECTED[@]}"; do
   case "$plugin" in
     GlitchItems)
-      for jar in VaultUnlocked PlaceholderAPI; do
+      for jar in VaultUnlocked PlaceholderAPI NMinimap AnvilORM; do
         if [[ ! -f "${REPO_DIR}/plugins/GlitchItems/lib/${jar}.jar" ]]; then
           seed_lib GlitchItems "$jar" || warn "Missing ${jar}.jar for GlitchItems — run sudo ./plugins/GlitchItems/build.sh once"
         fi
@@ -157,7 +157,7 @@ for plugin in "${SELECTED[@]}"; do
       fi
       ;;
     GlitchStash)
-      for jar in VaultUnlocked; do
+      for jar in VaultUnlocked NMinimap AnvilORM; do
         if [[ ! -f "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar" ]]; then
           seed_lib GlitchStash "$jar" || true
         fi
