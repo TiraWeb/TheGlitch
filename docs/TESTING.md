@@ -171,19 +171,19 @@
 > Write a fresh checklist here once the operator's MythicHUD config lands.
 
 - [ ] `logs/latest.log` shows `[MythicHUD] Enabling MythicHUD ...` with no `NullPointerException` right after
-- [ ] (2026-09-28) Top-left card (extraction arrow tile + daily contracts) shows **only in red worlds**, never in the hub; arrow points at the nearest open extraction point
-- [ ] NMinimap: round minimap top-right in red worlds only; ready crates, open extraction points and nearby mobs appear; other players only within 16 blocks
-- [ ] Minimap does not generate terrain: region file counts stay constant (`render-new-chunks: false`), TPS 20, CPU stays low after a fresh client joins
-- [ ] Walking to the world border shows the warning at 32 blocks; no border cuts into the playable map
+- [x] (2026-09-28) Top-left card (extraction arrow tile + daily contracts) shows **only in red worlds**, never in the hub; arrow points at the nearest open extraction point
+- [x] NMinimap: round minimap top-right in red worlds only; ready crates, open extraction points and nearby mobs appear; other players only within 16 blocks
+- [x] Minimap does not generate terrain: region file counts stay constant (`render-new-chunks: false`), TPS 20, CPU stays low after a fresh client joins
+- [x] Walking to the world border shows the warning at 32 blocks; no border cuts into the playable map
 
 ## Access, ranks and raid buffer (2026-09-28)
 
-- [ ] Member (default rank) can open loot crates/chests in red worlds
-- [ ] `alpha` rank shows `[Alpha]`, has more than member, no destructive commands
-- [ ] During the 1-minute raid buffer, `/redzone` and any teleport into a red world is refused with a "maintenance" message (`glitchraid.admin` bypasses)
-- [ ] After extracting, the player lands in the hub (15 s grace stops auto-join re-adding them)
-- [ ] Class menu shows proper icons for members/alpha (not pink/missing)
-- [ ] New starter kit granted on first class pick (iron set, sword, shield, food, potions, bandages, grenades, key)
+- [x] Member (default rank) can open loot crates/chests in red worlds
+- [x] `alpha` rank shows `[Alpha]`, has more than member, no destructive commands
+- [x] During the 1-minute raid buffer, `/redzone` and any teleport into a red world is refused with a "maintenance" message (`glitchraid.admin` bypasses)
+- [x] After extracting, the player lands in the hub (15 s grace stops auto-join re-adding them)
+- [x] Class menu shows proper icons for members/alpha (not pink/missing)
+- [x] New starter kit granted on first class pick (iron set, sword, shield, food, potions, bandages, grenades, key)
 
 ## Economy & item balance (2026-09-02 — docs/ITEM_BALANCE.md)
 
