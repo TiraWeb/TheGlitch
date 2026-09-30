@@ -31,7 +31,10 @@ final class MapEdgeGenerator extends ChunkGenerator {
                 plugin.getLogger().warning("Could not read " + file + ": " + e.getMessage());
             }
         }
-        plugin.getLogger().info(worldName + ": map footprint " + map.size() + " chunks (void + edge walls outside it)");
+        // Multiverse probes every generator plugin at startup (e.g. with "hub"); only log real maps
+        if (!map.isEmpty()) {
+            plugin.getLogger().info(worldName + ": map footprint " + map.size() + " chunks (void + edge walls outside it)");
+        }
     }
 
     private static long key(int x, int z) {

@@ -64,7 +64,7 @@ Optional external map sources (not included in this repository):
 
 - **TerraSpace** Japanese cyberpunk city build (pre-built Java world save, pasted at spawn).
 - World border **512** centered on 0,0 — a city plaza, not a continent.
-- (Red worlds: square borders enclosing each whole imported map — `glitch_red` c(208.5,272.5) 5000, `glitch_red_eleria` c(256.5,560.5) 4000, `glitch_red_horizons` c(232.5,624.5) 4000; warning 32, damage buffer 2. `glitch_pve` no longer exists.)
+- (Red worlds, 2026-09-30: generator `GlitchWorldGen` — outside the imported map footprint (`plugins/GlitchWorldGen/<world>.keep`) chunks are void with barrier walls on the map edge. Borders: `glitch_red` c(744.5,776.5) 3184, `glitch_red_eleria` c(112.5,-7.5) 2176, `glitch_red_horizons` c(72.5,64.5) 3664; warning 32, damage buffer 2. `glitch_pve` no longer exists.)
 - Time frozen at midnight (neon-city aesthetic), weather off, mobs off.
 - WorldGuard `__global__` lockdown (Phase 4.2): no PvP, no block changes, no
   hunger drain, players invincible, no ender pearls. Also hardened against
