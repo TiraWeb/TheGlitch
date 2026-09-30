@@ -1,43 +1,42 @@
 #!/usr/bin/env bash
 #
-# The Glitch — Raider Rank icon on nametags + tab list.
-# Appends %glitchraid_rank_icon% (a tier glyph, E060-E067) after the player's
-# name via TAB's _DEFAULT_ tagsuffix/tabsuffix. Groups in groups.yml only set
-# prefixes, so they inherit these suffixes. Idempotent.
+# The Glitch — TAB nametag/tab groups + Raider Rank icon.
+# Installs the tracked server/plugins/TAB/groups.yml (staff/paid badges, the
+# alpha tester tag, and _DEFAULT_ suffix %glitchraid_rank_icon% = tier glyph
+# E060-E067 after the name), makes sure TAB's sorting/primary-group lists know
+# every group, and grants tab.group.alpha. Idempotent.
 #   sudo ./scripts/setup-rank-tags.sh
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-GROUPS_YML="/opt/theglitch/server/plugins/TAB/groups.yml"
+TAB_DIR="/opt/theglitch/server/plugins/TAB"
 
 log() { echo -e "\033[1;32m[rank-tags]\033[0m $*"; }
 die() { echo -e "\033[1;31m[rank-tags]\033[0m $*" >&2; exit 1; }
 
-[[ -f "${GROUPS_YML}" ]] || die "TAB groups.yml not found at ${GROUPS_YML}"
-cp -n "${GROUPS_YML}" "${GROUPS_YML}.pre-rank-tags" || true
+[[ -d "${TAB_DIR}" ]] || die "TAB not installed at ${TAB_DIR}"
+[[ -f "${TAB_DIR}/groups.yml" ]] && cp -n "${TAB_DIR}/groups.yml" "${TAB_DIR}/groups.yml.pre-rank-tags" 2>/dev/null || true
+install -m 644 "${REPO_DIR}/server/plugins/TAB/groups.yml" "${TAB_DIR}/groups.yml"
 
-python3 - "${GROUPS_YML}" <<'PY'
-import sys
+# Sorting + primary-group lists in the live config.yml (it is seeded once, so
+# groups added later have to be inserted in place).
+python3 - "${TAB_DIR}/config.yml" <<'PY'
+import re, sys
 p = sys.argv[1]
-lines = open(p, encoding="utf-8").read().split("\n")
-want = '"%luckperms-suffix% %glitchraid_rank_icon%"'
-start = lines.index("_DEFAULT_:")
-end = start + 1
-while end < len(lines) and (lines[end].startswith("  ") or not lines[end].strip()):
-    end += 1
-block = lines[start + 1:end]
-for key in ("tabsuffix", "tagsuffix"):
-    idx = next((i for i, l in enumerate(block) if l.strip().startswith(key + ":")), None)
-    if idx is None:
-        block.append(f"  {key}: {want}")
-    else:
-        block[idx] = f"  {key}: {want}"
-lines[start + 1:end] = block
-open(p, "w", encoding="utf-8").write("\n".join(lines))
-print("patched", p)
+s = open(p, encoding="utf-8").read()
+order = "owner,admin,dev,moderator,helper,alpha,sentinel,stalker,wisp,donor,default"
+s = re.sub(r"GROUPS:[a-z_,]+", "GROUPS:" + order, s, count=1)
+m = re.search(r"(primary-group-finding-list:\n)((?:\s*- \S+\n)+)", s)
+if m:
+    indent = re.match(r"(\s*)-", m.group(2)).group(1)
+    s = s[:m.start(2)] + "".join(f"{indent}- {g}\n" for g in order.split(",")) + s[m.end(2):]
+open(p, "w", encoding="utf-8").write(s)
+print("TAB sorting/primary groups:", order)
 PY
+chown minecraft:minecraft "${TAB_DIR}/groups.yml" "${TAB_DIR}/config.yml" 2>/dev/null || true
 
+python3 "${REPO_DIR}/scripts/mc-cmd.py" "lp group alpha permission set tab.group.alpha true" >/dev/null || true
 python3 "${REPO_DIR}/scripts/mc-cmd.py" "tab reload" >/dev/null || true
-log "Done — rank icons follow player names (tab reload sent)."
+log "Done — groups.yml installed, alpha tag live, rank icons after names (tab reload sent)."

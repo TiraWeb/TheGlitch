@@ -17,6 +17,7 @@ public final class GlitchEvents extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        com.theglitch.common.ConfigDefaults.merge(this);
 
         eventManager = new EventManager(this);
 

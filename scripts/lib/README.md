@@ -72,8 +72,7 @@ source "${REPO_DIR}/scripts/lib/gamerules.sh"
 **Arrays (copy of `scripts/setup-worlds.sh` 26.x tables):**
 
 - `GAMERULES_HUB_SNAKE` — hub (`minecraft:overworld`) — frozen, `spawn_mobs false`, `keep_inventory true`, …
-- `GAMERULES_PVE_SNAKE` — `glitch_pve` — `keep_inventory true`, `spawn_mobs false`, …
-- `GAMERULES_RED_SNAKE` — `glitch_red` — `keep_inventory false`, `spawn_phantoms false`, …
+- `GAMERULES_RED_SNAKE` — every red world (`glitch_red`, `glitch_red_eleria`, `glitch_red_horizons`) — `keep_inventory false`, `spawn_phantoms false`, …
 
 See the file header for the full old→new mapping
 (`doMobSpawning→spawn_mobs`, `doDaylightCycle→advance_time`, `doFireTick→`
@@ -92,7 +91,6 @@ See the file header for the full old→new mapping
 source "${REPO_DIR}/scripts/lib/gamerules.sh"
 
 apply_world_gamerules "overworld"  "GAMERULES_HUB_SNAKE"
-apply_world_gamerules "glitch_pve" "GAMERULES_PVE_SNAKE"
 apply_world_gamerules "glitch_red" "GAMERULES_RED_SNAKE"
 
 # One-off:

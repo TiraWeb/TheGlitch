@@ -61,6 +61,7 @@ public final class GlitchStash extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        com.theglitch.common.ConfigDefaults.merge(this);
         loadMessages();
         cacheConfig();
 

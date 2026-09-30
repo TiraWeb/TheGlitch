@@ -9,7 +9,7 @@ requirement is solved by coordinate offsetting **inside** the PvE world (dungeon
 slot grid, below) — no per-run world folders, ever.
 
 **World terrain is provisioning-dependent.** The default `scripts/setup-worlds.sh` path
-creates generated worlds. The separate `scripts/setup-imported-worlds.sh` path
+creates generated worlds. The old `scripts/setup-imported-worlds.sh` path (removed 2026-10-01; imports are manual)
 expects external uploaded saves. Those saves are not committed here, so the
 live terrain source must be verified on the server.
 

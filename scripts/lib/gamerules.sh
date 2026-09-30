@@ -26,7 +26,6 @@
 #
 # Arrays:
 #   GAMERULES_HUB_SNAKE  — hub (dim minecraft:overworld)  — safe, frozen, silent
-#   GAMERULES_PVE_SNAKE  — glitch_pve                      — keep_inventory ON, no natural spawns
 #   GAMERULES_RED_SNAKE  — glitch_red                      — full-loot PvP, no phantoms
 #
 # Helpers:
@@ -99,18 +98,6 @@ GAMERULES_HUB_SNAKE=(
   "mob_griefing false"
   "fire_spread_radius_around_player 0"
   "keep_inventory true"
-  "spawn_wandering_traders false"
-)
-
-# glitch_pve — keep_inventory ON (design), no natural spawns (MythicMobs only;
-# spawn_mobs false blocks NATURAL spawns but not plugin/command/egg spawns)
-GAMERULES_PVE_SNAKE=(
-  "keep_inventory true"
-  "spawn_mobs false"
-  "advance_time false"
-  "advance_weather false"
-  "mob_griefing false"
-  "fire_spread_radius_around_player 0"
   "spawn_wandering_traders false"
 )
 
@@ -190,7 +177,6 @@ apply_rule() {
 # Uses bash nameref (local -n) — requires bash 4.3+.
 # Example:
 #   apply_world_gamerules "overworld"  "GAMERULES_HUB_SNAKE"
-#   apply_world_gamerules "glitch_pve" "GAMERULES_PVE_SNAKE"
 #   apply_world_gamerules "glitch_red" "GAMERULES_RED_SNAKE"
 #
 # For each entry we split on first space into rule/value and call apply_rule.

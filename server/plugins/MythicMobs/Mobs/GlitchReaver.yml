@@ -37,7 +37,8 @@ GlitchReaver:
     FollowRange: 32
     KnockbackResistance: 1
     Silent: true
-    Persistent: true
+    # Persistent: false — with true, random-spawned Reavers never despawned and piled up
+    Persistent: false
     Despawn: true
     Invincible: false
     PreventSunburn: true
@@ -60,10 +61,15 @@ GlitchReaver:
     - stopsound{s=tugkandeman.endermauler_scream} @PIR{r=50} ~onDeath
     - stopsound{s=tugkandeman.ender_ringing} @PIR{r=50} ~onDeath
     - sound{s=tugkandeman.endermauler_death;v=2;p=1} @self ~onDeath
-    # Segmented tail renderer — endermauler's signature visual, registered once per spawn.
-    - segment{m=endermauler;angle=50;extend=0.25}
-    - segment{m=endermauler;p=root1;bounded=false}
-    - segment{m=endermauler;p=lace;em=false;roll=true;angle=80;extend=0.1}
-    - renderinit{m=endermauler}
+    # Segmented tail renderer — endermauler's signature visual, registered once per
+    # spawn/load (untriggered lines default to ~onCombat and re-ran on every hit).
+    - segment{m=endermauler;angle=50;extend=0.25} @self ~onSpawn
+    - segment{m=endermauler;p=root1;bounded=false} @self ~onSpawn
+    - segment{m=endermauler;p=lace;em=false;roll=true;angle=80;extend=0.1} @self ~onSpawn
+    - renderinit{m=endermauler} @self ~onSpawn
+    - segment{m=endermauler;angle=50;extend=0.25} @self ~onLoad
+    - segment{m=endermauler;p=root1;bounded=false} @self ~onLoad
+    - segment{m=endermauler;p=lace;em=false;roll=true;angle=80;extend=0.1} @self ~onLoad
+    - renderinit{m=endermauler} @self ~onLoad
   Drops:
     - GlitchReaverLoot

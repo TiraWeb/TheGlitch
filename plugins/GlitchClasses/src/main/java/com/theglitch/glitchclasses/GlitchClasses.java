@@ -26,6 +26,7 @@ public final class GlitchClasses extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        com.theglitch.common.ConfigDefaults.merge(this);
         loadMessages();
 
         classManager = new ClassManager(this);

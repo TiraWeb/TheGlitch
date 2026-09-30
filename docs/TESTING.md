@@ -10,7 +10,6 @@
 - [ ] Build all changed plugins:
   - `sudo ./scripts/build-all.sh`  *(preferred: 10-module reactor, topological order — covers all 9 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents; also syncs Nexo `itemname:` config v3)*
   - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules` (GlitchRaid/GlitchInsurance/GlitchEvents are reactor-only)
-  - `sudo ./scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026-09-02.sh` for economy+armor (Nexo `itemname:`, config v3, `rift_vault=6`, RCON verified)
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./scripts/setup-mythicmobs.sh` (`mm reload` + verify mobs list)
 - [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents (GlitchDungeons/GlitchHUD/GlitchHealthBar/GlitchLoot removed 2026-09-22 — see docs/STATUS.md; check MythicHUD/MythicDungeons instead once configured)

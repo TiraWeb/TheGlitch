@@ -71,7 +71,11 @@ STAND_INS = """Dungeon_GlitchReaver:
     PreventOtherDrops: true
 """
 # Obvious vendor typos that stop a skill line from loading (old -> new).
-FIXES = {"ember_claw": [("<random.float-.30to-50>", "<random.float.-30to-50>")]}
+FIXES = {
+    "ember_claw": [("<random.float-.30to-50>", "<random.float.-30to-50>")],
+    # MythicMobs has no @PlayersInRingNearOrigin — the Meteor-of-Doom burn never hit (2026-10-01)
+    "mage": [("@PlayersInRingNearOrigin{", "@PlayersInRing{")],
+}
 SKIP_FILES = {"mf_ember_claw_pet.yml", "packinfo.yml"}  # pet needs MCPets; packinfo rewritten
 
 _next_char = [0xE9A0]
@@ -207,6 +211,45 @@ def drop_blocks(text, names):
     return "".join(b for k, b in top_blocks(text) if k not in names)
 
 
+def drop_duplicate_keys(text):
+    """Remove earlier duplicates of a mapping key within the same parent.
+
+    SnakeYAML keeps the LAST value of a duplicated key and logs a warning on every
+    load (the Lovers ship AttackSpeed x4, Akaza a duplicated Cooldown, skeleton_boss
+    two Skills blocks); dropping the earlier copies keeps behaviour and quiets the log.
+    """
+    lines = text.split("\n")
+    key_re = re.compile(r"^(\s*)([A-Za-z0-9_\-.]+):(\s|$)")
+    scopes = []   # [(indent, {key: line_index})]
+    starts = []   # line indices of earlier duplicates to drop
+    for i, line in enumerate(lines):
+        m = key_re.match(line)
+        if not m:
+            continue
+        indent = len(m.group(1))
+        while scopes and scopes[-1][0] > indent:
+            scopes.pop()
+        if not scopes or scopes[-1][0] < indent:
+            scopes.append((indent, {}))
+        seen = scopes[-1][1]
+        if m.group(2) in seen:
+            starts.append(seen[m.group(2)])
+        seen[m.group(2)] = i
+    drop = set()
+    for start in starts:
+        indent = len(lines[start]) - len(lines[start].lstrip())
+        end = start + 1
+        while end < len(lines):
+            body = lines[end]
+            if body.strip() and len(body) - len(body.lstrip()) <= indent and not body.lstrip().startswith("- "):
+                break
+            if body.strip() and len(body) - len(body.lstrip()) < indent:
+                break
+            end += 1
+        drop.update(range(start, end))
+    return "\n".join(l for i, l in enumerate(lines) if i not in drop)
+
+
 def main():
     if not os.path.isdir(SRC):
         raise SystemExit(f"missing {SRC}")
@@ -273,6 +316,7 @@ def main():
                 text = text.replace(old, new)
             if pid == "akaza":
                 text = text.replace("%nexo_bossbar-akaza%", char_map["\U00010148"])
+            text = drop_duplicate_keys(text)
             if kind == "Mobs":
                 text = adjust_mobs(text, health)
             elif dupes:

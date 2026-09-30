@@ -249,8 +249,8 @@ All **10** deployable custom plugins (Stash, Classes, Items, Shops, DeathRules, 
 ## The three zones (Phase 4)
 
 The repository supports two world provisioning paths. `scripts/setup-worlds.sh` creates generated
-worlds for a fresh server. `scripts/setup-imported-worlds.sh` imports externally uploaded
-map saves. The imported saves are not stored in this repository, so the live terrain
+worlds for a fresh server; the live red worlds are imported map saves (copied into
+`hub/dimensions/minecraft/<world>/` and `mv import`ed by hand, see docs/ZONES.md). The imported saves are not stored in this repository, so the live terrain
 source must be verified on the server:
 
 | World | Purpose | Source Map |
@@ -321,7 +321,6 @@ bootstrap.sh                        one-shot / re-runnable box setup (Phases 0â€
 console.sh                          attach to the live server console
 recover-worlds.sh                   restore worlds from a backup
 scripts/setup-worlds.sh             Phase 4: creates/imports the three zones, rules, protections
-scripts/setup-imported-worlds.sh    Phase 4: import custom maps (glitch_red + glitch_pve) via Multiverse
 scripts/reapply-world-config.sh     Phase 4: re-apply gamerules/flags/borders after world import
 scripts/prune-generated-terrain.py  drop chunks absent from a reference backup or a .keep list (server stopped)
 scripts/map-footprint.py            imported-map chunk lists (blending_data) for GlitchWorldGen

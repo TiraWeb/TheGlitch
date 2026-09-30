@@ -26,6 +26,7 @@ public final class GlitchShops extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        com.theglitch.common.ConfigDefaults.merge(this);
         cacheConfig();
 
         shopManager = new ShopManager(this);

@@ -99,31 +99,31 @@ recipes:
   targeted_weapon_aegis:
     display: "<gold>Aegis Blade (Uncommon)"
     blueprint: true
-    icon: GOLD_SWORD
+    icon: GOLDEN_SWORD
     output: "glitchitems give uncommon blade aegis <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_veil:
     display: "<aqua>Veil Blade (Uncommon)"
     blueprint: true
-    icon: GOLD_SWORD
+    icon: GOLDEN_SWORD
     output: "glitchitems give uncommon blade veil <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_bloom:
     display: "<green>Bloom Blade (Uncommon)"
     blueprint: true
-    icon: GOLD_SWORD
+    icon: GOLDEN_SWORD
     output: "glitchitems give uncommon blade bloom <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_ward:
     display: "<red>Ward Blade (Uncommon)"
     blueprint: true
-    icon: GOLD_SWORD
+    icon: GOLDEN_SWORD
     output: "glitchitems give uncommon blade ward <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   targeted_weapon_hollow:
     display: "<light_purple>Hollow Blade (Uncommon)"
     blueprint: true
-    icon: GOLD_SWORD
+    icon: GOLDEN_SWORD
     output: "glitchitems give uncommon blade hollow <player>"
     materials: { rune_fragment: 3, rift_crystal: 1, aether_shard: 1 }
   rift_reveal_pack:

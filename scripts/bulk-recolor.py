@@ -5,7 +5,7 @@ from PIL import Image
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 TEMP = pathlib.Path(r"C:\Users\tirob\AppData\Local\Temp\opencode")
-TEX = REPO / "server" / "plugins" / "Oraxen" / "pack" / "textures"
+TEX = REPO / "server" / "plugins" / "Nexo" / "pack" / "external_packs" / "Oraxen" / "assets" / "minecraft" / "textures"
 
 VOID_TOP = (13, 6, 22)
 VOID_BOT = (24, 11, 38)

@@ -25,12 +25,10 @@ for RW in "${RED_WORLDS[@]}"; do
   mc "mv modify ${RW} set difficulty hard" >/dev/null
 done
 
-# ---- world borders (2026-09-29) ----
-# Square borders enclosing each imported map's ORIGINAL generated area, so nothing of the
-# maps is ever cut off but vanilla can't generate endless terrain around them (NMinimap's
-# render chain once generated ~160 region files north of every red world). Derived from the
-# chunk bounding box of the pre-NMinimap backup; the playable rectangles (scatter bounds:
-# Eleria 3000x1500, Horizons 3200x1400, glitch_red 2000x2000) sit well inside.
+# ---- world borders (2026-09-30) ----
+# Square around each imported map's footprint — the chunks that came from the map
+# save (scripts/map-footprint.py) — plus one chunk, so no part of a map is cut off.
+# Past the map's own edge GlitchWorldGen generates void behind barrier walls.
 log "Setting red world borders..."
 border() { # world centerX centerZ diameter
   mc "execute in minecraft:$1 run worldborder center $2 $3" >/dev/null
@@ -38,8 +36,6 @@ border() { # world centerX centerZ diameter
   mc "execute in minecraft:$1 run worldborder warning distance 32" >/dev/null
   mc "execute in minecraft:$1 run worldborder damage buffer 2" >/dev/null
 }
-# Square around each imported map's footprint (scripts/map-footprint.py) + 1 chunk;
-# GlitchWorldGen walls off the map's exact edge inside it (2026-09-30).
 border glitch_red 744 776 3184
 border glitch_red_eleria 112 -8 2176
 border glitch_red_horizons 72 64 3664
@@ -85,10 +81,6 @@ for RW in "${RED_WORLDS[@]}"; do
   mc "execute in minecraft:${RW} run weather clear" >/dev/null || true
 done
 
-# ---- world borders ----
-# Removed per user request (2026-08-24): no world borders are set. Worlds use vanilla default (6M).
-log "World borders skipped (removed per operator request — using vanilla defaults)."
-
 # ---- clear mobs ----
 log "Clearing leftover mobs..."
 for dim in overworld; do
@@ -98,33 +90,35 @@ for dim in overworld; do
   mc "execute in minecraft:${dim} run kill @e[type=!minecraft:player,type=!minecraft:armor_stand,type=!minecraft:item_frame,type=!minecraft:glow_item_frame,type=!minecraft:painting,type=!minecraft:item,type=!minecraft:interaction,type=!minecraft:text_display,type=!minecraft:item_display,type=!minecraft:experience_orb,type=!minecraft:villager]" >/dev/null || true
 done
 for RW in "${RED_WORLDS[@]}"; do
-  mc "execute in minecraft:${RW} run kill @e[type=!minecraft:player,type=!minecraft:warden]" >/dev/null || true
+  # Same keep-list as the hub plus markers/block displays: loot crates are Nexo
+  # furniture (item_display + interaction), the health-bar listener is a marker,
+  # and dropped loot must survive. Killing every non-player entity broke all of it.
+  mc "execute in minecraft:${RW} run kill @e[type=!minecraft:player,type=!minecraft:armor_stand,type=!minecraft:item_frame,type=!minecraft:glow_item_frame,type=!minecraft:painting,type=!minecraft:item,type=!minecraft:interaction,type=!minecraft:text_display,type=!minecraft:item_display,type=!minecraft:block_display,type=!minecraft:marker,type=!minecraft:experience_orb,type=!minecraft:villager]" >/dev/null || true
 done
 
 # ---- WorldGuard flags ----
 log "Applying WorldGuard flags..."
 flag() { mc "rg flag -w $1 __global__ $2 $3" >/dev/null; }
 
-# hub (overworld)
-flag overworld passthrough deny
-flag overworld pvp deny
-flag overworld use allow
-flag overworld build deny
-flag overworld leaf-decay deny
-flag overworld ice-form deny
-flag overworld ice-melt deny
-flag overworld snow-fall deny
-flag overworld snow-melt deny
-flag overworld grass-spread deny
-flag overworld mycelium-spread deny
-flag overworld vine-growth deny
-flag overworld chest-access allow
-flag overworld mob-spawning deny
-flag overworld entity-noclip deny
-flag overworld sleep allow
-flag overworld enderpearl deny
-flag overworld feed-delay deny
-flag overworld heal-delay deny
+# hub — WorldGuard keys regions by Bukkit world name ("hub"), not the
+# dimension id; "-w overworld" silently matched nothing.
+flag hub passthrough deny
+flag hub pvp deny
+flag hub use allow
+flag hub build deny
+flag hub leaf-decay deny
+flag hub ice-form deny
+flag hub ice-melt deny
+flag hub snow-fall deny
+flag hub snow-melt deny
+flag hub grass-spread deny
+flag hub mycelium-spread deny
+flag hub vine-growth deny
+flag hub chest-access allow
+flag hub mob-spawning deny
+flag hub entity-noclip deny
+flag hub sleep allow
+flag hub enderpearl deny
 
 # Every red world — indestructible adventure-like, full-loot PvP (RED WORLDS only)
 # Block/world modification denied; use/chest-access allowed so players can loot;

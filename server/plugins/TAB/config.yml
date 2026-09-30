@@ -15,7 +15,7 @@ scoreboard-teams:
   # Owner on top, members at the bottom; TAB groups come from the
   # tab.group.<name> permission each LuckPerms group grants (see setup-ranks.sh).
   sorting-types:
-    - "GROUPS:owner,admin,dev,moderator,helper,sentinel,stalker,wisp,donor,default"
+    - "GROUPS:owner,admin,dev,moderator,helper,alpha,sentinel,stalker,wisp,donor,default"
     - "PLACEHOLDER_A_TO_Z:%player%"
 
 # Group lookup order for per-group display (matches sorting above).
@@ -25,6 +25,7 @@ primary-group-finding-list:
   - dev
   - moderator
   - helper
+  - alpha
   - sentinel
   - stalker
   - wisp

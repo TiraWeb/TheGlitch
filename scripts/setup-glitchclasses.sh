@@ -14,10 +14,12 @@ REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 log()  { echo -e "\033[1;32m[setup]\033[0m $*"; }
 warn() { echo -e "\033[1;33m[setup]\033[0m $*"; }
 
-# Check if plugin JAR exists
-if [[ ! -f "${PLUGIN_DIR}/GlitchClasses.jar" ]]; then
+[[ ${EUID} -eq 0 ]] || { echo "Run me with sudo: sudo ./scripts/setup-glitchclasses.sh" >&2; exit 1; }
+
+# The jar lives in plugins/, not in the plugin's data folder
+if [[ ! -f "${SERVER_DIR}/plugins/GlitchClasses.jar" ]]; then
     warn "GlitchClasses.jar not found. Building from source..."
-    bash "${REPO_DIR}/plugins/GlitchClasses/build.sh"
+    bash "${REPO_DIR}/scripts/build-all.sh" GlitchClasses
 fi
 
 # Seed config if not present
@@ -30,6 +32,7 @@ if [[ ! -f "${PLUGIN_DIR}/messages.yml" ]]; then
     cp "${REPO_DIR}/plugins/GlitchClasses/src/main/resources/messages.yml" "${PLUGIN_DIR}/messages.yml"
     log "Messages seeded."
 fi
+chown -R minecraft:minecraft "${PLUGIN_DIR}" 2>/dev/null || true
 
 # Reload via RCON
 if [[ -f "${REPO_DIR}/scripts/mc-cmd.py" ]]; then

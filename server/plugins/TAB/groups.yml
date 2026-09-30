@@ -1,0 +1,44 @@
+# TAB v6 groups — The Glitch badge ranks (gradient tab + nametag).
+# Chat uses the legacy LuckPerms prefix; tab/nametag get gradients here.
+# Membership via tab.group.<name> (granted in LuckPerms). Highest first.
+owner:
+  tabprefix: "<gradient:#FFD94D:#FF6B35><bold> [OWNER]</bold></gradient>"
+  tagprefix: "<gradient:#FFD94D:#FF6B35><bold> [OWNER]</bold></gradient>"
+admin:
+  tabprefix: "<gradient:#FF6B6B:#C81E1E><bold> [ADMIN]</bold></gradient>"
+  tagprefix: "<gradient:#FF6B6B:#C81E1E><bold> [ADMIN]</bold></gradient>"
+dev:
+  tabprefix: "<gradient:#F0ABFC:#A855F7><bold> [DEV]</bold></gradient>"
+  tagprefix: "<gradient:#F0ABFC:#A855F7><bold> [DEV]</bold></gradient>"
+moderator:
+  tabprefix: "<gradient:#4ADE80:#16A34A><bold> [MOD]</bold></gradient>"
+  tagprefix: "<gradient:#4ADE80:#16A34A><bold> [MOD]</bold></gradient>"
+helper:
+  tabprefix: "<gradient:#60A5FA:#1D4ED8><bold> [HELPER]</bold></gradient>"
+  tagprefix: "<gradient:#60A5FA:#1D4ED8><bold> [HELPER]</bold></gradient>"
+sentinel:
+  tabprefix: "<gradient:#FBBF24:#B45309><bold> [SENTINEL]</bold></gradient>"
+  tagprefix: "<gradient:#FBBF24:#B45309><bold> [SENTINEL]</bold></gradient>"
+stalker:
+  tabprefix: "<gradient:#C084FC:#6B21A8><bold> [STALKER]</bold></gradient>"
+  tagprefix: "<gradient:#C084FC:#6B21A8><bold> [STALKER]</bold></gradient>"
+wisp:
+  tabprefix: "<gradient:#E0F2FE:#22D3EE><bold> [WISP]</bold></gradient>"
+  tagprefix: "<gradient:#E0F2FE:#22D3EE><bold> [WISP]</bold></gradient>"
+alpha:
+  tabprefix: "<gradient:#F5D0FE:#D946EF><bold> [ALPHA]</bold></gradient>"
+  tagprefix: "<gradient:#F5D0FE:#D946EF><bold> [ALPHA]</bold></gradient>"
+donor:
+  tabprefix: "%luckperms-prefix%"
+  tagprefix: "%luckperms-prefix%"
+default:
+  tabprefix: "<gray> [Member]</gray>"
+  tagprefix: "<gray> [Member]</gray>"
+
+# fallback for anyone without a rank group
+_DEFAULT_:
+  tabprefix: "%luckperms-prefix%"
+  tagprefix: "%luckperms-prefix%"
+  customtabname: "%player%"
+  tabsuffix: "%luckperms-suffix% %glitchraid_rank_icon%"
+  tagsuffix: "%luckperms-suffix% %glitchraid_rank_icon%"

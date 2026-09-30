@@ -4,8 +4,8 @@
 # Run AFTER `bootstrap.sh` + server restart (EssentialsX must be loaded):
 #   sudo ./scripts/setup-essentials.sh
 #
-# Sets spawn point, creates zone-transition warps, and configures the
-# starter kit. Safe to re-run: spawn/warp set commands are idempotent.
+# Permission + economy hardening for EssentialsX (spawn, balance, pay, chat
+# colour; no warps/kits/back-on-death/tpahere for players). Safe to re-run.
 
 set -euo pipefail
 
@@ -37,53 +37,11 @@ for i in {1..60}; do
 done
 log "EssentialsX confirmed loaded."
 
-# --- hub spawn -------------------------------------------------------------
-log "Setting hub spawn point (0, -60, 0)..."
-mc "setspawn default"
-
-# --- zone warps ------------------------------------------------------------
-log "Creating zone-transition warps..."
-
-# Red Zone entry points — radius 700, 60 degrees apart
-mc "setwarp red_e1 700 -60 0 glitch_red"
-mc "setwarp red_e2 350 -60 606 glitch_red"
-mc "setwarp red_e3 -350 -60 606 glitch_red"
-mc "setwarp red_e4 -700 -60 0 glitch_red"
-mc "setwarp red_e5 -350 -60 -606 glitch_red"
-mc "setwarp red_e6 350 -60 -606 glitch_red"
-
-# Red Zone extraction sites — operator-placed in-game (VelKoth arenas);
-# no fixed warp coordinates (EssentialsX is incompatible with MC 26.x anyway).
-
-# --- starting kit ----------------------------------------------------------
-log "Configuring starter kit (Glitch Kit)..."
-# Kit is defined in Essentials kits.yml — seed it from repo (already done by bootstrap)
-# setkit requires a player inventory, so we configure it via config.yml instead
-KIT_DIR="${REPO_DIR}/server/plugins/Essentials"
-mkdir -p "${KIT_DIR}"
-if [[ ! -f "${KIT_DIR}/kits.yml" ]]; then
-  cat > "${KIT_DIR}/kits.yml" <<'KITS'
-# The Glitch — starter kit for new players
-# Seeded by scripts/setup-essentials.sh
-
-glitch-starter:
-  delay: 0
-  items:
-    - iron_sword 1
-    - leather_chestplate 1
-    - leather_leggings 1
-    - leather_boots 1
-    - bread 8
-    - torch 16
-    - echo_shard 5
-KITS
-  log "Starter kit config seeded."
-else
-  warn "kits.yml already exists — skipping seed (box copy wins)."
-fi
-
-# Tell Essentials to use the starter kit for new players (set via config)
-mc "essentials setnewbieskit glitch-starter"
+# Spawn, warps and the starter kit are NOT set here any more (2026-10-01):
+# setspawn/setwarp need a player (they did nothing from console), the red-zone
+# warps pointed underground and are denied to players anyway, and the starter
+# kit is GlitchClasses' first-class-pick kit (plugins/GlitchClasses config.yml).
+# Set the hub spawn in-game with /setspawn if it ever needs to move.
 
 # --- permissions -----------------------------------------------------------
 log "Granting default player permissions..."
@@ -129,26 +87,12 @@ fi
 log "Reloading EssentialsX..."
 mc "ess reload"
 
-log "Verifying warps:"
-mc "essentials warps"
-
 cat <<'EOF'
 
 ============================================================
-  Phase 5.2 — EssentialsX configured.
+  Phase 5.2 — EssentialsX permissions hardened.
 ============================================================
-
-  Spawn:     Hub (0, -60, 0)
-  Warps:     pve_staging, red_e1-e6
-  Kit:       glitch-starter (iron sword, leather armor, bread, torches, 5 shards)
-  Chat:      color + format enabled
-  Economy:   VaultUnlocked auto-detects EssentialsX economy
-
-  Player commands:
-    /spawn          — return to hub
-    /warp <name>    — teleport to a zone or extraction point
-    /kit glitch-starter — get starter gear
-
-  Next: scripts/setup-tab.sh or scripts/setup-mythicmobs.sh
-============================================================
+  Players: /spawn, /balance, /pay, colour chat, /workbench
+  Denied:  /warp, /kit, /back on death, /tpahere (would bypass extraction)
+  Economy: VaultUnlocked; min-money 0, economy log on
 EOF

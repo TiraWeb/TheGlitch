@@ -26,6 +26,7 @@ public final class GlitchInsurance extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        com.theglitch.common.ConfigDefaults.merge(this);
         cacheMessages();
 
         manager = new InsuranceManager(this);

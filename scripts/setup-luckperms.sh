@@ -4,9 +4,8 @@
 # Run AFTER `bootstrap.sh` + a server restart (LuckPerms must be loaded):
 #   sudo ./scripts/setup-luckperms.sh
 #
-# Creates the permission group hierarchy, prefixes, and the staff promotion
-# track. Safe to re-run: LuckPerms commands are idempotent for group creation
-# (errors silently if group already exists).
+# Creates the base groups, default-player permissions and the alpha tester
+# group. Ranks/badges/hierarchy: scripts/setup-ranks.sh. Safe to re-run.
 #
 # All commands go through the server console via local RCON (scripts/mc-cmd.py).
 
@@ -49,41 +48,15 @@ mc "lp creategroup donor"
 mc "lp creategroup moderator"
 mc "lp creategroup admin"
 
-# --- hierarchy (parent chain: default → donor → moderator → admin) ----------
-log "Setting group hierarchy"
-
-mc "lp group donor parent add default"
-mc "lp group moderator parent add donor"
-mc "lp group admin parent add moderator"
-
-# --- weights (higher = higher priority in display/lookup) -------------------
-log "Setting group weights"
-
-mc "lp group default setweight 0"
-mc "lp group donor setweight 100"
-mc "lp group moderator setweight 500"
-mc "lp group admin setweight 1000"
-
-# --- prefixes (shown in chat/tab/name tag via TAB plugin later) ------------
-log "Setting group prefixes"
-
-mc "lp group default meta setprefix \"&7[Member] \""
-mc "lp group donor meta setprefix \"&b[Donor] \""
-mc "lp group moderator meta setprefix \"&9[Mod] \""
-mc "lp group admin meta setprefix \"&c[Admin] \""
+# Hierarchy, weights, prefixes (glyph badges) and the staff track are owned by
+# scripts/setup-ranks.sh (run after this by setup-all-plugins.sh). This script
+# used to set text prefixes with no priority, a default->donor->moderator chain
+# and a donor-first staff track, which overrode the badges when re-run.
 
 # --- default group ---------------------------------------------------------
 log "Setting 'default' as the default group for new players"
 
 mc "lp group default setdefault"
-
-# --- staff promotion track --------------------------------------------------
-log "Creating 'staff' promotion track"
-
-mc "lp createtrack staff"
-mc "lp track staff append donor"
-mc "lp track staff append moderator"
-mc "lp track staff append admin"
 
 # --- default permissions for the default group ------------------------------
 log "Setting default player permissions"

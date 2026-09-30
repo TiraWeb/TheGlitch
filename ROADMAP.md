@@ -41,7 +41,7 @@ Check items off as they're completed. Each numbered topic is sized to roughly on
 Everything below is *mechanics* — worlds, gamerules, protection flags, borders,
 and config. The scripts are present, but live verification and terrain source
 depend on the provisioning path. `scripts/setup-worlds.sh` creates generated worlds;
-`scripts/setup-imported-worlds.sh` expects external uploaded saves. Physical
+Imported map saves are copied in and `mv import`ed by hand (the old setup-imported-worlds.sh was removed 2026-10-01). Physical
 construction inside these worlds is a separate body of work, split out into its
 own checklist below.
 

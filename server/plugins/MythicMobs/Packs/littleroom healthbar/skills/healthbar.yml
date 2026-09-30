@@ -214,6 +214,13 @@ HEALTHBAR_ENTITY_determine_status:
   
 
 HEALTHBAR_ENTITY_get_owner_health_difference:
+  # 2026-10-01: guards — the skill still failed in bursts (~3k/min) when a bar
+  # outlived its owner (owner dead/removed by a rescatter or prune) or ran
+  # before init stored owner_prev_hp.
+  Conditions:
+  - variableisset{var=caster.owner_prev_hp} true
+  TargetConditions:
+  - dead false
   Skills:
   - variableMath{var=caster.owner_diff_hp;eq="<caster.var.owner_prev_hp>-<target.hp>"} @parent
   - setvar{var=caster.owner_prev_hp;val="<target.hp>";type=FLOAT} @parent

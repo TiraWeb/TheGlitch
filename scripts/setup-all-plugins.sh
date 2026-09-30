@@ -69,6 +69,7 @@ START_TIME=$(date +%s)
 
 # 1. LuckPerms (foundation — must be first)
 run_step "1" "scripts/setup-luckperms.sh"
+run_step "1b" "scripts/setup-ranks.sh"
 
 # 2. EssentialsX (spawn, warps, kit, economy)
 run_step "2" "scripts/setup-essentials.sh"

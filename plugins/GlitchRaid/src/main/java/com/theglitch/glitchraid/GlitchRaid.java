@@ -22,6 +22,7 @@ public final class GlitchRaid extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        com.theglitch.common.ConfigDefaults.merge(this);
 
         raidManager = new RaidManager(this);
         rankManager = new com.theglitch.glitchraid.rank.RankManager(this);

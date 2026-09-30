@@ -20,16 +20,12 @@ GlitchPhantom:
     FollowRange: 30
     KnockbackResistance: 0
     PreventBlockDestruction: true
+    # Phantoms burn in daylight and the red worlds keep a day cycle (2026-10-01)
+    PreventSunburn: true
     ScoreboardTags: [res_veil]
-  AIGoalSelectors:
-    - clear
-    - fly
-    - float
-    - lookatplayers
-    - randomfly
-  AITargetSelectors:
-    - clear
-    - players
+  # No AIGoalSelectors/AITargetSelectors: fly/float/lookatplayers/randomfly and the
+  # "players" target selector are invalid for PHANTOM, so "clear" left it with no
+  # targeting at all. The vanilla phantom AI (circle + swoop at players) is kept.
   Skills:
     - model{mid=mage;usm=true;n=false;step=1} @self ~onSpawn
     - model{mid=mage;usm=true;n=false;step=1} @self ~onLoad

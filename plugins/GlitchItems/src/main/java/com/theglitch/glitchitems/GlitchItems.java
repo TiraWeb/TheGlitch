@@ -25,6 +25,7 @@ public final class GlitchItems extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        com.theglitch.common.ConfigDefaults.merge(this);
 
         economy = getEconomy();
         if (economy == null) {

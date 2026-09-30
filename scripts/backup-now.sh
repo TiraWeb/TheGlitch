@@ -72,30 +72,10 @@ rm -f "$TMP_TAR"
 
 # We archive from /opt/theglitch so paths are server/...  (easier to restore with -C /opt/theglitch)
 # Exclude rebuildable jars and ephemeral files; keep licensed jars for later append
-TAR_RC=0
-tar -cpf "$TMP_TAR" \
-  --exclude='server/logs' \
-  --exclude='server/logs/*' \
-  --exclude='server/cache' \
-  --exclude='server/cache/*' \
-  --exclude='server/world' \
-  --exclude='server/world_nether' \
-  --exclude='server/world_the_end' \
-  --exclude='server/world/*' \
-  --exclude='server/world_nether/*' \
-  --exclude='server/world_the_end/*' \
-  --exclude='server/plugins/*.jar' \
-  --exclude='server/plugins/*/*.jar' \
-  --exclude='server/plugins/*/*/*.jar' \
-  --exclude='server/plugins/*/lib' \
-  --exclude='server/plugins/*/lib/*' \
-  --exclude='*.tmp' \
-  --exclude='*.lock' \
-  --exclude='*.pid' \
-  --exclude='server/plugins/dynmap/web/tiles/*' \
-  --exclude='server/plugins/BlueMap/web/*' \
-  --exclude='__pycache__' \
-  -C /opt/theglitch \
+# Only existing paths go to tar — one missing folder (e.g. FastAsyncWorldEdit
+# on a box with plain WorldEdit) used to make tar exit 2 and abort the backup.
+BACKUP_PATHS=()
+for rel in \
   server/hub \
   server/server.properties \
   server/eula.txt \
@@ -136,7 +116,51 @@ tar -cpf "$TMP_TAR" \
   server/plugins/TAB \
   server/plugins/PlaceholderAPI \
   server/plugins/Vault \
+  server/plugins/GlitchQuests \
+  server/plugins/GlitchWorldGen \
+  server/plugins/Essentials \
+  server/plugins/CoreProtect \
+  server/plugins/GrimAC \
+  server/plugins/ModelEngine \
+  server/plugins/NMinimap \
+  server/plugins/ajLeaderboards \
+  server/plugins/DecentHolograms \
+  server/plugins/WorldEdit \
+  ; do
+  [[ -e "/opt/theglitch/${rel}" ]] && BACKUP_PATHS+=("${rel}")
+done
+
+TAR_RC=0
+tar -cpf "$TMP_TAR" \
+  --exclude='server/logs' \
+  --exclude='server/logs/*' \
+  --exclude='server/cache' \
+  --exclude='server/cache/*' \
+  --exclude='server/world' \
+  --exclude='server/world_nether' \
+  --exclude='server/world_the_end' \
+  --exclude='server/world/*' \
+  --exclude='server/world_nether/*' \
+  --exclude='server/world_the_end/*' \
+  --exclude='server/plugins/*.jar' \
+  --exclude='server/plugins/*/*.jar' \
+  --exclude='server/plugins/*/*/*.jar' \
+  --exclude='server/plugins/*/lib' \
+  --exclude='server/plugins/*/lib/*' \
+  --exclude='*.tmp' \
+  --exclude='*.lock' \
+  --exclude='*.pid' \
+  --exclude='server/plugins/dynmap/web/tiles/*' \
+  --exclude='server/plugins/BlueMap/web/*' \
+  --exclude='__pycache__' \
+  -C /opt/theglitch \
+  "${BACKUP_PATHS[@]}" \
   2> >(grep -v "Removing leading" >&2) || TAR_RC=$?
+# tar exit 1 = "file changed as we read it" (normal on a live server): keep the archive.
+if [[ $TAR_RC -eq 1 ]]; then
+  echo "$LOG_PREFIX WARN: some files changed while archiving (tar exit 1) — archive kept." >&2
+  TAR_RC=0
+fi
 if [[ $TAR_RC -ne 0 ]]; then
   echo "$LOG_PREFIX ERROR: tar failed (exit $TAR_RC) — deleting partial archive and aborting before retention." >&2
   rm -f "$TMP_TAR" "${TMP_TAR}.gz" "$ARCHIVE" "${ARCHIVE}.sha256" 2>/dev/null || true

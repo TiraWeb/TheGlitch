@@ -40,11 +40,11 @@ log "PlaceholderAPI confirmed loaded."
 
 # --- refresh eCloud --------------------------------------------------------
 log "Refreshing PAPI eCloud..."
-mc "papi ecloud refresh"
+mc "papi ecloud refresh" || true   # mc-cmd exits 1 on "error" replies; the fallback below handles it
 
 # --- check if eCloud is reachable ------------------------------------------
 if ! mc "papi ecloud list" 2>/dev/null | grep -qi "expansion\|name"; then
-  warn "PAPI eCloud appears blocked (Oracle Cloud firewall)."
+  warn "PAPI eCloud appears blocked (host firewall)."
   warn ""
   warn "Option 1: Open firewall for eCloud (run these two commands):"
   warn "  sudo ufw allow out to 172.67.187.160 port 443"
@@ -66,7 +66,7 @@ log "Installing required expansions..."
 EXPANSIONS=("LuckPerms" "Vault" "Server")
 for exp in "${EXPANSIONS[@]}"; do
   log "  Downloading: ${exp}"
-  mc "papi ecloud download ${exp}" 2>/dev/null
+  mc "papi ecloud download ${exp}" 2>/dev/null || true
   if mc "papi ecloud list installed" 2>/dev/null | grep -qi "${exp}"; then
     log "  ${exp} installed successfully."
   else

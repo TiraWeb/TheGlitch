@@ -91,7 +91,5 @@ cat <<'EOF'
 
   Verify menus in-game:
     /dm list                  — list loaded menus
-    /dm open class_selector   — open class selector
-    /dm open shard_shop       — open shard shop
 ============================================================
 EOF

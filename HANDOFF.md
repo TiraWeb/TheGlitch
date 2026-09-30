@@ -62,8 +62,6 @@ sudo ./bootstrap.sh
 sudo ./scripts/setup-worlds.sh
 sudo ./scripts/setup-all-plugins.sh
 sudo ./scripts/setup-nexo-items.sh    # Nexo jar must be purchased+uploaded manually first (docs/STATUS.md)
-sudo ./scripts/deploy-balance-2026-09-02.sh  # 2026-09-02 balance: 20 items itemname, COINS retuned, roll-based sell, attrs, consumables, Vault +5%, scatter 10→6 (4d8c554/6e2fba7)
-sudo ./scripts/deploy-armor-2026-09-02.sh     # 2026-09-02 armor: +0..+5 ANVIL slot40 or /armor upgrade, per-slot identity, config v3 (f1da4d0/d847c69, RCON verified)
 
 # Preferred — single reactor build (correct topological order, Paper resolved once, parallel):
 sudo ./scripts/build-all.sh           # builds/deploys all 10 plugins (GlitchDungeons/HUD/HealthBar/Loot removed 2026-09-22)

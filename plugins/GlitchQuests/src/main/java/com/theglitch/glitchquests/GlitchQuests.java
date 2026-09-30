@@ -45,6 +45,7 @@ public final class GlitchQuests extends JavaPlugin implements TabCompleter, List
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        com.theglitch.common.ConfigDefaults.merge(this);
         quests = new QuestManager(this);
         menus = new Menus(quests);
         QuestListener listener = new QuestListener(this, quests);

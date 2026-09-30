@@ -286,34 +286,16 @@ if [[ -f "${REPO_DIR}/server/plugins/Coins/config.yml" && ! -f "${PLUGIN_DIR}/Co
 fi
 
 # ---------------------------------------------------------------------------
-# Phase 5.3 — seed MythicMobs configs (once; box's copy wins after first boot)
-# Mob definitions, skills, and drop tables are synced from the repo.
-# If the operator edits them in-game (or via /mm reload), the box's copy
-# becomes the source of truth — bootstrap won't overwrite.
+# Phase 5.3 — sync MythicMobs configs (repo is the source of truth for every
+# file it tracks; files that only exist on the box — licensed boss packs,
+# MythicMobs' own defaults — are left alone). Includes the health-bar pack,
+# items and config-spawning.yml (vanilla-spawn off + spawn caps).
 # ---------------------------------------------------------------------------
 if [[ -d "${REPO_DIR}/server/plugins/MythicMobs" ]]; then
-  log "Phase 5.3 — seeding MythicMobs configs"
+  log "Phase 5.3 — syncing MythicMobs configs"
   install -d -m 755 "${PLUGIN_DIR}/MythicMobs"
-  for subdir in Mobs Skills DropTables Spawners SpawnAreas randomspawns; do
-    if [[ -d "${REPO_DIR}/server/plugins/MythicMobs/${subdir}" ]]; then
-      install -d -m 755 "${PLUGIN_DIR}/MythicMobs/${subdir}"
-      for f in "${REPO_DIR}/server/plugins/MythicMobs/${subdir}"/*.yml; do
-        [[ -f "${f}" ]] || continue
-        install -m 644 "${f}" "${PLUGIN_DIR}/MythicMobs/${subdir}/"
-      done
-    fi
-  done
-fi
-
-# ---------------------------------------------------------------------------
-# Phase 5.5 — seed FancyNpcs + DeluxeMenus configs (once; box's copy wins)
-# ---------------------------------------------------------------------------
-if [[ -f "${REPO_DIR}/server/plugins/DeluxeMenus/gui_configs/class_selector.yml" ]]; then
-  log "Phase 5.5 — seeding DeluxeMenus GUI configs"
-  install -d -m 755 "${PLUGIN_DIR}/DeluxeMenus/gui_configs"
-  for f in "${REPO_DIR}/server/plugins/DeluxeMenus/gui_configs"/*.yml; do
-    [[ -f "${f}" ]] || continue
-    install -m 644 "${f}" "${PLUGIN_DIR}/DeluxeMenus/gui_configs/"
+  (cd "${REPO_DIR}/server/plugins/MythicMobs" && find Mobs Skills DropTables Spawners SpawnAreas randomspawns items config Packs       -type f -name '*.yml' 2>/dev/null) | while IFS= read -r rel; do
+    install -D -m 644 "${REPO_DIR}/server/plugins/MythicMobs/${rel}" "${PLUGIN_DIR}/MythicMobs/${rel}"
   done
 fi
 

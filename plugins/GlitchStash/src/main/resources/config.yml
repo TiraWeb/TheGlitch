@@ -1,5 +1,5 @@
 ﻿config-version: 1
-# GlitchStash â€” The Glitch Extraction Vault
+# GlitchStash — The Glitch Extraction Vault
 # Items saved automatically on successful extraction
 
 # Residual Glitch payout: on extraction, pay bonus shards =
@@ -16,10 +16,10 @@ extraction-variants:
   # When true, winning a key zone without consuming the key gives no variant
   # bonus and logs a warning (the VelKoth win itself cannot be cancelled).
   enforce-key: true
-  # How long a consumed key stays armed (seconds) â€” covers the capture duration
+  # How long a consumed key stays armed (seconds) — covers the capture duration
   arm-duration-seconds: 180
   # Zones are rectangles (x/z bounds, y ignored) mirroring your in-game VelKoth
-  # arenas. Empty by default â€” the operator places arenas in-game, then adds the
+  # arenas. Empty by default — the operator places arenas in-game, then adds the
   # matching bounds here and runs /extractadmin reload. Example shape:
   #   fast:
   #     world: glitch_red

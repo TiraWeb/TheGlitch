@@ -186,12 +186,10 @@ mc "mv setspawn hub:0,-60,0" >/dev/null
 # 'passthrough deny' on __global__ is the docs-recommended way to make a world
 # read-only for non-members (never 'build deny' — that breaks pistons etc).
 # Ops implicitly bypass protection; use '/rg bypass' to toggle when testing.
-# ---- world borders (2026-09-29) ----
-# Square borders enclosing each imported map's ORIGINAL generated area, so nothing of the
-# maps is ever cut off but vanilla can't generate endless terrain around them (NMinimap's
-# render chain once generated ~160 region files north of every red world). Derived from the
-# chunk bounding box of the pre-NMinimap backup; the playable rectangles (scatter bounds:
-# Eleria 3000x1500, Horizons 3200x1400, glitch_red 2000x2000) sit well inside.
+# ---- world borders (2026-09-30) ----
+# Square around each imported map's footprint — the chunks that came from the map
+# save (scripts/map-footprint.py) — plus one chunk, so no part of a map is cut off.
+# Past the map's own edge GlitchWorldGen generates void behind barrier walls.
 log "Setting red world borders..."
 border() { # world centerX centerZ diameter
   mc "execute in minecraft:$1 run worldborder center $2 $3" >/dev/null
@@ -199,8 +197,6 @@ border() { # world centerX centerZ diameter
   mc "execute in minecraft:$1 run worldborder warning distance 32" >/dev/null
   mc "execute in minecraft:$1 run worldborder damage buffer 2" >/dev/null
 }
-# Square around each imported map's footprint (scripts/map-footprint.py) + 1 chunk;
-# GlitchWorldGen walls off the map's exact edge inside it (2026-09-30).
 border glitch_red 744 776 3184
 border glitch_red_eleria 112 -8 2176
 border glitch_red_horizons 72 64 3664
@@ -274,75 +270,12 @@ for w in hub "${RED_WORLDS[@]}"; do
   mc "mv gamerule list ${w} --filter keep_inventory" 2>/dev/null | grep -i "keep_inventory:" || echo "     keep_inventory: (unreadable)"
 done
 
-# --- Red Zone pre-generation (border 2000 + margin) --------------------------
-# Skip if already pre-generated. Detected two ways: an explicit marker, OR a
-# healthy count of region files already on disk (the ~1050-radius area is ~20+
-# .mca files; a fresh world has 0-2). This avoids redoing the ~18-min job when
-# the chunks are already present (e.g. after re-importing an existing world).
-PREGEN_MARKER="${DIM_DIR}/glitch_red/.pregen-started"
-RED_REGION="${DIM_DIR}/glitch_red/region"
-mca_count=$(find "${RED_REGION}" -name '*.mca' 2>/dev/null | wc -l)
-if [[ -f "${PREGEN_MARKER}" || "${mca_count}" -gt 8 ]]; then
-  log "Red Zone already pre-generated (${mca_count} region files) — skipping (delete ${PREGEN_MARKER} + region to redo)"
-  touch "${PREGEN_MARKER}" 2>/dev/null || true
-  chown "${MC_USER}:${MC_USER}" "${PREGEN_MARKER}" 2>/dev/null || true
-else
-  log "Starting Red Zone pre-generation (radius 1050 around 0,0) — ~18 min on 2 cores, runs in background"
-  mc "chunky world glitch_red" >/dev/null
-  mc "chunky shape square"     >/dev/null
-  mc "chunky center 0 0"       >/dev/null
-  mc "chunky radius 1050"      >/dev/null
-  mc "chunky start"            >/dev/null
-  touch "${PREGEN_MARKER}" 2>/dev/null || true
-  chown "${MC_USER}:${MC_USER}" "${PREGEN_MARKER}" 2>/dev/null || true
-fi
-
-# --- Imported red worlds: pre-generation across the FULL scatter/loot zone ---
-# Eleria/Horizons only ship the small footprint the source map download
-# covered — everything outside it is ungenerated. SpotPicker (GlitchStash)
-# and ScatterManager (GlitchItems) both deliberately never force-generate
-# chunks live (that's what caused the 2026-09-21 watchdog freeze/crash — see
-# docs/STATUS.md), so any ungenerated chunk inside their search area is just
-# permanently unavailable to them: extraction points fail to validate, and
-# loot containers/vanilla structures never spawn there even after a player
-# walks in and the chunk naturally generates (scatter already ran and moved
-# on by then). The fix is to make "ungenerated chunk in the loot zone" not
-# exist in the first place.
-#
-# 2026-09-21 (initial): pre-generated only a small padded box around each
-# world's dynamic-overrides extraction center/radius — fixed extraction but
-# left the wider ScatterManager loot-scatter border still full of gaps, which
-# is what actually crashed the server.
-# 2026-09-21 (2nd pass): widened to a SQUARE centered at (1000,1000) radius
-# 1000, copying glitch_red's own convention — WRONG, because Eleria/Horizons
-# are not centered there at all (confirmed via their spawn points, both
-# ~(0,0)/(30,0), and later via the operator's own map-file dimensions).
-# 2026-09-21 (3rd pass, correct): rectangular corners centered on world origin,
-# sized to the operator's confirmed real map dimensions (Horizons 3200x1400,
-# Eleria 3000x1500) — matches plugins/GlitchItems/src/main/resources/config.yml
-# scatter.worlds.* exactly. Chunky skips chunks already on disk, so re-running
-# this only fills gaps.
-declare -A IMPORTED_RED_PREGEN_CORNERS=(
-  [glitch_red_eleria]="-1500 -750 1500 750"
-  [glitch_red_horizons]="-1600 -700 1600 700"
-)
-for RW in "${RED_WORLDS[@]:1}"; do
-  RW_MARKER="${DIM_DIR}/${RW}/.pregen-started"
-  RW_REGION="${DIM_DIR}/${RW}/region"
-  rw_mca_count=$(find "${RW_REGION}" -name '*.mca' 2>/dev/null | wc -l)
-  if [[ -f "${RW_MARKER}" ]]; then
-    log "${RW}: extraction-box pre-generation already done — skipping (delete ${RW_MARKER} to redo)"
-    continue
-  fi
-  corners="${IMPORTED_RED_PREGEN_CORNERS[${RW}]:--1000 -1000 1000 1000}"
-  log "${RW}: pre-generating loot/extraction zone (corners ${corners}, was ${rw_mca_count} region files)"
-  mc "chunky world ${RW}"        >/dev/null
-  mc "chunky shape rectangle"    >/dev/null
-  mc "chunky corners ${corners}" >/dev/null
-  mc "chunky start"              >/dev/null
-  touch "${RW_MARKER}" 2>/dev/null || true
-  chown "${MC_USER}:${MC_USER}" "${RW_MARKER}" 2>/dev/null || true
-done
+# --- No pre-generation for the red worlds (2026-09-30) -------------------------
+# All three red worlds are imported map saves: every playable chunk is already on
+# disk, and GlitchWorldGen (scripts/setup-map-edges.sh) generates anything outside
+# a map as void behind barrier walls. The old Chunky passes here (radius 1050
+# around 0,0 for glitch_red; ±1500/±1600 boxes for Eleria/Horizons) are what
+# filled the areas around the maps with vanilla terrain, so they were removed.
 
 cat <<'EOF'
 
@@ -351,18 +284,11 @@ cat <<'EOF'
 ============================================================
 
   Worlds:  hub (main, border 512)
-           glitch_red (border 2000, seed 20260719)
-           glitch_red_eleria, glitch_red_horizons (external map imports)
+           glitch_red, glitch_red_eleria, glitch_red_horizons
+             (imported maps; borders around each map footprint;
+              run scripts/setup-map-edges.sh once so nothing generates past them)
 
-  If pre-generation started, it runs in the background —
-  expect elevated CPU and TPS dips for ~15-20 minutes.
-    progress:  sudo ./console.sh   (chunky prints updates)
-    pause:     scripts/mc-cmd.py 'chunky pause'
-    resume:    scripts/mc-cmd.py 'chunky continue'
-  (Re-running this script skips pre-gen automatically once done. Pre-gen only
-   runs for glitch_red — the two imported red worlds already have terrain.)
-
-  Recommended after pre-gen finishes:
+  Recommended next:
     sudo systemctl restart theglitch   # applies per-world paper-world.yml
   then confirm all four worlds are registered across the restart:
     scripts/mc-cmd.py 'mv list'        # expect hub, glitch_red(_eleria/_horizons)

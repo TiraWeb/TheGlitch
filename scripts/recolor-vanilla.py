@@ -2,7 +2,7 @@
 """Recolor vanilla container/hud textures to Arcane Ruins theme while preserving layout.
 
 Input: vanilla PNGs downloaded to C:/Users/tirob/AppData/Local/Temp/opencode/
-Output: themed textures into server/plugins/Oraxen/pack/textures/
+Output: themed textures into server/plugins/Nexo/pack/external_packs/Oraxen/assets/minecraft/textures/
 
 This ensures slot positions are pixel-perfect (fixes E inventory misalignment).
 """
@@ -11,7 +11,7 @@ from PIL import Image
 
 REPO = Path(__file__).resolve().parents[1]
 TEMP = Path(r"C:\Users\tirob\AppData\Local\Temp\opencode")
-TEX = REPO / "server" / "plugins" / "Oraxen" / "pack" / "textures"
+TEX = REPO / "server" / "plugins" / "Nexo" / "pack" / "external_packs" / "Oraxen" / "assets" / "minecraft" / "textures"
 
 VOID_TOP = (13, 6, 22)
 VOID_BOT = (24, 11, 38)

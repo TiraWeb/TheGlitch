@@ -36,7 +36,10 @@ BACKUP="/opt/theglitch/backups/pre-map-edges-$(date +%Y%m%d-%H%M)"
 log "Backing up region/entities/poi -> ${BACKUP}"
 for w in "${WORLDS[@]}"; do
   mkdir -p "${BACKUP}/${w}"
-  cp -a "${DIMS}/${w}/region" "${DIMS}/${w}/entities" "${DIMS}/${w}/poi" "${BACKUP}/${w}/" 2>/dev/null || true
+  for kind in region entities poi; do
+    [[ -d "${DIMS}/${w}/${kind}" ]] || continue
+    cp -a "${DIMS}/${w}/${kind}" "${BACKUP}/${w}/" || die "backup of ${w}/${kind} failed — not pruning"
+  done
 done
 
 log "Pruning chunks outside the maps"
@@ -47,12 +50,16 @@ python3 - "${SERVER}/plugins/Multiverse-Core/worlds.yml" "${WORLDS[@]}" <<'PY'
 import sys
 path, worlds = sys.argv[1], sys.argv[2:]
 lines = open(path, encoding="utf-8").read().split("\n")
-current = None
+current, done = None, set()
 for i, l in enumerate(lines):
     if l and not l.startswith(" ") and l.endswith(":"):
-        current = l[:-1].split(":")[-1]
+        current = l[:-1].split(":")[-1].strip("'\"")
     elif current in worlds and l.startswith("  generator:"):
         lines[i] = "  generator: GlitchWorldGen"
+        done.add(current)
+missing = [w for w in worlds if w not in done]
+if missing:
+    sys.exit("generator line not found for: " + ", ".join(missing) + " — set it with /mv modify or by hand")
 open(path, "w", encoding="utf-8").write("\n".join(lines))
 print("generator set for", ", ".join(worlds))
 PY

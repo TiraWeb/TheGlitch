@@ -92,7 +92,7 @@ mc "lp group admin meta setprefix 1000 \"$I_ADMIN \""
 
 # --- TAB sorting membership (TAB groups.yml GROUPS list matches these) -----
 log "Setting TAB group membership flags"
-for g in default wisp stalker sentinel helper dev moderator admin owner donor; do
+for g in default alpha wisp stalker sentinel helper dev moderator admin owner donor; do
   mc "lp group $g permission set tab.group.$g true"
 done
 
@@ -157,6 +157,11 @@ done
 for p in essentials.ban essentials.tempban.unlimited essentials.unban essentials.banip essentials.unbanip          essentials.invsee essentials.enderchest.others essentials.socialspy essentials.tphere essentials.fly grim.spectate; do
   mc "lp group moderator permission set ${p} true"
 done
+# The global fly above is set on moderator itself, which beats helper's inherited
+# red-world deny — repeat the deny here so moderators can't fly in PvP zones.
+for w in glitch_red glitch_red_eleria glitch_red_horizons; do
+  mc "lp group moderator permission set essentials.fly false world=${w}"
+done
 mc "lp group helper meta set meta.class.staff true"
 mc "lp group helper meta set meta.zone.staff true"
 # Dev: creative tools + all Glitch admin commands (inherits helper powers)
@@ -167,7 +172,7 @@ mc "lp group dev permission set essentials.gamemode.adventure true"
 mc "lp group dev permission set essentials.gamemode.spectator true"
 mc "lp group dev permission set worldedit.* true"
 mc "lp group dev permission set fawe.admin true"
-for p in glitchitems glitchstash glitchhideout glitchclasses glitchraid glitchdungeons glitchinsurance glitchevents glitchloot glitchhud glitchhealthbar glitchdeathrules; do
+for p in glitchitems glitchstash glitchhideout glitchclasses glitchraid glitchinsurance glitchevents glitchdeathrules glitchquests; do
   mc "lp group dev permission set $p.admin true"
 done
 mc "lp group dev meta set meta.class.staff true"
@@ -180,7 +185,7 @@ mc "lp group admin permission set fawe.admin true"
 mc "lp group admin permission set multiverse.* true"
 mc "lp group admin permission set tab.* true"
 mc "lp group admin permission set deluxemenus.* true"
-for p in glitchitems glitchstash glitchhideout glitchclasses glitchraid glitchdungeons glitchinsurance glitchevents glitchloot glitchhud glitchhealthbar glitchdeathrules; do
+for p in glitchitems glitchstash glitchhideout glitchclasses glitchraid glitchinsurance glitchevents glitchdeathrules glitchquests; do
   mc "lp group admin permission set $p.admin true"
 done
 # Owner: everything (inherits admin, plus full LuckPerms control)
