@@ -38,6 +38,13 @@ public final class GlitchStash extends JavaPlugin {
         return extractionHud;
     }
     private volatile List<String> redWorlds = List.of("glitch_red");
+
+    public boolean isRedWorld(String world) {
+        for (String w : redWorlds) {
+            if (w.equalsIgnoreCase(world)) return true;
+        }
+        return false;
+    }
     private FileConfiguration messagesConfig;
     private File messagesFile;
 

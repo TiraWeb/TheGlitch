@@ -129,6 +129,12 @@ public final class GadgetListener implements Listener {
         }
     }
 
+    /** Placed gadgets (barricade, mine) respect WorldGuard regions like block placement would. */
+    private boolean inProtectedRegion(Location loc) {
+        ScatterManager scatter = plugin.getScatterManager();
+        return scatter != null && scatter.isProtectedRegion(loc);
+    }
+
     private static boolean isGadget(String id) {
         return GAME_ONLY.contains(id) || id.equals("bandage") || id.equals("adrenaline_shot");
     }
@@ -345,6 +351,10 @@ public final class GadgetListener implements Listener {
             default -> BlockFace.NORTH;
         };
         Block base = clicked.getRelative(BlockFace.UP);
+        if (inProtectedRegion(base.getLocation())) {
+            player.sendActionBar(MM.deserialize("<red>You can't deploy that here.</red>"));
+            return false;
+        }
         List<Block> placed = new ArrayList<>();
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = 0; dy <= 1; dy++) {
@@ -386,6 +396,10 @@ public final class GadgetListener implements Listener {
             return false;
         }
         Location at = clicked.getLocation().add(0.5, 1.03, 0.5);
+        if (inProtectedRegion(at)) {
+            player.sendActionBar(MM.deserialize("<red>You can't arm that here.</red>"));
+            return false;
+        }
         ItemDisplay display = at.getWorld().spawn(at, ItemDisplay.class, d -> {
             d.setItemStack(new ItemStack(Material.HEAVY_WEIGHTED_PRESSURE_PLATE));
             d.setPersistent(false);

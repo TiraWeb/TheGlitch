@@ -513,8 +513,8 @@ public final class RaidManager {
             try { endGlobalRaid(world, RaidEndReason.TIMEOUT); } catch (Exception ignored) {}
         }
         // Buffer check: if we are in the 1m scatter buffer, do NOT start a fresh raid — wait for next t0
-        if (isInBufferPeriod()) {
-            long remainMs = getMillisUntilNextCycle();
+        if (isInBufferPeriod(world)) {
+            long remainMs = getMillisUntilNextCycle(world);
             plugin.getLogger().info("Global raid start suppressed — in 1m buffer, next cycle in " + formatTime((int) Math.max(0, remainMs / 1000)) + " (world=" + world + ")");
             return null;
         }
@@ -860,8 +860,9 @@ public final class RaidManager {
         final RaidEndReason summaryReason = reason;
         FoliaScheduler.runLaterGlobal(plugin, () -> sendSummary(summarySession, summaryReason), summaryDelayTicks);
         String worldLog = world;
-        // Global cycle fully ended — extraction markers no longer needed
-        extractedThisRaid.clear();
+        // This world's cycle ended — only its members' extraction markers go
+        // (clearing the whole set touched the other red worlds' raids too)
+        extractedThisRaid.removeAll(membersSnapshot);
         plugin.getLogger().info("Global raid ended for world " + worldLog + " reason=" + reason + " members=" + membersSnapshot.size());
     }
 
@@ -1914,6 +1915,8 @@ public final class RaidManager {
             // STRICT world filter: only RED
             if (!p.getWorld().getName().equalsIgnoreCase(worldKey)) continue;
             if (p.getWorld().getName().equalsIgnoreCase(hubWorld)) continue;
+            // Just extracted and waiting for the hub teleport — not a timeout victim
+            if (isRecentlyExtracted(p.getUniqueId())) continue;
             victims.add(p.getUniqueId());
             if (!session.getMembers().contains(p.getUniqueId())) {
                 session.getMembers().add(p.getUniqueId());
@@ -1926,6 +1929,7 @@ public final class RaidManager {
             if (memberId.equals(session.getLeader()) && Bukkit.getPlayer(memberId) == null) continue;
             Player p = Bukkit.getPlayer(memberId);
             if (p == null) continue;
+            if (isRecentlyExtracted(memberId)) continue;
             // STRICT: only if still in RED at kill moment — skip if they escaped to hub/pve during iteration
             String w = p.getWorld().getName();
             if (!w.equalsIgnoreCase(worldKey)) continue;

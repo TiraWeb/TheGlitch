@@ -532,7 +532,7 @@ public final class ClassPanel implements Listener {
                     try {
                         var g = plugin.getClassGUI();
                         // Select directly from the floating panel — no chest-GUI redirect (2026-09-20).
-                        if (g != null) g.applyClassSelectCore(player, arg);
+                        if (g != null) g.requestClassSelect(player, arg, null);
                     } catch (Throwable t) {
                         plugin.getLogger().fine("panel class select failed: " + t.getClass().getSimpleName());
                     }

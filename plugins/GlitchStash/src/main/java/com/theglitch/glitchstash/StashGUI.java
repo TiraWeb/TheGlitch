@@ -94,9 +94,9 @@ public class StashGUI implements Listener {
 
         int pages = Math.max(1, (flat.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         int current = Math.min(Math.max(0, page), pages - 1);
-        if (current != page) {
-            openSessions.put(player.getUniqueId(), new openSession(current));
-        }
+        // Always record the page shown — only storing it when clamped left the
+        // session on page 0 after "Next", so clicks took items from the wrong page.
+        openSessions.put(player.getUniqueId(), new openSession(current));
 
         for (int slot = 9; slot < SIZE; slot++) {
             inv.setItem(slot, null);

@@ -90,6 +90,8 @@ public final class InsuranceManager {
     private volatile int premiumPerItem = 100;
     private volatile int maxInsuredItems = 3;
     private volatile int claimWindowSeconds = 300;
+    /** How long a bought policy protects the item (independent of the old claim window). */
+    private volatile int policyDurationSeconds = 3600;
     private volatile int cooldownSeconds = 60;
     private volatile Set<String> enabledWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
 
@@ -126,6 +128,7 @@ public final class InsuranceManager {
                 plugin.getLogger().warning("Invalid max-insured-items " + maxInsuredItems + " — clamped to 3.");
                 maxInsuredItems = Math.max(1, Math.min(maxInsuredItems, 36));
             }
+            policyDurationSeconds = Math.max(60, plugin.getConfig().getInt("insurance.policy-duration-seconds", 3600));
             claimWindowSeconds = plugin.getConfig().getInt("insurance.claim-window-seconds", 300);
             if (claimWindowSeconds < 1 || claimWindowSeconds > 86400) {
                 plugin.getLogger().warning("Invalid claim-window-seconds " + claimWindowSeconds + " — clamped to 300.");
@@ -223,7 +226,7 @@ public final class InsuranceManager {
 
         // Already insured check (isSimilar)
         for (InsuredItem existing : list) {
-            if (existing.rawItem().isSimilar(stack)) {
+            if (samePolicyItem(existing.rawItem(), stack)) {
                 return InsureResult.ALREADY_INSURED;
             }
         }
@@ -237,7 +240,7 @@ public final class InsuranceManager {
         }
 
         long now = System.currentTimeMillis();
-        long expires = now + (long) claimWindowSeconds * 1000L;
+        long expires = now + (long) policyDurationSeconds * 1000L;
         String name = displayName(stack);
         InsuredItem insuredItem = new InsuredItem(stack.clone(), now, expires, name);
         list.add(insuredItem);
@@ -309,9 +312,18 @@ public final class InsuranceManager {
             if (drop == null) continue;
             for (InsuredItem insuredItem : list) {
                 if (matched.contains(insuredItem)) continue;
-                if (drop.isSimilar(insuredItem.rawItem())) {
-                    dropIter.remove();
-                    itemsToKeep.add(drop);
+                if (samePolicyItem(drop, insuredItem.rawItem())) {
+                    // A policy covers the amount that was insured, not the whole stack
+                    int covered = Math.max(1, insuredItem.rawItem().getAmount());
+                    if (drop.getAmount() > covered) {
+                        ItemStack keep = drop.clone();
+                        keep.setAmount(covered);
+                        drop.setAmount(drop.getAmount() - covered);
+                        itemsToKeep.add(keep);
+                    } else {
+                        dropIter.remove();
+                        itemsToKeep.add(drop);
+                    }
                     matched.add(insuredItem);
                     kept++;
                     break;
@@ -345,7 +357,7 @@ public final class InsuranceManager {
         List<InsuredItem> matched = new ArrayList<>();
         for (InsuredItem insuredItem : list) {
             for (ItemStack content : retained) {
-                if (content != null && content.isSimilar(insuredItem.rawItem())) {
+                if (content != null && samePolicyItem(content, insuredItem.rawItem())) {
                     matched.add(insuredItem);
                     break;
                 }
@@ -361,6 +373,26 @@ public final class InsuranceManager {
             }
         }
         return matched.size();
+    }
+
+    /**
+     * Same item for insurance purposes: identical apart from stack size and
+     * durability. isSimilar() alone failed as soon as the gear took damage in
+     * the raid, so the policy never paid out.
+     */
+    static boolean samePolicyItem(ItemStack a, ItemStack b) {
+        if (a == null || b == null || a.getType() != b.getType()) return false;
+        return normalized(a).isSimilar(normalized(b));
+    }
+
+    private static ItemStack normalized(ItemStack stack) {
+        ItemStack copy = stack.clone();
+        copy.setAmount(1);
+        if (copy.getItemMeta() instanceof org.bukkit.inventory.meta.Damageable dmg && dmg.hasDamage()) {
+            dmg.setDamage(0);
+            copy.setItemMeta(dmg);
+        }
+        return copy;
     }
 
     private void purgeExpired(UUID uuid) {

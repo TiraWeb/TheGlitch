@@ -176,7 +176,7 @@ public final class CombatListener implements Listener {
         Integer frost = attributes.get("frost-touch");
         if (frost != null && frost > 0) {
             victim.addPotionEffect(new org.bukkit.potion.PotionEffect(
-                    org.bukkit.potion.PotionEffectType.SLOWNESS, 40, Math.min(frost - 1, 1)));
+                    org.bukkit.potion.PotionEffectType.SLOWNESS, 40, Math.max(0, Math.min(frost - 1, 2))));
         }
 
         return out;
@@ -271,6 +271,8 @@ public final class CombatListener implements Listener {
     public void onKill(org.bukkit.event.entity.EntityDeathEvent event) {
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
+        // Red Zone only — otherwise rifts could be farmed on mobs anywhere
+        if (!glitchManager.isEnabledWorld(killer.getWorld().getName())) return;
         GearRolls rolls = gearManager.parse(killer.getInventory().getItemInMainHand());
         if (rolls == null || rolls.type != GearType.DREAM_EATER) return;
         if (java.util.concurrent.ThreadLocalRandom.current().nextInt(100) >= gearManager.dreamRiftChance()) return;

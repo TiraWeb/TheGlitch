@@ -31,6 +31,9 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
     public void onExtractionWin(KothWinEvent event) {
         Player player = event.getWinner();
         if (player == null) return;
+        // Only Red Zone extraction arenas stash + clear the inventory — a KOTH
+        // won anywhere else (event arenas, tests) must not wipe the winner.
+        if (!plugin.isRedWorld(player.getWorld().getName())) return;
 
         // 1. Save inventory to stash.
         // getStorageContents() = 36 main slots only — getContents() would ALSO
@@ -88,11 +91,13 @@ public record ExtractionListener(GlitchStash plugin, StashManager stashManager) 
 
     private void payGlitchBonus(Player player, ItemStack[] contents, ItemStack[] armor,
                                 ItemStack offhand, int variantBonusPct) {
-        // Cached config check — no getConfig() per extraction
-        if (!plugin.isPayoutEnabled()) return;
+        // Cached config check — no getConfig() per extraction. payout-enabled only
+        // gates the Residual Glitch part; an armed Fast/Silent variant still pays.
+        boolean glitchPayout = plugin.isPayoutEnabled();
+        if (!glitchPayout && variantBonusPct <= 0) return;
         GlitchItems glitchItems = GlitchItems.getInstance();
         if (glitchItems == null) return;
-        double multiplier = glitchItems.getGlitchManager().getPayoutMultiplier(player);
+        double multiplier = glitchPayout ? glitchItems.getGlitchManager().getPayoutMultiplier(player) : 1.0;
         GlitchShops shops = GlitchShops.getInstance();
         if (shops == null) return;
         ShopManager shopManager = shops.getShopManager();

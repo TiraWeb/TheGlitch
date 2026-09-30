@@ -28,7 +28,8 @@ public final class GearRolls {
         return rarity.getId() + "|" + type.name() + "|" + resonance.name() + "|"
                 + attributes + "|"
                 + damage + "|" + armor + "|" + speed + "|" + maxhp + "|" + boost
-                + "|" + level;
+                + "|" + level
+                + "|" + starsPrimary + "|" + starsSpeed + "|" + starsHp;
     }
 
     public static GearRolls deserialize(String data) {
@@ -52,6 +53,16 @@ public final class GearRolls {
                     rolls.level = Integer.parseInt(parts[9]);
                 } catch (NumberFormatException ignored) {
                     rolls.level = 0;
+                }
+            }
+            // Star counts (appended 2026-10-01; older items read as 0 stars)
+            if (parts.length >= 13) {
+                try {
+                    rolls.starsPrimary = Integer.parseInt(parts[10]);
+                    rolls.starsSpeed = Integer.parseInt(parts[11]);
+                    rolls.starsHp = Integer.parseInt(parts[12]);
+                } catch (NumberFormatException ignored) {
+                    rolls.starsPrimary = rolls.starsSpeed = rolls.starsHp = 0;
                 }
             }
             // Rarity.fromId returns null for unknown ids (it does not throw) —

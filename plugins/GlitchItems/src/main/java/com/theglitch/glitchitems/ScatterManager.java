@@ -535,9 +535,8 @@ public final class ScatterManager {
             Bukkit.getPluginManager().registerEvent(evt, listener, EventPriority.MONITOR,
                     (l, ev) -> {
                         if (!ev.getClass().getName().equals(eventClass.getName())) return;
-                        plugin.getLogger().info("[Scatter] AutoExtractCycleEndEvent received — scattering now (post-extraction).");
                         // Ensure we run on correct thread — events fire on global region
-                        scatterNow();
+                        scatterForCycle();
                     }, plugin);
             this.cycleListener = listener;
             plugin.getLogger().info("[Scatter] Hooked AutoExtractCycleEndEvent — will scatter right after extraction ends.");
@@ -572,13 +571,27 @@ public final class ScatterManager {
      * {@code AutoExtractCycleEndEvent} if the reflective hook is not desired.
      * </p>
      */
+    /**
+     * Cycle-end entry point. Every red world's scheduler fires the cycle-end event
+     * (and GlitchStash also calls ContainerManager#scatter), all at the same moment,
+     * and one scatter covers every world — so repeat calls within a minute are no-ops.
+     */
+    public void scatterForCycle() {
+        long now = System.currentTimeMillis();
+        if (now - lastCycleScatter < 60_000L) return;
+        lastCycleScatter = now;
+        scatterNow();
+    }
+
+    private volatile long lastCycleScatter;
+
     public void scatterNow() {
         if (!enabled) {
             plugin.getLogger().info("[Scatter] scatterNow() called but scatter is disabled — ignoring.");
             return;
         }
         if (!scatterLock.compareAndSet(false, true)) {
-            plugin.getLogger().warning("[Scatter] scatterNow() already running — skipping concurrent invocation.");
+            plugin.getLogger().info("[Scatter] scatterNow() already running — skipping concurrent invocation.");
             return;
         }
         if (!FoliaScheduler.isFolia()) {
@@ -1593,7 +1606,7 @@ public final class ScatterManager {
      * {@code __global__}. If WorldGuard is not installed or the check fails,
      * returns false (allow placement). Uses reflection to avoid hard dependency.
      */
-    private boolean isProtectedRegion(Location loc) {
+    public boolean isProtectedRegion(Location loc) {
         if (loc == null || loc.getWorld() == null) return false;
         Plugin wg = Bukkit.getPluginManager().getPlugin("WorldGuard");
         if (wg == null || !wg.isEnabled()) return false;

@@ -105,7 +105,10 @@ public final class ClassCommand implements CommandExecutor {
                             "<shards>", String.valueOf((int) economy.getBalance(player))));
                     return true;
                 }
-                economy.withdrawPlayer(player, cost);
+                if (!economy.withdrawPlayer(player, cost).transactionSuccess()) {
+                    player.sendMessage(Component.text("Payment failed — class not reset.", NamedTextColor.RED));
+                    return true;
+                }
                 classManager.resetClass(player.getUniqueId());
                 classManager.applyMaxHealth(player, 0);
                 player.sendMessage(plugin.getComponent("class-reset"));

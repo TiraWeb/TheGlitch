@@ -287,12 +287,9 @@ public final class EventManager {
         Inventory inv = barrel.getInventory();
         for (String itemName : supplyItems) {
             ItemStack stack = null;
-            // 1) Try GlitchCommon NexoUtil reflectively (custom items like unstable_rift_common, rune_fragment)
+            // 1) Nexo custom items (unstable_rift_common, rune_fragment, ...)
             try {
-                Class<?> util = Class.forName("com.theglitch.common.NexoUtil");
-                java.lang.reflect.Method build = util.getMethod("build", String.class);
-                Object res = build.invoke(null, itemName);
-                if (res instanceof ItemStack s) stack = s;
+                stack = com.theglitch.common.NexoUtil.build(itemName);
             } catch (Exception ignored) {}
             // 2) Fallback: vanilla material
             if (stack == null) {
@@ -363,7 +360,10 @@ public final class EventManager {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             LivingEntity boss = null;
             for (Entity e : world.getNearbyEntities(spawnCenter, 32, 32, 32)) {
-                if (e instanceof LivingEntity living && !before.contains(living.getUniqueId())) {
+                // Only the MythicMob we spawned — a player or natural mob that
+                // wandered in used to be "tracked" and .remove()d at despawn.
+                if (e instanceof LivingEntity living && !(living instanceof Player)
+                        && !before.contains(living.getUniqueId()) && isMythicType(living, mob)) {
                     boss = living;
                     break;
                 }
@@ -389,6 +389,22 @@ public final class EventManager {
         return true;
     }
 
+    /** MythicMobs internal type of an entity, via reflection (MythicMobs is a soft dependency). */
+    private static boolean isMythicType(Entity entity, String type) {
+        try {
+            Class<?> mb = Class.forName("io.lumine.mythic.bukkit.MythicBukkit");
+            Object inst = mb.getMethod("inst").invoke(null);
+            Object mobs = inst.getClass().getMethod("getMobManager").invoke(inst);
+            Object opt = mobs.getClass().getMethod("getActiveMob", java.util.UUID.class).invoke(mobs, entity.getUniqueId());
+            if (!(opt instanceof java.util.Optional<?> o) || o.isEmpty()) return false;
+            Object active = o.get();
+            Object mobType = active.getClass().getMethod("getMobType").invoke(active);
+            return type.equalsIgnoreCase(String.valueOf(mobType));
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     public void cancelAll() {
         cancelPendingAutoTask();
         for (BukkitTask task : activeTasks.values()) {
@@ -407,13 +423,22 @@ public final class EventManager {
         }
     }
 
+    /**
+     * A random enabled red world that has someone in it (falls back to any
+     * enabled world). Returning the first match meant Eleria and Horizons
+     * never got supply drops or roaming bosses.
+     */
     public World pickEnabledWorld() {
+        List<World> occupied = new ArrayList<>();
+        List<World> all = new ArrayList<>();
         for (World world : Bukkit.getWorlds()) {
-            if (enabledWorlds.contains(world.getName().toLowerCase(Locale.ROOT))) {
-                return world;
-            }
+            if (!enabledWorlds.contains(world.getName().toLowerCase(Locale.ROOT))) continue;
+            all.add(world);
+            if (randomPlayerIn(world) != null) occupied.add(world);
         }
-        return null;
+        List<World> pool = occupied.isEmpty() ? all : occupied;
+        if (pool.isEmpty()) return null;
+        return pool.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(pool.size()));
     }
 
     private Player randomPlayerIn(World world) {

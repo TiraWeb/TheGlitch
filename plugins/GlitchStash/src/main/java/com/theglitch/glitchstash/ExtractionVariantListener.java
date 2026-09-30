@@ -48,9 +48,12 @@ public final class ExtractionVariantListener implements Listener {
                 "<variant>", variant.name()));
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    // Not ignoreCancelled: Bukkit fires RIGHT_CLICK_AIR already cancelled, so the key
+    // could only be armed by clicking a block. Respect a denied item use instead.
+    @EventHandler(priority = EventPriority.HIGH)
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return;
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (!manager.isEnabledCached()) return;
 

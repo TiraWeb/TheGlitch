@@ -111,7 +111,11 @@ public final class ResidualGlitchManager {
                 enteredAt.put(player.getUniqueId(), System.currentTimeMillis());
             }
             if (!isEnabledWorld(worldName)) {
-                hide(player);
+                // Residual Glitch belongs to one raid. Leaving the red world by any
+                // path (party-pulled extraction, reroute, admin tp) ends it — without
+                // this the timer kept running and the next entry jumped to 8/8.
+                if (getLast(player) != 0L || getStacks(player) > 0) clear(player);
+                else hide(player);
                 continue;
             }
             long now = System.currentTimeMillis();

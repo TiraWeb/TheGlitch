@@ -32,6 +32,8 @@ public final class ClassManager {
 
     private final GlitchClasses plugin;
     private final Map<UUID, ClassData> players = new ConcurrentHashMap<>();
+    /** Per-class progress (class -> {level, xp}) so switching back restores it (2026-10-01). */
+    private final Map<UUID, Map<String, int[]>> savedProgress = new ConcurrentHashMap<>();
     private final Path playerDir;
     private volatile int cachedMaxLevel = 10;
     private volatile int cachedResetCost = 500;
@@ -81,18 +83,41 @@ public final class ClassManager {
     }
 
     /**
-     * Set a player's class. Switching to a different class resets level and
-     * XP to 0 — progress is not carried across classes. The explicit paid
-     * reset flow (resetClass) is separate and unaffected.
+     * Set a player's class. Each class keeps its own level/XP: the current
+     * class's progress is stored and the target class resumes where it was
+     * left (a class never played starts at 0). The paid reset (resetClass)
+     * still wipes the current class.
      */
     public void setClass(UUID uuid, String className) {
         String sanitized = sanitizeClassName(className);
         ClassData data = getClassData(uuid);
         boolean changed = !data.className().equals(sanitized);
-        ClassData updated = new ClassData(uuid, sanitized,
-                changed ? 0 : data.level(), changed ? 0 : data.xp());
+        Map<String, int[]> saved = savedProgress.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>());
+        if (changed && !data.className().equals("none")) {
+            saved.put(data.className(), new int[]{data.level(), data.xp()});
+        }
+        int[] target = changed ? saved.getOrDefault(sanitized, new int[]{0, 0}) : new int[]{data.level(), data.xp()};
+        ClassData updated = new ClassData(uuid, sanitized, target[0], target[1]);
         players.put(uuid, updated);
         saveToFile(uuid, updated);
+    }
+
+    /** Saved {level, xp} for a class the player isn't currently using ({0,0} if never played). */
+    public int[] savedProgress(UUID uuid, String className) {
+        Map<String, int[]> saved = savedProgress.get(uuid);
+        int[] p = saved == null ? null : saved.get(sanitizeClassName(className));
+        return p == null ? new int[]{0, 0} : p.clone();
+    }
+
+    private void writeProgress(YamlConfiguration yaml, UUID uuid, ClassData data) {
+        Map<String, int[]> saved = savedProgress.get(uuid);
+        if (saved != null) {
+            for (Map.Entry<String, int[]> e : saved.entrySet()) {
+                if (e.getKey().equals(data.className())) continue;
+                yaml.set("progress." + e.getKey() + ".level", e.getValue()[0]);
+                yaml.set("progress." + e.getKey() + ".xp", e.getValue()[1]);
+            }
+        }
     }
 
     /**
@@ -142,6 +167,8 @@ public final class ClassManager {
      * Reset a player's class to none.
      */
     public void resetClass(UUID uuid) {
+        Map<String, int[]> saved = savedProgress.get(uuid);
+        if (saved != null) saved.remove(getClassData(uuid).className());
         ClassData updated = new ClassData(uuid, "none", 0, 0);
         players.put(uuid, updated);
         saveToFile(uuid, updated);
@@ -222,6 +249,15 @@ public final class ClassManager {
 
                     ClassData data = new ClassData(uuid, className, level, xp);
                     players.put(uuid, data);
+                    var progress = yaml.getConfigurationSection("progress");
+                    if (progress != null) {
+                        Map<String, int[]> saved = new ConcurrentHashMap<>();
+                        for (String cls : progress.getKeys(false)) {
+                            saved.put(sanitizeClassName(cls), new int[]{
+                                    progress.getInt(cls + ".level", 0), progress.getInt(cls + ".xp", 0)});
+                        }
+                        savedProgress.put(uuid, saved);
+                    }
                 } catch (Exception e) {
                     plugin.getLogger().log(Level.WARNING, "Failed to load player: " + path.getFileName(), e);
                 }
@@ -240,6 +276,7 @@ public final class ClassManager {
         yaml.set("class", data.className());
         yaml.set("level", data.level());
         yaml.set("xp", data.xp());
+        writeProgress(yaml, uuid, data);
 
         latestSnapshot.put(uuid, yaml);
         // Only one write in flight per player; it drains the latest snapshot
@@ -295,6 +332,7 @@ public final class ClassManager {
         yaml.set("class", data.className());
         yaml.set("level", data.level());
         yaml.set("xp", data.xp());
+        writeProgress(yaml, uuid, data);
         try {
             Path parent = file.getParent();
             if (parent != null) Files.createDirectories(parent);

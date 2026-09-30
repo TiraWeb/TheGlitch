@@ -504,12 +504,33 @@ public class ClassGUI implements Listener {
     // ==================== ACTIONS ====================
 
     private void handleClassSelect(Player player, String className) {
-        applyClassSelectCore(player, className);
-
         player.closeInventory();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        requestClassSelect(player, className, () -> Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (player.isOnline()) openClassMenu(player, className);
-        }, 5L);
+        }, 5L));
+    }
+
+    /**
+     * Switching away from a class you already play asks first (a single misclick
+     * on the wall panel used to switch instantly). Progress is kept per class.
+     */
+    public void requestClassSelect(Player player, String className, Runnable afterApply) {
+        ClassData data = classManager.getClassData(player.getUniqueId());
+        if (data.className().equals("none") || data.className().equalsIgnoreCase(className)) {
+            applyClassSelectCore(player, className);
+            if (afterApply != null) afterApply.run();
+            return;
+        }
+        int[] saved = classManager.savedProgress(player.getUniqueId(), className);
+        com.theglitch.common.ChatConfirm.ask(player, MM.deserialize(
+                "<yellow>Switch to <white>" + capitalizeFirst(className) + "</white>?</yellow> <gray>Your <white>"
+                        + capitalizeFirst(data.className()) + " Lv " + data.level()
+                        + "</white> is saved — switching back restores it. " + capitalizeFirst(className)
+                        + " is <white>Lv " + saved[0] + "</white>.</gray>"),
+                () -> {
+                    applyClassSelectCore(player, className);
+                    if (afterApply != null) afterApply.run();
+                });
     }
 
     /** Applies a class selection with no chest-GUI follow-up — used by the floating panel. */
@@ -599,7 +620,9 @@ public class ClassGUI implements Listener {
         }
         boolean leveledUp = classManager.addXp(player.getUniqueId(), classManager.getXpForLevel(data.level() + 1));
         if (!leveledUp) {
-            economy.depositPlayer(player, cost);
+            if (!economy.depositPlayer(player, cost).transactionSuccess()) {
+                plugin.getLogger().warning("CRITICAL: upgrade refund failed for " + player.getName() + " amount=" + cost);
+            }
             player.sendMessage(Component.text("Upgrade failed — shards refunded.", NamedTextColor.RED));
             return null;
         }
@@ -617,10 +640,9 @@ public class ClassGUI implements Listener {
 
     public boolean selectFromDialog(Player player, String className) {
         if (!isConfiguredClass(className)) return false;
-        applyClassSelectCore(player, className);
-        Bukkit.getScheduler().runTaskLater(plugin,
+        requestClassSelect(player, className, () -> Bukkit.getScheduler().runTaskLater(plugin,
                 () -> openClassMenu(player, className),
-                5L);
+                5L));
         return true;
     }
 

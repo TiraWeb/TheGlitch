@@ -153,10 +153,10 @@ public final class GlitchItems extends JavaPlugin {
      * Folia-safe entry for extraction hook (GlitchStash AutoExtractScheduler reflectively probes
      * GlitchItems for scatter methods). Supports multiple probed names.
      */
-    public void scatter() { if (scatterManager != null) scatterManager.scatterNow(); }
-    public void scatterLoot() { if (scatterManager != null) scatterManager.scatterNow(); }
-    public void onCycleEnd() { if (scatterManager != null) scatterManager.scatterNow(); }
-    public void handleCycleEnd() { if (scatterManager != null) scatterManager.scatterNow(); }
+    public void scatter() { if (scatterManager != null) scatterManager.scatterForCycle(); }
+    public void scatterLoot() { if (scatterManager != null) scatterManager.scatterForCycle(); }
+    public void onCycleEnd() { if (scatterManager != null) scatterManager.scatterForCycle(); }
+    public void handleCycleEnd() { if (scatterManager != null) scatterManager.scatterForCycle(); }
     public void doScatter() { if (scatterManager != null) scatterManager.scatterNow(); }
 
     public Economy getEconomy() {

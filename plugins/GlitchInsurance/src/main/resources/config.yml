@@ -6,6 +6,9 @@ insurance:
   premium-per-item: 100
   max-insured-items: 3
   claim-window-seconds: 300
+  # How long a bought policy protects the item (2026-10-01: was tied to the
+  # 300s claim window, so policies lapsed mid-raid). 3600 = 1 hour.
+  policy-duration-seconds: 3600
   cooldown-seconds: 60
   enabled-worlds:
     - glitch_red
@@ -17,13 +20,13 @@ messages:
   already-insured: "<red>That item is already insured.</red>"
   max-reached: "<red>You have reached the maximum insured items (<max>).</red>"
   not-enough-shards: "<red>Not enough Shards — you need <premium> Shards to insure this item.</red>"
-  claim: "<green>Your insured gear was protected on death! Use <white>/insurance claim</white> to retrieve if needed.</green>"
+  claim: "<green>Your insured gear was protected on death — it stayed with you.</green>"
   no-insurance: "<red>You have no insured items.</red>"
   cooldown: "<red>Insurance is on cooldown — try again in <seconds>s.</red>"
   reload: "<green>GlitchInsurance configuration reloaded.</green>"
   list-header: "<gold>Insured items (<count>/<max>):</gold>"
   list-entry: "<gray>- <item> <dark_gray>(<remaining>s remaining)</dark_gray></gray>"
-  help: "<yellow>/insurance buy</yellow> <gray>— insure held item</gray> <dark_gray>|</dark_gray> <yellow>/insurance list</yellow> <gray>— show insured</gray> <dark_gray>|</dark_gray> <yellow>/insurance claim</yellow> <gray>— claim protected gear</gray>"
+  help: "<yellow>/insurance buy</yellow> <gray>— insure held item</gray> <dark_gray>|</dark_gray> <yellow>/insurance list</yellow> <gray>— show insured</gray>"
   claimed: "<green>Claimed <count> insured item(s).</green>"
   admin-reloaded: "<green>GlitchInsurance reloaded.</green>"
   admin-cleared: "<red>Cleared insurance for <player>.</red>"

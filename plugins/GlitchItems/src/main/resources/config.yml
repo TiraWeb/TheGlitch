@@ -365,3 +365,7 @@ scatter:
   messages:
     scatter-broadcast: "<gray>Glitch energy coalesces — <white>{total}</white> caches scattered across the Red World."
     broadcast-enabled: true
+
+# NMinimap markers (MinimapBridge): ready loot crates within this many blocks.
+minimap:
+  crate-radius: 64

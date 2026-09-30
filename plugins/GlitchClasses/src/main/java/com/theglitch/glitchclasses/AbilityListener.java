@@ -494,6 +494,7 @@ public class AbilityListener implements Listener {
 
     @EventHandler
     public void onGuardianSave(EntityDamageEvent event) {
+        if (event.isCancelled()) return; // a cancelled hit can't be fatal — don't burn the protection
         if (!(event.getEntity() instanceof Player player)) return;
         UUID uuid = player.getUniqueId();
         Long until = guardianProtection.get(uuid);
@@ -560,29 +561,29 @@ public class AbilityListener implements Listener {
         Location eyeLoc = player.getEyeLocation();
         Vector direction = eyeLoc.getDirection().multiply(range);
 
-        // Find first solid block or max range
-        Block targetBlock = null;
+        // Stop just short of the first block hit (or at max range), then find a
+        // standing spot near that height. Landing "on top of the hit block" put
+        // players inside walls; clamping to the highest block put them on roofs
+        // above caves and dungeons.
+        Vector unit = eyeLoc.getDirection().normalize();
+        Location aim = eyeLoc.clone().add(unit.clone().multiply(range));
         try {
-            var result = player.getWorld().rayTraceBlocks(eyeLoc, direction, range,
+            var result = player.getWorld().rayTraceBlocks(eyeLoc, unit, range,
                     FluidCollisionMode.NEVER, true);
             if (result != null) {
-                targetBlock = result.getHitBlock();
+                aim = result.getHitPosition().toLocation(player.getWorld()).subtract(unit.clone().multiply(0.6));
             }
         } catch (Exception ignored) {
             // Ray trace failed — use max range
         }
-
-        Location destination;
-        if (targetBlock != null) {
-            // Land on top of the hit block — no surface clamp, which would
-            // teleport through terrain (e.g. onto a roof above a cave).
-            destination = targetBlock.getLocation().add(0.5, 1, 0.5);
-        } else {
-            destination = eyeLoc.add(direction);
-            // Ensure destination is safe — clamp to surface only when the
-            // trace found no block at all.
-            destination.setY(destination.getWorld().getHighestBlockYAt(destination) + 1);
+        Location destination = safeStandingSpot(aim);
+        if (destination == null) {
+            clearCooldown(player.getUniqueId(), "tactical");
+            player.sendActionBar(Component.text("No safe spot to step to.", NamedTextColor.RED));
+            return;
         }
+        destination.setYaw(player.getLocation().getYaw());
+        destination.setPitch(player.getLocation().getPitch());
 
         // Teleport with particles
         Location startLoc = player.getLocation().clone();
@@ -593,6 +594,26 @@ public class AbilityListener implements Listener {
         player.getWorld().spawnParticle(Particle.SMOKE, destination.add(0, 1, 0), 15, 0.2, 0.3, 0.2, 0.05);
         player.playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.2f);
         player.sendMessage(plugin.getComponent("shadow-step"));
+    }
+
+    /** Nearest spot within 6 blocks down / 2 up of {@code aim} with solid ground and 2 blocks of air. */
+    private static Location safeStandingSpot(Location aim) {
+        World world = aim.getWorld();
+        if (world == null) return null;
+        int x = aim.getBlockX(), z = aim.getBlockZ(), y0 = aim.getBlockY();
+        int[] order = {0, -1, -2, -3, -4, -5, -6, 1, 2};
+        for (int dy : order) {
+            int y = y0 + dy;
+            if (y <= world.getMinHeight() || y + 1 >= world.getMaxHeight()) continue;
+            Block feet = world.getBlockAt(x, y, z);
+            Block head = feet.getRelative(BlockFace.UP);
+            Block ground = feet.getRelative(BlockFace.DOWN);
+            if (feet.isPassable() && head.isPassable() && !feet.isLiquid() && !head.isLiquid()
+                    && ground.getType().isSolid()) {
+                return new Location(world, x + 0.5, y, z + 0.5);
+            }
+        }
+        return null;
     }
 
     // Specter ultimate: Ghost Protocol — 10s undetectable, 2x speed
@@ -914,6 +935,7 @@ public class AbilityListener implements Listener {
     public void onVanguardKnockback(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (!isClass(player, "vanguard")) return;
+        if (!isGameWorld(player.getWorld().getName())) return; // class passives only in game worlds
         if (!hasShield(player)) return;
 
         // Paper 1.21.4 does not expose knockback getters on this event. Apply
@@ -931,6 +953,7 @@ public class AbilityListener implements Listener {
     public void onVanguardLastStand(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (!isClass(player, "vanguard")) return;
+        if (!isGameWorld(player.getWorld().getName())) return; // class passives only in game worlds
 
         ClassData data = classManager.getClassData(player.getUniqueId());
         if (data.level() < 3) return; // trait2 unlock level
@@ -958,6 +981,7 @@ public class AbilityListener implements Listener {
     public void onWardenMend(PlayerItemConsumeEvent event) {
         Player player = event.getPlayer();
         if (!isClass(player, "warden")) return;
+        if (!isGameWorld(player.getWorld().getName())) return; // class passives only in game worlds
 
         ClassData data = classManager.getClassData(player.getUniqueId());
         if (data.level() < 3) return;
@@ -988,6 +1012,7 @@ public class AbilityListener implements Listener {
     public void onSpecterSpeed(org.bukkit.event.player.PlayerMoveEvent event) {
         Player player = event.getPlayer();
         if (!isClass(player, "specter")) return;
+        if (!isGameWorld(player.getWorld().getName())) return; // class passives only in game worlds
 
         ClassData data = classManager.getClassData(player.getUniqueId());
         if (data.level() < 1) return;
@@ -1004,6 +1029,7 @@ public class AbilityListener implements Listener {
     public void onSpecterFallDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (!isClass(player, "specter")) return;
+        if (!isGameWorld(player.getWorld().getName())) return; // class passives only in game worlds
         if (event.getCause() != EntityDamageEvent.DamageCause.FALL) return;
 
         ClassData data = classManager.getClassData(player.getUniqueId());
@@ -1161,6 +1187,11 @@ public class AbilityListener implements Listener {
     private int getCooldown(String className, String abilityType, int level) {
         int baseCooldown = baseCooldowns.getOrDefault(className + "." + abilityType, 20);
         return Math.max(cooldownFloor, baseCooldown - (level * cooldownReduction));
+    }
+
+    private void clearCooldown(UUID uuid, String ability) {
+        Map<String, Long> playerCooldowns = cooldowns.get(uuid);
+        if (playerCooldowns != null) playerCooldowns.remove(ability);
     }
 
     private void setCooldown(UUID uuid, String ability, int seconds) {

@@ -457,6 +457,9 @@ public final class ContainerManager {
      * @return number of orphan entities removed
      */
     public int sweepOrphans(Chunk chunk) {
+        // Loot crates only exist in the red worlds — the same furniture used as
+        // decoration in the hub or dungeons must never be swept.
+        if (!enabledWorlds.contains(chunk.getWorld().getName())) return 0;
         if (chunk == null || furnitureTypes.isEmpty()) return 0;
         int removed = 0;
         for (Entity entity : chunk.getEntities()) {
@@ -640,7 +643,7 @@ public final class ContainerManager {
     // GlitchStash probes GlitchItems#getContainerManager() for scatter entry points.
     // These aliases delegate to ScatterManager so extracted cycles can trigger
     // scatter even if the event hook is not yet wired.
-    public void scatter() { try { GlitchItems.getInstance().getScatterManager().scatterNow(); } catch (Exception ignored) {} }
+    public void scatter() { try { GlitchItems.getInstance().getScatterManager().scatterForCycle(); } catch (Exception ignored) {} }
     public void resetContainers() { scatter(); }
     public void onCycleEnd() { scatter(); }
     public void handleCycleEnd() { scatter(); }

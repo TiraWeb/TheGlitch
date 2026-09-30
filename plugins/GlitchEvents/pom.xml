@@ -24,6 +24,13 @@
             <artifactId>paper-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- Shaded in for NexoUtil (supply-drop items); reflection across plugin
+             classloaders couldn't see another plugin's shaded copy. -->
+        <dependency>
+            <groupId>com.theglitch</groupId>
+            <artifactId>GlitchCommon</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -35,6 +42,21 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <resources>
