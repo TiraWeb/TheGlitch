@@ -875,6 +875,10 @@ public final class RaidManager {
 
     public void recordDeath(UUID uuid) {
         lastDeathMillis.put(uuid, System.currentTimeMillis());
+        // The loot died with you: a later extraction in the same global session
+        // must not pay out (or grant Raider Rank for) the previous life's haul.
+        RaidSession session = activeRaids.get(uuid);
+        if (session != null) session.resetLoot(uuid);
     }
 
     public boolean isRecentlyDead(UUID uuid, long withinMs) {
@@ -934,6 +938,11 @@ public final class RaidManager {
                     if (p != null) {
                         for (UUID mid : p.getMembers()) {
                             if (mid.equals(uuid)) continue;
+                            // Only members already standing in this red world and not in
+                            // another raid; the rest auto-join when they enter it.
+                            Player member = Bukkit.getPlayer(mid);
+                            if (member == null || activeRaids.containsKey(mid)
+                                    || !member.getWorld().getName().equalsIgnoreCase(playerWorld)) continue;
                             newGlobal.getMembers().add(mid);
                             activeRaids.put(mid, newGlobal);
                             Player mp = Bukkit.getPlayer(mid);

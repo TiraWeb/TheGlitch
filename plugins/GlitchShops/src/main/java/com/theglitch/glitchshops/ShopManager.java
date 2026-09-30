@@ -293,6 +293,11 @@ public final class ShopManager {
     public List<GearStockEntry> getGearStock() {        return gearStock;
     }
 
+    /** Removes a bought piece from the rotating stock; false if it was already taken. */
+    public boolean takeGearStock(GearStockEntry entry) {
+        return entry != null && gearStock.remove(entry);
+    }
+
     public GearStockEntry gearStockById(String id) {
         if (id == null || id.isBlank()) return null;
         for (GearStockEntry entry : gearStock) {

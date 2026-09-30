@@ -88,6 +88,8 @@ public final class PartyManager {
 
     public boolean acceptInvite(Player player) {
         UUID pid = player.getUniqueId();
+        // One party at a time — a second accept used to add the player to both.
+        if (playerToLeader.containsKey(pid)) return false;
         for (Map.Entry<UUID, Party> entry : parties.entrySet()) {
             Party party = entry.getValue();
             if (party.isInviteValid(pid)) {

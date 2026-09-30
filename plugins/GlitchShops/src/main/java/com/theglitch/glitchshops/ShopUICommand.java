@@ -123,6 +123,7 @@ public final class ShopUICommand implements CommandExecutor {
                     default:
                         break;
                 }
+                if (!panelAdmin(player)) return true;
                 com.theglitch.glitchshops.ui.BazaarPanel.rebuild();
                 return true;
             }

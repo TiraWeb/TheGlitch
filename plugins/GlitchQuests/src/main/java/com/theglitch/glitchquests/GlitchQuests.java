@@ -32,6 +32,15 @@ public final class GlitchQuests extends JavaPlugin implements TabCompleter, List
 
     public static GlitchQuests get() { return instance; }
 
+    /**
+     * Called by GlitchItems (reflection) when a player loots one of the Red Zone
+     * loot crates. That is the only thing LOOT_CONTAINER counts — opening vanilla
+     * containers (player-placed chests, furnaces) was farmable by relogging.
+     */
+    public void containerLooted(org.bukkit.entity.Player player) {
+        if (quests != null) quests.progress(player, QuestDef.QuestType.LOOT_CONTAINER, 1);
+    }
+
     @Override
     public void onEnable() {
         instance = this;

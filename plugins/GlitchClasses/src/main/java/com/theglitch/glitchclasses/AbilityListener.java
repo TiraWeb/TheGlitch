@@ -58,6 +58,7 @@ public class AbilityListener implements Listener {
     // Active effects tracking
     private final Map<UUID, Boolean> cloakActive = new HashMap<>();
     private final Map<UUID, List<Block>> turretBlocks = new HashMap<>();
+    private final java.util.Set<Block> tempBeacons = new java.util.HashSet<>();
 
     // Turret lifecycle (owned armor stands) — used by Engineer repair + Cataclysm
     private final Map<UUID, ArmorStand> turrets = new HashMap<>();
@@ -198,9 +199,10 @@ public class AbilityListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        cooldowns.remove(uuid);
+        // cooldowns are absolute expiry times — keep them so a relog can't reset
+        // an ultimate. turretBlocks stays too: its scheduled removal clears the
+        // Shield Wall; dropping it here left the barrier wall up forever.
         cloakActive.remove(uuid);
-        turretBlocks.remove(uuid);
         turretExpiry.remove(uuid);
         turretRepairs.remove(uuid);
         repairCooldown.remove(uuid);
@@ -403,16 +405,19 @@ public class AbilityListener implements Listener {
         // Place a beacon-like block — only into air/replaceable space; never
         // destroy an existing solid block or container. Try one block up if
         // the feet position is blocked, else cancel.
+        // Air only: isReplaceable() also accepted water/grass/snow, which the
+        // cleanup then turned into AIR (deleting water sources).
         Block target = loc.getBlock();
-        if (!target.isReplaceable()) {
+        if (!target.getType().isAir()) {
             target = target.getRelative(BlockFace.UP);
         }
-        if (!target.isReplaceable()) {
+        if (!target.getType().isAir()) {
             player.sendMessage(Component.text("No room for the Revive Beacon here.", NamedTextColor.RED));
             return;
         }
         Block beaconBlock = target;
         beaconBlock.setType(Material.BEACON);
+        tempBeacons.add(beaconBlock);
         player.sendMessage(plugin.getComponent("revive-placed"));
 
         // Particle beacon effect — clone so the delayed ally search below
@@ -451,6 +456,7 @@ public class AbilityListener implements Listener {
             if (beaconBlock.getType() == Material.BEACON) {
                 beaconBlock.setType(Material.AIR);
             }
+            tempBeacons.remove(beaconBlock);
         }, channelTicks);
     }
 
@@ -676,6 +682,20 @@ public class AbilityListener implements Listener {
      * Remove orphaned turret armor stands left over from a previous run
      * (mirrors ClassPanel's stale-entity purge). Called on plugin enable.
      */
+    /** Shield Wall barriers and Revive Beacons are temporary — remove them all on shutdown/reload. */
+    public void removeTemporaryBlocks() {
+        for (List<Block> blocks : turretBlocks.values()) {
+            for (Block block : blocks) {
+                if (block.getType() == Material.BARRIER) block.setType(Material.AIR);
+            }
+        }
+        turretBlocks.clear();
+        for (Block block : tempBeacons) {
+            if (block.getType() == Material.BEACON) block.setType(Material.AIR);
+        }
+        tempBeacons.clear();
+    }
+
     public void purgeStaleTurrets() {
         for (World world : Bukkit.getWorlds()) {
             for (ArmorStand stand : world.getEntitiesByClass(ArmorStand.class)) {

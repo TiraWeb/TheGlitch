@@ -57,8 +57,25 @@ public class ClassGUI implements Listener {
             "DARK_PURPLE", NamedTextColor.DARK_PURPLE,
             "AQUA", NamedTextColor.AQUA);
 
-    private static final Map<UUID, String> openSessions = new HashMap<>();
-    private static final Set<UUID> switchingGui = new HashSet<>();
+    /**
+     * The menu identifies itself by its InventoryHolder (not a per-player map):
+     * a session map could be wiped by the close event of whatever inventory was
+     * open before (e.g. the Hideout's Skill Trainer), leaving the class menu
+     * with uncancelled clicks — its icons could be taken.
+     */
+    private static final class Holder implements org.bukkit.inventory.InventoryHolder {
+        private final String session;
+        private Inventory inventory;
+
+        private Holder(String session) {
+            this.session = session;
+        }
+
+        @Override
+        public Inventory getInventory() {
+            return inventory;
+        }
+    }
 
     // Static GUI icons — identical every open, cached once and cloned per use
     private static final ItemStack CACHED_HINT = buildHint();
@@ -101,7 +118,8 @@ public class ClassGUI implements Listener {
         ClassData data = classManager.getClassData(player.getUniqueId());
 
         // Textured CLASSES background (shared Glitch menu look); empty slots show the art.
-        Inventory inv = Bukkit.createInventory(null, 54, com.theglitch.common.MenuTitles.title(player,
+        Holder holder = new Holder("main54");
+        Inventory inv = Bukkit.createInventory(holder, 54, com.theglitch.common.MenuTitles.title(player,
                 com.theglitch.common.MenuTitles.CLASSES, "<light_purple>Choose Your Class</light_purple>"));
 
         int[] cardSlots = {19, 21, 23, 25};
@@ -117,7 +135,7 @@ public class ClassGUI implements Listener {
             inv.setItem(53, resetItem());
         }
 
-        openSessions.put(player.getUniqueId(), "main54");
+        holder.inventory = inv;
         player.openInventory(inv);
     }
 
@@ -250,7 +268,8 @@ public class ClassGUI implements Listener {
         ClassData data = classManager.getClassData(player.getUniqueId());
         boolean selected = className.equals(data.className());
 
-        Inventory inv = Bukkit.createInventory(null, 45, com.theglitch.common.MenuTitles.title(player,
+        Holder holder = new Holder("class:" + className);
+        Inventory inv = Bukkit.createInventory(holder, 45, com.theglitch.common.MenuTitles.title(player,
                 com.theglitch.common.MenuTitles.CLASS, "<light_purple>" + capitalizeFirst(className) + "</light_purple>"));
         inv.setItem(4, UiKit.pipsItem(data.level(), classManager.getMaxLevel()));
 
@@ -280,7 +299,7 @@ public class ClassGUI implements Listener {
             inv.setItem(41, buyUpgradeItem(className, data));
         }
 
-        openSessions.put(player.getUniqueId(), "class:" + className);
+        holder.inventory = inv;
         player.openInventory(inv);
     }
 
@@ -432,8 +451,8 @@ public class ClassGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        String session = openSessions.get(player.getUniqueId());
-        if (session == null) return;
+        if (!(event.getView().getTopInventory().getHolder() instanceof Holder holder)) return;
+        String session = holder.session;
 
         event.setCancelled(true);
         if (event.getClickedInventory() != event.getView().getTopInventory()) return;
@@ -454,7 +473,6 @@ public class ClassGUI implements Listener {
             int[] cardSlots = {19, 21, 23, 25};
             for (int i = 0; i < cardSlots.length; i++) {
                 if (slot == cardSlots[i]) {
-                    switchingGui.add(player.getUniqueId());
                     openClassMenu(player, CLASS_ORDER[i]);
                     return;
                 }
@@ -465,7 +483,6 @@ public class ClassGUI implements Listener {
         if (session.startsWith("class:")) {
             String className = session.substring("class:".length());
             if (slot == 39) {
-                switchingGui.add(player.getUniqueId());
                 openMainMenu(player);
                 return;
             }
@@ -489,9 +506,10 @@ public class ClassGUI implements Listener {
     private void handleClassSelect(Player player, String className) {
         applyClassSelectCore(player, className);
 
-        switchingGui.add(player.getUniqueId());
         player.closeInventory();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> openClassMenu(player, className), 5L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline()) openClassMenu(player, className);
+        }, 5L);
     }
 
     /** Applies a class selection with no chest-GUI follow-up — used by the floating panel. */
@@ -508,7 +526,6 @@ public class ClassGUI implements Listener {
     }
 
     private void handleClassReset(Player player) {
-        openSessions.remove(player.getUniqueId());
         player.closeInventory();
         ClassData data = classManager.getClassData(player.getUniqueId());
         com.theglitch.common.ChatConfirm.ask(player, MM.deserialize(
@@ -551,12 +568,10 @@ public class ClassGUI implements Listener {
         ClassData newData = applyUpgradeCore(player, data);
         if (newData == null) return;
 
-        // Close + reopen like class select — switchingGui keeps the session
-        // alive across the close event, otherwise the reopened GUI has no
-        // session and every click is dead.
-        switchingGui.add(player.getUniqueId());
         player.closeInventory();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> openClassMenu(player, newData.className()), 10L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline()) openClassMenu(player, newData.className());
+        }, 10L);
     }
 
     private ClassData applyUpgradeCore(Player player, ClassData data) {
@@ -645,10 +660,8 @@ public class ClassGUI implements Listener {
     }
 
     @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
-        if (switchingGui.remove(player.getUniqueId())) return;
-        openSessions.remove(player.getUniqueId());
+    public void onInventoryDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
+        if (event.getView().getTopInventory().getHolder() instanceof Holder) event.setCancelled(true);
     }
 
     // ==================== HELPERS ====================

@@ -438,17 +438,10 @@ public final class RaidListener implements Listener {
         if (event.getItem().getPersistentDataContainer().has(manager.getLootCountedKey(), tagType)) {
             return;
         }
-        org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
-        if (meta != null && meta.getPersistentDataContainer().has(manager.getLootCountedKey(), tagType)) {
-            return;
-        }
-        // Tag both the item entity and the stack meta so re-drops cannot be counted again
+        // Tag the item ENTITY only. Writing the tag into the stack's meta made
+        // counted items stop stacking/merging with identical untagged copies;
+        // re-drops are already excluded by the thrower check above.
         event.getItem().getPersistentDataContainer().set(manager.getLootCountedKey(), tagType, (byte) 1);
-        if (meta != null) {
-            meta.getPersistentDataContainer().set(manager.getLootCountedKey(), tagType, (byte) 1);
-            stack.setItemMeta(meta);
-            event.getItem().setItemStack(stack);
-        }
         // Use the sell-price path so only meaningful loot ticks the counter
         java.util.List<org.bukkit.inventory.ItemStack> single = java.util.List.of(stack);
         // Check quickly if it would have value before calling heavy reflection path

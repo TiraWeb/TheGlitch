@@ -51,6 +51,16 @@ public final class ShopGUI implements Listener {
     private static final Map<UUID, Session> sessions = new HashMap<>();
     private static final Set<UUID> switchingGui = new HashSet<>();
 
+    /** Marks our chest window so balance refreshes never touch another open inventory. */
+    private static final class ShopHolder implements org.bukkit.inventory.InventoryHolder {
+        private Inventory inventory;
+
+        @Override
+        public Inventory getInventory() {
+            return inventory;
+        }
+    }
+
     private record Session(String category, boolean sellMode, int page) {
     }
 
@@ -113,9 +123,11 @@ public final class ShopGUI implements Listener {
             }
         }
         // Textured BAZAAR background (same look as every Glitch chest menu); empty slots show the art.
-        Inventory inv = Bukkit.createInventory(null, SIZE,
+        ShopHolder holder = new ShopHolder();
+        Inventory inv = Bukkit.createInventory(holder, SIZE,
                 com.theglitch.common.MenuTitles.title(player, com.theglitch.common.MenuTitles.BAZAAR,
                         "<gold>Grand Bazaar</gold>"));
+        holder.inventory = inv;
 
         inv.setItem(0, balanceItem(player));
         inv.setItem(3, tabButton("tab_buy", "gui_buy", Material.EMERALD, "BUY",
@@ -399,8 +411,12 @@ public final class ShopGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (!(event.getView().getTopInventory().getHolder() instanceof ShopHolder)) return;
         Session session = sessions.get(player.getUniqueId());
-        if (session == null) return;
+        if (session == null) {
+            event.setCancelled(true);
+            return;
+        }
 
         event.setCancelled(true);
 
@@ -508,22 +524,7 @@ public final class ShopGUI implements Listener {
         ItemStack snapshot = item.clone();
         snapshot.setAmount(amount);
 
-        int remaining = item.getAmount() - amount;
-        try {
-            if (remaining <= 0) {
-                player.getInventory().setItem(slot, null);
-            } else {
-                ItemStack copy = item.clone();
-                copy.setAmount(remaining);
-                player.getInventory().setItem(slot, copy);
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Shop sell removal failed for " + player.getName() + ": " + e.getMessage());
-            message(player, "denied");
-            sound(player, false);
-            return;
-        }
-
+        // Pay first, then take the item: a failed deposit must never cost the item.
         net.milkbowl.vault.economy.EconomyResponse depResp;
         try {
             depResp = economy.depositPlayer(player, total);
@@ -536,6 +537,27 @@ public final class ShopGUI implements Listener {
         if (depResp == null || !depResp.transactionSuccess()) {
             String err = depResp != null ? depResp.errorMessage : "null response";
             plugin.getLogger().warning("Shop sell deposit failed for " + player.getName() + ": " + err + " amount=" + total);
+            message(player, "denied");
+            sound(player, false);
+            return;
+        }
+
+        int remaining = item.getAmount() - amount;
+        try {
+            if (remaining <= 0) {
+                player.getInventory().setItem(slot, null);
+            } else {
+                ItemStack copy = item.clone();
+                copy.setAmount(remaining);
+                player.getInventory().setItem(slot, copy);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Shop sell removal failed for " + player.getName() + ": " + e.getMessage() + " — taking back " + total);
+            try {
+                economy.withdrawPlayer(player, total);
+            } catch (Exception ex) {
+                plugin.getLogger().warning("CRITICAL: sell rollback failed for " + player.getName() + " amount=" + total);
+            }
             message(player, "denied");
             sound(player, false);
             return;
@@ -591,6 +613,13 @@ public final class ShopGUI implements Listener {
                 plugin.getLogger().warning("Shop buy failed: gear entry " + gearEntry.id() + " empty for " + player.getName() + " — refunding " + total);
                 refundDeposit(economy, player, total);
                 message(player, "denied");
+                sound(player, false);
+                return;
+            }
+            // One buyer per rolled piece — remove it now (refunds below still hand it back via the item)
+            if (!shopManager.takeGearStock(gearEntry)) {
+                refundDeposit(economy, player, total);
+                player.sendMessage(MM.deserialize("<red>Someone just bought that piece — reopen the shop.</red>"));
                 sound(player, false);
                 return;
             }
@@ -688,7 +717,7 @@ public final class ShopGUI implements Listener {
 
     private void refreshBalance(Player player) {
         Inventory top = player.getOpenInventory().getTopInventory();
-        top.setItem(0, balanceItem(player));
+        if (top.getHolder() instanceof ShopHolder) top.setItem(0, balanceItem(player));
     }
 
     private int buyStackSize() {
@@ -727,6 +756,11 @@ public final class ShopGUI implements Listener {
         player.playSound(player.getLocation(),
                 success ? Sound.ENTITY_EXPERIENCE_ORB_PICKUP : Sound.ENTITY_VILLAGER_NO,
                 1.0f, success ? 1.4f : 1.0f);
+    }
+
+    @EventHandler
+    public void onInventoryDrag(org.bukkit.event.inventory.InventoryDragEvent event) {
+        if (event.getView().getTopInventory().getHolder() instanceof ShopHolder) event.setCancelled(true);
     }
 
     @EventHandler

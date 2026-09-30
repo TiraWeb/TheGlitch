@@ -58,6 +58,7 @@ public final class GlitchClasses extends JavaPlugin {
     @Override
     public void onDisable() {
         ClassPanel.shutdown();
+        if (abilityListener != null) abilityListener.removeTemporaryBlocks();
         if (classManager != null) {
             classManager.shutdown();
         }

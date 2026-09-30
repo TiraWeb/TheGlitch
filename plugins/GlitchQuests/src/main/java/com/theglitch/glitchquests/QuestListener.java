@@ -107,14 +107,8 @@ public final class QuestListener implements Listener {
         if (m.name().endsWith("_ORE") || m == Material.ANCIENT_DEBRIS) quests.progress(p, QuestType.MINE_ORE, 1);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onOpen(InventoryOpenEvent e) {
-        if (!(e.getPlayer() instanceof Player p)) return;
-        if (!(e.getInventory().getHolder(false) instanceof Container c)) return;
-        Location l = c.getLocation();
-        String key = l.getWorld().getName() + ":" + l.getBlockX() + ":" + l.getBlockY() + ":" + l.getBlockZ();
-        if (quests.data(p).lootedToday.add(key)) quests.progress(p, QuestType.LOOT_CONTAINER, 1);
-    }
+    // LOOT_CONTAINER is reported by GlitchItems (GlitchQuests#containerLooted) — one
+    // count per Red Zone loot crate actually looted.
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onFish(PlayerFishEvent e) {

@@ -749,6 +749,16 @@ public final class ContainerManager {
         if (type.requiresKey() && !emptied) {
             consumeKey(player, type);
         }
+        // Quest hook: "loot N containers" counts real loot-crate opens only
+        if (!loot.isEmpty()) {
+            try {
+                org.bukkit.plugin.Plugin questPlugin = Bukkit.getPluginManager().getPlugin("GlitchQuests");
+                if (questPlugin != null && questPlugin.isEnabled()) {
+                    questPlugin.getClass().getMethod("containerLooted", Player.class).invoke(questPlugin, player);
+                }
+            } catch (Exception ignored) {
+            }
+        }
         // Hook: count loot toward active GlitchRaid (if installed) — fixes raid loot not ticking for containers
         if (!loot.isEmpty()) {
             try {
@@ -907,7 +917,10 @@ public final class ContainerManager {
         Map<Integer, ItemStack> leftovers = player.getInventory().addItem(loot.toArray(new ItemStack[0]));
         if (!leftovers.isEmpty()) {
             Location dropLoc = loc.clone().add(0.5, 0.5, 0.5);
-            leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(dropLoc, left));
+            // Thrower = the looter: GlitchRaid already counted this loot when the
+            // container opened, so picking the overflow up must not count it again.
+            leftovers.values().forEach(left -> player.getWorld().dropItemNaturally(dropLoc, left)
+                    .setThrower(player.getUniqueId()));
         }
     }
 

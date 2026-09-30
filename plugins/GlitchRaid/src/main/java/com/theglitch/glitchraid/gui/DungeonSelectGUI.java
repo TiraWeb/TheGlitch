@@ -67,6 +67,8 @@ public class DungeonSelectGUI implements Listener {
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private final GlitchRaid plugin;
+    /** Players whose key was used but who haven't reached the dungeon instance yet (id -> dungeon id). */
+    private final java.util.Map<java.util.UUID, String> awaitingEntry = new java.util.concurrent.ConcurrentHashMap<>();
 
     public DungeonSelectGUI(GlitchRaid plugin) {
         this.plugin = plugin;
@@ -152,8 +154,12 @@ public class DungeonSelectGUI implements Listener {
                 return;
             }
             player.sendMessage(MM.deserialize("<gray>Key used — opening <white>" + d.name() + "</white>...</gray>"));
+            awaitingEntry.put(player.getUniqueId(), d.id());
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "md play " + d.id() + " " + player.getName());
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                // Refund only if the instance was never entered — leaving or wiping
+                // inside the 60s window used to hand the key back too.
+                if (awaitingEntry.remove(player.getUniqueId()) == null) return;
                 if (!player.isOnline()) return;
                 if (player.getWorld().getName().startsWith(d.id() + "_")) return;
                 ItemStack refund = NexoUtil.build(keyId);
@@ -164,6 +170,14 @@ public class DungeonSelectGUI implements Listener {
                 player.sendMessage(MM.deserialize("<yellow>The dungeon didn't start — your key was returned.</yellow>"));
             }, REFUND_TICKS);
         });
+    }
+
+    @EventHandler
+    public void onEnterInstance(org.bukkit.event.player.PlayerChangedWorldEvent event) {
+        String id = awaitingEntry.get(event.getPlayer().getUniqueId());
+        if (id != null && event.getPlayer().getWorld().getName().startsWith(id + "_")) {
+            awaitingEntry.remove(event.getPlayer().getUniqueId());
+        }
     }
 
     private static String keyId(int tier) {

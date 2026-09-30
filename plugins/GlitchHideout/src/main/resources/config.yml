@@ -4,6 +4,11 @@ config-version: 1
 
 med-cooldown-seconds: 30
 
+# Worlds where /hideout, /recycle and the hideout menus work (stash/armory/med
+# must not be usable mid-raid or in dungeons). No bypass: staff
+# ranks hold * which would otherwise grant it.
+allowed-worlds: [hub]
+
 modern-ui:
   dialogs: false
   remote-perm: theglitch.remoteui

@@ -73,7 +73,24 @@ public final class HideoutGUI implements Listener {
         this.manager = manager;
     }
 
+    /**
+     * The hideout (stash, armory, med station, workbench, recycler) is a hub
+     * facility. Anywhere else — a Red Zone raid, a dungeon instance — it would
+     * let players bank loot without extracting or full-heal mid-fight.
+     */
+    public boolean usableHere(Player player) {
+        java.util.List<String> worlds = plugin.getConfig().getStringList("allowed-worlds");
+        if (worlds.isEmpty()) worlds = java.util.List.of("hub");
+        String here = player.getWorld().getName();
+        for (String w : worlds) {
+            if (w.equalsIgnoreCase(here)) return true;
+        }
+        player.sendMessage(Component.text("The Hideout is only reachable from the Hub.", NamedTextColor.RED));
+        return false;
+    }
+
     public void openMain(Player player) {
+        if (!usableHere(player)) return;
         Inventory inv = Bukkit.createInventory(null, MAIN_SIZE,
                 MenuTitles.title(player, MenuTitles.HIDEOUT, "<dark_purple>The Hideout</dark_purple>"));
 
@@ -290,6 +307,10 @@ public final class HideoutGUI implements Listener {
         if (session == null) return;
 
         event.setCancelled(true);
+        if (!usableHere(player)) {
+            player.closeInventory();
+            return;
+        }
         if (event.getClickedInventory() == null) return;
         if (event.getClickedInventory() != event.getView().getTopInventory()) {
             // Clicking your own inventory while the stash/armory is open stores the item
@@ -458,6 +479,7 @@ public final class HideoutGUI implements Listener {
     // --------------------------------------------------------------- recycler
 
     public void openRecycler(Player player) {
+        if (!usableHere(player)) return;
         if (manager.getLevel(player.getUniqueId(), "workbench") < 1) {
             player.sendMessage(plugin.getComponent("craft-locked"));
             return;
