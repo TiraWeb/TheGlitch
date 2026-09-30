@@ -294,7 +294,7 @@ fi
 if [[ -d "${REPO_DIR}/server/plugins/MythicMobs" ]]; then
   log "Phase 5.3 — syncing MythicMobs configs"
   install -d -m 755 "${PLUGIN_DIR}/MythicMobs"
-  (cd "${REPO_DIR}/server/plugins/MythicMobs" && find Mobs Skills DropTables Spawners SpawnAreas randomspawns items config Packs       -type f -name '*.yml' 2>/dev/null) | while IFS= read -r rel; do
+  (cd "${REPO_DIR}/server/plugins/MythicMobs" && find Mobs Skills DropTables Spawners SpawnAreas randomspawns items config Packs       -type f -name '*.yml' 2>/dev/null || true) | while IFS= read -r rel; do
     install -D -m 644 "${REPO_DIR}/server/plugins/MythicMobs/${rel}" "${PLUGIN_DIR}/MythicMobs/${rel}"
   done
 fi
