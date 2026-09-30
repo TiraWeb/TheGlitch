@@ -157,3 +157,62 @@ rank_owner:
   height: 13
   font: minecraft:default
   char: "\uE058"
+
+# Raider Rank tier icons (E060-E067) — shown after the player name on the
+# nametag/tab list via %glitchraid_rank_icon% (TAB _DEFAULT_ tagsuffix,
+# scripts/setup-rank-tags.sh). Art: scripts/gen-rank-icons.py (16x16).
+rank_t_bronze:
+  texture: glyphs/rank_t_bronze
+  ascent: 8
+  height: 9
+  font: minecraft:default
+  char: "\uE060"
+
+rank_t_silver:
+  texture: glyphs/rank_t_silver
+  ascent: 8
+  height: 9
+  font: minecraft:default
+  char: "\uE061"
+
+rank_t_gold:
+  texture: glyphs/rank_t_gold
+  ascent: 8
+  height: 9
+  font: minecraft:default
+  char: "\uE062"
+
+rank_t_platinum:
+  texture: glyphs/rank_t_platinum
+  ascent: 8
+  height: 9
+  font: minecraft:default
+  char: "\uE063"
+
+rank_t_diamond:
+  texture: glyphs/rank_t_diamond
+  ascent: 8
+  height: 9
+  font: minecraft:default
+  char: "\uE064"
+
+rank_t_grandmaster:
+  texture: glyphs/rank_t_grandmaster
+  ascent: 8
+  height: 9
+  font: minecraft:default
+  char: "\uE065"
+
+rank_t_celestial:
+  texture: glyphs/rank_t_celestial
+  ascent: 8
+  height: 9
+  font: minecraft:default
+  char: "\uE066"
+
+rank_t_eternity:
+  texture: glyphs/rank_t_eternity
+  ascent: 8
+  height: 9
+  font: minecraft:default
+  char: "\uE067"

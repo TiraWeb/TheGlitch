@@ -29,6 +29,11 @@ commands:
     description: Opens the Red Zone world picker GUI
     usage: /redzone
     permission: glitchraid.raid
+  rank:
+    description: Raider Rank — your tier, the ladder, recent RR and the top 10
+    usage: /rank [top|<player>]
+    aliases: [raiderrank, rr]
+    permission: glitchraid.raid
   dungeons:
     description: Opens the boss dungeon picker (entry costs a dungeon key)
     usage: /dungeons

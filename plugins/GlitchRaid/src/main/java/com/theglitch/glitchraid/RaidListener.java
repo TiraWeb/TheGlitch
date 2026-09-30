@@ -264,6 +264,16 @@ public final class RaidListener implements Listener {
             return;
         }
         manager.recordDeath(player.getUniqueId());
+        com.theglitch.glitchraid.rank.RankManager ranks = plugin.getRankManager();
+        if (ranks != null) {
+            int lost = manager.itemValue(event.getDrops());
+            Player killer = player.getKiller();
+            boolean pvp = killer != null && !killer.equals(player);
+            if (pvp && manager.isInRaid(killer.getUniqueId())) {
+                ranks.recordPlayerKill(killer.getUniqueId(), player.getUniqueId(), lost);
+            }
+            ranks.onDeath(player.getUniqueId(), lost, pvp ? "killed by " + killer.getName() : "died in a raid");
+        }
         // Timeout victims already incremented in handleTimeout — don't double count if this death is the timeout kill
         boolean isTimeout = manager.isTimeoutVictim(player.getUniqueId());
         if (!isTimeout) {
@@ -319,6 +329,11 @@ public final class RaidListener implements Listener {
         // The PDC flag reroutes the player to the hub with an explanation on join.
         manager.takeSoloRaidEnd(player.getUniqueId()); // drop any stored timer
         manager.markDisconnectCancelled(player);
+        com.theglitch.glitchraid.rank.RankManager quitRanks = plugin.getRankManager();
+        if (quitRanks != null) {
+            quitRanks.onDeath(player.getUniqueId(),
+                    manager.itemValue(java.util.Arrays.asList(player.getInventory().getContents())), "combat-logged");
+        }
         if (manager.isSessionGlobal(session) || !session.getLeader().equals(player.getUniqueId())) {
             // Global sessions persist for everyone else; solo non-leaders just leave.
             // endRaid(DISCONNECT) detaches a single player from a global session.

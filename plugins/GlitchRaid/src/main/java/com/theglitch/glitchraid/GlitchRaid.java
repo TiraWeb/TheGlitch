@@ -14,6 +14,7 @@ public final class GlitchRaid extends JavaPlugin {
 
     private static GlitchRaid instance;
     private RaidManager raidManager;
+    private com.theglitch.glitchraid.rank.RankManager rankManager;
     private RedPortalManager portalManager;
     private com.theglitch.glitchraid.gui.RedZoneSelectGUI redZoneSelectGui;
 
@@ -23,6 +24,9 @@ public final class GlitchRaid extends JavaPlugin {
         saveDefaultConfig();
 
         raidManager = new RaidManager(this);
+        rankManager = new com.theglitch.glitchraid.rank.RankManager(this);
+        com.theglitch.glitchraid.rank.RankGUI rankGui = new com.theglitch.glitchraid.rank.RankGUI(rankManager);
+        Bukkit.getPluginManager().registerEvents(rankGui, this);
         portalManager = new RedPortalManager(this);
         redZoneSelectGui = new com.theglitch.glitchraid.gui.RedZoneSelectGUI(this, raidManager);
 
@@ -70,6 +74,10 @@ public final class GlitchRaid extends JavaPlugin {
             getLogger().warning("Command 'redzone' not found in plugin.yml — check registration.");
         }
 
+        if (getCommand("rank") != null) {
+            getCommand("rank").setExecutor(new com.theglitch.glitchraid.rank.RankCommand(rankManager, rankGui));
+        }
+
         if (getCommand("dungeons") != null) {
             getCommand("dungeons").setExecutor((sender, command, label, args) -> {
                 if (sender instanceof org.bukkit.entity.Player player) {
@@ -111,6 +119,9 @@ public final class GlitchRaid extends JavaPlugin {
         if (raidManager != null) {
             raidManager.shutdown();
         }
+        if (rankManager != null) {
+            rankManager.saveNow();
+        }
         instance = null;
         getLogger().info("GlitchRaid disabled.");
     }
@@ -126,11 +137,18 @@ public final class GlitchRaid extends JavaPlugin {
         if (portalManager != null) {
             portalManager.reload();
         }
+        if (rankManager != null) {
+            rankManager.reload();
+        }
         getLogger().info("GlitchRaid configuration reloaded.");
     }
 
     public RaidManager getRaidManager() {
         return raidManager;
+    }
+
+    public com.theglitch.glitchraid.rank.RankManager getRankManager() {
+        return rankManager;
     }
 
     public RedPortalManager getPortalManager() {

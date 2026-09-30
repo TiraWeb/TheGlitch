@@ -185,6 +185,16 @@
 - [x] Class menu shows proper icons for members/alpha (not pink/missing)
 - [x] New starter kit granted on first class pick (iron set, sword, shield, food, potions, bandages, grenades, key)
 
+## Raider Rank (2026-09-30)
+
+- [ ] `papi parse <you> %glitchraid_rank_icon%` returns the Bronze glyph; the icon shows after your name on the nametag and tab list
+- [ ] `/raidadmin rank set <you> 260` → Gold icon + promotion title after a moment; `set 710` broadcasts the Diamond promotion
+- [ ] Extract with loot → `+RR` chat line and a `/rank` history entry; empty run (<50 value) gives +2
+- [ ] Die in a raid → RR lost; the first death that would demote leaves you at the tier floor ("Demotion shield used")
+- [ ] Kill another raider carrying 200+ value, then extract → +5 per kill; same victim again within 30 min gives nothing
+- [ ] `/rank` menu shows the RANK background, ladder, history, top 10; `/rank top` and `/rank <player>` work
+- [ ] Hub hologram `lb_rank` (place with `/dh hologram movehere lb_rank`)
+
 ## Economy & item balance (2026-09-02 — docs/ITEM_BALANCE.md)
 
 - [ ] Consumables work: `/nexo give healing_potion <you>` → eat → Regen II 5s; `corrupted_heal` → full HP + Regen III 10s; `aether_tonic` → Speed II + Absorption II 30s; `ward_salve` → Resistance I + Absorption I 20s (honey bottle leave is fine)

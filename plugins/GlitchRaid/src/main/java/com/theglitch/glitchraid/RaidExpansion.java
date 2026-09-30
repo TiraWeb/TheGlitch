@@ -71,6 +71,8 @@ public final class RaidExpansion extends PlaceholderExpansion {
         }
         // Offline player: limited placeholders (in_raid false, others 0)
         String id = identifier.toLowerCase(java.util.Locale.ROOT);
+        String rankValue = rank(offlinePlayer.getUniqueId(), id);
+        if (rankValue != null) return rankValue;
         switch (id) {
             case "player":
                 return offlinePlayer.getName();
@@ -94,6 +96,8 @@ public final class RaidExpansion extends PlaceholderExpansion {
             return "";
         }
         String id = identifier.toLowerCase(java.util.Locale.ROOT);
+        String rankValue = rank(player.getUniqueId(), id);
+        if (rankValue != null) return rankValue;
         switch (id) {
             // Plain player name. MythicDungeons' command functions only expand
             // PlaceholderAPI, and PAPI's own "player" expansion isn't installed;
@@ -132,6 +136,36 @@ public final class RaidExpansion extends PlaceholderExpansion {
                 }
                 return String.valueOf(session.getMembers().size());
             }
+            default:
+                return null;
+        }
+    }
+
+    /** Raider Rank placeholders: rank_icon, rank_name, rank_rr, rank_next_rr, rank_progress, rank_position. */
+    private String rank(java.util.UUID id, String key) {
+        if (!key.startsWith("rank_")) return null;
+        GlitchRaid gr = GlitchRaid.getInstance();
+        com.theglitch.glitchraid.rank.RankManager ranks = gr == null ? null : gr.getRankManager();
+        if (ranks == null) return "";
+        int rr = ranks.rr(id);
+        com.theglitch.glitchraid.rank.RankTier tier = ranks.tierOf(rr);
+        com.theglitch.glitchraid.rank.RankTier next = tier.next();
+        switch (key) {
+            case "rank_icon":
+                return String.valueOf(tier.glyph());
+            case "rank_name":
+                return tier.displayName();
+            case "rank_rr":
+                return String.valueOf(rr);
+            case "rank_next_rr":
+                return next == null ? "0" : String.valueOf(ranks.min(next) - rr);
+            case "rank_progress": {
+                if (next == null) return "100";
+                int from = ranks.min(tier), to = ranks.min(next);
+                return String.valueOf(Math.max(0, rr - from) * 100 / Math.max(1, to - from));
+            }
+            case "rank_position":
+                return String.valueOf(ranks.position(id));
             default:
                 return null;
         }

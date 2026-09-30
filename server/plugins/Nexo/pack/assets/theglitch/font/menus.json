@@ -104,6 +104,15 @@
       "chars": [
         "\uf00b"
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "theglitch:gui/rank_bg.png",
+      "height": 256,
+      "ascent": 42,
+      "chars": [
+        "\uf00c"
+      ]
     }
   ]
 }

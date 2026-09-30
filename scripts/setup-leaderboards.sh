@@ -39,7 +39,7 @@ AJ_CFG="/opt/theglitch/server/plugins/ajLeaderboards/config.yml"
 [[ -f "${AJ_CFG}" ]] || die "ajLeaderboards config not found at ${AJ_CFG}"
 sed -i -E \
   -e 's/^enable-dontupdate-permission:.*/enable-dontupdate-permission: false/' \
-  -e 's/^offline-update-boards:.*/offline-update-boards: [vault_eco_balance, statistic_mob_kills, statistic_player_kills, statistic_hours_played]/' \
+  -e 's/^offline-update-boards:.*/offline-update-boards: [vault_eco_balance, statistic_mob_kills, statistic_player_kills, statistic_hours_played, glitchraid_rank_rr]/' \
   -e 's/^offline-update-interval-hours:.*/offline-update-interval-hours: 1/' \
   -e 's/^offline-update-run-on-startup:.*/offline-update-run-on-startup: true/' \
   "${AJ_CFG}"
@@ -54,6 +54,7 @@ BOARDS=(
   "lb_mobkills|statistic_mob_kills|&5&l⚡ &d&lMOB SLAYERS &5&l⚡| kills"
   "lb_pvp|statistic_player_kills|&5&l⚡ &d&lPLAYER KILLS &5&l⚡| kills"
   "lb_playtime|statistic_hours_played|&5&l⚡ &d&lMOST PLAYTIME &5&l⚡|h"
+  "lb_rank|glitchraid_rank_rr|&5&l⚡ &d&lTOP RAIDERS &5&l⚡| RR"
 )
 
 i=0
@@ -78,4 +79,4 @@ for entry in "${BOARDS[@]}"; do
   mc "dh line add ${name} 1 &7Your rank: &d#%ajlb_position_${board}_alltime% &8| &b%ajlb_value_${board}_alltime%${unit}" >/dev/null
 done
 
-log "Done. Place them in-game with /dh hologram movehere <lb_money|lb_level|lb_mobkills|lb_pvp|lb_playtime>"
+log "Done. Place them in-game with /dh hologram movehere <lb_money|lb_level|lb_mobkills|lb_pvp|lb_playtime|lb_rank>"

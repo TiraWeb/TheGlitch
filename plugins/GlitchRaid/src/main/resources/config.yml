@@ -62,6 +62,31 @@ portal:
 dungeons:
   enabled: true
 
+# Raider Rank (RR ladder, Bronze..Eternity). Code defaults match these, so a
+# live config seeded before this section existed behaves the same.
+rank:
+  enabled: true
+  tiers: { bronze: 0, silver: 100, gold: 250, platinum: 450, diamond: 700, grandmaster: 1000, celestial: 1400, eternity: 1900 }
+  extract:
+    base: 10              # RR for any extraction with real loot
+    per-100-value: 1      # +1 RR per 100 Shards of loot value extracted
+    cap: 60
+    low-value: 50         # under this loot value the run only earns...
+    low-value-gain: 2
+    per-player-kill: 5    # per raider killed that raid (credited only on extract)
+  death:
+    base: 8               # RR lost dying in a raid / combat-logging
+    per-200-value: 1      # -1 RR per 200 Shards of gear dropped
+    cap: 40
+  kills:
+    min-victim-value: 200 # victims carrying less than this give no kill credit
+    same-victim-cooldown-minutes: 30
+  curve:
+    grandmaster-gain: 0.8 # Grandmaster+ gain less and lose more
+    grandmaster-loss: 1.25
+    eternity-gain: 0.6
+  broadcast-from: DIAMOND # server-wide promotion message from this tier up
+
 messages:
   raid-started: "<green><bold>Raid started!</bold> <gray>Good luck — the Glitch awaits.</gray>"
   raid-auto-started: "<green><bold>Raid started!</bold> <gray>You entered the Glitch — 30:00 to extract!</gray>"

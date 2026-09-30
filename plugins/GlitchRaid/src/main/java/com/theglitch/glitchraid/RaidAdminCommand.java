@@ -85,6 +85,36 @@ public final class RaidAdminCommand implements CommandExecutor {
                 manager.endRaid(target.getUniqueId(), RaidEndReason.MANUAL);
                 sender.sendMessage(MM.deserialize("<green>Ended raid for <white>" + target.getName() + "</white></green>"));
             }
+            case "rank" -> {
+                // /raidadmin rank <set|add|reset> <player> [n]
+                var ranks = plugin.getRankManager();
+                if (ranks == null || args.length < 3) {
+                    sender.sendMessage(MM.deserialize("<red>Usage: /raidadmin rank <set|add|reset> <player> [n]</red>"));
+                    return true;
+                }
+                var target = Bukkit.getOfflinePlayerIfCached(args[2]);
+                if (target == null) {
+                    sender.sendMessage(MM.deserialize("<red>Player not found: <white>" + args[2] + "</white></red>"));
+                    return true;
+                }
+                String op = args[1].toLowerCase();
+                if (op.equals("reset")) {
+                    ranks.reset(target.getUniqueId());
+                } else {
+                    int n;
+                    try {
+                        n = Integer.parseInt(args.length > 3 ? args[3] : "");
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(MM.deserialize("<red>Give a number of RR.</red>"));
+                        return true;
+                    }
+                    int base = op.equals("add") ? ranks.rr(target.getUniqueId()) : 0;
+                    ranks.set(target.getUniqueId(), target.getName(), base + n);
+                }
+                int rr = ranks.rr(target.getUniqueId());
+                sender.sendMessage(MM.deserialize("<green>" + target.getName() + " is now " + ranks.tierOf(rr).styled()
+                        + " <green>(" + rr + " RR)</green></green>"));
+            }
             default -> {
                 sender.sendMessage(MM.deserialize("<red>Unknown subcommand.</red>"));
                 sendHelp(sender);
@@ -98,6 +128,7 @@ public final class RaidAdminCommand implements CommandExecutor {
         sender.sendMessage(MM.deserialize("<yellow>/raidadmin reload</yellow> <gray>— Reload config</gray>"));
         sender.sendMessage(MM.deserialize("<yellow>/raidadmin list</yellow> <gray>— List active raids</gray>"));
         sender.sendMessage(MM.deserialize("<yellow>/raidadmin end <player></yellow> <gray>— End player's raid</gray>"));
+        sender.sendMessage(MM.deserialize("<yellow>/raidadmin rank <set|add|reset> <player> [n]</yellow> <gray>— Raider Rank RR</gray>"));
     }
 
     private String getName(java.util.UUID uuid) {

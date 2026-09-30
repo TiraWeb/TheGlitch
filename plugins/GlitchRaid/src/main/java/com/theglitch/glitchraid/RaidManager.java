@@ -1371,7 +1371,10 @@ public final class RaidManager {
         if (session != null) {
             for (UUID mid : membersSnapshot) {
                 int myLoot = session.getBounty(mid);
+                int extractedValue = session.getLootValue(mid);
                 session.resetLoot(mid);
+                com.theglitch.glitchraid.rank.RankManager ranks = plugin.getRankManager();
+                if (ranks != null) ranks.onExtract(mid, extractedValue);
                 paidOnExtract.put(mid, 0);
                 if (myLoot <= 0) continue;
                 int payout = (int) Math.round(myLoot * payoutMultiplier);
@@ -1522,15 +1525,9 @@ public final class RaidManager {
         session.addBounty(uuid, amount);
     }
 
-    /**
-     * Add loot value derived from ItemStacks' sell prices (GlitchShops) or fallback.
-     * Used for container loot and other item-based rewards so the BossBar/status reflects real value.
-     * Per-player — does not share across party.
-     */
-    public void addLootFromItems(Player player, Collection<ItemStack> items) {
-        if (items == null || items.isEmpty()) return;
-        RaidSession session = activeRaids.get(player.getUniqueId());
-        if (session == null) return;
+    /** Total GlitchShops sell value of the stacks (0 for unsellable items or without GlitchShops). */
+    public int itemValue(Collection<ItemStack> items) {
+        if (items == null || items.isEmpty()) return 0;
         int value = 0;
         try {
             Plugin shopsPlugin = Bukkit.getPluginManager().getPlugin("GlitchShops");
@@ -1555,6 +1552,19 @@ public final class RaidManager {
             }
         } catch (Exception ignored) {
         }
+        return value;
+    }
+
+    /**
+     * Add loot value derived from ItemStacks' sell prices (GlitchShops) or fallback.
+     * Used for container loot and other item-based rewards so the BossBar/status reflects real value.
+     * Per-player — does not share across party.
+     */
+    public void addLootFromItems(Player player, Collection<ItemStack> items) {
+        if (items == null || items.isEmpty()) return;
+        RaidSession session = activeRaids.get(player.getUniqueId());
+        if (session == null) return;
+        int value = itemValue(items);
         // Unsellable items contribute 0 — no flat fallback (prevents junk farms inflating loot)
         if (value > 0) {
             session.addLoot(player.getUniqueId(), value);
