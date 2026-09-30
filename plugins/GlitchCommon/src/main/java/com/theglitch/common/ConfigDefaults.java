@@ -23,6 +23,13 @@ public final class ConfigDefaults {
         FileConfiguration config = plugin.getConfig();
         Configuration defaults = config.getDefaults();
         if (defaults == null) return 0;
+        // A live file that failed to parse loads as empty — saving now would
+        // replace the operator's broken-but-recoverable file with bare defaults.
+        java.io.File file = new java.io.File(plugin.getDataFolder(), "config.yml");
+        if (file.length() > 0 && config.getKeys(false).isEmpty()) {
+            plugin.getLogger().warning("config.yml did not parse — not filling defaults (fix the YAML, then restart).");
+            return 0;
+        }
         int added = 0;
         for (String key : defaults.getKeys(true)) {
             if (defaults.isConfigurationSection(key)) continue;
