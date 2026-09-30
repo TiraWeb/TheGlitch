@@ -199,9 +199,11 @@ border() { # world centerX centerZ diameter
   mc "execute in minecraft:$1 run worldborder warning distance 32" >/dev/null
   mc "execute in minecraft:$1 run worldborder damage buffer 2" >/dev/null
 }
-border glitch_red 208 272 5000
-border glitch_red_eleria 256 560 4000
-border glitch_red_horizons 232 624 4000
+# Square around each imported map's footprint (scripts/map-footprint.py) + 1 chunk;
+# GlitchWorldGen walls off the map's exact edge inside it (2026-09-30).
+border glitch_red 744 776 3184
+border glitch_red_eleria 112 -8 2176
+border glitch_red_horizons 72 64 3664
 
 log "Applying WorldGuard flags"
 

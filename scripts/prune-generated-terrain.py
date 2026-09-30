@@ -39,6 +39,17 @@ def reference_chunks(root, world):
     return keep
 
 
+def keep_file_chunks(keep_dir, world):
+    keep = set()
+    path = os.path.join(keep_dir, world + ".keep")
+    if os.path.isfile(path):
+        for line in open(path):
+            p = line.split()
+            if len(p) == 2:
+                keep.add((int(p[0]), int(p[1])))
+    return keep
+
+
 def prune_file(path, keep, apply):
     rx, rz = map(int, COORD.search(os.path.basename(path)).groups())
     with open(path, "rb" if not apply else "r+b") as fh:
@@ -63,13 +74,17 @@ def prune_file(path, keep, apply):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--reference-root", required=True)
+    ap.add_argument("--reference-root")
+    ap.add_argument("--keep-dir")
     ap.add_argument("--live-root", default="/opt/theglitch/server/hub/dimensions/minecraft")
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
+    if not (args.reference_root or args.keep_dir):
+        ap.error("need --reference-root or --keep-dir")
 
     for world in WORLDS:
-        keep = reference_chunks(args.reference_root, world)
+        keep = (keep_file_chunks(args.keep_dir, world) if args.keep_dir
+                else reference_chunks(args.reference_root, world))
         if not keep:
             sys.exit(f"no reference chunks for {world} — refusing to continue")
         for kind in KINDS:

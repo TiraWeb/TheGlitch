@@ -344,11 +344,11 @@ scatter:
       max-x: 2000
       min-z: 0
       max-z: 2000
-    glitch_red_eleria:
-      min-x: -1500
-      max-x: 1500
-      min-z: -750
-      max-z: 750
+    glitch_red_eleria:          # = the imported map's footprint bbox (2026-09-30)
+      min-x: -960
+      max-x: 1184
+      min-z: -848
+      max-z: 832
     glitch_red_horizons:
       min-x: -1600
       max-x: 1600

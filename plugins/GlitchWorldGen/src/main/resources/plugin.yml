@@ -1,0 +1,7 @@
+name: GlitchWorldGen
+version: '${project.version}'
+main: com.theglitch.glitchworldgen.GlitchWorldGen
+api-version: '1.21'
+# STARTUP so the generator exists before Multiverse loads the red worlds
+load: STARTUP
+description: Void generator with barrier walls around each imported Red Zone map (generator id GlitchWorldGen)
