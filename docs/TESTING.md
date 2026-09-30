@@ -184,6 +184,23 @@
 - [x] Class menu shows proper icons for members/alpha (not pink/missing)
 - [x] New starter kit granted on first class pick (iron set, sword, shield, food, potions, bandages, grenades, key)
 
+## Audit fixes (2026-10-01)
+
+- [ ] Hideout → Skill Trainer → class menu: icons can't be taken; dragging items into Shop/Class menus is blocked
+- [ ] Shop: selling pays and removes the item; a bought gear piece disappears from the vendor for everyone
+- [ ] `/hideout` in a Red Zone says "only reachable from the Hub"; works in the hub
+- [ ] Stash with 50+ items: page 2 clicks take the item shown
+- [ ] Sell a star-rolled gear piece — price includes stars; `/armor upgrade` keeps stars (new gear; items rolled before this keep their lore but read 0 stars)
+- [ ] Fast/Silent key arms with a right-click in the air
+- [ ] Die in a raid, re-enter and extract — payout/RR only for the new life's loot
+- [ ] Party: accepting a second invite is refused
+- [ ] Class switch asks [YES]/[NO]; switching back restores the old class's level
+- [ ] Specter has no speed buff in the hub; Shadow Step never lands in a wall or on a cave roof
+- [ ] Insurance still protects an item 50 minutes after buying, even after it took durability damage
+- [ ] Supply drops/roaming bosses occur in Eleria and Horizons too; supply barrels contain Nexo items
+- [ ] Glitch Phantoms attack players and don't burn in daylight
+- [ ] Alpha players show the `[ALPHA]` tag on nametag and tab
+
 ## Raider Rank (2026-09-30)
 
 - [ ] `papi parse <you> %glitchraid_rank_icon%` returns the Bronze glyph; the icon shows after your name on the nametag and tab list
