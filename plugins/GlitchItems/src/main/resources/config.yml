@@ -356,11 +356,12 @@ scatter:
       max-z: 700
   chunks-per-container: 8
   max-attempts-per-container: 50
+  # Halved 2026-09-30 (operator: too many crates) — 416 -> 210 per world.
   counts:
-    debris: 240
-    cache: 120
-    vault: 48
-    rift_vault: 8
+    debris: 120
+    cache: 60
+    vault: 24
+    rift_vault: 6
   messages:
     scatter-broadcast: "<gray>Glitch energy coalesces — <white>{total}</white> caches scattered across the Red World."
     broadcast-enabled: true
