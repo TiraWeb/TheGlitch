@@ -53,6 +53,9 @@ final class RogueChat {
     private int botCooldownSec, pairCooldownSec, maxPerMinute, maxWords, hearRadius;
     private String systemPrompt;
     private List<String> quirks, fallback;
+    private java.util.regex.Pattern blocked;
+    /** After a 429 (free-tier quota) Gemini is skipped until this time; fallbacks fill in. */
+    private volatile long backoffUntil;
 
     RogueChat(GlitchBots plugin) {
         this.plugin = plugin;
@@ -70,6 +73,12 @@ final class RogueChat {
         systemPrompt = c.getString("chat.system-prompt", "");
         quirks = c.getStringList("chat.quirks");
         fallback = c.getStringList("chat.fallback-lines");
+        // Lines matching any blocked word are thrown away for a fallback (identity insults,
+        // slurs, sexual accusations etc. the prompt forbids but the model occasionally emits)
+        List<String> words = c.getStringList("chat.blocked-words");
+        blocked = words.isEmpty() ? null : java.util.regex.Pattern.compile(
+                // \b = word start, so "rape" doesn't hit "grape" and "jews" doesn't hit "jewel"
+                "(?i)\\b(" + String.join("|", words.stream().map(java.util.regex.Pattern::quote).toList()) + ")");
         apiKey = loadKey(c);
         plugin.getLogger().info("Rogue chat: " + (!enabled ? "off" : apiKey.isEmpty()
                 ? "fallback lines only (no Gemini key — put it in plugins/GlitchBots/gemini.key)"
@@ -109,15 +118,18 @@ final class RogueChat {
         pairCooldown.put(pair, now);
 
         String context = context(bot, target);
-        if (apiKey.isEmpty() || !takeAiSlot(now)) {
+        if (apiKey.isEmpty() || now < backoffUntil || !takeAiSlot(now)) {
             say(bot, fallbackLine(target));
             return;
         }
         inFlight.incrementAndGet();
         ask(bot, target, context).whenComplete((line, err) -> {
             inFlight.decrementAndGet();
-            String out = (err != null || line == null || line.isBlank()) ? fallbackLine(target) : line;
-            if (err != null && !warnedFailure) {
+            boolean bad = line == null || line.isBlank() || (blocked != null && blocked.matcher(line).find());
+            String out = (err != null || bad) ? fallbackLine(target) : line;
+            if (err != null && String.valueOf(err.getMessage()).contains("HTTP 429")) {
+                backoffUntil = System.currentTimeMillis() + 60_000L; // free-tier quota — pause AI for a minute
+            } else if (err != null && !warnedFailure) {
                 warnedFailure = true;
                 plugin.getLogger().warning("Gemini call failed (" + err.getClass().getSimpleName() + ": "
                         + safe(err.getMessage()) + ") — using fallback lines when it does. Logged once.");
@@ -172,6 +184,17 @@ final class RogueChat {
         // No thinkingConfig: Gemini 3.x rejects thinkingBudget (HTTP 400), and its default
         // answers in ~0.7 s; "low" thinking spent the token budget and cut lines short.
         gen.addProperty("maxOutputTokens", 60);
+        // Swearing is wanted (PG-16 banter); Google's defaults block too much of it. Only
+        // block high-severity output — the prompt + blocked-words list cover the rest.
+        JsonArray safety = new JsonArray();
+        for (String cat : new String[]{"HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
+                "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"}) {
+            JsonObject s = new JsonObject();
+            s.addProperty("category", cat);
+            s.addProperty("threshold", "BLOCK_ONLY_HIGH");
+            safety.add(s);
+        }
+        body.add("safetySettings", safety);
         body.add("generationConfig", gen);
 
         HttpRequest req = HttpRequest.newBuilder(URI.create(String.format(ENDPOINT, model)))
