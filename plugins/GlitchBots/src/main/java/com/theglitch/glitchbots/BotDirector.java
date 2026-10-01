@@ -37,6 +37,8 @@ final class BotDirector {
     private final NPCRegistry registry;
     private final Map<UUID, RogueBot> bots = new ConcurrentHashMap<>(); // entity/NPC uuid -> bot
     private final Map<String, Long> emptySince = new HashMap<>();
+    /** Admin test spawns (/bots spawn ... x z) keep a world's rogues even with nobody there, until this time. */
+    private final Map<String, Long> testHoldUntil = new HashMap<>();
     private final Set<String> namesInUse = new HashSet<>();
     private BukkitTask directorTask;
     private BukkitTask brainTask;
@@ -58,6 +60,10 @@ final class BotDirector {
         if (brainTask != null) brainTask.cancel();
         directorTask = null;
         brainTask = null;
+    }
+
+    void holdForTest(String world, long millis) {
+        testHoldUntil.put(world, System.currentTimeMillis() + millis);
     }
 
     NPCRegistry registry() {
@@ -92,6 +98,9 @@ final class BotDirector {
                 continue;
             }
             List<Player> real = raiders(w);
+            Long hold = testHoldUntil.get(name);
+            if (hold != null && hold > now) continue;
+            testHoldUntil.remove(name);
             if (real.isEmpty()) {
                 long since = emptySince.computeIfAbsent(name, k -> now);
                 if (now - since >= cfg.despawnGraceSeconds * 1000L) clearWorld(name);

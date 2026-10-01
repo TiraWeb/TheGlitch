@@ -103,6 +103,7 @@ public final class GlitchBots extends JavaPlugin {
                 if (args.length >= 5) {
                     int x = parse(args[3], 0), z = parse(args[4], 0);
                     w.getChunkAt(x >> 4, z >> 4).addPluginChunkTicket(this);
+                    director.holdForTest(w.getName(), 120_000L);
                     for (int i = 0; i < count; i++) {
                         Location spot = BotDirector.groundSpot(w, x + i * 2, z);
                         if (spot != null && director.spawnAt(spot) != null) made++;
