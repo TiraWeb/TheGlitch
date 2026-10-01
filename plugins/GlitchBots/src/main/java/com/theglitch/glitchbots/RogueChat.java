@@ -69,6 +69,8 @@ final class RogueChat {
     private String replyInstruction;
     private List<String> replyFallback;
     private java.util.regex.Pattern blocked;
+    /** Style rejects (forced similes etc.) — same effect as blocked words: use a fallback. */
+    private final List<java.util.regex.Pattern> rejects = new java.util.ArrayList<>();
     /** After a 429 (free-tier quota) Gemini is skipped until this time; fallbacks fill in. */
     private volatile long backoffUntil;
 
@@ -94,6 +96,14 @@ final class RogueChat {
         systemPrompt = c.getString("chat.system-prompt", "");
         quirks = c.getStringList("chat.quirks");
         fallback = c.getStringList("chat.fallback-lines");
+        rejects.clear();
+        for (String r : c.getStringList("chat.reject-patterns")) {
+            try {
+                rejects.add(java.util.regex.Pattern.compile(r, java.util.regex.Pattern.CASE_INSENSITIVE));
+            } catch (java.util.regex.PatternSyntaxException e) {
+                plugin.getLogger().warning("Bad chat.reject-patterns entry: " + r);
+            }
+        }
         replyEnabled = c.getBoolean("chat.replies.enabled", true);
         replyRadius = Math.max(4, c.getInt("chat.replies.radius", 24));
         replyCooldownSec = Math.max(1, c.getInt("chat.replies.player-cooldown-seconds", 4));
@@ -180,7 +190,8 @@ final class RogueChat {
         inFlight.incrementAndGet();
         call.whenComplete((line, err) -> {
             inFlight.decrementAndGet();
-            boolean bad = line == null || line.isBlank() || (blocked != null && blocked.matcher(line).find());
+            boolean bad = line == null || line.isBlank() || (blocked != null && blocked.matcher(line).find())
+                    || rejects.stream().anyMatch(p -> p.matcher(line).find());
             String out = (err != null || bad) ? fallbackSupplier.get() : line;
             if (err != null && String.valueOf(err.getMessage()).contains("HTTP 429")) {
                 backoffUntil = System.currentTimeMillis() + 60_000L; // free-tier quota — pause AI for a minute
@@ -310,7 +321,7 @@ final class RogueChat {
         contents.add(user);
         body.add("contents", contents);
         JsonObject gen = new JsonObject();
-        gen.addProperty("temperature", 1.1);
+        gen.addProperty("temperature", 0.95);
         // No thinkingConfig: Gemini 3.x rejects thinkingBudget (HTTP 400), and its default
         // answers in ~0.7 s; "low" thinking spent the token budget and cut lines short.
         gen.addProperty("maxOutputTokens", 60);
