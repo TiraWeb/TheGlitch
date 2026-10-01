@@ -217,7 +217,8 @@
 
 - [ ] `/bots status` lists all 3 red worlds; enter a Red Zone alone → rogues appear within ~1 min, out of sight, up to 9 (10 − 1 real)
 - [ ] Rogues never appear in the tab list, `/list` or the server-list player count; nametag reads `Rogue <name>` in red
-- [ ] NMinimap / MythicHUD don't show rogues as players (if they do, report — they should be hidden)
+- [ ] Rogues show on the minimap as red hostile dots within ~48 blocks (not as player markers)
+- [ ] A rogue that spots you shouts one `[Rogue X]` line in chat (Gemini-written once `gemini.key` is set, else a fallback line); no spam (max once/min per rogue)
 - [ ] Rogues walk to crates and loot them (crate then shows not-ready), fight you and Glitch mobs, flee when low, and later walk to an open extraction point and vanish with a portal puff ("Rogue X extracted")
 - [ ] Killing one: chat "you eliminated Rogue X", drops its looted items + some gear; `+40` kill bounty; after extracting, Raider Rank shows "+N rogues"
 - [ ] Being killed by a rogue: normal death rules + RR loss; nothing odd in the death message
