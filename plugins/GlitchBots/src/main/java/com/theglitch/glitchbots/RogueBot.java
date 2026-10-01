@@ -41,6 +41,8 @@ final class RogueBot {
     final String rarity;
     /** Personality used for this rogue's chat lines. */
     final String quirk;
+    /** "british" or "american" — picks the chat style. */
+    final String dialect;
     final List<ItemStack> bag = new ArrayList<>();
     private final Set<String> skippedCrates = new HashSet<>();
 
@@ -66,6 +68,7 @@ final class RogueBot {
         this.world = world;
         this.rarity = rarity;
         this.quirk = plugin.chat().randomQuirk();
+        this.dialect = plugin.chat().randomDialect();
     }
 
     int cratesLooted() {

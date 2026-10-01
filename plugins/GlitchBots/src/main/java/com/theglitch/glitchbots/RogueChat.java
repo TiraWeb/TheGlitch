@@ -53,6 +53,14 @@ final class RogueChat {
     private int botCooldownSec, pairCooldownSec, maxPerMinute, maxWords, hearRadius;
     private String systemPrompt;
     private List<String> quirks, fallback;
+    // Voices: each rogue is British or American (chat.styles), share set by chat.american-share
+    private final Map<String, String> styles = new java.util.LinkedHashMap<>();
+    private double americanShare, spotAiChance;
+    // Free-tier daily budget (Gemini RPD resets at midnight Pacific)
+    private int dailyLimit;
+    private int usedToday;
+    private java.time.LocalDate usageDay;
+    private static final java.time.ZoneId PACIFIC = java.time.ZoneId.of("America/Los_Angeles");
     // Conversations: a raider talking in chat near a rogue (or saying its name) gets a reply
     private final Map<String, Deque<String>> history = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastReplyTo = new ConcurrentHashMap<>();
@@ -75,6 +83,12 @@ final class RogueChat {
         botCooldownSec = c.getInt("chat.bot-cooldown-seconds", 60);
         pairCooldownSec = c.getInt("chat.same-player-cooldown-seconds", 300);
         maxPerMinute = Math.max(0, c.getInt("chat.max-ai-per-minute", 10));
+        dailyLimit = Math.max(0, c.getInt("chat.daily-ai-limit", 450));
+        spotAiChance = Math.max(0, Math.min(1, c.getDouble("chat.spot-ai-chance", 0.6)));
+        americanShare = Math.max(0, Math.min(1, c.getDouble("chat.american-share", 0.5)));
+        styles.clear();
+        var st = c.getConfigurationSection("chat.styles");
+        if (st != null) for (String k : st.getKeys(false)) styles.put(k, st.getString(k, ""));
         maxWords = Math.max(4, c.getInt("chat.max-words", 16));
         hearRadius = Math.max(8, c.getInt("chat.hear-radius", 40));
         systemPrompt = c.getString("chat.system-prompt", "");
@@ -96,7 +110,7 @@ final class RogueChat {
         apiKey = loadKey(c);
         plugin.getLogger().info("Rogue chat: " + (!enabled ? "off" : apiKey.isEmpty()
                 ? "fallback lines only (no Gemini key — put it in plugins/GlitchBots/gemini.key)"
-                : "Gemini " + model + " (max " + maxPerMinute + " calls/min)"));
+                : "Gemini " + model + " (max " + maxPerMinute + " calls/min, " + dailyLimit + "/day)"));
     }
 
     private String loadKey(FileConfiguration c) {
@@ -111,6 +125,26 @@ final class RogueChat {
         }
         if (k == null || k.isBlank()) k = System.getenv("GEMINI_API_KEY");
         return k == null ? "" : k.trim();
+    }
+
+    /** british or american, for a new rogue. */
+    String randomDialect() {
+        return ThreadLocalRandom.current().nextDouble() < americanShare ? "american" : "british";
+    }
+
+    /** "AI lines today: n/limit" for /bots status. */
+    synchronized String usageLine() {
+        rollDay();
+        return "Gemini today: " + usedToday + "/" + dailyLimit + (apiKey.isEmpty() ? " (no key)" : "")
+                + (System.currentTimeMillis() < backoffUntil ? " [rate-limited, backing off]" : "");
+    }
+
+    private void rollDay() {
+        java.time.LocalDate today = java.time.LocalDate.now(PACIFIC);
+        if (!today.equals(usageDay)) {
+            usageDay = today;
+            usedToday = 0;
+        }
     }
 
     /** A random personality for a new rogue. */
@@ -132,7 +166,8 @@ final class RogueChat {
         pairCooldown.put(pair, now);
 
         String context = context(bot, target);
-        if (apiKey.isEmpty() || now < backoffUntil || !takeAiSlot(now)) {
+        boolean useAi = ThreadLocalRandom.current().nextDouble() < spotAiChance; // save budget for replies
+        if (!useAi || apiKey.isEmpty() || now < backoffUntil || !takeAiSlot(now)) {
             say(bot, fallbackLine(target));
             return;
         }
@@ -230,9 +265,11 @@ final class RogueChat {
     }
 
     private synchronized boolean takeAiSlot(long now) {
+        rollDay();
         while (!recentCalls.isEmpty() && now - recentCalls.peekFirst() > 60_000L) recentCalls.pollFirst();
-        if (recentCalls.size() >= maxPerMinute || inFlight.get() >= 3) return false;
+        if (recentCalls.size() >= maxPerMinute || inFlight.get() >= 3 || usedToday >= dailyLimit) return false;
         recentCalls.addLast(now);
+        usedToday++;
         return true;
     }
 
@@ -259,6 +296,7 @@ final class RogueChat {
         String sys = systemPrompt
                 .replace("<name>", bot.handle)
                 .replace("<quirk>", bot.quirk)
+                .replace("<style>", styles.getOrDefault(bot.dialect, styles.getOrDefault("british", "")))
                 .replace("<max_words>", String.valueOf(systemSuffix == null ? maxWords : replyWords));
         if (systemSuffix != null && !systemSuffix.isBlank()) sys = sys + "\n" + systemSuffix;
         JsonObject body = new JsonObject();

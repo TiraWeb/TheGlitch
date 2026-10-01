@@ -76,7 +76,7 @@ public final class GlitchBots extends JavaPlugin {
         switch (sub) {
             case "status" -> {
                 sender.sendMessage(MM.deserialize("<gold>Rogue Raiders</gold> <gray>(" + (config.enabled ? "on" : "off")
-                        + ", target " + config.targetPerWorld + "/world)</gray>"));
+                        + ", target " + config.targetPerWorld + "/world) · " + chat.usageLine() + "</gray>"));
                 for (String name : config.worlds) {
                     World w = Bukkit.getWorld(name);
                     if (w == null) continue;
