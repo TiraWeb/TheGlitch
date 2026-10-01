@@ -21,9 +21,29 @@ import su.nezushin.nminimap.markers.impl.LocationMarker;
 public final class MinimapBridge implements Listener {
 
     private final GlitchItems plugin;
+    /**
+     * Rogue Raider (GlitchBots) positions per world, refreshed on the main thread every
+     * half second. The marker event is async, and Citizens NPC players aren't in
+     * world.getPlayers(), so the render path reads this snapshot instead.
+     */
+    private final java.util.Map<String, java.util.List<org.bukkit.Location>> rogues = new java.util.concurrent.ConcurrentHashMap<>();
 
     public MinimapBridge(GlitchItems plugin) {
         this.plugin = plugin;
+    }
+
+    void startRogueSnapshots() {
+        org.bukkit.Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            for (org.bukkit.World w : org.bukkit.Bukkit.getWorlds()) {
+                if (!Worlds.isGameWorld(w.getName())) continue;
+                java.util.List<org.bukkit.Location> found = new java.util.ArrayList<>();
+                for (Player p : w.getEntitiesByClass(Player.class)) {
+                    if (com.theglitch.common.Bots.isBot(p)) found.add(p.getLocation());
+                }
+                if (found.isEmpty()) rogues.remove(w.getName());
+                else rogues.put(w.getName(), java.util.List.copyOf(found));
+            }
+        }, 40L, 10L);
     }
 
     @EventHandler
@@ -40,9 +60,7 @@ public final class MinimapBridge implements Listener {
         double rogueRadius = plugin.getConfig().getDouble("minimap.rogue-radius", 48.0);
         double r2 = rogueRadius * rogueRadius;
         org.bukkit.Location here = player.getLocation();
-        for (Player other : new java.util.ArrayList<>(player.getWorld().getPlayers())) {
-            if (!com.theglitch.common.Bots.isBot(other)) continue;
-            org.bukkit.Location at = other.getLocation();
+        for (org.bukkit.Location at : rogues.getOrDefault(player.getWorld().getName(), java.util.List.of())) {
             double dx = at.getX() - here.getX(), dz = at.getZ() - here.getZ();
             if (dx * dx + dz * dz > r2) continue;
             event.getMarkers().add(new LocationMarker("rogue", at));

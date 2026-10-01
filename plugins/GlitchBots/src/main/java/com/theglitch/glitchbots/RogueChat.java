@@ -53,6 +53,13 @@ final class RogueChat {
     private int botCooldownSec, pairCooldownSec, maxPerMinute, maxWords, hearRadius;
     private String systemPrompt;
     private List<String> quirks, fallback;
+    // Conversations: a raider talking in chat near a rogue (or saying its name) gets a reply
+    private final Map<String, Deque<String>> history = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> lastReplyTo = new ConcurrentHashMap<>();
+    private boolean replyEnabled;
+    private int replyRadius, replyCooldownSec, replyWords, historyLines;
+    private String replyInstruction;
+    private List<String> replyFallback;
     private java.util.regex.Pattern blocked;
     /** After a 429 (free-tier quota) Gemini is skipped until this time; fallbacks fill in. */
     private volatile long backoffUntil;
@@ -73,6 +80,13 @@ final class RogueChat {
         systemPrompt = c.getString("chat.system-prompt", "");
         quirks = c.getStringList("chat.quirks");
         fallback = c.getStringList("chat.fallback-lines");
+        replyEnabled = c.getBoolean("chat.replies.enabled", true);
+        replyRadius = Math.max(4, c.getInt("chat.replies.radius", 24));
+        replyCooldownSec = Math.max(1, c.getInt("chat.replies.player-cooldown-seconds", 4));
+        replyWords = Math.max(4, c.getInt("chat.replies.max-words", 24));
+        historyLines = Math.max(2, c.getInt("chat.replies.memory-lines", 8));
+        replyInstruction = c.getString("chat.replies.instruction", "");
+        replyFallback = c.getStringList("chat.replies.fallback-lines");
         // Lines matching any blocked word are thrown away for a fallback (identity insults,
         // slurs, sexual accusations etc. the prompt forbids but the model occasionally emits)
         List<String> words = c.getStringList("chat.blocked-words");
@@ -122,11 +136,17 @@ final class RogueChat {
             say(bot, fallbackLine(target));
             return;
         }
+        deliver(bot, target, ask(bot, context, null), () -> fallbackLine(target));
+    }
+
+    /** Waits for Gemini, swaps in a fallback when it fails or says something blocked, then speaks. */
+    private void deliver(RogueBot bot, Player target, java.util.concurrent.CompletableFuture<String> call,
+                         java.util.function.Supplier<String> fallbackSupplier) {
         inFlight.incrementAndGet();
-        ask(bot, target, context).whenComplete((line, err) -> {
+        call.whenComplete((line, err) -> {
             inFlight.decrementAndGet();
             boolean bad = line == null || line.isBlank() || (blocked != null && blocked.matcher(line).find());
-            String out = (err != null || bad) ? fallbackLine(target) : line;
+            String out = (err != null || bad) ? fallbackSupplier.get() : line;
             if (err != null && String.valueOf(err.getMessage()).contains("HTTP 429")) {
                 backoffUntil = System.currentTimeMillis() + 60_000L; // free-tier quota — pause AI for a minute
             } else if (err != null && !warnedFailure) {
@@ -134,8 +154,79 @@ final class RogueChat {
                 plugin.getLogger().warning("Gemini call failed (" + err.getClass().getSimpleName() + ": "
                         + safe(err.getMessage()) + ") — using fallback lines when it does. Logged once.");
             }
-            Bukkit.getScheduler().runTask(plugin, () -> say(bot, out));
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                remember(bot, target, bot.handle + ": " + out);
+                say(bot, out);
+            });
         });
+    }
+
+    // ---- conversations ----
+
+    /**
+     * A real raider said something in chat (main thread). The rogue whose name they used
+     * (within hearing range) answers, otherwise the nearest rogue within reply range.
+     */
+    void onPlayerChat(Player player, String message) {
+        if (!enabled || !replyEnabled || Bots.isBot(player) || message == null || message.isBlank()) return;
+        long now = System.currentTimeMillis();
+        Long last = lastReplyTo.get(player.getUniqueId());
+        if (last != null && now - last < replyCooldownSec * 1000L) return;
+        Location at = player.getLocation();
+        String lower = " " + message.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]+", " ") + " ";
+        RogueBot named = null, nearest = null;
+        double namedD = Double.MAX_VALUE, nearestD = Double.MAX_VALUE;
+        for (RogueBot b : plugin.director().inWorld(player.getWorld().getName())) {
+            Location l = b.location();
+            if (l == null || l.getWorld() != at.getWorld()) continue;
+            double d = l.distance(at);
+            if (d <= hearRadius && d < namedD && lower.contains(" " + b.handle.toLowerCase(java.util.Locale.ROOT) + " ")) {
+                named = b;
+                namedD = d;
+            }
+            if (d <= replyRadius && d < nearestD) {
+                nearest = b;
+                nearestD = d;
+            }
+        }
+        RogueBot bot = named != null ? named : nearest;
+        if (bot == null) return;
+        lastReplyTo.put(player.getUniqueId(), now);
+        String said = message.length() > 200 ? message.substring(0, 200) : message;
+        remember(bot, player, player.getName() + ": " + said);
+
+        StringBuilder convo = new StringBuilder("Chat so far between you (").append(bot.handle)
+                .append(") and the raider ").append(player.getName()).append(":\n");
+        for (String l : history.getOrDefault(key(bot, player), new ArrayDeque<>())) convo.append(l).append("\n");
+        convo.append("Reply to their last message now.");
+
+        if (apiKey.isEmpty() || now < backoffUntil || !takeAiSlot(now)) {
+            String fb = replyFallbackLine(player);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                remember(bot, player, bot.handle + ": " + fb);
+                say(bot, fb);
+            }, 20L);
+            return;
+        }
+        deliver(bot, player, ask(bot, convo.toString(), replyInstruction.replace("<reply_words>", String.valueOf(replyWords))),
+                () -> replyFallbackLine(player));
+    }
+
+    private String key(RogueBot bot, Player p) {
+        return bot.npc.getUniqueId() + ">" + p.getUniqueId();
+    }
+
+    private void remember(RogueBot bot, Player p, String line) {
+        Deque<String> h = history.computeIfAbsent(key(bot, p), k -> new ArrayDeque<>());
+        synchronized (h) {
+            h.addLast(line);
+            while (h.size() > historyLines) h.pollFirst();
+        }
+    }
+
+    private String replyFallbackLine(Player p) {
+        if (replyFallback.isEmpty()) return "yeah yeah, talk is cheap, drop the loot";
+        return replyFallback.get(ThreadLocalRandom.current().nextInt(replyFallback.size())).replace("<player>", p.getName());
     }
 
     private synchronized boolean takeAiSlot(long now) {
@@ -164,11 +255,12 @@ final class RogueChat {
         return sb.toString();
     }
 
-    private java.util.concurrent.CompletableFuture<String> ask(RogueBot bot, Player target, String userText) {
+    private java.util.concurrent.CompletableFuture<String> ask(RogueBot bot, String userText, String systemSuffix) {
         String sys = systemPrompt
                 .replace("<name>", bot.handle)
                 .replace("<quirk>", bot.quirk)
-                .replace("<max_words>", String.valueOf(maxWords));
+                .replace("<max_words>", String.valueOf(systemSuffix == null ? maxWords : replyWords));
+        if (systemSuffix != null && !systemSuffix.isBlank()) sys = sys + "\n" + systemSuffix;
         JsonObject body = new JsonObject();
         JsonObject sysObj = new JsonObject();
         sysObj.add("parts", parts(sys));
@@ -263,6 +355,7 @@ final class RogueChat {
     void forget(UUID npcId) {
         botCooldown.remove(npcId);
         pairCooldown.keySet().removeIf(k -> k.startsWith(npcId.toString()));
+        history.keySet().removeIf(k -> k.startsWith(npcId.toString()));
     }
 
     private String safe(String s) {

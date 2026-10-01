@@ -35,6 +35,17 @@ final class BotListener implements Listener {
         if (npc != null && plugin.director().bot(npc.getUniqueId()) != null) event.setCancelled(true);
     }
 
+    /** Raiders can talk to rogues: chat near one (or say its name) and it answers in character. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onChat(io.papermc.paper.event.player.AsyncChatEvent event) {
+        Player player = event.getPlayer();
+        if (!plugin.cfg().worlds.contains(player.getWorld().getName())) return;
+        String text = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(event.message());
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (player.isOnline()) plugin.chat().onPlayerChat(player, text);
+        });
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onRogueDeath(PlayerDeathEvent event) {
         Player body = event.getEntity();
