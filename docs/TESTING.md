@@ -219,6 +219,7 @@
 - [ ] Rogues never appear in the tab list, `/list` or the server-list player count; nametag reads `Rogue <name>` in red
 - [ ] Rogues show on the minimap as a purple chevron within ~48 blocks (not red mob dots, not player markers)
 - [ ] A rogue that spots you shouts one `[Rogue X]` line in chat (Gemini-written once `gemini.key` is set, else a fallback line); no spam (max once/min per rogue)
+- [ ] Talk in chat within ~24 blocks of a rogue (or say its name within 40) → it replies in character within ~1–2 s and remembers the last few lines; asking "are you a bot?" gets an in-character admission
 - [ ] Rogues walk to crates and loot them (crate then shows not-ready), fight you and Glitch mobs, flee when low, and later walk to an open extraction point and vanish with a portal puff ("Rogue X extracted")
 - [ ] Killing one: chat "you eliminated Rogue X", drops its looted items + some gear; `+40` kill bounty; after extracting, Raider Rank shows "+N rogues"
 - [ ] Being killed by a rogue: normal death rules + RR loss; nothing odd in the death message
