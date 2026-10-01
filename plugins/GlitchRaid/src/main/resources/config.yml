@@ -64,6 +64,9 @@ dungeons:
 
 # Raider Rank (RR ladder, Bronze..Eternity). Code defaults match these, so a
 # live config seeded before this section existed behaves the same.
+# Kill bounty (Shards, paid on extraction like mob bounty) for a Rogue Raider bot (GlitchBots)
+rogue-kill-bounty: 40
+
 rank:
   enabled: true
   tiers: { bronze: 0, silver: 100, gold: 250, platinum: 450, diamond: 700, grandmaster: 1000, celestial: 1400, eternity: 1900 }
@@ -74,6 +77,7 @@ rank:
     low-value: 50         # under this loot value the run only earns...
     low-value-gain: 2
     per-player-kill: 5    # per raider killed that raid (credited only on extract)
+    per-rogue-kill: 2     # per Rogue Raider bot killed that raid (credited only on extract)
   death:
     base: 8               # RR lost dying in a raid / combat-logging
     per-200-value: 1      # -1 RR per 200 Shards of gear dropped

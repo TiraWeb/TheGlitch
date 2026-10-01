@@ -41,6 +41,7 @@ TRACK1_ORDER=(
   "GlitchEvents"
   "GlitchQuests"
   "GlitchWorldGen"
+  "GlitchBots"
 )
 
 log()  { echo -e "\033[1;36m[build-all]\033[0m $*"; }

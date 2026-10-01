@@ -1,0 +1,135 @@
+# GlitchBots — Rogue Raiders (AI raider bots)
+#
+# Rogues are an openly AI faction: they look and fight like raiders, loot crates and
+# head for extraction, but they never appear in the tab list or the server's player
+# count and never pretend to be human. Their names always carry the "Rogue" label.
+
+config-version: 1
+enabled: true
+
+# Red worlds that get rogues
+worlds:
+  - glitch_red
+  - glitch_red_eleria
+  - glitch_red_horizons
+
+# Each world is filled up to this many raiders: bots = target - real players (never below 0).
+# Rogues only exist while at least one real player is in the world.
+target-per-world: 10
+
+# New rogues appear out of sight, this many blocks from a random real player in the world
+# (entities only tick within simulation-distance of a player, so keep max under ~110).
+spawn-ring:
+  min: 40
+  max: 96
+# ...and never closer than this to ANY real player
+min-player-distance: 24
+max-spawn-per-tick: 1
+# Director tick (seconds)
+tick-seconds: 5
+# Seconds a world must be empty of real players before its rogues are removed
+despawn-grace-seconds: 30
+
+name-format: "<gray>Rogue</gray> <red><name></red>"
+names:
+  - Vex
+  - Kael
+  - Riven
+  - Sable
+  - Dusk
+  - Nyx
+  - Corvo
+  - Hex
+  - Wren
+  - Ash
+  - Mako
+  - Shade
+  - Talon
+  - Ember
+  - Rook
+  - Vesper
+  - Jinx
+  - Grimm
+  - Onyx
+  - Lark
+  - Fable
+  - Static
+  - Glint
+  - Hollow
+  - Brine
+  - Cinder
+  - Morrow
+  - Scrap
+  - Pike
+  - Thorn
+  - Quill
+  - Echo
+  - Flint
+  - Rune
+  - Slate
+  - Vandal
+  - Kestrel
+  - Moth
+  - Nova
+  - Rust
+  - Sliver
+  - Wick
+  - Zero
+  - Haze
+  - Crux
+  - Drift
+  - Fen
+  - Gloam
+  - Ivo
+  - Kite
+  - Lux
+  - Marrow
+  - Null
+  - Orrin
+  - Pyre
+  - Quake
+  - Rift
+  - Soot
+  - Tatter
+  - Umber
+
+# Gear rarity weights (GlitchItems gear). Armor pieces roll per slot with armor-chance.
+gear-tiers:
+  common: 45
+  uncommon: 30
+  rare: 17
+  epic: 7
+  legendary: 1
+armor-chance: 0.7
+# Share of rogues that fight with a bow/crossbow instead of a blade
+ranged-chance: 0.25
+
+combat:
+  health: 20.0
+  range: 24.0          # how far they notice targets
+  chase-range: 40.0
+  attack-rate-ticks: 14
+  # Lower = better aim (Sentinel accuracy spread) per rarity tier
+  accuracy:
+    common: 2.5
+    uncommon: 2.0
+    rare: 1.4
+    epic: 0.9
+    legendary: 0.5
+  # Below this share of max health a rogue breaks off and runs for a few seconds
+  flee-health: 0.3
+  flee-seconds: 7
+
+loot:
+  # Crates a rogue loots before heading for extraction
+  max-crates: 4
+  crate-search-radius: 80
+  # Head for extraction when the raid timer has less than this left (seconds)
+  extract-when-remaining: 240
+
+drops:
+  # Each worn/held piece drops with this chance; the looted bag always drops
+  gear-chance: 0.35
+
+# Kill bounty / Raider Rank credit for killing a rogue live in GlitchRaid's config
+# (rogue-kill-bounty, rank.extract.per-rogue-kill).

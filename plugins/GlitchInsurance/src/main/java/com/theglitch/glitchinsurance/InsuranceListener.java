@@ -30,6 +30,7 @@ public final class InsuranceListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        if (com.theglitch.common.Bots.isBot(player)) return;
         String world = player.getWorld().getName();
         if (!manager.isEnabledWorld(world)) return;
 

@@ -24,6 +24,7 @@ public record DeathRulesListener(GlitchDeathRules plugin) implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        if (player.hasMetadata("NPC")) return; // Rogue Raider bots: GlitchBots sets their drops
         // Cached HashSet lookup — no getStringList + List.contains per death
         if (!plugin.isMercyWorld(player.getWorld().getName())) {
             return;

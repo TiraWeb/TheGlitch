@@ -270,7 +270,7 @@ public final class CombatListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onKill(org.bukkit.event.entity.EntityDeathEvent event) {
         Player killer = event.getEntity().getKiller();
-        if (killer == null) return;
+        if (killer == null || com.theglitch.common.Bots.isBot(killer)) return;
         // Red Zone only — otherwise rifts could be farmed on mobs anywhere
         if (!glitchManager.isEnabledWorld(killer.getWorld().getName())) return;
         GearRolls rolls = gearManager.parse(killer.getInventory().getItemInMainHand());
@@ -294,6 +294,7 @@ public final class CombatListener implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        if (com.theglitch.common.Bots.isBot(player)) return;
         if (glitchManager.isEnabledWorld(player.getWorld().getName())) {
             glitchManager.clear(player);
         }

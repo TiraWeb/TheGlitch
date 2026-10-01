@@ -1,0 +1,22 @@
+name: GlitchBots
+version: '${project.version}'
+main: com.theglitch.glitchbots.GlitchBots
+api-version: '1.21'
+description: Rogue Raiders — clearly labelled AI raider bots that fill quiet Red Zones (never counted as players)
+depend:
+  - Citizens
+  - Sentinel
+softdepend:
+  - GlitchItems
+  - GlitchRaid
+  - GlitchStash
+  - MythicMobs
+commands:
+  bots:
+    description: Rogue Raider admin — status, spawn, clear, reload
+    usage: /bots <status|spawn <world> [count] [x z]|clear [world]|reload>
+    permission: glitchbots.admin
+permissions:
+  glitchbots.admin:
+    description: Rogue Raider admin commands
+    default: op

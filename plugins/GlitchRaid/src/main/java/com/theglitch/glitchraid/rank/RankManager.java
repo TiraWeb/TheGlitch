@@ -58,12 +58,13 @@ public final class RankManager {
     private final File file;
     private final Map<UUID, Entry> data = new ConcurrentHashMap<>();
     private final Map<UUID, Integer> pendingKills = new ConcurrentHashMap<>();
+    private final Map<UUID, Integer> pendingRogueKills = new ConcurrentHashMap<>();
     private final Map<String, Long> lastKill = new ConcurrentHashMap<>();
     private final EnumMap<RankTier, Integer> mins = new EnumMap<>(RankTier.class);
     private volatile boolean dirty;
 
     private boolean enabled;
-    private int extractBase, extractPer100, extractCap, lowValue, lowGain, killBonus;
+    private int extractBase, extractPer100, extractCap, lowValue, lowGain, killBonus, rogueKillBonus;
     private int deathBase, deathPer200, deathCap, killMinVictimValue;
     private long killCooldownMs;
     private double highGain, highLoss, topGain;
@@ -86,6 +87,7 @@ public final class RankManager {
         lowValue = c.getInt("rank.extract.low-value", 50);
         lowGain = c.getInt("rank.extract.low-value-gain", 2);
         killBonus = c.getInt("rank.extract.per-player-kill", 5);
+        rogueKillBonus = c.getInt("rank.extract.per-rogue-kill", 2);
         deathBase = c.getInt("rank.death.base", 8);
         deathPer200 = c.getInt("rank.death.per-200-value", 1);
         deathCap = c.getInt("rank.death.cap", 40);
@@ -161,26 +163,36 @@ public final class RankManager {
         pendingKills.merge(killer, 1, Integer::sum);
     }
 
+    /** A raider killed a Rogue Raider bot; credited (smaller than a player kill) on extract. */
+    public void recordRogueKill(UUID killer) {
+        if (!enabled) return;
+        pendingRogueKills.merge(killer, 1, Integer::sum);
+    }
+
     public void onExtract(UUID id, int lootValue) {
         if (!enabled) return;
         int kills = pendingKills.getOrDefault(id, 0);
         pendingKills.remove(id);
+        Integer rogueKills = pendingRogueKills.remove(id);
+        int rogues = rogueKills == null ? 0 : rogueKills;
         int gain = lootValue < lowValue ? lowGain
                 : Math.min(extractCap, extractBase + (lootValue / 100) * extractPer100);
-        gain += kills * killBonus;
+        gain += kills * killBonus + rogues * rogueKillBonus;
         RankTier t = tier(id);
         if (t == RankTier.ETERNITY) gain = (int) Math.round(gain * topGain);
         else if (t.ordinal() >= RankTier.GRANDMASTER.ordinal()) gain = (int) Math.round(gain * highGain);
         gain = Math.max(1, gain);
         entry(id).shield = true;
         String why = "extracted " + String.format("%,d", lootValue) + " Shards"
-                + (kills > 0 ? ", " + kills + " raider kill" + (kills == 1 ? "" : "s") : "");
+                + (kills > 0 ? ", " + kills + " raider kill" + (kills == 1 ? "" : "s") : "")
+                + (rogues > 0 ? ", " + rogues + " rogue" + (rogues == 1 ? "" : "s") : "");
         change(id, gain, why);
     }
 
     public void onDeath(UUID id, int lostValue, String reason) {
         if (!enabled) return;
         pendingKills.remove(id);
+        pendingRogueKills.remove(id);
         int loss = Math.min(deathCap, deathBase + (lostValue / 200) * deathPer200);
         if (tier(id).ordinal() >= RankTier.GRANDMASTER.ordinal()) loss = (int) Math.round(loss * highLoss);
         change(id, -loss, reason);

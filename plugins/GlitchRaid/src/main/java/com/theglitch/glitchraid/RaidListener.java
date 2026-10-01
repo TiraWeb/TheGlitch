@@ -1,5 +1,6 @@
 package com.theglitch.glitchraid;
 
+import com.theglitch.common.Bots;
 import com.theglitch.common.FoliaScheduler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -38,6 +39,7 @@ public final class RaidListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onWorldChange(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
+        if (Bots.isBot(player)) return; // Rogue Raiders never join raid sessions
         String to = player.getWorld().getName();
         String from = event.getFrom().getName();
         String hubWorld = manager.getHubWorld();
@@ -106,6 +108,7 @@ public final class RaidListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        if (Bots.isBot(player)) return;
         FoliaScheduler.runLaterGlobal(plugin, () -> {
             if (!player.isOnline()) return;
             // Disconnect-cancelled raid (or raid lost while away, e.g. restart):
@@ -168,6 +171,7 @@ public final class RaidListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
+        if (Bots.isBot(player)) return;
         if (manager.isTimeoutVictim(player.getUniqueId())) {
             // Force respawn to hub spawn
             try {
@@ -234,6 +238,7 @@ public final class RaidListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        if (Bots.isBot(player)) return; // rogue kills are credited in onEntityDeath
         if (!manager.isInRaid(player.getUniqueId())) {
             return;
         }
@@ -278,6 +283,7 @@ public final class RaidListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        if (Bots.isBot(player)) return;
         if (!manager.isInRaid(player.getUniqueId())) {
             return;
         }
@@ -387,7 +393,12 @@ public final class RaidListener implements Listener {
         }
         int value = 10;
         String typeName = event.getEntity().getType().name();
-        if (typeName.contains("BOSS") || typeName.contains("ELDER") || typeName.contains("WARDEN") || typeName.contains("ENDER_DRAGON")) {
+        if (Bots.isBot(event.getEntity())) {
+            // Rogue Raider: bigger bounty, plus Raider Rank credit if the killer extracts
+            value = plugin.getConfig().getInt("rogue-kill-bounty", 40);
+            com.theglitch.glitchraid.rank.RankManager ranks = plugin.getRankManager();
+            if (ranks != null) ranks.recordRogueKill(killer.getUniqueId());
+        } else if (typeName.contains("BOSS") || typeName.contains("ELDER") || typeName.contains("WARDEN") || typeName.contains("ENDER_DRAGON")) {
             value = 50;
         } else if (event.getEntity() instanceof org.bukkit.entity.Monster) {
             value = 10;
@@ -399,7 +410,7 @@ public final class RaidListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPickup(EntityPickupItemEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
+        if (!(event.getEntity() instanceof Player player) || Bots.isBot(player)) return;
         if (!manager.isInRaid(player.getUniqueId())) return;
         // Only count if the item has sell value (avoid counting junk like dirt)
         org.bukkit.inventory.ItemStack stack = event.getItem().getItemStack();

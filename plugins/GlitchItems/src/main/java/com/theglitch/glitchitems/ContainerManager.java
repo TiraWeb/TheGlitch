@@ -704,16 +704,58 @@ public final class ContainerManager {
             return false;
         }
 
-        ThreadLocalRandom rand = ThreadLocalRandom.current();
         int luck = plugin.getGlitchManager().lootLuckBonus(player);
-
-        List<ItemStack> loot = new ArrayList<>();
-        boolean surged = false;
-
         int rolls = type.maxRolls();
         if (player.getScoreboardTags().contains(SCAVENGE_TAG)) {
             rolls += scavengeBonusRolls;
         }
+        List<ItemStack> loot = new ArrayList<>();
+        boolean surged = rollContents(type, rolls, luck, loot);
+
+        boolean emptied = loot.isEmpty();
+        if (type.requiresKey() && !emptied) {
+            consumeKey(player, type);
+        }
+        // Quest hook: "loot N containers" counts real loot-crate opens only
+        if (!loot.isEmpty()) {
+            try {
+                org.bukkit.plugin.Plugin questPlugin = Bukkit.getPluginManager().getPlugin("GlitchQuests");
+                if (questPlugin != null && questPlugin.isEnabled()) {
+                    questPlugin.getClass().getMethod("containerLooted", Player.class).invoke(questPlugin, player);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return finishOpen(player, record, type, loc, loot, surged, rand(), now, emptied);
+    }
+
+    private static ThreadLocalRandom rand() {
+        return ThreadLocalRandom.current();
+    }
+
+    /**
+     * A Rogue Raider bot (GlitchBots) loots a ready crate: same pools as a player with
+     * no luck bonus, key crates are skipped, and the crate goes on cooldown so players
+     * find it emptied. Returns the items (empty when not lootable).
+     */
+    public List<ItemStack> botLoot(Location loc) {
+        List<ItemStack> loot = new ArrayList<>();
+        if (loc == null || loc.getWorld() == null) return loot;
+        ContainerRecord record = byLocation.get(locKey(loc));
+        ContainerType type = record == null ? null : types.get(record.type);
+        if (type == null || type.requiresKey() || !enabledWorlds.contains(record.world)) return loot;
+        long now = System.currentTimeMillis();
+        if (record.lastOpened + type.regenSeconds() * 1000L > now) return loot;
+        rollContents(type, type.maxRolls(), 0, loot);
+        record.lastOpened = now;
+        dirty.set(true);
+        return loot;
+    }
+
+    /** Rolls a crate's rarity rolls, material extras and loot pools into {@code loot}; returns whether a luck surge hit. */
+    private boolean rollContents(ContainerType type, int rolls, int luck, List<ItemStack> loot) {
+        ThreadLocalRandom rand = ThreadLocalRandom.current();
+        boolean surged = false;
         for (int i = 0; i < rolls; i++) {
             Rarity rarity = rollRarity(type, rand);
             if (rarity == null) continue;
@@ -747,21 +789,11 @@ public final class ContainerManager {
                 loot.add(extra);
             }
         }
+        return surged;
+    }
 
-        boolean emptied = loot.isEmpty();
-        if (type.requiresKey() && !emptied) {
-            consumeKey(player, type);
-        }
-        // Quest hook: "loot N containers" counts real loot-crate opens only
-        if (!loot.isEmpty()) {
-            try {
-                org.bukkit.plugin.Plugin questPlugin = Bukkit.getPluginManager().getPlugin("GlitchQuests");
-                if (questPlugin != null && questPlugin.isEnabled()) {
-                    questPlugin.getClass().getMethod("containerLooted", Player.class).invoke(questPlugin, player);
-                }
-            } catch (Exception ignored) {
-            }
-        }
+    private boolean finishOpen(Player player, ContainerRecord record, ContainerType type, Location loc,
+                               List<ItemStack> loot, boolean surged, ThreadLocalRandom rand, long now, boolean emptied) {
         // Hook: count loot toward active GlitchRaid (if installed) — fixes raid loot not ticking for containers
         if (!loot.isEmpty()) {
             try {

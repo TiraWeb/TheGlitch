@@ -68,7 +68,7 @@ public class RedZoneSelectGUI implements Listener {
             Material mat = OPTION_MATERIALS[i % OPTION_MATERIALS.length];
             String desc = manager.getWorldDescription(world);
             org.bukkit.World w = Bukkit.getWorld(world);
-            int raiders = w == null ? 0 : w.getPlayers().size();
+            int raiders = w == null ? 0 : com.theglitch.common.Bots.realPlayers(w).size();
             com.theglitch.glitchraid.RaidSession global = manager.findActiveGlobalSession(world);
             String timer = global != null
                     ? "<gray>Extraction window: <white>" + manager.formatTime(global.getRemainingSeconds()) + "</white> left</gray>"

@@ -355,6 +355,7 @@ public final class AutoExtractScheduler {
         int killed = 0;
         for (Player player : new ArrayList<>(red.getPlayers())) {
             if (player == null || !player.isOnline()) continue;
+            if (com.theglitch.common.Bots.isBot(player)) continue; // GlitchBots clears its own rogues
             // Never kill spectators/creatives — they are staff/legit exemptions
             try {
                 if (player.getGameMode() == org.bukkit.GameMode.CREATIVE || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) {

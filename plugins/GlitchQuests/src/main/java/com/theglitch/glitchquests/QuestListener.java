@@ -88,7 +88,12 @@ public final class QuestListener implements Listener {
     public void onDeath(EntityDeathEvent e) {
         LivingEntity dead = e.getEntity();
         Player killer = dead.getKiller();
-        if (killer == null || killer.equals(dead)) return;
+        if (killer == null || killer.equals(dead) || com.theglitch.common.Bots.isBot(killer)) return;
+        if (com.theglitch.common.Bots.isBot(dead)) {
+            // Rogue Raider bots count as hostile kills, not player kills
+            quests.progress(killer, QuestType.KILL_MOB, 1);
+            return;
+        }
         if (dead instanceof Player) {
             quests.progress(killer, QuestType.KILL_PLAYER, 1);
             return;

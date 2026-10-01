@@ -63,6 +63,10 @@ public final class ClassManager {
      * Get or create class data for a player.
      */
     public ClassData getClassData(UUID uuid) {
+        ClassData known = players.get(uuid);
+        if (known != null) return known;
+        // Rogue Raider bots (Citizens NPCs) are Players too — never give them stored class data
+        if (com.theglitch.common.Bots.isBot(org.bukkit.Bukkit.getEntity(uuid))) return new ClassData(uuid, "none", 0, 0);
         return players.computeIfAbsent(uuid, id -> new ClassData(id, "none", 0, 0));
     }
 
