@@ -55,6 +55,8 @@ Live server data (worlds, edited configs) is never overwritten; `start.sh` and t
 - **Ranks:** default (member) has chest/loot-crate and QoL permissions; `alpha` (weight 50, `[Alpha]`) is the trusted-tester tier — more than member, nothing destructive (`scripts/setup-luckperms.sh`).
 - **Red worlds** (`glitch_red`, `glitch_red_eleria`, `glitch_red_horizons`) each have a square world border around the whole imported map, red-only HUD + minimap, and no heavy mobs near the entry spawn. During the 1-minute raid buffer nobody (except `glitchraid.admin`) can enter a red world — they get a "maintenance" message.
 - **Loot line:** salvage/refined parts, Recycler (`/recycle`), sell-only trinkets, 16 blueprints that unlock Workbench recipes, 6 gadgets, Secure Pouch (docs/ITEM_SYSTEM.md §14).
+- **Rogue Raiders:** clearly labelled AI raider bots (GlitchBots, Citizens + Sentinel) fill each occupied Red Zone up to 10 raiders — they loot crates, fight, flee and extract; never counted as players (`/bots status`).
+- **Parties:** one `/party` for raids and dungeons (leader brings hub members into raids; leader starts dungeons).
 - **Raider Rank:** RR from extracting (lost on raid deaths), tiers Bronze → Eternity with an icon after the name on nametags/tab; `/rank`, `/rank top`, `/raidadmin rank set|add|reset` (docs/STATUS.md snapshot).
 - **Dungeons:** 11 MythicDungeons boss dungeons (licensed assets, live-only — docs/DUNGEONS.md).
 - **Client pack:** one resource pack authority (Nexo) merging ModelEngine, MythicHUD and NMinimap packs. The client needs the pack for the HUD/minimap; not compatible with Iris/OptiFine shaders or Bedrock.

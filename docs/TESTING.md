@@ -213,6 +213,18 @@
 - [ ] Glitch Phantoms attack players and don't burn in daylight
 - [ ] Alpha players show the `[ALPHA]` tag on nametag and tab
 
+## Rogue Raiders (GlitchBots, 2026-10-01)
+
+- [ ] `/bots status` lists all 3 red worlds; enter a Red Zone alone → rogues appear within ~1 min, out of sight, up to 9 (10 − 1 real)
+- [ ] Rogues never appear in the tab list, `/list` or the server-list player count; nametag reads `Rogue <name>` in red
+- [ ] NMinimap / MythicHUD don't show rogues as players (if they do, report — they should be hidden)
+- [ ] Rogues walk to crates and loot them (crate then shows not-ready), fight you and Glitch mobs, flee when low, and later walk to an open extraction point and vanish with a portal puff ("Rogue X extracted")
+- [ ] Killing one: chat "you eliminated Rogue X", drops its looted items + some gear; `+40` kill bounty; after extracting, Raider Rank shows "+N rogues"
+- [ ] Being killed by a rogue: normal death rules + RR loss; nothing odd in the death message
+- [ ] A second real player joins the world → target drops to 8 (one rogue walks off to extract)
+- [ ] Leave the world → its rogues are removed ~30 s later; scatter buffer clears all rogues
+- [ ] TPS stays ≥ 19.5 with a full world (`/tps`); if not, lower `target-per-world` in `plugins/GlitchBots/config.yml` + `/bots reload`
+
 ## Raider Rank (2026-09-30)
 
 - [ ] `papi parse <you> %glitchraid_rank_icon%` returns the Bronze glyph; the icon shows after your name on the nametag and tab list
