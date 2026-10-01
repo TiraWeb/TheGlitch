@@ -369,3 +369,4 @@ scatter:
 # NMinimap markers (MinimapBridge): ready loot crates within this many blocks.
 minimap:
   crate-radius: 64
+  rogue-radius: 48   # Rogue Raider bots (GlitchBots) show as hostile dots within this range

@@ -241,6 +241,7 @@ final class BotDirector {
     void remove(RogueBot b) {
         bots.remove(b.npc.getUniqueId());
         namesInUse.remove(b.handle);
+        plugin.chat().forget(b.npc.getUniqueId());
         UUID entityId = b.entityId;
         try {
             b.npc.destroy();

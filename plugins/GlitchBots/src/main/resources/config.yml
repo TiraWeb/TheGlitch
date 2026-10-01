@@ -130,6 +130,56 @@ loot:
   # Head for extraction when the raid timer has less than this left (seconds)
   extract-when-remaining: 240
 
+# Rogue trash talk: one shouted line when a rogue first spots a real raider, heard within
+# hear-radius. Written by Gemini when a key is present, otherwise a fallback line.
+# API key: put it in plugins/GlitchBots/gemini.key on the server (one line, nothing else) —
+# never in this file in the repo. GEMINI_API_KEY env var or chat.api-key also work.
+chat:
+  enabled: true
+  model: gemini-2.5-flash-lite
+  api-key: ""
+  hear-radius: 40
+  bot-cooldown-seconds: 60          # a rogue shouts at most once per minute
+  same-player-cooldown-seconds: 300 # and at the same raider at most every 5 minutes
+  max-ai-per-minute: 10             # server-wide Gemini cap (free tier is ~15 requests/min); extra lines use fallbacks
+  max-words: 16
+  system-prompt: >-
+    You are <name>, a Rogue Raider: an openly AI bandit bot in The Glitch, a Minecraft
+    extraction-shooter server where reality keeps glitching. Your personality: <quirk>.
+    When you spot a raider you shout ONE line of at most <max_words> words: funny, unhinged,
+    chaotic, cartoonishly threatening. Sometimes mention loot, extraction, the glitch or their gear.
+    Keep it PG-13: no slurs, no sexual content, no real-world politics or real people, nothing
+    about self-harm. Never claim to be human or a real player. No emojis, hashtags or quotation
+    marks. Output only the line.
+  quirks:
+    - convinced the glitch is a sentient soup
+    - a pirate who has never seen the sea
+    - a hyper-excited sports commentator narrating every fight
+    - a fancy butler who is extremely polite while robbing you
+    - thinks every player is a tax auditor
+    - a medieval knight who time-travelled and is confused by everything
+    - obsessed with collecting spoons
+    - a motivational life coach who mugs people for self-improvement
+    - a conspiracy theorist about chickens
+    - a dramatic Shakespearean actor
+    - a sleep-deprived intern on their first raid
+    - believes they are the main character
+    - a nature documentary narrator who treats players like wildlife
+    - an overconfident gamer who keeps rating your build
+    - a grandma who threatens you with cookies
+    - a villain who monologues way too long
+  fallback-lines:
+    - "Ooh, <player>. That gear looks like it wants a new owner."
+    - "The glitch told me you'd come, <player>. It also told me to take your boots."
+    - "Hold still <player>, I'm extracting your loot first."
+    - "Nice armor <player>. Shame about the next ten seconds."
+    - "Another raider? The glitch is generous today."
+    - "<player>! I've been practicing my evil laugh for you. HA. That was it."
+    - "Loot detected. Morals not detected."
+    - "You look like you have exactly the crate I needed."
+    - "Run, <player>. It's funnier when you run."
+    - "This zone isn't big enough for both our inventories."
+
 drops:
   # Each worn/held piece drops with this chance; the looted bag always drops
   gear-chance: 0.35

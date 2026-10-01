@@ -63,3 +63,7 @@ backups/*.sha256
 /Dungeon_bosses/
 /Dungeon_maps.zip
 /dungeon-private/
+
+# API keys for server features (never commit)
+gemini.key
+**/gemini.key

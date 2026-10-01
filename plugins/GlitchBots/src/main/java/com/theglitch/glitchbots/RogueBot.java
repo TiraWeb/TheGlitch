@@ -39,6 +39,8 @@ final class RogueBot {
     final String handle;
     final String world;
     final String rarity;
+    /** Personality used for this rogue's chat lines. */
+    final String quirk;
     final List<ItemStack> bag = new ArrayList<>();
     private final Set<String> skippedCrates = new HashSet<>();
 
@@ -63,6 +65,11 @@ final class RogueBot {
         this.handle = handle;
         this.world = world;
         this.rarity = rarity;
+        this.quirk = plugin.chat().randomQuirk();
+    }
+
+    int cratesLooted() {
+        return cratesLooted;
     }
 
     // ---- spawn / gear ----
@@ -168,6 +175,7 @@ final class RogueBot {
             s.range = normalRange;
             state = leaving || cratesLooted >= cfg.maxCrates ? State.EXTRACT : State.ROAM;
         }
+        spotCheck(body, s);
         if (s.chasing != null) return true; // Sentinel is fighting — let it
 
         // Stuck detection while walking
@@ -223,6 +231,24 @@ final class RogueBot {
             }
         }
         return true;
+    }
+
+    /** Shout at a real raider when we start chasing one, or first see one close by. */
+    private void spotCheck(LivingEntity body, SentinelTrait s) {
+        if (s.chasing instanceof Player target && !com.theglitch.common.Bots.isBot(target)) {
+            plugin.chat().onSpot(this, target);
+            return;
+        }
+        Player nearest = null;
+        double best = 24 * 24;
+        for (Player p : com.theglitch.common.Bots.realPlayers(body.getWorld())) {
+            double d = p.getLocation().distanceSquared(body.getLocation());
+            if (d < best && p.getGameMode() != org.bukkit.GameMode.SPECTATOR && body.hasLineOfSight(p)) {
+                best = d;
+                nearest = p;
+            }
+        }
+        if (nearest != null) plugin.chat().onSpot(this, nearest);
     }
 
     private boolean pickCrate(Location here) {

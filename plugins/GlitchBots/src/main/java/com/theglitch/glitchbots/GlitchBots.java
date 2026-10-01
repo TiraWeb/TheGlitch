@@ -24,6 +24,7 @@ public final class GlitchBots extends JavaPlugin {
     private BotConfig config;
     private GlitchHooks hooks;
     private BotDirector director;
+    private RogueChat chat;
 
     @Override
     public void onEnable() {
@@ -31,6 +32,8 @@ public final class GlitchBots extends JavaPlugin {
         ConfigDefaults.merge(this);
         config = new BotConfig(getConfig());
         hooks = new GlitchHooks(this);
+        chat = new RogueChat(this);
+        chat.reload();
         director = new BotDirector(this);
         Bukkit.getPluginManager().registerEvents(new BotListener(this), this);
         director.start();
@@ -53,6 +56,10 @@ public final class GlitchBots extends JavaPlugin {
 
     GlitchHooks hooks() {
         return hooks;
+    }
+
+    RogueChat chat() {
+        return chat;
     }
 
     BotDirector director() {
@@ -121,6 +128,7 @@ public final class GlitchBots extends JavaPlugin {
             case "reload" -> {
                 reloadConfig();
                 config = new BotConfig(getConfig());
+                chat.reload();
                 director.start();
                 sender.sendMessage(MM.deserialize("<green>GlitchBots reloaded.</green>"));
             }
