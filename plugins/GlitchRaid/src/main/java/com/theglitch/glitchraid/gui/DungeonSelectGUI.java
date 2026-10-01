@@ -175,6 +175,7 @@ public class DungeonSelectGUI implements Listener {
                     }
                 }
             }
+            plugin.getRaidManager().getPartyManager().refreshDungeonParty(player.getUniqueId());
             awaitingEntry.put(player.getUniqueId(), d.id());
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "md play " + d.id() + " " + player.getName());
             Bukkit.getScheduler().runTaskLater(plugin, () -> {

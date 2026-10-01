@@ -105,9 +105,9 @@ done
 
 # Global MD settings: cap concurrent instances for a 4 vCPU host. Instances are
 # created on demand and deleted after — no dungeon world is loaded while nobody
-# plays. Parties: GlitchRaid provides them (DungeonPartyBridge) — /party is the
-# same party for raids and dungeons; MD's own party-finder broadcast is off.
-sed -i -E 's/^(  PartyPlugin: ).*/\1GlitchRaid/; s/^(    AutoBroadcast: ).*/\1false/; s/^(  MaxInstances: ).*/\16/' "${MD}/config.yml"
+# plays. Parties: MD stays on Default; GlitchRaid attaches its party (DungeonPartyBridge) —
+# /party is the same party for raids and dungeons. Party-finder broadcast off.
+sed -i -E 's/^(  PartyPlugin: ).*/\1Default/; s/^(    AutoBroadcast: ).*/\1false/; s/^(  MaxInstances: ).*/\16/' "${MD}/config.yml"
 
 # --- restart + resource pack -------------------------------------------------------
 log "Restarting the server to load the new mobs, models and dungeons"

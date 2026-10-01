@@ -44,6 +44,12 @@ public final class PartyManager {
         if (bridge != null) bridge.sync(party, removed);
     }
 
+    /** Re-attaches the player's party in MythicDungeons (it drops one-player parties after a run). */
+    public void refreshDungeonParty(UUID playerUuid) {
+        Party party = getParty(playerUuid);
+        syncDungeons(party, party == null ? Set.of(playerUuid) : Set.of());
+    }
+
     public int getMaxPartySize() {
         return maxPartySize;
     }

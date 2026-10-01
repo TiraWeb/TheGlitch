@@ -8,6 +8,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -20,14 +23,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Makes the GlitchRaid party THE party for MythicDungeons too, so players never
- * juggle two party systems. MythicDungeons supports a custom provider: with
- * {@code General.PartyPlugin: GlitchRaid} in its config, every party member's
- * MythicPlayer gets an {@code IDungeonParty} that we implement here.
+ * juggle two party systems. MythicDungeons (PartyPlugin: Default) reads a player's
+ * party through {@code MythicPlayer.getDungeonParty()}: its own MythicParty when the
+ * player used MD's /party (rerouted to /raid by {@link PartyCommandAlias}), otherwise
+ * the {@code IDungeonParty} we attach to every online member here. Play, queue,
+ * ready check and leader-only start all go through that interface.
  *
  * MythicDungeons is a licensed jar that is not on the build classpath, so the
- * interface is implemented with a {@link Proxy} and everything else is
- * reflection. If MythicDungeons is missing, too old, or set to another party
- * plugin, the bridge stays inactive and nothing else changes.
+ * interface is implemented with a {@link Proxy} and the calls are method handles
+ * (plain reflection on its main class fails: it links Citizens, which isn't
+ * installed). If MythicDungeons is missing or changes, the bridge stays inactive.
  */
 public final class DungeonPartyBridge implements Listener {
 
@@ -37,10 +42,9 @@ public final class DungeonPartyBridge implements Listener {
     private final PartyManager parties;
     private final Map<UUID, Object> proxies = new ConcurrentHashMap<>(); // party leader -> IDungeonParty proxy
     private Class<?> partyInterface;
-    private Method inst;
-    private Method getMythicPlayer;
-    private Method setDungeonParty;
-    private Method initDungeonParty;
+    private MethodHandle inst;
+    private MethodHandle getMythicPlayer;
+    private MethodHandle setDungeonParty;
     private boolean active;
 
     public DungeonPartyBridge(GlitchRaid plugin, PartyManager parties) {
@@ -54,21 +58,15 @@ public final class DungeonPartyBridge implements Listener {
         try {
             ClassLoader cl = Bukkit.getPluginManager().getPlugin("MythicDungeons").getClass().getClassLoader();
             partyInterface = Class.forName(API, true, cl);
-            Class<?> md = Class.forName("net.playavalon.mythicdungeons.MythicDungeons", true, cl);
-            inst = md.getMethod("inst");
-            getMythicPlayer = md.getMethod("getMythicPlayer", Player.class);
-            Class<?> mythicPlayer = getMythicPlayer.getReturnType();
-            setDungeonParty = mythicPlayer.getMethod("setDungeonParty", partyInterface);
-            initDungeonParty = partyInterface.getMethod("initDungeonParty", org.bukkit.plugin.Plugin.class);
-            String configured = String.valueOf(md.getMethod("getPartyPluginName").invoke(inst.invoke(null)));
-            if (!configured.equalsIgnoreCase(plugin.getName())) {
-                plugin.getLogger().warning("MythicDungeons uses party plugin '" + configured
-                        + "' — set General.PartyPlugin: " + plugin.getName() + " so dungeons use raid parties.");
-                return;
-            }
+            Class<?> md = Class.forName("net.playavalon.mythicdungeons.MythicDungeons", false, cl);
+            Class<?> mythicPlayer = Class.forName("net.playavalon.mythicdungeons.player.MythicPlayer", false, cl);
+            MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+            inst = lookup.findStatic(md, "inst", MethodType.methodType(md));
+            getMythicPlayer = lookup.findVirtual(md, "getMythicPlayer", MethodType.methodType(mythicPlayer, Player.class));
+            setDungeonParty = lookup.findVirtual(mythicPlayer, "setDungeonParty", MethodType.methodType(void.class, partyInterface));
             active = true;
             for (Party party : parties.getAllParties()) sync(party, List.of());
-            plugin.getLogger().info("MythicDungeons party bridge active — dungeons use raid parties.");
+            plugin.getLogger().info("MythicDungeons party bridge active — dungeons use /party.");
         } catch (ReflectiveOperationException | LinkageError e) {
             plugin.getLogger().warning("MythicDungeons party bridge unavailable: " + e);
         }
@@ -95,8 +93,11 @@ public final class DungeonPartyBridge implements Listener {
                 return;
             }
             Object proxy = proxies.computeIfAbsent(party.getLeader(), id -> newProxy(id));
-            initDungeonParty.invoke(proxy, plugin);
-        } catch (ReflectiveOperationException | RuntimeException e) {
+            for (UUID id : party.getMembers()) {
+                Player p = Bukkit.getPlayer(id);
+                if (p != null) setParty(p, proxy);
+            }
+        } catch (Throwable e) {
             plugin.getLogger().warning("Dungeon party sync failed: " + e);
         }
     }
@@ -112,8 +113,8 @@ public final class DungeonPartyBridge implements Listener {
         }, 10L);
     }
 
-    private void setParty(Player player, Object party) throws ReflectiveOperationException {
-        Object mythicPlayer = getMythicPlayer.invoke(inst.invoke(null), player);
+    private void setParty(Player player, Object party) throws Throwable {
+        Object mythicPlayer = getMythicPlayer.invoke(inst.invoke(), player);
         if (mythicPlayer != null) setDungeonParty.invoke(mythicPlayer, party);
     }
 
