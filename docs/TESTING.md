@@ -127,8 +127,20 @@
 
 ## GlitchRaid (raid lifecycle)
 
-- [ ] `/raid start` begins a raid: BossBar timer appears (default 1800s), party leader assigned
+- [ ] Entering a Red Zone starts/joins its raid timer (`/raid start` in the hub only explains how to enter)
 - [ ] Invite up to 3 members (`max 4`) — invites work, declines/left players removed from party
+
+### One party for raids + dungeons (2026-10-01) — needs 2 players
+- [ ] `/party invite <B>` (A) → B gets "invited you to their party (raids + dungeons)"; `/party accept` joins; `/party list` shows `[Leader]` and `[Hub]`
+- [ ] `/dparty`, `/party create`, `/recruit` never open MythicDungeons' own party (rerouted / hint to `/party invite`)
+- [ ] A (leader) walks through the Red portal → B in the hub follows into the same zone and joins the same raid timer
+- [ ] B enters a Red Zone first → A is **not** pulled (only the leader pulls)
+- [ ] B in a dungeon while A enters a Red Zone → B stays in the dungeon and gets "not brought along" message
+- [ ] B (non-leader) opens `/dungeons` → "Only your party leader can start a dungeon"; no key taken
+- [ ] A starts a dungeon while B is in a Red Zone → "whole party must be in the hub" (B named); no key taken
+- [ ] A starts a dungeon with B in the hub → B gets the `/ready` hint; after `/ready` both land in the same instance
+- [ ] After the dungeon, A starts another → still both go (party re-attached)
+- [ ] `/party leave` (B) → next dungeon from A is solo; A leaving disbands for everyone
 - [ ] Loot picked up and kills/deaths during the raid are counted (`/raid status` reflects them)
 - [ ] `/raid status` shows timer, party, loot, deaths (global auto-raid: `Zone | Raiders | Party`, no session UUID)
 - [ ] Mid-raid `/warp hub`, `/spawn`, `/redzone` are blocked unless the player has `glitchraid.bypass.exit` (default false; `*` grants it)
