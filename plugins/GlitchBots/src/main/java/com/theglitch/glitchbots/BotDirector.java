@@ -4,7 +4,6 @@ import com.theglitch.common.Bots;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -158,8 +157,9 @@ final class BotDirector {
 
     private void pruneDead(String world) {
         for (RogueBot b : inWorld(world)) {
-            // Chunk unloaded (no player near) or killed — drop it; the director refills near players
-            if (!b.npc.isSpawned()) remove(b);
+            // Chunk unloaded (no player near) or killed — drop it; the director refills near players.
+            // Fresh spawns get a few seconds: Citizens can finish spawning a tick later.
+            if (!b.npc.isSpawned() && System.currentTimeMillis() - b.spawnedAt > 10_000L) remove(b);
         }
     }
 
@@ -190,9 +190,7 @@ final class BotDirector {
     RogueBot spawnAt(Location spot) {
         BotConfig cfg = plugin.cfg();
         String handle = pickName();
-        String display = LegacyComponentSerializer.legacySection()
-                .serialize(plugin.mm().deserialize(cfg.nameFormat.replace("<name>", handle)));
-        NPC npc = registry.createNPC(EntityType.PLAYER, display);
+        NPC npc = registry.createNPC(EntityType.PLAYER, cfg.nameFormat.replace("<name>", handle));
         RogueBot bot = new RogueBot(plugin, npc, handle, spot.getWorld().getName(), cfg.rollRarity());
         if (!bot.spawn(spot)) {
             npc.destroy();
@@ -234,10 +232,27 @@ final class BotDirector {
     void remove(RogueBot b) {
         bots.remove(b.npc.getUniqueId());
         namesInUse.remove(b.handle);
+        UUID entityId = b.entityId;
         try {
             b.npc.destroy();
         } catch (Exception ignored) {
         }
+        forgetEssentialsUser(entityId);
+    }
+
+    /**
+     * Essentials creates a userdata file for every player entity it sees, NPCs included
+     * ("Created a User for Rogue X"). Rogues are throwaway — delete the file once gone.
+     */
+    private void forgetEssentialsUser(UUID id) {
+        if (id == null) return;
+        java.io.File f = new java.io.File(plugin.getDataFolder().getParentFile(), "Essentials/userdata/" + id + ".yml");
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            try {
+                java.nio.file.Files.deleteIfExists(f.toPath());
+            } catch (Exception ignored) {
+            }
+        }, 100L);
     }
 
     int clearWorld(String world) {

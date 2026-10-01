@@ -26,6 +26,15 @@ final class BotListener implements Listener {
         this.plugin = plugin;
     }
 
+    /** Rogues path over ledges a player would avoid — no fall damage, so they don't die walking. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onRogueFall(org.bukkit.event.entity.EntityDamageEvent event) {
+        if (event.getCause() != org.bukkit.event.entity.EntityDamageEvent.DamageCause.FALL) return;
+        if (!Bots.isBot(event.getEntity())) return;
+        NPC npc = plugin.director().registry().getNPC(event.getEntity());
+        if (npc != null && plugin.director().bot(npc.getUniqueId()) != null) event.setCancelled(true);
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onRogueDeath(PlayerDeathEvent event) {
         Player body = event.getEntity();

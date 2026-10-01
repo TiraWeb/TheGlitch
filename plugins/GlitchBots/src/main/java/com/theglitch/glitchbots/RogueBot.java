@@ -43,6 +43,9 @@ final class RogueBot {
     private final Set<String> skippedCrates = new HashSet<>();
 
     State state = State.ROAM;
+    final long spawnedAt = System.currentTimeMillis();
+    /** The spawned body's UUID (for Essentials userdata cleanup). */
+    java.util.UUID entityId;
     /** Leaving because the world has more rogues than it needs (not because it's done looting). */
     boolean leaving;
     private int cratesLooted;
@@ -76,6 +79,7 @@ final class RogueBot {
         // real player's skin. Citizens then shows one of Minecraft's default skins.
         SkinTrait skin = npc.getOrAddTrait(SkinTrait.class);
         skin.setFetchDefaultSkin(false);
+        npc.getOrAddTrait(net.citizensnpcs.trait.ScoreboardTrait.class).setColor(cfg.nameColor);
 
         boolean ranged = ThreadLocalRandom.current().nextDouble() < cfg.rangedChance;
         Equipment eq = npc.getOrAddTrait(Equipment.class);
@@ -120,6 +124,7 @@ final class RogueBot {
         s.needsAmmo = false;
 
         if (!npc.spawn(at)) return false;
+        if (npc.getEntity() != null) entityId = npc.getEntity().getUniqueId();
         lastPos = at.clone();
         return true;
     }

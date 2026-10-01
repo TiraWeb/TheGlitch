@@ -30,7 +30,10 @@ tick-seconds: 5
 # Seconds a world must be empty of real players before its rogues are removed
 despawn-grace-seconds: 30
 
-name-format: "<gray>Rogue</gray> <red><name></red>"
+# Plain text only (no color codes — Minecraft rejects them in player-entity names); the
+# name is colored through the NPC's scoreboard team instead.
+name-format: "Rogue <name>"
+name-color: RED
 names:
   - Vex
   - Kael

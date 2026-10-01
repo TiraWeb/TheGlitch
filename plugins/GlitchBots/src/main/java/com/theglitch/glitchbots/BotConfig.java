@@ -17,6 +17,7 @@ final class BotConfig {
     final int targetPerWorld;
     final int ringMin, ringMax, minPlayerDistance, maxSpawnPerTick, tickSeconds, despawnGraceSeconds;
     final String nameFormat;
+    final org.bukkit.ChatColor nameColor;
     final List<String> names;
     final Map<String, Integer> rarityWeights = new LinkedHashMap<>();
     final double armorChance, rangedChance;
@@ -40,7 +41,19 @@ final class BotConfig {
         maxSpawnPerTick = Math.max(1, c.getInt("max-spawn-per-tick", 1));
         tickSeconds = Math.max(1, c.getInt("tick-seconds", 5));
         despawnGraceSeconds = Math.max(0, c.getInt("despawn-grace-seconds", 30));
-        nameFormat = c.getString("name-format", "<gray>Rogue</gray> <red><name></red>");
+        // Strip any legacy/MiniMessage formatting: a '§' in an NPC player's name breaks its death packet
+        String fmt = c.getString("name-format", "Rogue <name>").replace("<name>", "\u0000");
+        fmt = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(fmt))
+                .replaceAll("(?i)[\u00a7&][0-9a-fk-or]", "");
+        nameFormat = fmt.replace("\u0000", "<name>");
+        org.bukkit.ChatColor color;
+        try {
+            color = org.bukkit.ChatColor.valueOf(c.getString("name-color", "RED").toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            color = org.bukkit.ChatColor.RED;
+        }
+        nameColor = color;
         List<String> n = c.getStringList("names");
         names = n.isEmpty() ? List.of("Vex", "Kael", "Riven", "Sable", "Dusk") : n;
         ConfigurationSection tiers = c.getConfigurationSection("gear-tiers");
