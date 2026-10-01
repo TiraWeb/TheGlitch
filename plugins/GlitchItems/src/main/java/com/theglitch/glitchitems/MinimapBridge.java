@@ -36,7 +36,7 @@ public final class MinimapBridge implements Listener {
             event.getMarkers().add(new LocationMarker("crate_" + crate.type(), crate.location()));
         }
         // Rogue Raiders (GlitchBots) are PLAYER-type NPCs, which NMinimap's mob radar always
-        // skips — draw them as hostile dots ourselves, within the mob radar's range.
+        // skips — draw them ourselves as the purple "rogue" chevron, within the mob radar's range.
         double rogueRadius = plugin.getConfig().getDouble("minimap.rogue-radius", 48.0);
         double r2 = rogueRadius * rogueRadius;
         org.bukkit.Location here = player.getLocation();
@@ -45,7 +45,7 @@ public final class MinimapBridge implements Listener {
             org.bukkit.Location at = other.getLocation();
             double dx = at.getX() - here.getX(), dz = at.getZ() - here.getZ();
             if (dx * dx + dz * dz > r2) continue;
-            event.getMarkers().add(new LocationMarker("hostile", at));
+            event.getMarkers().add(new LocationMarker("rogue", at));
         }
     }
 
@@ -53,7 +53,7 @@ public final class MinimapBridge implements Listener {
     public void onRadarIcon(AsyncEntityIconSelectEvent event) {
         Entity entity = event.getEntity();
         if (com.theglitch.common.Bots.isBot(entity)) {
-            event.setSelectedIcon("hostile");
+            event.setSelectedIcon("rogue");
             event.setAllowRotation(false);
             return;
         }

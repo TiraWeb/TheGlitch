@@ -4,6 +4,7 @@
   crate_<type>  loot crates ready to open (GlitchItems MinimapBridge), tier colours
   extract       open extraction points (GlitchStash MinimapExtractionMarkers)
   hostile       mob radar dot (MinimapBridge sets it for every Mob)
+  rogue         Rogue Raider bot (GlitchBots) — purple chevron, MinimapBridge
 
 On-map size comes from NMinimap config markers.sizes (map pixels), so these are
 drawn at 16x16 and scaled down by the client.
@@ -56,6 +57,15 @@ def hostile():
     return im
 
 
+def rogue():
+    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.polygon([(8, 0), (15, 15), (8, 11), (1, 15)], fill=EDGE)
+    d.polygon([(8, 3), (13, 13), (8, 9), (3, 13)], fill=(168, 85, 247, 255))
+    d.polygon([(8, 5), (10, 10), (8, 8)], fill=(225, 190, 255, 255))
+    return im
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--preview")
@@ -64,6 +74,7 @@ def main():
     icons = {f"crate_{t}": crate(*c) for t, c in CRATES.items()}
     icons["extract"] = extract()
     icons["hostile"] = hostile()
+    icons["rogue"] = rogue()
     for name, im in icons.items():
         im.save(os.path.join(OUT, f"{name}.png"))
     if args.preview:

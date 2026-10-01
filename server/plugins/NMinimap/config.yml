@@ -153,6 +153,10 @@ markers:
     hostile:
       height: 3
       width: 3
+    #Rogue Raider bots (GlitchBots) — purple chevron, drawn by GlitchItems MinimapBridge
+    rogue:
+      height: 5
+      width: 5
     #NMinimap/markers/player.png
     player:
       #size in pixels

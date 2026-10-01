@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Rogue trash talk: when a rogue first spots a real raider it shouts one short line,
- * written by Gemini (gemini-2.5-flash-lite) in the rogue's random personality, or a
+ * written by Gemini (gemini-3.5-flash-lite; 2.5 is closed to new API users) in the rogue's random personality, or a
  * canned fallback line when no API key is set, the API errors, or a rate cap is hit.
  * Lines always go out under the "Rogue <name>" label and the prompt forbids claiming
  * to be human. The API key is read from plugins/GlitchBots/gemini.key (or the
@@ -61,7 +61,7 @@ final class RogueChat {
     void reload() {
         FileConfiguration c = plugin.getConfig();
         enabled = c.getBoolean("chat.enabled", true);
-        model = c.getString("chat.model", "gemini-2.5-flash-lite");
+        model = c.getString("chat.model", "gemini-3.5-flash-lite");
         botCooldownSec = c.getInt("chat.bot-cooldown-seconds", 60);
         pairCooldownSec = c.getInt("chat.same-player-cooldown-seconds", 300);
         maxPerMinute = Math.max(0, c.getInt("chat.max-ai-per-minute", 10));
@@ -169,10 +169,9 @@ final class RogueChat {
         body.add("contents", contents);
         JsonObject gen = new JsonObject();
         gen.addProperty("temperature", 1.1);
+        // No thinkingConfig: Gemini 3.x rejects thinkingBudget (HTTP 400), and its default
+        // answers in ~0.7 s; "low" thinking spent the token budget and cut lines short.
         gen.addProperty("maxOutputTokens", 60);
-        JsonObject thinking = new JsonObject();
-        thinking.addProperty("thinkingBudget", 0);
-        gen.add("thinkingConfig", thinking);
         body.add("generationConfig", gen);
 
         HttpRequest req = HttpRequest.newBuilder(URI.create(String.format(ENDPOINT, model)))

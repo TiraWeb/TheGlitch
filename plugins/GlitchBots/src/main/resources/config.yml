@@ -136,7 +136,7 @@ loot:
 # never in this file in the repo. GEMINI_API_KEY env var or chat.api-key also work.
 chat:
   enabled: true
-  model: gemini-2.5-flash-lite
+  model: gemini-3.5-flash-lite   # 2.5 Flash-Lite is closed to new API users (HTTP 404)
   api-key: ""
   hear-radius: 40
   bot-cooldown-seconds: 60          # a rogue shouts at most once per minute
