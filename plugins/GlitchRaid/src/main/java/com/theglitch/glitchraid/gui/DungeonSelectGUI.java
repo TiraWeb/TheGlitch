@@ -86,6 +86,7 @@ public class DungeonSelectGUI implements Listener {
 
         gui.setItem(INFO_SLOT, item(Material.WRITABLE_BOOK, "<yellow><bold>Boss Dungeons</bold></yellow>",
                 "<gray>Private instance for you and your party (1-4).</gray>",
+                "<gray>Party: <yellow>/party invite <player></yellow> — the leader starts.</gray>",
                 "<gray>Entry uses one dungeon key of the dungeon's tier.</gray>",
                 "<gray>Keys: Bazaar → Keys tab.</gray>",
                 " ",
@@ -138,6 +139,11 @@ public class DungeonSelectGUI implements Listener {
             player.sendMessage(MM.deserialize("<red>Dungeons are opening soon.</red>"));
             return;
         }
+        String blocked = partyProblem(player);
+        if (blocked != null) {
+            player.sendMessage(MM.deserialize(blocked));
+            return;
+        }
         String keyId = keyId(d.tier());
         if (keyCount(player, d.tier()) < 1) {
             player.sendMessage(MM.deserialize("<red>You need a " + KEY_NAME[d.tier()]
@@ -148,12 +154,27 @@ public class DungeonSelectGUI implements Listener {
                 + " Dungeon Key</" + TIER_COLOUR[d.tier()].substring(1) + "> <gray>to enter <white>" + d.name()
                 + "</white> with your party?</gray>");
         ChatConfirm.ask(player, question, () -> {
-            // Re-check on YES: the key may have been used or sold since.
+            // Re-check on YES: the key may have been used or sold since, or the party moved.
+            String nowBlocked = partyProblem(player);
+            if (nowBlocked != null) {
+                player.sendMessage(MM.deserialize(nowBlocked));
+                return;
+            }
             if (!takeKey(player, keyId)) {
                 player.sendMessage(MM.deserialize("<red>You no longer have that key.</red>"));
                 return;
             }
             player.sendMessage(MM.deserialize("<gray>Key used — opening <white>" + d.name() + "</white>...</gray>"));
+            com.theglitch.glitchraid.Party party = plugin.getRaidManager().getPartyManager().getParty(player.getUniqueId());
+            if (party != null && party.getSize() > 1) {
+                for (java.util.UUID mid : party.getMembers()) {
+                    Player m = Bukkit.getPlayer(mid);
+                    if (m != null && !m.equals(player)) {
+                        m.sendMessage(MM.deserialize("<light_purple>" + player.getName() + "</light_purple> <gray>is starting <white>" + d.name()
+                                + "</white> — type <yellow>/ready</yellow> when MythicDungeons asks.</gray>"));
+                    }
+                }
+            }
             awaitingEntry.put(player.getUniqueId(), d.id());
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "md play " + d.id() + " " + player.getName());
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -170,6 +191,35 @@ public class DungeonSelectGUI implements Listener {
                 player.sendMessage(MM.deserialize("<yellow>The dungeon didn't start — your key was returned.</yellow>"));
             }, REFUND_TICKS);
         });
+    }
+
+    /**
+     * Dungeons run for the whole /party. Only the leader may start one, and every
+     * online member must be in the hub and out of a raid: MythicDungeons teleports the
+     * party, and pulling someone out of a Red Zone would skip extraction.
+     * Returns the reason entry is blocked, or null when the party can go.
+     */
+    private String partyProblem(Player player) {
+        com.theglitch.glitchraid.RaidManager raids = plugin.getRaidManager();
+        String hub = raids.getHubWorld();
+        if (!player.getWorld().getName().equalsIgnoreCase(hub) || raids.isInRaid(player.getUniqueId())) {
+            return "<red>Dungeons start from the hub.</red>";
+        }
+        com.theglitch.glitchraid.Party party = raids.getPartyManager().getParty(player.getUniqueId());
+        if (party == null || party.getSize() < 2) return null;
+        if (!party.isLeader(player.getUniqueId())) {
+            return "<red>Only your party leader can start a dungeon.</red> <gray>Leave with <yellow>/party leave</yellow> to go solo.</gray>";
+        }
+        List<String> away = new ArrayList<>();
+        for (java.util.UUID mid : party.getMembers()) {
+            Player m = Bukkit.getPlayer(mid);
+            if (m == null || m.equals(player)) continue;
+            if (!m.getWorld().getName().equalsIgnoreCase(hub) || raids.isInRaid(mid)) away.add(m.getName());
+        }
+        if (!away.isEmpty()) {
+            return "<red>Your whole party must be in the hub first.</red> <gray>Not here: <white>" + String.join(", ", away) + "</white></gray>";
+        }
+        return null;
     }
 
     @EventHandler

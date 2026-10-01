@@ -987,7 +987,10 @@ public final class RaidManager {
         // Include party members if leader has a party
         Party party = partyManager.getParty(uuid);
         if (party != null) {
-            members.addAll(party.getMembers());
+            // Members already in another raid keep it; only free members share this one.
+            for (UUID mid : party.getMembers()) {
+                if (mid.equals(uuid) || !activeRaids.containsKey(mid)) members.add(mid);
+            }
         } else {
             members.add(uuid);
             // Also ensure leader is in map even if solo party not created
@@ -1035,7 +1038,9 @@ public final class RaidManager {
             for (UUID mid : members) {
                 if (mid.equals(uuid)) continue;
                 Player p = Bukkit.getPlayer(mid);
-                if (p != null && !p.getWorld().getName().equalsIgnoreCase(leader.getWorld().getName())) {
+                // Only pull from the hub — never out of a dungeon instance or another red world
+                if (p != null && !p.getWorld().getName().equalsIgnoreCase(leader.getWorld().getName())
+                        && p.getWorld().getName().equalsIgnoreCase(hubWorld)) {
                     if (inBuffer && !p.hasPermission("glitchraid.admin")) {
                         plugin.getLogger().info("Party pull skipped for " + p.getName() + " — in 1m buffer (next in " + bufferRemain + ")");
                         try {
@@ -1439,6 +1444,39 @@ public final class RaidManager {
                         p2.sendMessage(MM.deserialize("<green>Party extraction — pulled to hub with <white>" + player.getName() + "</white>.</green>"));
                     }
                 }, 20L);
+            }
+        }
+    }
+
+    /**
+     * The party leader just entered (or is in) a red world: bring online members who
+     * are standing in the hub to the leader. Members anywhere else — a dungeon, another
+     * red world, mid-respawn — are left alone and told why. Pulled members join the raid
+     * through their own world change, so buffer and session rules apply as usual.
+     */
+    public void pullPartyToLeader(Player leader) {
+        Party party = partyManager.getParty(leader.getUniqueId());
+        if (party == null || !party.isLeader(leader.getUniqueId()) || party.getSize() < 2) return;
+        String world = leader.getWorld().getName();
+        if (!isRedWorld(world) || isInBufferPeriod(world)) return;
+        String zone = getWorldDisplayName(world);
+        for (UUID mid : party.getMembers()) {
+            if (mid.equals(leader.getUniqueId()) || isInRaid(mid)) continue;
+            Player member = Bukkit.getPlayer(mid);
+            if (member == null || member.isDead()) continue;
+            if (!member.getWorld().getName().equalsIgnoreCase(hubWorld)) {
+                try {
+                    member.sendMessage(MM.deserialize("<yellow>Your party leader <white>" + leader.getName() + "</white> entered <white>" + zone
+                            + "</white> — <gray>you weren't brought along because you're not in the hub.</gray></yellow>"));
+                } catch (Exception ignored) {}
+                continue;
+            }
+            try {
+                FoliaScheduler.teleportEntity(member, plugin, leader.getLocation());
+                member.sendMessage(MM.deserialize("<gray>Party: following <white>" + leader.getName() + "</white> into <white>" + zone + "</white>.</gray>"));
+                plugin.getLogger().info("Party pull: " + member.getName() + " -> " + leader.getName() + " in " + world);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Party pull failed for " + member.getName() + ": " + e.getMessage());
             }
         }
     }

@@ -23,6 +23,7 @@ public final class PartyManager {
 
     private final Map<UUID, Party> parties = new ConcurrentHashMap<>(); // leader -> party
     private final Map<UUID, UUID> playerToLeader = new ConcurrentHashMap<>(); // player -> leader
+    private volatile DungeonPartyBridge dungeonBridge;
 
     public PartyManager(GlitchRaid plugin) {
         this.plugin = plugin;
@@ -31,6 +32,16 @@ public final class PartyManager {
 
     public void reload() {
         this.maxPartySize = Math.max(1, plugin.getConfig().getInt("raid.party-max-size", 4));
+    }
+
+    /** Mirrors every membership change into MythicDungeons (one party for raids and dungeons). */
+    public void setDungeonBridge(DungeonPartyBridge bridge) {
+        this.dungeonBridge = bridge;
+    }
+
+    private void syncDungeons(Party party, Set<UUID> removed) {
+        DungeonPartyBridge bridge = dungeonBridge;
+        if (bridge != null) bridge.sync(party, removed);
     }
 
     public int getMaxPartySize() {
@@ -67,6 +78,7 @@ public final class PartyManager {
         parties.put(id, party);
         playerToLeader.put(id, id);
         plugin.getLogger().info("Raid party created: leader=" + leader.getName());
+        syncDungeons(party, Set.of());
         return party;
     }
 
@@ -97,6 +109,7 @@ public final class PartyManager {
                 party.addMember(pid);
                 playerToLeader.put(pid, party.getLeader());
                 party.clearInvite(pid);
+                syncDungeons(party, Set.of());
                 plugin.getLogger().info(player.getName() + " accepted raid party invite -> leader=" + Bukkit.getOfflinePlayer(party.getLeader()).getName());
                 return true;
             }
@@ -124,6 +137,7 @@ public final class PartyManager {
         if (!party.isMember(tid)) return false;
         party.removeMember(tid);
         playerToLeader.remove(tid);
+        syncDungeons(party, Set.of(tid));
         return true;
     }
 
@@ -135,11 +149,17 @@ public final class PartyManager {
         playerToLeader.remove(playerUuid);
         if (wasLeader) {
             // Leader leaves -> disband (or promote next member — we disband for simplicity)
-            for (UUID member : Set.copyOf(party.rawMembers())) {
+            Set<UUID> former = Set.copyOf(party.rawMembers());
+            for (UUID member : former) {
                 playerToLeader.remove(member);
             }
             parties.remove(party.getLeader());
             plugin.getLogger().info("Raid party disbanded (leader left): " + playerUuid);
+            java.util.Set<UUID> removed = new java.util.HashSet<>(former);
+            removed.add(playerUuid);
+            syncDungeons(party, removed);
+        } else {
+            syncDungeons(party, Set.of(playerUuid));
         }
     }
 

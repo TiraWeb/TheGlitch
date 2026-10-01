@@ -45,6 +45,10 @@ public final class RaidCommand implements CommandExecutor {
         PartyManager partyMgr = manager.getPartyManager();
         switch (sub) {
             case "start" -> {
+                if (manager.isGlobalRemainingMode() && !manager.isRedWorld(player.getWorld().getName())) {
+                    player.sendMessage(MM.deserialize("<gray>Raids start when you enter a Red Zone — walk through the portal or use <yellow>/redzone</yellow>. Your party leader brings party members in the hub along.</gray>"));
+                    return true;
+                }
                 if (manager.isInRaid(player.getUniqueId())) {
                     String alreadyRaw = plugin.getConfig().getString("messages.already-in-raid", "<red>You are already in a raid!</red>");
                     player.sendMessage(MM.deserialize(alreadyRaw));
@@ -115,7 +119,7 @@ public final class RaidCommand implements CommandExecutor {
             }
             case "invite" -> {
                 if (args.length < 2) {
-                    player.sendMessage(MM.deserialize("<red>Usage: /raid invite <player></red>"));
+                    player.sendMessage(MM.deserialize("<red>Usage: /party invite <player></red>"));
                     return true;
                 }
                 Player target = Bukkit.getPlayer(args[1]);
@@ -141,14 +145,14 @@ public final class RaidCommand implements CommandExecutor {
                     player.sendMessage(MM.deserialize("<red>Invite failed — party full (" + partyMgr.getParty(player.getUniqueId()).getSize() + "/" + manager.getPartyMaxSize() + ") or already invited.</red>"));
                     return true;
                 }
-                player.sendMessage(MM.deserialize("<green>Invited <white>" + target.getName() + "</white> to your raid party. <gray>(" + partyMgr.getParty(player.getUniqueId()).getSize() + "/" + manager.getPartyMaxSize() + ")</gray></green>"));
-                target.sendMessage(MM.deserialize("<green><white>" + player.getName() + "</white> invited you to a raid party! <yellow>Use /raid accept</yellow> to join. <gray>(30s)</gray></green>"));
+                player.sendMessage(MM.deserialize("<green>Invited <white>" + target.getName() + "</white> to your party. <gray>(" + partyMgr.getParty(player.getUniqueId()).getSize() + "/" + manager.getPartyMaxSize() + ")</gray></green>"));
+                target.sendMessage(MM.deserialize("<green><white>" + player.getName() + "</white> invited you to their party (raids + dungeons)! <yellow>/party accept</yellow> to join. <gray>(30s)</gray></green>"));
                 target.sendMessage(MM.deserialize("<gray>Party leader: <white>" + player.getName() + "</white></gray>"));
             }
             case "accept" -> {
                 boolean ok = partyMgr.acceptInvite(player);
                 if (!ok) {
-                    player.sendMessage(MM.deserialize("<red>No pending raid invite.</red>"));
+                    player.sendMessage(MM.deserialize("<red>No pending party invite.</red>"));
                     return true;
                 }
                 Party party = partyMgr.getParty(player.getUniqueId());
@@ -158,32 +162,25 @@ public final class RaidCommand implements CommandExecutor {
                 }
                 Player leader = Bukkit.getPlayer(party.getLeader());
                 String leaderName = leader != null ? leader.getName() : Bukkit.getOfflinePlayer(party.getLeader()).getName();
-                player.sendMessage(MM.deserialize("<green>Joined <white>" + leaderName + "</white>'s raid party! <gray>(" + party.getSize() + "/" + manager.getPartyMaxSize() + ")</gray></green>"));
+                player.sendMessage(MM.deserialize("<green>Joined <white>" + leaderName + "</white>'s party! <gray>(" + party.getSize() + "/" + manager.getPartyMaxSize() + ")</gray></green>"));
                 if (leader != null && !leader.getUniqueId().equals(player.getUniqueId())) {
                     leader.sendMessage(MM.deserialize("<green><white>" + player.getName() + "</white> joined your party! <gray>(" + party.getSize() + "/" + manager.getPartyMaxSize() + ")</gray></green>"));
                 }
-                // If party leader is already in a raid, pull new member into same raid and teleport if needed
-                for (java.util.UUID mid : party.getMembers()) {
-                    if (mid.equals(player.getUniqueId())) continue;
-                    if (manager.isInRaid(mid)) {
-                        RaidSession session = manager.getSession(mid);
-                        if (session != null && !session.getMembers().contains(player.getUniqueId())) {
-                            session.getMembers().add(player.getUniqueId());
-                            manager.handlePartyMemberAddedToActiveRaid(player, session);
-                            player.sendMessage(MM.deserialize("<gray>Added to ongoing raid — teleporting to party...</gray>"));
-                            // Teleport to a party member in glitch_red if possible
-                            for (java.util.UUID other : session.getMembers()) {
-                                Player otherP = Bukkit.getPlayer(other);
-                                if (otherP != null && manager.isRedWorld(otherP.getWorld().getName())) {
-                                    try {
-                                        FoliaScheduler.teleportEntity(player, plugin, otherP.getLocation());
-                                        player.showBossBar(manager.getBossBarForSession(session));
-                                    } catch (Exception ignored) {}
-                                    break;
-                                }
-                            }
-                        }
-                        break;
+                // Leader already raiding: join them — but only from the hub (never out of a
+                // dungeon or another raid). The world change adds the player to that raid.
+                Player raidingLeader = Bukkit.getPlayer(party.getLeader());
+                if (raidingLeader != null && !raidingLeader.getUniqueId().equals(player.getUniqueId())
+                        && manager.isInRaid(raidingLeader.getUniqueId())
+                        && manager.isRedWorld(raidingLeader.getWorld().getName())
+                        && !manager.isInRaid(player.getUniqueId())) {
+                    String zone = manager.getWorldDisplayName(raidingLeader.getWorld().getName());
+                    if (!player.getWorld().getName().equalsIgnoreCase(manager.getHubWorld())) {
+                        player.sendMessage(MM.deserialize("<gray>Your leader is raiding <white>" + zone + "</white> — go back to the hub to join them.</gray>"));
+                    } else if (manager.isInBufferPeriod(raidingLeader.getWorld().getName())) {
+                        player.sendMessage(MM.deserialize("<gray>Your leader is in <white>" + zone + "</white> — it reopens after the loot reshuffle.</gray>"));
+                    } else {
+                        player.sendMessage(MM.deserialize("<gray>Your leader is raiding <white>" + zone + "</white> — teleporting you to them...</gray>"));
+                        FoliaScheduler.teleportEntity(player, plugin, raidingLeader.getLocation());
                     }
                 }
             }
@@ -203,11 +200,11 @@ public final class RaidCommand implements CommandExecutor {
                 }
                 boolean wasLeader = partyMgr.isLeader(player.getUniqueId());
                 partyMgr.leaveParty(player.getUniqueId());
-                player.sendMessage(MM.deserialize(wasLeader ? "<yellow>Disbanded your raid party.</yellow>" : "<yellow>Left the raid party.</yellow>"));
+                player.sendMessage(MM.deserialize(wasLeader ? "<yellow>Disbanded your party.</yellow>" : "<yellow>Left the party.</yellow>"));
             }
             case "kick" -> {
                 if (args.length < 2) {
-                    player.sendMessage(MM.deserialize("<red>Usage: /raid kick <player></red>"));
+                    player.sendMessage(MM.deserialize("<red>Usage: /party kick <player></red>"));
                     return true;
                 }
                 Player target = Bukkit.getPlayer(args[1]);
@@ -239,21 +236,29 @@ public final class RaidCommand implements CommandExecutor {
                     return true;
                 }
                 player.sendMessage(MM.deserialize("<green>Kicked <white>" + target.getName() + "</white> from party.</green>"));
-                target.sendMessage(MM.deserialize("<red>You were kicked from the raid party.</red>"));
+                target.sendMessage(MM.deserialize("<red>You were kicked from the party.</red>"));
             }
             case "list", "party" -> {
                 Party party = partyMgr.getParty(player.getUniqueId());
                 if (party == null) {
-                    player.sendMessage(MM.deserialize("<gray>You're not in a raid party. <yellow>/raid invite <player></yellow> to create one.</gray>"));
+                    player.sendMessage(MM.deserialize("<gray>You're not in a party. <yellow>/party invite <player></yellow> to create one.</gray>"));
                     return true;
                 }
-                player.sendMessage(MM.deserialize("<gold><bold>Raid Party</bold> <gray>" + party.getSize() + "/" + manager.getPartyMaxSize() + " <gray>Leader: <white>" + getLeaderNameById(party.getLeader()) + "</white>"));
+                player.sendMessage(MM.deserialize("<gold><bold>Party</bold> <gray>" + party.getSize() + "/" + manager.getPartyMaxSize() + " <gray>Leader: <white>" + getLeaderNameById(party.getLeader()) + "</white>"));
                 for (java.util.UUID mid : party.getMembers()) {
                     boolean isLeader = mid.equals(party.getLeader());
                     String name = getPlayerName(mid);
-                    boolean inRaid = manager.isInRaid(mid);
                     String suffix = isLeader ? " <yellow>[Leader]</yellow>" : "";
-                    suffix += inRaid ? " <green>[In Raid]</green>" : " <gray>[Lobby]</gray>";
+                    Player online = Bukkit.getPlayer(mid);
+                    if (online == null) {
+                        suffix += " <dark_gray>[Offline]</dark_gray>";
+                    } else if (manager.isInRaid(mid)) {
+                        suffix += " <red>[" + manager.getWorldDisplayName(online.getWorld().getName()) + "]</red>";
+                    } else if (online.getWorld().getName().equalsIgnoreCase(manager.getHubWorld())) {
+                        suffix += " <green>[Hub]</green>";
+                    } else {
+                        suffix += " <light_purple>[Dungeon]</light_purple>";
+                    }
                     player.sendMessage(MM.deserialize((isLeader ? "<yellow>- " : "<gray>- ") + name + suffix));
                 }
             }
@@ -267,15 +272,15 @@ public final class RaidCommand implements CommandExecutor {
     }
 
     private void sendHelp(Player player) {
-        player.sendMessage(MM.deserialize("<gold><bold>GlitchRaid</bold> <gray>— Raid lifecycle & parties</gray>"));
-        player.sendMessage(MM.deserialize("<yellow>/raid status</yellow> <gray>— Time left, your loot/deaths, party</gray>"));
-        player.sendMessage(MM.deserialize("<yellow>/raid invite <player></yellow> <gray>— Invite to party (max 4)</gray>"));
-        player.sendMessage(MM.deserialize("<yellow>/raid accept</yellow><gray>/</gray><yellow>decline</yellow> <gray>— Answer invite (30s)</gray>"));
-        player.sendMessage(MM.deserialize("<yellow>/raid kick <player></yellow> <gray>— Leader kicks</gray>"));
-        player.sendMessage(MM.deserialize("<yellow>/raid leave</yellow> <gray>— Leave party (not in raid)</gray>"));
-        player.sendMessage(MM.deserialize("<yellow>/raid list</yellow> <gray>— Show party</gray>"));
-        player.sendMessage(MM.deserialize("<yellow>/raid start</yellow> <gray>— Start solo (auto also on entering a Red Zone world)</gray>"));
-        player.sendMessage(MM.deserialize("<dark_gray>Party auto-teleports: when any member enters a Red Zone world, rest are pulled.</dark_gray>"));
+        player.sendMessage(MM.deserialize("<gold><bold>Party</bold> <gray>— one party for raids and dungeons (max " + manager.getPartyMaxSize() + ")</gray>"));
+        player.sendMessage(MM.deserialize("<yellow>/party invite <player></yellow> <gray>— Invite (creates your party)</gray>"));
+        player.sendMessage(MM.deserialize("<yellow>/party accept</yellow><gray>/</gray><yellow>decline</yellow> <gray>— Answer an invite (30s)</gray>"));
+        player.sendMessage(MM.deserialize("<yellow>/party list</yellow> <gray>— Members and where they are</gray>"));
+        player.sendMessage(MM.deserialize("<yellow>/party kick <player></yellow> <gray>— Leader removes a member</gray>"));
+        player.sendMessage(MM.deserialize("<yellow>/party leave</yellow> <gray>— Leave (the leader leaving disbands it)</gray>"));
+        player.sendMessage(MM.deserialize("<yellow>/raid status</yellow> <gray>— Time left, your loot and deaths</gray>"));
+        player.sendMessage(MM.deserialize("<dark_gray>Raids: when the leader enters a Red Zone, members in the hub come along. "
+                + "Dungeons: the leader starts one from /dungeons; members must be in the hub and type /ready.</dark_gray>"));
     }
 
     private String getLeaderName(RaidSession session) {

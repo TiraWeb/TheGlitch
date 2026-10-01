@@ -37,6 +37,12 @@ public final class GlitchRaid extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(redZoneSelectGui, this);
         com.theglitch.glitchraid.gui.DungeonSelectGUI dungeonGui = new com.theglitch.glitchraid.gui.DungeonSelectGUI(this);
         Bukkit.getPluginManager().registerEvents(dungeonGui, this);
+        // One party for raids and dungeons: /party -> raid party, MythicDungeons uses it too
+        Bukkit.getPluginManager().registerEvents(new PartyCommandAlias(), this);
+        DungeonPartyBridge dungeonParties = new DungeonPartyBridge(this, raidManager.getPartyManager());
+        Bukkit.getPluginManager().registerEvents(dungeonParties, this);
+        raidManager.getPartyManager().setDungeonBridge(dungeonParties);
+        Bukkit.getScheduler().runTask(this, dungeonParties::enable); // after MythicDungeons has enabled
         // VelKoth bridge — only if VelKoth present, to avoid NoClassDefFoundError when hard import missing
         if (Bukkit.getPluginManager().getPlugin("VelKoth") != null) {
             try {

@@ -5,7 +5,7 @@ General:
   # Any keys you don't translate fall back to English automatically.
   Language: en
   # What plugin to use for the party system. Defaults to DungeonParties, which is provided by Mythic Dungeons.
-  PartyPlugin: Default
+  PartyPlugin: GlitchRaid
   # Enable or disable the built-in party-chat system
   PartyChat: false
   # The max number of instances that can be run on this server.
@@ -36,7 +36,7 @@ General:
   ReadyCheckRequireLeader: true
   PartyFinder:
     # Whether to automatically broadcast party recruitments regularly.
-    AutoBroadcast: true
+    AutoBroadcast: false
     # How many minutes there should be between each broadcast of a recruitment listing.
     ListingBroadcastPeriod: 5
   # What Multiverse-Inventories group to use for all dungeons.

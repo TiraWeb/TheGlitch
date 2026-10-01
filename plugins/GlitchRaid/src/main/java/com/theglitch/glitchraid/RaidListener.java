@@ -71,44 +71,18 @@ public final class RaidListener implements Listener {
                 }
             }
         } else if (manager.isRedWorld(to) && manager.isInRaid(player.getUniqueId())) {
-            // Already in raid (party pull) — ensure other party members are also pulled and see remaining time
-            Party party = manager.getPartyManager().getParty(player.getUniqueId());
+            // Already in raid (relog / rejoin) — make sure the remaining-time bossbar shows
             RaidSession mySession = manager.getSession(player.getUniqueId());
-            if (party != null) {
-                for (java.util.UUID mid : party.getMembers()) {
-                    if (mid.equals(player.getUniqueId())) continue;
-                    // Never re-abduct members who already extracted during this raid cycle
-                    if (!manager.isInRaid(mid) && manager.hasExtractedThisRaid(mid)) continue;
-                    Player other = Bukkit.getPlayer(mid);
-                    if (other != null && !other.getWorld().getName().equalsIgnoreCase(to)) {
-                        // Don't pull if other is recently dead (avoid death loop)
-                        if (manager.isRecentlyDead(mid, 5000L)) continue;
-                        // Fix 1: never drag members into red during the scatter buffer (except bypass).
-                        if (manager.isInBufferPeriod(to) && !other.hasPermission("glitchraid.admin")) {
-                            try { other.sendMessage(MM.deserialize("<yellow>The Glitch is scattering — <gray>staying out of the Red Zone until the next extraction.</gray></yellow>")); } catch (Exception ignored) {}
-                            plugin.getLogger().info("Party pull skipped for " + other.getName() + " — in 1m buffer (stays out of " + to + ")");
-                            continue;
-                        }
-                        try {
-                            FoliaScheduler.teleportEntity(other, plugin, player.getLocation());
-                            other.sendMessage(MM.deserialize("<gray>Party pulled you to <white>" + to + "</white> with <white>" + player.getName() + "</white>.</gray>"));
-                            plugin.getLogger().info("Party pull: " + other.getName() + " -> " + player.getName() + " in " + to);
-                        } catch (Exception ignored) {}
-                        // Ensure pulled member shares the same timer (remaining time) — crucial for global-remaining
-                        if (other != null && !manager.isInRaid(mid) && mySession != null) {
-                            try { manager.handlePartyMemberAddedToActiveRaid(other, mySession); } catch (Exception ignored) {}
-                        }
-                    } else if (other != null && !manager.isInRaid(mid) && mySession != null) {
-                        // Member online but not yet in raid and not in RED — if global, add to global with remaining time
-                        try { manager.handlePartyMemberAddedToActiveRaid(other, mySession); } catch (Exception ignored) {}
-                    }
-                }
-            }
-            // Ensure the entering player still sees the correct remaining-time bossbar (handles relog/global)
             if (mySession != null) {
                 net.kyori.adventure.bossbar.BossBar bar = manager.getBossBarForSession(mySession);
                 if (bar != null) try { player.showBossBar(bar); } catch (Exception ignored) {}
             }
+        }
+        // The party leader walking in brings the party along (members in the hub only —
+        // never out of a dungeon or another raid). Members join the raid through their
+        // own world change once they land.
+        if (manager.isRedWorld(to) && manager.isInRaid(player.getUniqueId())) {
+            manager.pullPartyToLeader(player);
         }
 
         // Leaving a red world to hub -> treat as extraction if in raid (and not a recent death respawn)
