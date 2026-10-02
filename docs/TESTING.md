@@ -213,6 +213,27 @@
 - [ ] Glitch Phantoms attack players and don't burn in daylight
 - [ ] Alpha players show the `[ALPHA]` tag on nametag and tab
 
+## New-player tutorial (GlitchTutorial, 2026-10-02)
+
+Easiest test: offline mode is on, so join with a never-used name (e.g. `TutorialTest1`) — or `/tutorial` on any account (replay, no reward if already paid).
+- [ ] Brand-new name → after ~2 s you're in the tutorial world: title "Welcome to The Glitch", Echo (aqua NPC) nearby, top-left HUD card "Tutorial · 1/8"
+- [ ] Intro lines `[1/4] Echo: …`, then a clickable **[▶ Continue]** (or it moves on by itself after ~35 s)
+- [ ] Class GUI opens → pick one → starter kit as usual + tutorial loadout (rare blade, uncommon armor worn, potions) with the "Tutorial item" lore line
+- [ ] 3 barrels marked with particles → each gives its loot once; HUD counts 1/3, 2/3, 3/3
+- [ ] 3 Corrupted Crawlers spawn → kill them (HUD 3/3); they drop nothing
+- [ ] Training rogue appears, trash-talks (Gemini line), fights only you; kill it → tagged loot drops
+- [ ] Extraction beam: stand in it 5 s ("Extracting… 3/5"), stepping out resets → "EXTRACTED" → teleported to the hub
+- [ ] Hub tour: action-bar arrow + distance + particle trail → Stash Keeper, Red Zone Gate, Hideout, Bazaar, Insurance, one Echo line each
+- [ ] Iron Dungeon Key given → `/dungeons` → Goblin Hollow → clear it → back at the hub: "You're ready", +500 Shards, all tutorial items gone, anything you had before is back
+- [ ] Leaving/dying in the dungeon without clearing → a new key + "try again" line
+- [ ] Tutorial items can't be dropped, put in the stash/chests/Bazaar sell/insurance, or used as Hideout crafting material
+- [ ] Walking into the Red Zone Gate during the tutorial is blocked ("Finish the tutorial first")
+- [ ] `/tutorial skip` → confirm → lent items gone, inventory back, no reward; `/tutorial` replays (no second reward)
+- [ ] Quit mid-step and rejoin → resumes at that step's checkpoint
+- [ ] Two newcomers in the tutorial at once can't see each other
+- [ ] Existing players (have joined before) are NOT dragged in
+- Admin: `/tutorial admin status [player]`, `reset <player>`, `start <player>`, `setpoint <name>` (stand on the spot), `autolayout`, `reload`
+
 ## Leaving raids / dungeons (2026-10-02)
 
 - [ ] In a raid, `/leave` → chat [YES]/[NO]; YES → you go MIA: straight to the hub (no death screen), carried gear dropped where you stood, insured gear + Secure Pouch kept, `/rank` shows "left the raid (MIA)" RR loss, no payout
