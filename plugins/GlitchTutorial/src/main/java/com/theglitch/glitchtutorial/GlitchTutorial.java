@@ -196,13 +196,33 @@ public final class GlitchTutorial extends JavaPlugin {
                 sender.sendMessage("Point " + args[2] + " set.");
             }
             case "autolayout" -> autolayout(sender);
+            case "instancetest" -> {
+                // Opens a private world for a dummy id, checks it, closes it again (no player needed)
+                java.util.UUID dummy = java.util.UUID.randomUUID();
+                long t0 = System.currentTimeMillis();
+                instances.open(dummy, "instancetest", w -> {
+                    if (w == null) {
+                        sender.sendMessage("Instance test FAILED to open (see console).");
+                        return;
+                    }
+                    Location spawn = manager.point(w, "spawn");
+                    String ground = spawn == null ? "no spawn point" : spawn.clone().add(0, -1, 0).getBlock().getType().name();
+                    sender.sendMessage("Instance " + w.getName() + " opened in " + (System.currentTimeMillis() - t0) + " ms; spawn stands on "
+                            + ground + "; border " + (int) w.getWorldBorder().getSize() + "; keep_inventory "
+                            + w.getGameRuleValue(org.bukkit.GameRule.KEEP_INVENTORY) + ". Closing in 5 s.");
+                    Bukkit.getScheduler().runTaskLater(this, () -> {
+                        instances.close(dummy);
+                        sender.sendMessage("Instance " + w.getName() + " closed (" + instances.count() + " running).");
+                    }, 100L);
+                });
+            }
             case "reload" -> {
                 reloadConfig();
                 manager.placeCrates(manager.world());
                 if (echo != null) echo.respawnAll();
                 sender.sendMessage("GlitchTutorial reloaded.");
             }
-            default -> sender.sendMessage("/tutorial admin <status [player]|reset <player>|start <player>|setpoint <name>|autolayout|reload>");
+            default -> sender.sendMessage("/tutorial admin <status [player]|reset <player>|start <player>|setpoint <name>|autolayout|instancetest|reload>");
         }
         return true;
     }

@@ -98,7 +98,10 @@ final class TutorialInstances {
 
     /** Gets (or builds) the player's instance, then runs {@code ready} on the main thread (null = failed). */
     void open(Player p, Consumer<World> ready) {
-        UUID id = p.getUniqueId();
+        open(p.getUniqueId(), p.getName(), ready);
+    }
+
+    void open(UUID id, String who, Consumer<World> ready) {
         World have = of(id);
         if (have != null) {
             ready.accept(have);
@@ -156,7 +159,7 @@ final class TutorialInstances {
                 w.setAutoSave(false); // thrown away afterwards — never worth a disk write
                 byPlayer.put(id, name);
                 reserved.remove(name);
-                plugin.getLogger().info("Tutorial instance " + name + " opened for " + p.getName() + " (" + byPlayer.size() + " running)");
+                plugin.getLogger().info("Tutorial instance " + name + " opened for " + who + " (" + byPlayer.size() + " running)");
                 try {
                     onOpen.accept(w);
                 } catch (Exception e) {
