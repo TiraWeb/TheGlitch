@@ -171,6 +171,26 @@ def set_key(text, dotted, value):
     return text[:pos] + f"{indent}{parts[-1]}: {value}" + text[line_end:]
 
 
+# Commands players may use inside an instance (Rules.AllowCommands is false). /party is
+# rerouted to /raid by GlitchRaid and /leave to /abandon (confirm), so those must pass too.
+ALLOWED_COMMANDS = ["party", "dparty", "p", "raid", "abandon", "leaveraid", "quitraid",
+                    "dungeon leave", "md leave", "leave", "ready", "notready"]
+
+
+def set_allowed_commands(text):
+    """Replace the Rules.AllowedCommands list (a plain YAML list under its key)."""
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        if line.strip() == "AllowedCommands:":
+            indent = line[:len(line) - len(line.lstrip())]
+            j = i + 1
+            while j < len(lines) and lines[j].lstrip().startswith("- "):
+                j += 1
+            lines[i + 1:j] = [f"{indent}  - {c}" for c in ALLOWED_COMMANDS]
+            return "\n".join(lines)
+    return text
+
+
 def config_yml(did, layout, template):
     name, tier, *_ = DUNGEONS[did]
     sx, sy, sz = layout["spawn"]
@@ -188,6 +208,7 @@ def config_yml(did, layout, template):
     t = set_key(t, "General.TimeLimit", "20")
     t = set_key(t, "Requirements.MaxPartySize", "4")
     t = set_key(t, "Rules.AllowDropItems", "false")
+    t = set_allowed_commands(t)
     # StartLocation isn't in the default template: add it under General
     start = {"==": "org.bukkit.Location", "x": sx, "y": float(sy), "z": sz, "yaw": yaw, "pitch": 0.0}
     body = "\n".join(f"    {k}: {v}" for k, v in start.items())

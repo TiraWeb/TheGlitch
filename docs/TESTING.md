@@ -213,6 +213,15 @@
 - [ ] Glitch Phantoms attack players and don't burn in daylight
 - [ ] Alpha players show the `[ALPHA]` tag on nametag and tab
 
+## Leaving raids / dungeons (2026-10-02)
+
+- [ ] In a raid, `/leave` → chat [YES]/[NO]; YES → you go MIA: straight to the hub (no death screen), carried gear dropped where you stood, insured gear + Secure Pouch kept, `/rank` shows "left the raid (MIA)" RR loss, no payout
+- [ ] After leaving, the raid bossbar is gone and walking back in starts/joins a raid normally
+- [ ] `/spawn` / `/warp` mid-raid are still blocked, and the message mentions `/leave`
+- [ ] Creative/spectator staff: `/leave` just sends them to the hub
+- [ ] In a dungeon, `/leave` → confirm → MythicDungeons leave → hub exit point; no clear reward, key not refunded
+- [ ] `/party list` and `/party invite` work inside a dungeon (MD only allows whitelisted commands)
+
 ## Rogue Raiders (GlitchBots, 2026-10-01)
 
 - [ ] `/bots status` lists all 3 red worlds; enter a Red Zone alone → rogues appear within ~1 min, out of sight, up to 9 (10 − 1 real)
