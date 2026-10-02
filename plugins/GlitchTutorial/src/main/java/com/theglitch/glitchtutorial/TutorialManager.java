@@ -50,6 +50,8 @@ final class TutorialManager {
     private final Map<UUID, Set<UUID>> mobs = new ConcurrentHashMap<>();
     private final Set<UUID> busy = ConcurrentHashMap.newKeySet(); // in a scripted pause (dialogue → advance)
     private final Set<UUID> finishedDungeon = ConcurrentHashMap.newKeySet();
+    /** Players whose training rogue has been seen alive (so "gone" means it died). */
+    private final Set<UUID> rogueSeen = ConcurrentHashMap.newKeySet();
 
     TutorialManager(GlitchTutorial plugin, TutorialStore store, Hooks hooks) {
         this.plugin = plugin;
@@ -370,10 +372,7 @@ final class TutorialManager {
         TutorialStore.Record r = record(p);
         if (r == null || r.status != TutorialStore.Status.ACTIVE) return;
         if (rogue && r.step == Step.ROGUE) {
-            for (ItemStack it : tagged(cfg().getStringList("rogue-drop"))) {
-                dead.getWorld().dropItemNaturally(dead.getLocation(), it);
-            }
-            sayThenAdvance(p, "rogue-done");
+            rogueDefeated(p, dead.getLocation());
             return;
         }
         if (!rogue && r.step == Step.MOBS) {
@@ -486,6 +485,7 @@ final class TutorialManager {
     }
 
     void forget(Player p) {
+        rogueSeen.remove(p.getUniqueId());
         cancelDialogue(p);
         busy.remove(p.getUniqueId());
         Set<UUID> mine = mobs.remove(p.getUniqueId());
@@ -506,6 +506,7 @@ final class TutorialManager {
                 continue;
             }
             long since = System.currentTimeMillis() - stepStarted.getOrDefault(p.getUniqueId(), 0L);
+            bless(p);
             switch (r.step) {
                 case INTRO -> {
                     if (since > 35_000L) advance(p);
@@ -528,12 +529,61 @@ final class TutorialManager {
                         spawnMobs(p); // despawned or never appeared — bring the rest back
                     }
                 }
-                case ROGUE -> {
-                    if (since > 90_000L) advance(p); // rogue never showed / got stuck — don't block the tutorial
-                }
+                case ROGUE -> tickRogue(p, since);
                 case EXTRACT -> tickExtract(p, r);
                 case HUB -> tickHub(p, r);
                 default -> { }
+            }
+        }
+    }
+
+    /**
+     * The kill event isn't the only signal: a Citizens rogue can die (or be removed) without a
+     * credited killer. Once we've seen this player's rogue nearby, its disappearance counts as
+     * the kill — no more waiting on a timeout.
+     */
+    private void tickRogue(Player p, long since) {
+        boolean alive = false;
+        for (Entity e : p.getWorld().getNearbyEntities(p.getLocation(), 96, 48, 96)) {
+            if (com.theglitch.common.Bots.isBot(e) && !e.isDead() && e.getName().startsWith("Rogue ")) {
+                alive = true;
+                break;
+            }
+        }
+        if (alive) {
+            rogueSeen.add(p.getUniqueId());
+            return;
+        }
+        if (rogueSeen.remove(p.getUniqueId())) {
+            rogueDefeated(p, p.getLocation());
+        } else if (since > 20_000L && since < 22_000L) {
+            spawnRogue(p); // never appeared — try once more
+        } else if (since > 60_000L) {
+            advance(p); // still nothing — don't block the tutorial
+        }
+    }
+
+    private void rogueDefeated(Player p, Location at) {
+        if (!stepIs(p, Step.ROGUE) || busy.contains(p.getUniqueId())) return;
+        rogueSeen.remove(p.getUniqueId());
+        for (ItemStack it : tagged(cfg().getStringList("rogue-drop"))) {
+            at.getWorld().dropItemNaturally(at, it);
+        }
+        sayThenAdvance(p, "rogue-done");
+    }
+
+    /** Tutorial blessing (config "blessing"): short effects refreshed every tick-second. */
+    private void bless(Player p) {
+        for (String spec : cfg().getStringList("blessing")) {
+            String[] s = spec.split(":");
+            org.bukkit.potion.PotionEffectType type = org.bukkit.Registry.EFFECT.get(
+                    org.bukkit.NamespacedKey.minecraft(s[0].toLowerCase(Locale.ROOT)));
+            if (type == null) continue;
+            int amp = s.length > 1 ? Integer.parseInt(s[1].trim()) : 0;
+            org.bukkit.potion.PotionEffect cur = p.getPotionEffect(type);
+            if (cur != null && cur.getAmplifier() > amp) continue; // a stronger effect from elsewhere
+            if (cur == null || cur.getDuration() < 200) {
+                p.addPotionEffect(new org.bukkit.potion.PotionEffect(type, 300, amp, true, false, true));
             }
         }
     }
