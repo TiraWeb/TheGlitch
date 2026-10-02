@@ -21,6 +21,11 @@ final class MapEdgeGenerator extends ChunkGenerator {
 
     MapEdgeGenerator(GlitchWorldGen plugin, String worldName) {
         Path file = plugin.getDataFolder().toPath().resolve(worldName + ".keep");
+        // Instance copies (e.g. GlitchTutorial's tutorial_<n>) share their template's footprint
+        if (!Files.isRegularFile(file) && worldName.matches(".+_[0-9]+")) {
+            Path base = plugin.getDataFolder().toPath().resolve(worldName.replaceAll("_[0-9]+$", "") + ".keep");
+            if (Files.isRegularFile(base)) file = base;
+        }
         if (Files.isRegularFile(file)) {
             try {
                 for (String line : Files.readAllLines(file)) {

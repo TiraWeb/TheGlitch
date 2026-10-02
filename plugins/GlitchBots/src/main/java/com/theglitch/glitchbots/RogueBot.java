@@ -174,7 +174,10 @@ final class RogueBot {
     /** Called every second by the director. Returns false when the bot is done (extracted). */
     boolean tick() {
         Entity e = entity();
-        if (!(e instanceof LivingEntity body)) return true;
+        if (!(e instanceof LivingEntity body)) {
+            // a training rogue whose private tutorial world was unloaded is done for good
+            return tutorialTarget == null || System.currentTimeMillis() - spawnedAt < 10_000L;
+        }
         SentinelTrait s = npc.getOrAddTrait(SentinelTrait.class);
         if (tutorialTarget != null) {
             // Training rogue: no roaming/looting/extracting — just taunt and fight its one trainee.

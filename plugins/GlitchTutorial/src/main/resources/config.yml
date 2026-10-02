@@ -9,7 +9,12 @@
 
 config-version: 1
 enabled: true
+# Template world (built by scripts/setup-tutorial.sh). Players never play in it: each one gets a
+# private copy named <world>_<n> (like dungeon instances) that is unloaded and deleted as soon as
+# they leave it — finished, skipped, logged out or /spawn. Edit points/crates in the template.
 world: tutorial
+# Most private tutorial worlds at once (each is ~26 MB on disk while it runs)
+max-instances: 30
 # Brand-new players (never joined before) start it automatically
 auto-start: true
 

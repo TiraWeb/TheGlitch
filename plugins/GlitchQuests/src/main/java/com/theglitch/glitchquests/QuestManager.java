@@ -251,7 +251,7 @@ public final class QuestManager {
     public void progress(Player p, QuestType type, int amount) {
         if (amount <= 0) return;
         // The new-player tutorial (GlitchTutorial) hands out easy kills and crates — not daily progress
-        if (p.getWorld().getName().equals("tutorial")) return;
+        if (com.theglitch.common.Worlds.isTutorialWorld(p.getWorld().getName())) return;
         PlayerData d = data(p);
         for (QuestDef q : activeDaily()) {
             if (q.type() == type) bump(p, d, q, d.dailyProgress, amount);

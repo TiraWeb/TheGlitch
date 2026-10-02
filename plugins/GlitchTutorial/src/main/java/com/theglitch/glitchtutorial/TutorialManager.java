@@ -45,6 +45,7 @@ final class TutorialManager {
     private final GlitchTutorial plugin;
     private final TutorialStore store;
     private final Hooks hooks;
+    private final TutorialInstances instances;
     private final Map<UUID, List<BukkitTask>> dialogue = new ConcurrentHashMap<>();
     private final Map<UUID, Long> stepStarted = new ConcurrentHashMap<>();
     private final Map<UUID, Set<UUID>> mobs = new ConcurrentHashMap<>();
@@ -53,10 +54,11 @@ final class TutorialManager {
     /** Players whose training rogue has been seen alive (so "gone" means it died). */
     private final Set<UUID> rogueSeen = ConcurrentHashMap.newKeySet();
 
-    TutorialManager(GlitchTutorial plugin, TutorialStore store, Hooks hooks) {
+    TutorialManager(GlitchTutorial plugin, TutorialStore store, Hooks hooks, TutorialInstances instances) {
         this.plugin = plugin;
         this.store = store;
         this.hooks = hooks;
+        this.instances = instances;
         Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 40L, 20L);
     }
 
@@ -66,17 +68,27 @@ final class TutorialManager {
 
     // ---- lookups ----
 
+    /** The template world (admin tools; players play in their own copy, see {@link TutorialInstances}). */
     World world() {
-        return Bukkit.getWorld(cfg().getString("world", "tutorial"));
+        return Bukkit.getWorld(instances.template());
     }
 
+    TutorialInstances instances() {
+        return instances;
+    }
+
+    /** In the template or any tutorial instance. */
     boolean inTutorialWorld(Player p) {
-        World w = world();
-        return w != null && p.getWorld().equals(w);
+        return instances.isTutorialWorld(p.getWorld().getName());
     }
 
+    /** A step point in the template world. */
     Location point(String name) {
-        World w = world();
+        return point(world(), name);
+    }
+
+    /** A step point in a given tutorial world (template or instance: same coordinates). */
+    Location point(World w, String name) {
         ConfigurationSection s = cfg().getConfigurationSection("points." + name);
         if (w == null || s == null) return null;
         return new Location(w, s.getDouble("x"), s.getDouble("y"), s.getDouble("z"), (float) s.getDouble("yaw"), 0f);
@@ -116,7 +128,7 @@ final class TutorialManager {
     void onJoin(Player p) {
         TutorialStore.Record r = record(p);
         if (r == null) {
-            if (!p.hasPlayedBefore() && cfg().getBoolean("enabled", true) && cfg().getBoolean("auto-start", true) && world() != null) {
+            if (!p.hasPlayedBefore() && cfg().getBoolean("enabled", true) && cfg().getBoolean("auto-start", true) && instances.templateReady()) {
                 start(p);
             } else {
                 store.create(p.getUniqueId()).status = TutorialStore.Status.LEGACY;
@@ -140,7 +152,7 @@ final class TutorialManager {
     }
 
     void start(Player p) {
-        if (world() == null) {
+        if (!instances.templateReady()) {
             p.sendMessage(MM.deserialize("<red>The tutorial world isn't set up yet.</red>"));
             return;
         }
@@ -148,13 +160,31 @@ final class TutorialManager {
             resume(p);
             return;
         }
-        String here = p.getWorld().getName();
-        if (!here.equals("hub") && !inTutorialWorld(p)) {
+        if (!canStartHere(p)) {
             // from a raid this would stash the raid inventory without extracting (and the
             // red-world exit guard would cancel the teleport anyway)
             p.sendMessage(MM.deserialize("<red>Start the tutorial from the hub.</red>"));
             return;
         }
+        p.sendActionBar(MM.deserialize("<gray>Preparing your tutorial world...</gray>"));
+        instances.open(p, w -> {
+            if (w == null) {
+                p.sendMessage(MM.deserialize("<red>Couldn't open a tutorial world right now. Try <yellow>/tutorial</yellow> again in a minute.</red>"));
+                return;
+            }
+            if (!p.isOnline() || isActive(p) || !canStartHere(p)) {
+                if (!isActive(p)) closeInstance(p.getUniqueId());
+                return;
+            }
+            begin(p, w);
+        });
+    }
+
+    private boolean canStartHere(Player p) {
+        return p.getWorld().getName().equals("hub") || inTutorialWorld(p);
+    }
+
+    private void begin(Player p, World w) {
         TutorialStore.Record r = record(p);
         boolean rewarded = r != null && r.rewarded;
         if (r == null) r = store.create(p.getUniqueId());
@@ -166,7 +196,7 @@ final class TutorialManager {
         r.snapshot = TutorialStore.snapshot(inv.getContents());
         inv.clear();
         store.saveNow(); // the snapshot is the player's real inventory — never lose it
-        Location spawn = point("spawn");
+        Location spawn = point(w, "spawn");
         if (spawn != null) p.teleport(spawn);
         p.showTitle(Title.title(MM.deserialize("<aqua><bold>Welcome to The Glitch</bold></aqua>"),
                 MM.deserialize("<gray>a quick practice raid</gray>"),
@@ -179,19 +209,35 @@ final class TutorialManager {
         TutorialStore.Record r = record(p);
         if (r == null) return;
         if (r.step.inTutorialWorld()) {
-            Location cp = checkpoint(r.step);
-            if (cp != null) p.teleport(cp);
+            if (p.getWorld().getName().startsWith("glitch_red")) return; // never out of a raid
+            instances.open(p, w -> {
+                if (w == null) {
+                    p.sendMessage(MM.deserialize("<red>Couldn't open a tutorial world right now. Try <yellow>/tutorial</yellow> again in a minute.</red>"));
+                    return;
+                }
+                if (!p.isOnline() || !isActive(p)) return;
+                Location cp = checkpoint(w, record(p).step);
+                if (cp != null) p.teleport(cp);
+                enter(p);
+            });
+            return;
         }
         enter(p);
     }
 
-    Location checkpoint(Step s) {
+    Location checkpoint(World w, Step s) {
         return switch (s) {
-            case MOBS -> point("crate3");
-            case ROGUE -> point("mobs");
-            case EXTRACT -> point("rogue");
-            default -> point("spawn");
+            case MOBS -> point(w, "crate3");
+            case ROGUE -> point(w, "mobs");
+            case EXTRACT -> point(w, "rogue");
+            default -> point(w, "spawn");
         };
+    }
+
+    /** Drop the player's private world (left it, finished, skipped or logged out). */
+    void closeInstance(UUID player) {
+        mobs.remove(player);
+        instances.close(player);
     }
 
     void enter(Player p) {
@@ -214,7 +260,7 @@ final class TutorialManager {
                 }
             }
             case CRATES -> {
-                placeCrates();
+                placeCrates(p.getWorld());
                 if (Integer.bitCount(r.progress) >= CRATES.length) sayThenAdvance(p, "crates-done");
                 else say(p, "crates", null);
             }
@@ -232,6 +278,7 @@ final class TutorialManager {
                     Location hub = hubSpawn();
                     if (hub != null) p.teleport(hub);
                 }
+                closeInstance(id); // the tutorial-world part is over
                 say(p, "hub", null);
             }
             case DUNGEON -> {
@@ -338,9 +385,10 @@ final class TutorialManager {
         return out;
     }
 
-    void placeCrates() {
+    void placeCrates(World w) {
+        if (w == null || !instances.isTutorialWorld(w.getName())) return;
         for (String c : CRATES) {
-            Location l = point(c);
+            Location l = point(w, c);
             if (l == null) continue;
             Block b = l.getBlock();
             if (b.getType() != Material.BARREL) b.setType(Material.BARREL, false);
@@ -351,7 +399,7 @@ final class TutorialManager {
     boolean onCrate(Player p, Block block) {
         int idx = -1;
         for (int i = 0; i < CRATES.length; i++) {
-            Location l = point(CRATES[i]);
+            Location l = point(block.getWorld(), CRATES[i]);
             if (l != null && l.getBlock().equals(block)) idx = i;
         }
         if (idx < 0) return false;
@@ -378,7 +426,9 @@ final class TutorialManager {
 
     private void spawnMobs(Player p) {
         if (!stepIs(p, Step.MOBS)) return;
-        Location at = point("mobs");
+        World w = instances.of(p.getUniqueId());
+        if (w == null || !p.getWorld().equals(w)) return; // paused outside their world
+        Location at = point(w, "mobs");
         if (at == null) return;
         TutorialStore.Record r = record(p);
         Set<UUID> tracked = mobs.get(p.getUniqueId());
@@ -420,7 +470,9 @@ final class TutorialManager {
 
     private void spawnRogue(Player p) {
         if (!stepIs(p, Step.ROGUE)) return;
-        Location at = point("rogue");
+        World w = instances.of(p.getUniqueId());
+        if (w == null || !p.getWorld().equals(w)) return; // paused outside their world
+        Location at = point(w, "rogue");
         if (at == null || !cfg().getBoolean("rogue.enabled", true) || Bukkit.getPluginManager().getPlugin("GlitchBots") == null) {
             advance(p); // no bots installed — skip this step rather than block the tutorial
             return;
@@ -488,7 +540,8 @@ final class TutorialManager {
     void skip(Player p) {
         TutorialStore.Record r = record(p);
         if (r == null || r.status != TutorialStore.Status.ACTIVE) return;
-        if (p.getWorld().getName().matches("[a-z]+_\\d+")) p.performCommand("md leave"); // inside a dungeon instance
+        String here = p.getWorld().getName();
+        if (here.matches("[a-z]+_\\d+") && !instances.isTutorialWorld(here)) p.performCommand("md leave"); // inside a dungeon instance
         cleanup(p, r);
         r.status = TutorialStore.Status.SKIPPED;
         store.saveNow();
@@ -521,17 +574,20 @@ final class TutorialManager {
             Location hub = hubSpawn();
             if (hub != null) p.teleport(hub);
         }
+        closeInstance(p.getUniqueId());
     }
 
     void forget(Player p) {
-        rogueSeen.remove(p.getUniqueId());
+        UUID id = p.getUniqueId();
+        rogueSeen.remove(id);
         cancelDialogue(p);
-        busy.remove(p.getUniqueId());
-        Set<UUID> mine = mobs.remove(p.getUniqueId());
-        if (mine != null) for (UUID id : mine) {
-            Entity e = Bukkit.getEntity(id);
-            if (e != null) e.remove();
-        }
+        busy.remove(id);
+        mobs.remove(id);
+        // Logged out: drop their world once they're gone (a quick relog lands back in it; a
+        // later resume gets a fresh copy at their step's checkpoint)
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (Bukkit.getPlayer(id) == null) closeInstance(id);
+        }, 20L);
     }
 
     // ---- per-second checks ----
@@ -567,7 +623,7 @@ final class TutorialManager {
             case CRATES -> {
                 for (int i = 0; i < CRATES.length; i++) {
                     if ((r.progress & (1 << i)) != 0) continue;
-                    Location l = point(CRATES[i]);
+                    Location l = point(p.getWorld(), CRATES[i]);
                     if (l != null) p.spawnParticle(Particle.END_ROD, l.getBlock().getLocation().add(0.5, 1.3, 0.5), 6, 0.15, 0.4, 0.15, 0.01);
                 }
             }
@@ -642,7 +698,7 @@ final class TutorialManager {
     }
 
     private void tickExtract(Player p, TutorialStore.Record r) {
-        Location pad = point("extract");
+        Location pad = point(p.getWorld(), "extract");
         if (pad == null) return;
         for (int i = 0; i < 6; i++) {
             p.spawnParticle(Particle.END_ROD, pad.clone().add(0, i * 1.5, 0), 3, 0.2, 0.3, 0.2, 0.01);

@@ -53,7 +53,6 @@ final class TutorialListener implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!p.isOnline()) return;
             manager.onJoin(p);
-            updateVisibility(p);
         }, 40L);
     }
 
@@ -62,28 +61,16 @@ final class TutorialListener implements Listener {
         manager.forget(event.getPlayer());
     }
 
+    /** Leaving your own tutorial world (step done, /spawn, skip...) throws it away. */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onWorldChange(PlayerChangedWorldEvent event) {
         Player p = event.getPlayer();
         if (Bots.isBot(p)) return;
-        updateVisibility(p);
-        World tw = manager.world();
-        if (tw != null && event.getFrom().equals(tw)) {
-            for (Player other : Bukkit.getOnlinePlayers()) {
-                p.showPlayer(plugin, other);
-                other.showPlayer(plugin, p);
-            }
-        }
-    }
-
-    /** Newcomers in the tutorial world can't see each other — it should feel like their own run. */
-    private void updateVisibility(Player p) {
-        World tw = manager.world();
-        if (tw == null || !p.getWorld().equals(tw)) return;
-        for (Player other : tw.getPlayers()) {
-            if (other.equals(p) || Bots.isBot(other)) continue;
-            p.hidePlayer(plugin, other);
-            other.hidePlayer(plugin, p);
+        java.util.UUID owner = manager.instances().ownerOf(event.getFrom().getName());
+        if (owner != null && owner.equals(p.getUniqueId())) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!p.getWorld().equals(event.getFrom())) manager.closeInstance(owner);
+            });
         }
     }
 
@@ -106,7 +93,7 @@ final class TutorialListener implements Listener {
         TutorialStore.Record r = manager.record(p);
         if (r == null || r.status != TutorialStore.Status.ACTIVE || !r.step.inTutorialWorld()) return;
         if (!manager.inTutorialWorld(p)) return;
-        Location cp = manager.checkpoint(r.step);
+        Location cp = manager.checkpoint(p.getWorld(), r.step);
         if (cp != null) event.setRespawnLocation(cp);
     }
 
@@ -138,8 +125,7 @@ final class TutorialListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onKill(EntityDeathEvent event) {
         LivingEntity dead = event.getEntity();
-        World tw = manager.world();
-        if (tw == null || !dead.getWorld().equals(tw)) return;
+        if (!manager.instances().isTutorialWorld(dead.getWorld().getName())) return;
         boolean rogue = Bots.isBot(dead);
         if (dead instanceof Player && !rogue) return;
         if (!rogue) event.getDrops().clear(); // tutorial mobs drop nothing real

@@ -21,7 +21,15 @@ public final class Worlds {
     /** Hub / spawn world (if needed). */
     public static final String HUB = "world";
 
+    /** The new-player tutorial template world; each player runs in a copy named {@code tutorial_<n>}. */
+    public static final String TUTORIAL = "tutorial";
+
     private Worlds() {
+    }
+
+    /** The tutorial template or one of its per-player instances ({@code tutorial_<n>}). */
+    public static boolean isTutorialWorld(String worldName) {
+        return worldName != null && (worldName.equals(TUTORIAL) || worldName.matches(TUTORIAL + "_[0-9]+"));
     }
 
     /**

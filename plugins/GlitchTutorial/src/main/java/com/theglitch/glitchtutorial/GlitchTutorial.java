@@ -31,6 +31,7 @@ public final class GlitchTutorial extends JavaPlugin {
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private TutorialStore store;
+    private TutorialInstances instances;
     private TutorialManager manager;
     private EchoNpc echo;
 
@@ -39,29 +40,40 @@ public final class GlitchTutorial extends JavaPlugin {
         saveDefaultConfig();
         ConfigDefaults.merge(this);
         store = new TutorialStore(this);
-        manager = new TutorialManager(this, store, new Hooks(this));
+        instances = new TutorialInstances(this);
+        manager = new TutorialManager(this, store, new Hooks(this), instances);
         Bukkit.getPluginManager().registerEvents(new TutorialListener(this, manager), this);
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new TutorialExpansion(this, manager).register();
         }
         hookDungeonEvents();
-        Bukkit.getScheduler().runTaskLater(this, () -> {
-            manager.placeCrates();
-            if (Bukkit.getPluginManager().getPlugin("Citizens") != null) {
-                try {
-                    echo = new EchoNpc(this, manager);
-                    echo.spawn();
-                } catch (Throwable t) {
-                    getLogger().warning("Echo NPC unavailable: " + t);
-                }
+        instances.deleteLeftovers();
+        if (Bukkit.getPluginManager().getPlugin("Citizens") != null) {
+            try {
+                echo = new EchoNpc(this, manager);
+            } catch (Throwable t) {
+                getLogger().warning("Echo NPC unavailable: " + t);
             }
+        }
+        // Each instance: crates in place, Echo standing by; Echo leaves before the world unloads
+        instances.hooks(w -> {
+            manager.placeCrates(w);
+            if (echo != null) echo.spawn(w);
+        }, w -> {
+            if (echo != null) echo.remove(w);
+        });
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            manager.placeCrates(manager.world());
+            if (echo != null && manager.world() != null) echo.spawn(manager.world()); // template, for admins
         }, 60L);
-        getLogger().info("Tutorial ready (world " + getConfig().getString("world") + ", auto-start " + getConfig().getBoolean("auto-start") + ")");
+        getLogger().info("Tutorial ready (template world " + getConfig().getString("world") + ", one private copy per player, auto-start "
+                + getConfig().getBoolean("auto-start") + ", template " + (instances.templateReady() ? "found" : "MISSING") + ")");
     }
 
     @Override
     public void onDisable() {
-        if (echo != null) echo.remove();
+        if (instances != null) instances.closeAll();
+        if (echo != null) echo.removeAll();
         if (store != null) store.saveNow();
     }
 
@@ -139,7 +151,8 @@ public final class GlitchTutorial extends JavaPlugin {
                     TutorialStore.Record r = t == null ? null : store.get(t.getUniqueId());
                     sender.sendMessage(r == null ? "No record." : t.getName() + ": " + r.status + " step " + r.step + " progress " + r.progress + " rewarded " + r.rewarded);
                 } else {
-                    sender.sendMessage("Tutorial world: " + (manager.world() == null ? "MISSING" : manager.world().getName()));
+                    sender.sendMessage("Tutorial template: " + (manager.world() == null ? "MISSING" : manager.world().getName())
+                            + " · private worlds running: " + instances.count());
                     for (String k : new String[]{"spawn", "echo", "crate1", "crate2", "crate3", "mobs", "rogue", "extract"}) {
                         Location l = manager.point(k);
                         sender.sendMessage(" " + k + ": " + (l == null ? "unset" : l.getBlockX() + " " + l.getBlockY() + " " + l.getBlockZ()
@@ -178,15 +191,15 @@ public final class GlitchTutorial extends JavaPlugin {
                 Location l = p.getLocation();
                 setPoint(args[2].toLowerCase(Locale.ROOT), l.getBlockX() + 0.5, l.getBlockY(), l.getBlockZ() + 0.5, l.getYaw());
                 saveConfig();
-                manager.placeCrates();
-                if (echo != null) echo.spawn();
+                manager.placeCrates(p.getWorld());
+                if (echo != null) echo.respawnAll();
                 sender.sendMessage("Point " + args[2] + " set.");
             }
             case "autolayout" -> autolayout(sender);
             case "reload" -> {
                 reloadConfig();
-                manager.placeCrates();
-                if (echo != null) echo.spawn();
+                manager.placeCrates(manager.world());
+                if (echo != null) echo.respawnAll();
                 sender.sendMessage("GlitchTutorial reloaded.");
             }
             default -> sender.sendMessage("/tutorial admin <status [player]|reset <player>|start <player>|setpoint <name>|autolayout|reload>");
@@ -259,8 +272,8 @@ public final class GlitchTutorial extends JavaPlugin {
             setPoint((String) plan[i][0], s[0], s[1], s[2], yaw);
         }
         saveConfig();
-        manager.placeCrates();
-        if (echo != null) echo.spawn();
+        manager.placeCrates(w);
+        if (echo != null) echo.respawnAll();
         sender.sendMessage("Layout set (height change along the path: " + Math.round(bestScore) + " blocks). /tutorial admin status to review.");
     }
 
