@@ -17,10 +17,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * GlitchTutorial — the new-player tutorial ("First Raid"): a guided run through a slice of a
@@ -197,12 +195,13 @@ public final class GlitchTutorial extends JavaPlugin {
     }
 
     private void setPoint(String name, double x, double y, double z, float yaw) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("x", x);
-        m.put("y", y);
-        m.put("z", z);
-        m.put("yaw", (double) Math.round(yaw));
-        getConfig().set("points." + name, m);
+        // Plain keys (a Map value isn't readable as a ConfigurationSection until the next reload)
+        String base = "points." + name;
+        getConfig().set(base, null);
+        getConfig().set(base + ".x", x);
+        getConfig().set(base + ".y", y);
+        getConfig().set(base + ".z", z);
+        getConfig().set(base + ".yaw", (double) Math.round(yaw));
     }
 
     /**
