@@ -52,8 +52,8 @@ for rule in "keep_inventory true" "spawn_mobs false" "advance_time false" "advan
             "mob_griefing false" "spawn_monsters false" "spawn_wandering_traders false" "spawn_patrols false"; do
   mc "execute in minecraft:${WORLD} run gamerule ${rule}" || true
 done
-mc "execute in minecraft:${WORLD} run time set 6000"
-mc "execute in minecraft:${WORLD} run weather clear"
+mc "execute in minecraft:${WORLD} run time set 6000" || true  # 26.x: worlds without a world clock refuse this
+mc "weather ${WORLD} sun 1000000" || true  # Essentials /weather from the console
 mc "execute in minecraft:${WORLD} run worldborder center ${SLICE_CX} ${SLICE_CZ}"
 mc "execute in minecraft:${WORLD} run worldborder set $((SLICE_SIZE - 4))"
 mc "mv modify ${WORLD} set difficulty normal" || true

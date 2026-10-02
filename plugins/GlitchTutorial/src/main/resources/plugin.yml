@@ -1,0 +1,29 @@
+name: GlitchTutorial
+version: '${project.version}'
+main: com.theglitch.glitchtutorial.GlitchTutorial
+api-version: '1.21'
+description: First-join tutorial — guided raid slice, training rogue, extraction, hub tour and a first dungeon
+depend: []
+softdepend:
+  - Citizens
+  - GlitchItems
+  - GlitchClasses
+  - GlitchRaid
+  - GlitchBots
+  - MythicMobs
+  - MythicDungeons
+  - PlaceholderAPI
+  - Vault
+  - Multiverse-Core
+commands:
+  tutorial:
+    description: The new-player tutorial — start/replay, skip, admin tools
+    usage: /tutorial [skip|next|admin ...]
+    permission: glitchtutorial.use
+permissions:
+  glitchtutorial.use:
+    description: Use /tutorial
+    default: true
+  glitchtutorial.admin:
+    description: Tutorial admin commands
+    default: op

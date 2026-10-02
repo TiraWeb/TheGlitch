@@ -120,6 +120,28 @@ public final class GlitchBots extends JavaPlugin {
                 }
                 sender.sendMessage(MM.deserialize("<gray>Spawned <white>" + made + "</white>/" + count + " rogues in " + w.getName() + ".</gray>"));
             }
+            case "tutorial" -> {
+                // /bots tutorial <player> <x> <y> <z>  — GlitchTutorial's training rogue (fights only that player)
+                // /bots tutorial <player> clear       — remove it again
+                org.bukkit.entity.Player trainee = args.length >= 2 ? Bukkit.getPlayerExact(args[1]) : null;
+                if (trainee == null) {
+                    sender.sendMessage(MM.deserialize("<red>Usage: /bots tutorial <player> <x> <y> <z> | clear</red>"));
+                    return true;
+                }
+                director.clearTutorial(trainee.getUniqueId());
+                if (args.length >= 3 && args[2].equalsIgnoreCase("clear")) return true;
+                if (args.length < 5) {
+                    sender.sendMessage(MM.deserialize("<red>Usage: /bots tutorial <player> <x> <y> <z></red>"));
+                    return true;
+                }
+                try {
+                    Location at = new Location(trainee.getWorld(), Double.parseDouble(args[2]), Double.parseDouble(args[3]), Double.parseDouble(args[4]));
+                    RogueBot bot = director.spawnAt(at, trainee.getUniqueId());
+                    sender.sendMessage(MM.deserialize(bot == null ? "<red>Couldn't spawn the training rogue.</red>" : "<gray>Training rogue " + bot.handle + " spawned.</gray>"));
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(MM.deserialize("<red>Bad coordinates.</red>"));
+                }
+            }
             case "clear" -> {
                 int n = args.length >= 2 ? director.clearWorld(args[1]) : director.clearAll();
                 for (World w : Bukkit.getWorlds()) w.removePluginChunkTickets(this);

@@ -1,0 +1,147 @@
+# GlitchTutorial — first-join tutorial ("First Raid")
+#
+# Flow: intro → pick a class → loot 3 crates → kill 3 Glitch mobs → beat a training rogue →
+# extract → hub tour → first dungeon → finish (+reward). Tutorial items are tagged and always
+# taken back; whatever the player had before is given back at the end.
+#
+# Points are set with /tutorial admin autolayout (picks spots in the tutorial world) and
+# fine-tuned in-game with /tutorial admin setpoint <name> (stand on the spot).
+
+config-version: 1
+enabled: true
+world: tutorial
+# Brand-new players (never joined before) start it automatically
+auto-start: true
+
+reward:
+  shards: 500
+
+# Steps 1-6 happen at these points in the tutorial world (world: <world> above).
+points:
+  spawn: {x: -72.5, y: 70.0, z: -88.5, yaw: 0}
+  echo: {x: -70.5, y: 70.0, z: -86.5, yaw: 180}
+  crate1: {x: -72.5, y: 70.0, z: -70.5}
+  crate2: {x: -66.5, y: 70.0, z: -60.5}
+  crate3: {x: -76.5, y: 70.0, z: -52.5}
+  mobs: {x: -72.5, y: 70.0, z: -36.5}
+  rogue: {x: -72.5, y: 70.0, z: -16.5}
+  extract: {x: -72.5, y: 70.0, z: 4.5}
+
+# Hub tour (step 7): walk to each stop in order
+hub-tour:
+  - name: Stash Keeper
+    world: hub
+    x: 65.0
+    y: -46.0
+    z: -5.6
+    line: "This is your <green>stash</green>. Everything you extract lands here — it's the only place loot is safe."
+  - name: Red Zone Gate
+    world: hub
+    x: 65.0
+    y: -46.0
+    z: 9.5
+    line: "The <red>Red Zone Gate</red>. Walk through to raid — or use <yellow>/redzone</yellow> to pick a map. Your party leader brings the party."
+  - name: Hideout
+    world: hub
+    x: 90.0
+    y: -33.5
+    z: 10.0
+    line: "Your <aqua>Hideout</aqua>: craft upgrades, train skills and heal up between raids."
+  - name: Grand Bazaar
+    world: hub
+    x: 102.2
+    y: -36.0
+    z: 62.6
+    line: "The <gold>Grand Bazaar</gold>. Sell loot for Shards, buy gear, keys and potions."
+  - name: Insurance
+    world: hub
+    x: 54.5
+    y: -35.0
+    z: 79.5
+    line: "<yellow>Insurance</yellow>: pay a little before a raid and that gear comes back if you die. Worth it on your best stuff."
+
+dungeon:
+  # MythicDungeons map id of the first dungeon (Goblin Hollow)
+  id: small
+  key-item: dungeon_key_t1
+
+# Lent for the tutorial only (tagged, taken back at the end)
+loadout:
+  gear:
+    - BLADE:RARE
+    - HELMET:UNCOMMON
+    - CHESTPLATE:UNCOMMON
+    - LEGGINGS:UNCOMMON
+    - BOOTS:UNCOMMON
+  items:
+    - healing_potion:3
+    - ward_salve:2
+    - minecraft:cooked_beef:16
+
+# What each tutorial crate gives (tagged too) — "nexo id:amount" or "minecraft:material:amount"
+crate-loot:
+  crate1: [scrap_plating:2, frayed_wiring:1]
+  crate2: [rift_crystal:1, polymer_goo:2]
+  crate3: [aether_tonic:1, circuit_core:1]
+rogue-drop: [unstable_rift_uncommon:1, coolant_cell:2]
+
+mobs:
+  type: CorruptedCrawler
+  count: 3
+rogue:
+  # /bots tutorial spawns a weak rogue that only targets this player
+  enabled: true
+extract-seconds: 5
+
+# Dialogue — MiniMessage. <player> = name. Lines are sent a few seconds apart.
+guide-name: "<aqua><bold>Echo</bold></aqua>"
+line-delay-ticks: 60
+dialogue:
+  intro:
+    - "Hey, <player>. You're awake. Good — the Glitch didn't eat you on the way in."
+    - "This place is an <red>extraction zone</red>: you go in, grab what you can, and get OUT alive."
+    - "Die in there and everything you carried stays behind. Extract and it's yours forever."
+    - "I'll lend you some decent gear for a practice run. Let's go."
+  class:
+    - "First, pick a <gold>class</gold>. It decides your abilities — you can switch later."
+  class-done:
+    - "Nice. Here's some gear for the practice run — it goes back to me at the end, so don't get attached."
+  crates:
+    - "See those <gold>loot crates</gold>? Open all three. In real raids they refill on a timer, and other raiders want them too."
+  crates-done:
+    - "Everything you loot has value. The more you carry out, the more you earn — and the more you lose if you die."
+  mobs:
+    - "Glitch mobs incoming. Kill all three — swing, block, use your class ability."
+  mobs-done:
+    - "Not bad. In the Red Zone they hit harder and come in packs."
+  rogue:
+    - "Careful — a <red>Rogue Raider</red>. They loot, fight and talk a LOT of trash. Shut him up."
+  rogue-done:
+    - "Rogues drop what they carried. Grab it — that's free loot."
+  extract:
+    - "Now the important part: <green>extraction</green>. Stand in the beam until it finishes."
+  extract-done:
+    - "<green>Extracted!</green> In a real raid that loot would go straight to your stash."
+    - "The raid clock is 30 minutes. If it hits zero and you're still inside, the Glitch takes you. Typing <yellow>/leave</yellow> counts as dying."
+    - "Let me show you around the hub."
+  hub:
+    - "Follow the arrow on your screen — I'll explain each stop."
+  dungeon:
+    - "Last thing: a <light_purple>boss dungeon</light_purple>. Here's an Iron Dungeon Key — open <yellow>/dungeons</yellow> and pick <green>Goblin Hollow</green>."
+    - "Dungeons are private, keep your inventory, and the boss drops proper loot. Go get him."
+  dungeon-retry:
+    - "Didn't make it? Here's another key — try again, or <yellow>/tutorial skip</yellow> if you've had enough."
+  done:
+    - "That's it, <player>. You know the loop: raid, loot, extract, repeat — and don't trust anyone."
+    - "Here's <aqua><reward> Shards</aqua> to get you started. See you in the Glitch."
+
+# HUD objective lines (shown on the top-left card)
+objectives:
+  intro: "Listen to Echo"
+  class: "Pick a class"
+  crates: "Open the loot crates (<n>/3)"
+  mobs: "Kill the Glitch mobs (<n>/<max>)"
+  rogue: "Defeat the Rogue Raider"
+  extract: "Extract — stand in the beam"
+  hub: "Visit: <stop> (<n>/<max>)"
+  dungeon: "Clear Goblin Hollow (/dungeons)"

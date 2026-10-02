@@ -42,6 +42,7 @@
         <module>plugins/GlitchQuests</module>
         <module>plugins/GlitchWorldGen</module>
         <module>plugins/GlitchBots</module>
+        <module>plugins/GlitchTutorial</module>
     </modules>
 
     <repositories>

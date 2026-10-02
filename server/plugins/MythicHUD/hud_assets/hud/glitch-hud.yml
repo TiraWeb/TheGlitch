@@ -402,3 +402,53 @@ glitch-quest-red-4-done:
         padding: 3
         offset:
           y: 2
+glitch-tut-head:
+  conditions:
+    - 'placeholder{ph=%glitchtutorial_active%;v=true} true hide'
+  layers:
+    tile:
+      texture:
+        path: 'assets/glitch/icon_contracts.png'
+      align: 'right'
+      offset:
+        x: 8
+        y: -6
+    title:
+      text: '%glitchtutorial_title%'
+      font: 'default'
+      outlined: false
+      align: 'right'
+      offset:
+        x: 37
+        y: -11
+      background:
+        texture: 'assets/glitch/title_bar.png'
+        cap: 5
+        padding: 6
+        offset:
+          y: 6
+glitch-tut-line:
+  conditions:
+    - 'placeholder{ph=%glitchtutorial_active%;v=true} true hide'
+  layers:
+    box:
+      texture:
+        path: 'assets/glitch/box_active.png'
+      align: 'right'
+      offset:
+        x: 12
+        y: -34
+    text:
+      text: '%glitchtutorial_step%'
+      font: 'default'
+      outlined: false
+      align: 'right'
+      offset:
+        x: 25
+        y: -34
+      background:
+        texture: 'assets/glitch/line_bg.png'
+        cap: 3
+        padding: 3
+        offset:
+          y: 2

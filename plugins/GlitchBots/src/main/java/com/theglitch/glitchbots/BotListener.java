@@ -39,7 +39,7 @@ final class BotListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onChat(io.papermc.paper.event.player.AsyncChatEvent event) {
         Player player = event.getPlayer();
-        if (!plugin.cfg().worlds.contains(player.getWorld().getName())) return;
+        if (plugin.director().inWorld(player.getWorld().getName()).isEmpty()) return; // any world with rogues (incl. the tutorial)
         String text = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(event.message());
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (player.isOnline()) plugin.chat().onPlayerChat(player, text);
@@ -60,7 +60,8 @@ final class BotListener implements Listener {
         for (ItemStack it : bot.bag) {
             if (it != null && !it.getType().isAir()) drops.add(it);
         }
-        for (ItemStack it : bot.wornItems()) {
+        if (bot.tutorialTarget != null) drops.clear(); // training rogue: GlitchTutorial hands out the (tagged) loot
+        else for (ItemStack it : bot.wornItems()) {
             if (ThreadLocalRandom.current().nextDouble() < plugin.cfg().gearDropChance) drops.add(it);
         }
         event.setDroppedExp(0);

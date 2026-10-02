@@ -526,6 +526,8 @@ public final class HideoutManager {
     }
 
     private boolean isItem(ItemStack stack, String id) {
+        // Lent tutorial items (GlitchTutorial) are never crafting material — they'd become permanent
+        if (com.theglitch.common.TutorialItems.isTutorial(stack)) return false;
         String found = nexoIdOf(stack);
         return found != null && id.equalsIgnoreCase(found);
     }

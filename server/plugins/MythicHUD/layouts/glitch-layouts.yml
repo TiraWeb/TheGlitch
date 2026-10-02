@@ -161,3 +161,19 @@ glitch-hud:
       offset:
         x: 0
         y: 0
+    glitch-tut-head:
+      asset: 'glitch-tut-head'
+      position:
+        x: 0.0
+        y: 100.0
+      offset:
+        x: 0
+        y: 0
+    glitch-tut-line:
+      asset: 'glitch-tut-line'
+      position:
+        x: 0.0
+        y: 100.0
+      offset:
+        x: 0
+        y: 0

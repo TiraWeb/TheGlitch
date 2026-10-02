@@ -4,6 +4,7 @@
 
   Extraction card (red worlds): %glitchstash_hud_*% (GlitchStash ExtractionHud)
   Daily contracts:              %glitchquests_hud_*% (GlitchQuests QuestExpansion)
+  New-player tutorial:          %glitchtutorial_*% (GlitchTutorial TutorialExpansion)
 
 Writes (all under server/plugins/MythicHUD/):
   source-pack/assets/mythichud/textures/assets/glitch/*.png   pixel-art pieces
@@ -251,6 +252,22 @@ def hud_assets():
                         "text": text_layer(f"%glitchquests_hud_{n}_text%", LINE_X + 13, y),
                     },
                 }
+    # New-player tutorial objective (any world, while %glitchtutorial_active% is true)
+    tut = only_when("%glitchtutorial_active%", "true")
+    assets["glitch-tut-head"] = {
+        "conditions": [tut],
+        "layers": {
+            "tile": tex_layer("icon_contracts", LEFT, TOP),
+            "title": text_layer("%glitchtutorial_title%", BAR_X, TOP - 5, bar=True),
+        },
+    }
+    assets["glitch-tut-line"] = {
+        "conditions": [tut],
+        "layers": {
+            "box": tex_layer("box_active", LINE_X, TOP - 28),
+            "text": text_layer("%glitchtutorial_step%", LINE_X + 13, TOP - 28),
+        },
+    }
     return assets
 
 

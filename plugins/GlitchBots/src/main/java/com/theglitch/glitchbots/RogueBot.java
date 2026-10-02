@@ -47,6 +47,8 @@ final class RogueBot {
     private final Set<String> skippedCrates = new HashSet<>();
 
     State state = State.ROAM;
+    /** Set for the GlitchTutorial training rogue: fights only this player, weak, drops nothing real. */
+    java.util.UUID tutorialTarget;
     final long spawnedAt = System.currentTimeMillis();
     /** The spawned body's UUID (for Essentials userdata cleanup). */
     java.util.UUID entityId;
@@ -91,10 +93,12 @@ final class RogueBot {
         skin.setFetchDefaultSkin(false);
         npc.getOrAddTrait(net.citizensnpcs.trait.ScoreboardTrait.class).setColor(cfg.nameColor);
 
-        boolean ranged = ThreadLocalRandom.current().nextDouble() < cfg.rangedChance;
+        boolean ranged = tutorialTarget == null && ThreadLocalRandom.current().nextDouble() < cfg.rangedChance;
         Equipment eq = npc.getOrAddTrait(Equipment.class);
         ItemStack weapon;
-        if (ranged) {
+        if (tutorialTarget != null) {
+            weapon = new ItemStack(Material.STONE_SWORD); // plain, worthless — the tutorial hands out the loot
+        } else if (ranged) {
             weapon = new ItemStack(ThreadLocalRandom.current().nextBoolean() ? Material.BOW : Material.CROSSBOW);
             eq.set(Equipment.EquipmentSlot.OFF_HAND, new ItemStack(Material.ARROW, 32));
         } else {
@@ -105,14 +109,19 @@ final class RogueBot {
         Equipment.EquipmentSlot[] slots = {Equipment.EquipmentSlot.HELMET, Equipment.EquipmentSlot.CHESTPLATE,
                 Equipment.EquipmentSlot.LEGGINGS, Equipment.EquipmentSlot.BOOTS};
         for (int i = 0; i < slots.length; i++) {
-            if (ThreadLocalRandom.current().nextDouble() >= cfg.armorChance) continue;
+            if (tutorialTarget != null || ThreadLocalRandom.current().nextDouble() >= cfg.armorChance) continue;
             ItemStack piece = plugin.hooks().gear(ARMOR[i], rarity);
             if (piece != null) eq.set(slots[i], piece);
         }
 
         SentinelTrait s = npc.getOrAddTrait(SentinelTrait.class);
-        s.addTarget("players");
-        s.addTarget("monsters");
+        org.bukkit.entity.Player trainee = tutorialTarget == null ? null : org.bukkit.Bukkit.getPlayer(tutorialTarget);
+        if (trainee != null) {
+            s.addTarget("player:" + trainee.getName());
+        } else {
+            s.addTarget("players");
+            s.addTarget("monsters");
+        }
         s.addIgnore("npcs");
         s.squad = "glitch_rogues";
         s.respawnTime = -1;
@@ -123,13 +132,19 @@ final class RogueBot {
         s.enemyDrops = false;
         s.closeChase = true;
         s.rangedChase = ranged;
-        s.health = cfg.health;
+        s.health = tutorialTarget != null ? 14.0 : cfg.health;
         s.range = cfg.range;
         normalRange = cfg.range;
         s.chaseRange = cfg.chaseRange;
         s.attackRate = cfg.attackRateTicks;
         s.attackRateRanged = cfg.attackRateTicks + 6;
         s.accuracy = cfg.accuracy(rarity);
+        if (tutorialTarget != null) {
+            s.damage = 2.0;          // a training dummy with opinions
+            s.attackRate = 24;
+            s.range = 16;
+            normalRange = 16;
+        }
         s.allowKnockback = true;
         s.needsAmmo = false;
 
@@ -155,6 +170,16 @@ final class RogueBot {
         Entity e = entity();
         if (!(e instanceof LivingEntity body)) return true;
         SentinelTrait s = npc.getOrAddTrait(SentinelTrait.class);
+        if (tutorialTarget != null) {
+            // Training rogue: no roaming/looting/extracting — just taunt and fight its one trainee.
+            org.bukkit.entity.Player trainee = org.bukkit.Bukkit.getPlayer(tutorialTarget);
+            if (trainee == null || !trainee.getWorld().equals(body.getWorld())) return false;
+            spotCheck(body, s);
+            if (s.chasing == null && trainee.getLocation().distanceSquared(body.getLocation()) > 9) {
+                npc.getNavigator().setTarget(trainee, true);
+            }
+            return true;
+        }
         BotConfig cfg = plugin.cfg();
         long now = System.currentTimeMillis();
 

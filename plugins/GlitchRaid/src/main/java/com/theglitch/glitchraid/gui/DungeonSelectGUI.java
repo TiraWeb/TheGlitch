@@ -169,7 +169,8 @@ public class DungeonSelectGUI implements Listener {
                 player.sendMessage(MM.deserialize(nowBlocked));
                 return;
             }
-            if (!takeKey(player, keyId)) {
+            ItemStack usedKey = takeKey(player, keyId);
+            if (usedKey == null) {
                 player.sendMessage(MM.deserialize("<red>You no longer have that key.</red>"));
                 return;
             }
@@ -193,7 +194,8 @@ public class DungeonSelectGUI implements Listener {
                 if (awaitingEntry.remove(player.getUniqueId()) == null) return;
                 if (!player.isOnline()) return;
                 if (player.getWorld().getName().startsWith(d.id() + "_")) return;
-                ItemStack refund = NexoUtil.build(keyId);
+                // Give back the exact key that was used (a tutorial key stays a tutorial key)
+                ItemStack refund = usedKey;
                 if (refund != null) {
                     player.getInventory().addItem(refund).values()
                             .forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
@@ -253,21 +255,24 @@ public class DungeonSelectGUI implements Listener {
         return n;
     }
 
-    private static boolean takeKey(Player player, String id) {
+    /** Takes one key; returns a single copy of the key that was taken, or null if none. */
+    private static ItemStack takeKey(Player player, String id) {
         ItemStack[] contents = player.getInventory().getStorageContents();
         for (int i = 0; i < contents.length; i++) {
             ItemStack it = contents[i];
             if (it != null && id.equals(NexoUtil.idOf(it))) {
+                ItemStack one = it.clone();
+                one.setAmount(1);
                 if (it.getAmount() > 1) {
                     it.setAmount(it.getAmount() - 1);
                 } else {
                     contents[i] = null;
                 }
                 player.getInventory().setStorageContents(contents);
-                return true;
+                return one;
             }
         }
-        return false;
+        return null;
     }
 
     private static ItemStack item(Material material, String name, String... lore) {

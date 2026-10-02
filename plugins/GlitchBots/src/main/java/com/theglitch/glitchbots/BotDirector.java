@@ -197,10 +197,16 @@ final class BotDirector {
 
     /** Creates + spawns a rogue at an exact spot (used by /bots spawn too). */
     RogueBot spawnAt(Location spot) {
+        return spawnAt(spot, null);
+    }
+
+    /** {@code trainee} non-null = GlitchTutorial training rogue for that player. */
+    RogueBot spawnAt(Location spot, UUID trainee) {
         BotConfig cfg = plugin.cfg();
         String handle = pickName();
         NPC npc = registry.createNPC(EntityType.PLAYER, cfg.nameFormat.replace("<name>", handle));
-        RogueBot bot = new RogueBot(plugin, npc, handle, spot.getWorld().getName(), cfg.rollRarity());
+        RogueBot bot = new RogueBot(plugin, npc, handle, spot.getWorld().getName(), trainee != null ? "COMMON" : cfg.rollRarity());
+        bot.tutorialTarget = trainee;
         if (!bot.spawn(spot)) {
             npc.destroy();
             namesInUse.remove(handle);
@@ -270,6 +276,18 @@ final class BotDirector {
         for (RogueBot b : inWorld(world)) {
             remove(b);
             n++;
+        }
+        return n;
+    }
+
+    /** Removes the training rogue(s) of one tutorial player. */
+    int clearTutorial(UUID trainee) {
+        int n = 0;
+        for (RogueBot b : new ArrayList<>(bots.values())) {
+            if (trainee.equals(b.tutorialTarget)) {
+                remove(b);
+                n++;
+            }
         }
         return n;
     }
