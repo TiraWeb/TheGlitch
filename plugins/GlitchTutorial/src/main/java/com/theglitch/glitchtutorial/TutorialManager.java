@@ -121,6 +121,7 @@ final class TutorialManager {
             } else {
                 store.create(p.getUniqueId()).status = TutorialStore.Status.LEGACY;
                 store.markDirty();
+                leaveTutorialWorld(p);
             }
             return;
         }
@@ -128,12 +129,30 @@ final class TutorialManager {
             resume(p);
         } else {
             TutorialItems.stripAll(p); // leftovers from an interrupted run
+            leaveTutorialWorld(p);   // logged out in there, then skipped/reset — don't strand them
         }
+    }
+
+    private void leaveTutorialWorld(Player p) {
+        if (!inTutorialWorld(p) || p.hasPermission("glitchtutorial.admin")) return;
+        Location hub = hubSpawn();
+        if (hub != null) p.teleport(hub);
     }
 
     void start(Player p) {
         if (world() == null) {
             p.sendMessage(MM.deserialize("<red>The tutorial world isn't set up yet.</red>"));
+            return;
+        }
+        if (isActive(p)) { // a second start would overwrite the saved inventory with lent gear
+            resume(p);
+            return;
+        }
+        String here = p.getWorld().getName();
+        if (!here.equals("hub") && !inTutorialWorld(p)) {
+            // from a raid this would stash the raid inventory without extracting (and the
+            // red-world exit guard would cancel the teleport anyway)
+            p.sendMessage(MM.deserialize("<red>Start the tutorial from the hub.</red>"));
             return;
         }
         TutorialStore.Record r = record(p);
@@ -196,9 +215,13 @@ final class TutorialManager {
             }
             case CRATES -> {
                 placeCrates();
-                say(p, "crates", null);
+                if (Integer.bitCount(r.progress) >= CRATES.length) sayThenAdvance(p, "crates-done");
+                else say(p, "crates", null);
             }
-            case MOBS -> say(p, "mobs", () -> spawnMobs(p));
+            case MOBS -> {
+                if (r.progress >= cfg().getInt("mobs.count", 3)) sayThenAdvance(p, "mobs-done");
+                else say(p, "mobs", () -> spawnMobs(p));
+            }
             case ROGUE -> say(p, "rogue", () -> spawnRogue(p));
             case EXTRACT -> {
                 r.progress = 0;
@@ -249,7 +272,15 @@ final class TutorialManager {
 
     private void classPicked(Player p) {
         if (busy.contains(p.getUniqueId())) return;
-        giveLoadout(p);
+        // Rejoining after the loadout was handed over must not hand it over twice
+        boolean hasLoadout = false;
+        for (ItemStack it : p.getInventory().getContents()) {
+            if (TutorialItems.isTutorial(it)) {
+                hasLoadout = true;
+                break;
+            }
+        }
+        if (!hasLoadout) giveLoadout(p);
         sayThenAdvance(p, "class-done");
     }
 
@@ -350,7 +381,10 @@ final class TutorialManager {
         Location at = point("mobs");
         if (at == null) return;
         TutorialStore.Record r = record(p);
-        int want = Math.max(0, cfg().getInt("mobs.count", 3) - r.progress);
+        Set<UUID> tracked = mobs.get(p.getUniqueId());
+        long alive = tracked == null ? 0 : tracked.stream().map(Bukkit::getEntity).filter(e -> e != null && !e.isDead()).count();
+        int want = (int) Math.max(0, cfg().getInt("mobs.count", 3) - r.progress - alive);
+        if (want == 0) return;
         String type = cfg().getString("mobs.type", "CorruptedCrawler");
         Set<UUID> before = new HashSet<>();
         for (Entity e : at.getWorld().getNearbyEntities(at, 6, 6, 6)) before.add(e.getUniqueId());
@@ -466,8 +500,13 @@ final class TutorialManager {
         cancelDialogue(p);
         busy.remove(p.getUniqueId());
         TutorialItems.stripAll(p);
-        for (ItemStack it : TutorialStore.restore(r.snapshot)) {
-            if (it != null) p.getInventory().addItem(it).values().forEach(left -> p.getWorld().dropItemNaturally(p.getLocation(), left));
+        List<ItemStack> old = TutorialStore.restore(r.snapshot);
+        PlayerInventory inv = p.getInventory();
+        for (int i = 0; i < old.size(); i++) {
+            ItemStack it = old.get(i);
+            if (it == null) continue;
+            if (i < inv.getSize() && empty(inv.getItem(i))) inv.setItem(i, it);
+            else inv.addItem(it).values().forEach(left -> p.getWorld().dropItemNaturally(p.getLocation(), left));
         }
         r.snapshot = new ArrayList<>();
         Set<UUID> mine = mobs.remove(p.getUniqueId());
@@ -499,44 +538,53 @@ final class TutorialManager {
 
     private void tick() {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            TutorialStore.Record r = record(p);
-            if (r == null || r.status != TutorialStore.Status.ACTIVE || busy.contains(p.getUniqueId())) continue;
-            if (r.step.inTutorialWorld() && !inTutorialWorld(p)) {
-                p.sendActionBar(MM.deserialize("<gray>Tutorial paused — <yellow>/tutorial</yellow> to continue, <yellow>/tutorial skip</yellow> to stop.</gray>"));
-                continue;
-            }
-            long since = System.currentTimeMillis() - stepStarted.getOrDefault(p.getUniqueId(), 0L);
-            bless(p);
-            switch (r.step) {
-                case INTRO -> {
-                    if (since > 35_000L) advance(p);
-                }
-                case CLASS -> {
-                    if (hooks.hasClass(p.getUniqueId())) classPicked(p);
-                }
-                case CRATES -> {
-                    for (int i = 0; i < CRATES.length; i++) {
-                        if ((r.progress & (1 << i)) != 0) continue;
-                        Location l = point(CRATES[i]);
-                        if (l != null) p.spawnParticle(Particle.END_ROD, l.getBlock().getLocation().add(0.5, 1.3, 0.5), 6, 0.15, 0.4, 0.15, 0.01);
-                    }
-                }
-                case MOBS -> {
-                    Set<UUID> mine = mobs.get(p.getUniqueId());
-                    boolean anyAlive = mine != null && mine.stream().map(Bukkit::getEntity).anyMatch(e -> e != null && !e.isDead());
-                    if (!anyAlive && since > 15_000L) {
-                        stepStarted.put(p.getUniqueId(), System.currentTimeMillis());
-                        spawnMobs(p); // despawned or never appeared — bring the rest back
-                    }
-                }
-                case ROGUE -> tickRogue(p, since);
-                case EXTRACT -> tickExtract(p, r);
-                case HUB -> tickHub(p, r);
-                default -> { }
+            try {
+                tick(p);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Tutorial tick failed for " + p.getName() + ": " + e);
             }
         }
     }
 
+    private void tick(Player p) {
+        TutorialStore.Record r = record(p);
+        if (r == null || r.status != TutorialStore.Status.ACTIVE) return;
+        if (r.step.inTutorialWorld() && !inTutorialWorld(p)) {
+            p.sendActionBar(MM.deserialize("<gray>Tutorial paused — <yellow>/tutorial</yellow> to continue, <yellow>/tutorial skip</yellow> to stop.</gray>"));
+            return;
+        }
+        bless(p); // also during dialogue pauses, so it never lapses mid-fight
+        if (busy.contains(p.getUniqueId())) return;
+        long since = System.currentTimeMillis() - stepStarted.getOrDefault(p.getUniqueId(), 0L);
+        switch (r.step) {
+            case INTRO -> {
+                if (since > 35_000L) advance(p);
+            }
+            case CLASS -> {
+                if (hooks.hasClass(p.getUniqueId())) classPicked(p);
+                else if (since > 8_000L) p.sendActionBar(MM.deserialize("<gray>Pick a class — <yellow>/class</yellow></gray>"));
+            }
+            case CRATES -> {
+                for (int i = 0; i < CRATES.length; i++) {
+                    if ((r.progress & (1 << i)) != 0) continue;
+                    Location l = point(CRATES[i]);
+                    if (l != null) p.spawnParticle(Particle.END_ROD, l.getBlock().getLocation().add(0.5, 1.3, 0.5), 6, 0.15, 0.4, 0.15, 0.01);
+                }
+            }
+            case MOBS -> {
+                Set<UUID> mine = mobs.get(p.getUniqueId());
+                boolean anyAlive = mine != null && mine.stream().map(Bukkit::getEntity).anyMatch(e -> e != null && !e.isDead());
+                if (!anyAlive && since > 15_000L) {
+                    stepStarted.put(p.getUniqueId(), System.currentTimeMillis());
+                    spawnMobs(p); // despawned or never appeared — bring the rest back
+                }
+            }
+            case ROGUE -> tickRogue(p, since);
+            case EXTRACT -> tickExtract(p, r);
+            case HUB -> tickHub(p, r);
+            default -> { }
+        }
+    }
     /**
      * The kill event isn't the only signal: a Citizens rogue can die (or be removed) without a
      * credited killer. Once we've seen this player's rogue nearby, its disappearance counts as
@@ -544,7 +592,7 @@ final class TutorialManager {
      */
     private void tickRogue(Player p, long since) {
         boolean alive = false;
-        for (Entity e : p.getWorld().getNearbyEntities(p.getLocation(), 96, 48, 96)) {
+        for (Entity e : p.getWorld().getNearbyEntities(p.getLocation(), 160, 64, 160)) {
             if (com.theglitch.common.Bots.isBot(e) && !e.isDead() && e.getName().startsWith("Rogue ")) {
                 alive = true;
                 break;
@@ -579,7 +627,12 @@ final class TutorialManager {
             org.bukkit.potion.PotionEffectType type = org.bukkit.Registry.EFFECT.get(
                     org.bukkit.NamespacedKey.minecraft(s[0].toLowerCase(Locale.ROOT)));
             if (type == null) continue;
-            int amp = s.length > 1 ? Integer.parseInt(s[1].trim()) : 0;
+            int amp;
+            try {
+                amp = s.length > 1 ? Integer.parseInt(s[1].trim()) : 0;
+            } catch (NumberFormatException e) {
+                continue;
+            }
             org.bukkit.potion.PotionEffect cur = p.getPotionEffect(type);
             if (cur != null && cur.getAmplifier() > amp) continue; // a stronger effect from elsewhere
             if (cur == null || cur.getDuration() < 200) {
@@ -701,7 +754,10 @@ final class TutorialManager {
             return;
         }
         if (busy.contains(p.getUniqueId())) return;
-        sayLines(p, cfg().getStringList("dialogue." + r.step.key()), null, 0);
+        Runnable after = r.step == Step.CLASS ? () -> {
+            if (stepIs(p, Step.CLASS)) p.performCommand("class");
+        } : null;
+        sayLines(p, cfg().getStringList("dialogue." + r.step.key()), after, 0);
     }
 
     // ---- HUD ----

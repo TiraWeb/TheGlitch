@@ -121,6 +121,11 @@ final class TutorialListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onCrate(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) return;
+        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) {
+            // the off-hand pass of the same click: just keep the barrel closed
+            if (event.getClickedBlock().getType() == Material.BARREL && manager.inTutorialWorld(event.getPlayer())) event.setCancelled(true);
+            return;
+        }
         if (event.getClickedBlock().getType() != Material.BARREL || !manager.inTutorialWorld(event.getPlayer())) return;
         if (manager.onCrate(event.getPlayer(), event.getClickedBlock())) event.setCancelled(true);
     }
@@ -177,6 +182,12 @@ final class TutorialListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player p)) return;
+        // Bundles: a tutorial item tucked into a bundle would leave inside it
+        ItemStack cur = event.getCurrentItem(), cursor = event.getCursor();
+        if ((isBundle(cur) && TutorialItems.isTutorial(cursor)) || (isBundle(cursor) && TutorialItems.isTutorial(cur))) {
+            event.setCancelled(true);
+            return;
+        }
         if (event.getView().getTopInventory().getType() == InventoryType.CRAFTING) return; // own inventory only
         ItemStack hotbar = event.getHotbarButton() >= 0 ? p.getInventory().getItem(event.getHotbarButton()) : null;
         if (TutorialItems.isTutorial(event.getCurrentItem()) || TutorialItems.isTutorial(event.getCursor())
@@ -185,6 +196,10 @@ final class TutorialListener implements Listener {
             event.setCancelled(true);
             p.sendActionBar(MM.deserialize("<gray>Tutorial items can't be stored, sold or insured.</gray>"));
         }
+    }
+
+    private static boolean isBundle(ItemStack it) {
+        return it != null && it.getType().name().endsWith("BUNDLE");
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)

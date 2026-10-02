@@ -61,8 +61,17 @@ mc "mv modify ${WORLD} set allow-flight false" || true
 
 log "WorldGuard: nobody builds or breaks in the tutorial"
 for flag in "build deny" "block-break deny" "block-place deny" "creeper-explosion deny" "tnt deny" \
-            "fire-spread deny" "item-frame-rotation deny" "ride deny"; do
+            "fire-spread deny" "item-frame-rotation deny" "ride deny" "chest-access deny"; do
   mc "rg flag __global__ -w ${WORLD} ${flag}" || true
 done
+
+log "Removing entities copied from the red map (loot-crate furniture, crate labels, extraction markers)"
+# Same UUIDs as the live red-map crates — clicking one would open the real crate's loot.
+mc "execute in minecraft:${WORLD} run forceload add $((SLICE_CX - SLICE_SIZE / 2)) $((SLICE_CZ - SLICE_SIZE / 2)) $((SLICE_CX + SLICE_SIZE / 2 - 1)) $((SLICE_CZ + SLICE_SIZE / 2 - 1))" || true
+sleep 8
+for t in item_display text_display interaction armor_stand item; do
+  mc "execute in minecraft:${WORLD} run minecraft:kill @e[type=minecraft:${t}]" || true
+done
+mc "execute in minecraft:${WORLD} run forceload remove all" || true
 
 log "Done. Next: /tutorial admin autolayout (sets the step points), then /tutorial admin status"

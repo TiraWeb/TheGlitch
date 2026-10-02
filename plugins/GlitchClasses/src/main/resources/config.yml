@@ -12,6 +12,7 @@ game-worlds:
   - glitch_red
   - glitch_red_eleria
   - glitch_red_horizons
+  - tutorial          # new-player tutorial (GlitchTutorial) — Echo tells them to use their ability
 
 # Also active in worlds matching this regex: the MythicDungeons boss dungeon
 # instances, named <dungeon id>_<n> (ids from scripts/dungeon_md.py).
