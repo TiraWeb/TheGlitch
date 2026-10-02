@@ -65,8 +65,10 @@ public final class ClassManager {
     public ClassData getClassData(UUID uuid) {
         ClassData known = players.get(uuid);
         if (known != null) return known;
-        // Rogue Raider bots (Citizens NPCs) are Players too — never give them stored class data
-        if (com.theglitch.common.Bots.isBot(org.bukkit.Bukkit.getEntity(uuid))) return new ClassData(uuid, "none", 0, 0);
+        // Rogue Raider bots (Citizens NPCs) are Players too — never give them stored class data.
+        // Entity lookups are main-thread only; async callers (TAB/PAPI placeholders) only ask about real players.
+        if (org.bukkit.Bukkit.isPrimaryThread()
+                && com.theglitch.common.Bots.isBot(org.bukkit.Bukkit.getEntity(uuid))) return new ClassData(uuid, "none", 0, 0);
         return players.computeIfAbsent(uuid, id -> new ClassData(id, "none", 0, 0));
     }
 
