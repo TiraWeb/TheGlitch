@@ -284,7 +284,10 @@ final class TutorialInstances {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 String n = file.getFileName().toString();
-                if (n.equals("session.lock") || n.equals("chunk_tickets.dat")) return FileVisitResult.CONTINUE;
+                // metadata.dat (Paper) / uid.dat (legacy) carry the world's UUID: a copy with the
+                // template's is refused as a duplicate, so the instance gets a fresh one
+                if (n.equals("session.lock") || n.equals("chunk_tickets.dat") || n.equals("uid.dat")
+                        || (n.equals("metadata.dat") && file.getParent().endsWith("paper"))) return FileVisitResult.CONTINUE;
                 Files.copy(file, dst.resolve(src.relativize(file).toString()), StandardCopyOption.REPLACE_EXISTING);
                 return FileVisitResult.CONTINUE;
             }
