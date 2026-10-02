@@ -234,7 +234,7 @@ Easiest test: offline mode is on, so join with a never-used name (e.g. `Tutorial
 - [ ] Reaching the hub tour (or skip / `/spawn` / logging out) logs "Tutorial instance ... closed" and its folder under `hub/dimensions/minecraft/` is gone a few seconds later
 - [ ] Log out mid-tutorial, log back in → a fresh private world at your step's checkpoint
 - [ ] Existing players (have joined before) are NOT dragged in
-- Admin: `/tutorial admin status [player]`, `reset <player>`, `start <player>`, `setpoint <name>` (stand on the spot), `autolayout`, `reload`
+- Admin: `/tutorial admin status [player]`, `reset <player>`, `start <player>`, `setpoint <name>` (stand on the spot), `autolayout`, `instancetest` (opens a private copy, checks it, deletes it), `reload`
 
 ## Leaving raids / dungeons (2026-10-02)
 
