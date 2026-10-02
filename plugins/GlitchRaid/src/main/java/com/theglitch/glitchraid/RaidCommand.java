@@ -279,6 +279,7 @@ public final class RaidCommand implements CommandExecutor {
         player.sendMessage(MM.deserialize("<yellow>/party kick <player></yellow> <gray>— Leader removes a member</gray>"));
         player.sendMessage(MM.deserialize("<yellow>/party leave</yellow> <gray>— Leave (the leader leaving disbands it)</gray>"));
         player.sendMessage(MM.deserialize("<yellow>/raid status</yellow> <gray>— Time left, your loot and deaths</gray>"));
+        player.sendMessage(MM.deserialize("<yellow>/leave</yellow> <gray>— Give up a raid (counts as dying) or a dungeon (no rewards)</gray>"));
         player.sendMessage(MM.deserialize("<dark_gray>Raids: when the leader enters a Red Zone, members in the hub come along. "
                 + "Dungeons: the leader starts one from /dungeons; members must be in the hub and type /ready.</dark_gray>"));
     }

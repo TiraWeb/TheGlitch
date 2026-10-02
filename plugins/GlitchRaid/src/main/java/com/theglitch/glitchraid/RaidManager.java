@@ -9,6 +9,7 @@ import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -42,6 +43,8 @@ public final class RaidManager {
     private final Map<UUID, BossBar> bossBars = new ConcurrentHashMap<>();
     private final Map<UUID, FoliaScheduler.Cancellable> timers = new ConcurrentHashMap<>();
     private final Set<UUID> timeoutVictims = ConcurrentHashMap.newKeySet();
+    /** Players who chose /leave in a raid (MIA): their death is the abandon, their respawn is the hub. */
+    private final Set<UUID> abandoning = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Long> lastDeathMillis = new ConcurrentHashMap<>();
     // Players extracted during the current global cycle — prevents party pull re-abducting them
     private final Set<UUID> extractedThisRaid = ConcurrentHashMap.newKeySet();
@@ -2035,6 +2038,41 @@ public final class RaidManager {
         } catch (Exception e) {
             plugin.getLogger().warning("Failed scatter buffer for " + worldKey + ": " + e.getMessage());
         }
+    }
+
+    public boolean isAbandoning(UUID uuid) {
+        return abandoning.contains(uuid);
+    }
+
+    public void clearAbandoning(UUID uuid) {
+        abandoning.remove(uuid);
+    }
+
+    /**
+     * /leave in a raid: the player goes MIA. It is a real death so every death rule applies
+     * unchanged (drops, insurance, Secure Pouch, mercy rules, Raider Rank penalty, no payout);
+     * RaidListener detaches them from the raid and respawns them in the hub, skipping the
+     * death screen. Creative/spectator staff can't die — they're just detached and sent home.
+     */
+    public void abandonRaid(Player player) {
+        UUID id = player.getUniqueId();
+        if (player.getGameMode() == org.bukkit.GameMode.CREATIVE || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+            removeMember(id);
+            teleportToHub(player);
+            return;
+        }
+        abandoning.add(id);
+        FoliaScheduler.runLaterGlobal(plugin, () -> abandoning.remove(id), 600L);
+        player.setHealth(0.0);
+        FoliaScheduler.runLaterGlobal(plugin, () -> {
+            Player p = Bukkit.getPlayer(id);
+            if (p != null && p.isDead()) p.spigot().respawn();
+        }, 2L);
+    }
+
+    public Location hubSpawn() {
+        World hub = Bukkit.getWorld(hubWorld);
+        return hub == null ? null : hub.getSpawnLocation();
     }
 
     public void teleportToHub(Player player) {

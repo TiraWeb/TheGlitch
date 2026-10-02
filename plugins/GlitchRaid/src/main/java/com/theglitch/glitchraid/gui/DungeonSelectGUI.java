@@ -58,6 +58,15 @@ public class DungeonSelectGUI implements Listener {
             new Dungeon("town", "Hollow Town", 3, "The Lovers", Material.CHERRY_LEAVES, 31),
             new Dungeon("mythic", "Mythic Spire", 3, "The Awakened Mage", Material.AMETHYST_BLOCK, 33));
 
+    /** A MythicDungeons instance world of one of our dungeons ("<id>_<n>"). */
+    public static boolean isDungeonWorld(String world) {
+        if (world == null) return false;
+        for (Dungeon d : DUNGEONS) {
+            if (world.startsWith(d.id() + "_")) return true;
+        }
+        return false;
+    }
+
     private static final String[] TIER_COLOUR = {"", "<green>", "<gold>", "<light_purple>"};
     private static final String[] KEY_NAME = {"", "Iron", "Golden", "Mythic"};
     private static final int[] REWARD = {0, 400, 900, 1800};

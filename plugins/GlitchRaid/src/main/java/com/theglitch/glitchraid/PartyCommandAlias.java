@@ -19,6 +19,7 @@ public final class PartyCommandAlias implements Listener {
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final Set<String> PARTY = Set.of("party", "dparty", "mythicdungeons:party", "mythicdungeons:dparty");
     private static final Set<String> RECRUIT = Set.of("recruit", "mythicdungeons:recruit");
+    private static final Set<String> LEAVE = Set.of("leave", "mythicdungeons:leave");
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onCommand(PlayerCommandPreprocessEvent event) {
@@ -26,6 +27,16 @@ public final class PartyCommandAlias implements Listener {
         if (msg.length() < 2) return;
         String[] parts = msg.substring(1).trim().split("\\s+");
         String label = parts[0].toLowerCase(Locale.ROOT);
+        // /leave in a raid or a dungeon goes through /abandon's confirm (MD's own /leave has none,
+        // and outside MD it would mean nothing in a Red Zone)
+        if (LEAVE.contains(label)) {
+            String w = event.getPlayer().getWorld().getName();
+            GlitchRaid raid = GlitchRaid.getInstance();
+            if (raid != null && (raid.getRaidManager().isRedWorld(w) || com.theglitch.glitchraid.gui.DungeonSelectGUI.isDungeonWorld(w))) {
+                event.setMessage("/abandon");
+            }
+            return;
+        }
         if (RECRUIT.contains(label)) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(MM.deserialize("<gray>Build your team with <yellow>/party invite <player></yellow> — the same party goes into raids and dungeons.</gray>"));

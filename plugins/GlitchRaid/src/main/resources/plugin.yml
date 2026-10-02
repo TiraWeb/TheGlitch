@@ -30,6 +30,11 @@ commands:
     description: Opens the Red Zone world picker GUI
     usage: /redzone
     permission: glitchraid.raid
+  abandon:
+    description: Leave the current raid (counts as dying, MIA) or dungeon (no rewards) and go to the hub
+    usage: /abandon  (or /leave inside a raid or dungeon)
+    aliases: [leaveraid, quitraid]
+    permission: glitchraid.raid
   rank:
     description: Raider Rank — your tier, the ladder, recent RR and the top 10
     usage: /rank [top|<player>]

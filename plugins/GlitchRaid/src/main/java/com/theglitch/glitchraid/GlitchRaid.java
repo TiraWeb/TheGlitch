@@ -81,6 +81,10 @@ public final class GlitchRaid extends JavaPlugin {
             getLogger().warning("Command 'redzone' not found in plugin.yml — check registration.");
         }
 
+        if (getCommand("abandon") != null) {
+            getCommand("abandon").setExecutor(new AbandonCommand(raidManager));
+        }
+
         if (getCommand("rank") != null) {
             getCommand("rank").setExecutor(new com.theglitch.glitchraid.rank.RankCommand(rankManager, rankGui));
         }

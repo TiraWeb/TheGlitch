@@ -172,6 +172,16 @@ public final class RaidListener implements Listener {
     public void onRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         if (Bots.isBot(player)) return;
+        if (manager.isAbandoning(player.getUniqueId())) {
+            manager.clearAbandoning(player.getUniqueId());
+            org.bukkit.Location hub = manager.hubSpawn();
+            if (hub != null) event.setRespawnLocation(hub);
+            FoliaScheduler.runLaterGlobal(plugin, () -> {
+                if (player.isOnline()) player.sendMessage(MM.deserialize(
+                        "<gray>You left the raid. <red>What you carried is gone</red> <dark_gray>(insured gear + Secure Pouch kept)</dark_gray>.</gray>"));
+            }, 5L);
+            return;
+        }
         if (manager.isTimeoutVictim(player.getUniqueId())) {
             // Force respawn to hub spawn
             try {
@@ -243,6 +253,10 @@ public final class RaidListener implements Listener {
             return;
         }
         manager.recordDeath(player.getUniqueId());
+        boolean abandoned = manager.isAbandoning(player.getUniqueId());
+        if (abandoned) {
+            event.deathMessage(MM.deserialize("<gray>" + player.getName() + " left the raid <dark_gray>(MIA)</dark_gray>.</gray>"));
+        }
         com.theglitch.glitchraid.rank.RankManager ranks = plugin.getRankManager();
         if (ranks != null) {
             int lost = manager.itemValue(event.getDrops());
@@ -251,7 +265,8 @@ public final class RaidListener implements Listener {
             if (pvp && manager.isInRaid(killer.getUniqueId())) {
                 ranks.recordPlayerKill(killer.getUniqueId(), player.getUniqueId(), lost);
             }
-            ranks.onDeath(player.getUniqueId(), lost, pvp ? "killed by " + killer.getName() : "died in a raid");
+            ranks.onDeath(player.getUniqueId(), lost, abandoned ? "left the raid (MIA)"
+                    : pvp ? "killed by " + killer.getName() : "died in a raid");
         }
         // Timeout victims already incremented in handleTimeout — don't double count if this death is the timeout kill
         boolean isTimeout = manager.isTimeoutVictim(player.getUniqueId());
@@ -260,6 +275,11 @@ public final class RaidListener implements Listener {
         }
         RaidSession session = manager.getSession(player.getUniqueId());
         int deaths = session != null ? session.getDeaths(player.getUniqueId()) : 1;
+        if (abandoned) {
+            // MIA: out of the raid now — no recap, no re-join on respawn
+            manager.removeMember(player.getUniqueId());
+            return;
+        }
 
         String recapRaw = plugin.getConfig().getString("messages.death-recap",
                 "<red>Death recap: <white>You died! <gray>(Death #<deaths> this raid)</gray></white></red>");
@@ -367,7 +387,7 @@ public final class RaidListener implements Listener {
         if (!manager.isInRaid(id) || manager.isExitAllowed(id) || manager.isTimeoutVictim(id)) return;
         if (player.hasPermission("glitchraid.bypass.exit")) return;
         event.setCancelled(true);
-        player.sendMessage(MM.deserialize("<red>You can't leave the Red Zone mid-raid — <gray>reach an extraction point to get out with your loot.</gray></red>"));
+        player.sendMessage(MM.deserialize("<red>You can't leave the Red Zone mid-raid — <gray>reach an extraction point to get out with your loot, or <yellow>/leave</yellow> to give up (you lose what you carry).</gray></red>"));
     }
 
     /** Ender chests in a red world would let loot skip extraction (stash it, die, open one in the hub). */
