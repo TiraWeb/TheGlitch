@@ -539,14 +539,14 @@ final class TutorialManager {
     private void tick() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             try {
-                tick(p);
+                tickPlayer(p);
             } catch (Exception e) {
                 plugin.getLogger().warning("Tutorial tick failed for " + p.getName() + ": " + e);
             }
         }
     }
 
-    private void tick(Player p) {
+    private void tickPlayer(Player p) {
         TutorialStore.Record r = record(p);
         if (r == null || r.status != TutorialStore.Status.ACTIVE) return;
         if (r.step.inTutorialWorld() && !inTutorialWorld(p)) {
