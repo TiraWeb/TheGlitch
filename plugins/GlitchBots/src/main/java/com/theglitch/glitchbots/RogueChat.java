@@ -201,6 +201,7 @@ final class RogueChat {
                         + safe(err.getMessage()) + ") — using fallback lines when it does. Logged once.");
             }
             Bukkit.getScheduler().runTask(plugin, () -> {
+                if (plugin.director().bot(bot.npc.getUniqueId()) == null) return; // died while Gemini was thinking
                 remember(bot, target, bot.handle + ": " + out);
                 say(bot, out);
             });
@@ -249,6 +250,7 @@ final class RogueChat {
         if (apiKey.isEmpty() || now < backoffUntil || !takeAiSlot(now)) {
             String fb = replyFallbackLine(player);
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (plugin.director().bot(bot.npc.getUniqueId()) == null) return;
                 remember(bot, player, bot.handle + ": " + fb);
                 say(bot, fb);
             }, 20L);

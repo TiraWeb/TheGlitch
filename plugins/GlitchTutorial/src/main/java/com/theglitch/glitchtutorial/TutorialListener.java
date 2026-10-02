@@ -130,39 +130,22 @@ final class TutorialListener implements Listener {
         if (manager.onCrate(event.getPlayer(), event.getClickedBlock())) event.setCancelled(true);
     }
 
-    /** Last real player to hit each tutorial mob/rogue — Citizens NPC deaths don't always credit a killer. */
-    private final java.util.Map<java.util.UUID, java.util.UUID> lastHit = new java.util.concurrent.ConcurrentHashMap<>();
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onHit(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
-        World tw = manager.world();
-        if (tw == null || !event.getEntity().getWorld().equals(tw)) return;
-        org.bukkit.entity.Entity d = event.getDamager();
-        if (d instanceof org.bukkit.entity.Projectile proj && proj.getShooter() instanceof org.bukkit.entity.Entity shooter) d = shooter;
-        if (d instanceof Player hitter && !Bots.isBot(hitter)) lastHit.put(event.getEntity().getUniqueId(), hitter.getUniqueId());
-    }
-
+    /**
+     * Tutorial mobs and training rogues count for the newcomer they were spawned for, whoever
+     * landed the killing blow — newcomers are hidden from each other but can still hit each
+     * other's mobs, and Citizens NPC deaths don't always credit a killer.
+     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onKill(EntityDeathEvent event) {
         LivingEntity dead = event.getEntity();
         World tw = manager.world();
         if (tw == null || !dead.getWorld().equals(tw)) return;
-        Player killer = dead.getKiller();
-        java.util.UUID hit = lastHit.remove(dead.getUniqueId());
-        if ((killer == null || Bots.isBot(killer)) && hit != null) killer = Bukkit.getPlayer(hit);
         boolean rogue = Bots.isBot(dead);
-        if (killer == null || Bots.isBot(killer)) {
-            // a tutorial mob killed by something else still counts for its owner
-            if (!rogue && !(dead instanceof Player)) {
-                java.util.UUID owner = manager.mobOwner(dead.getUniqueId());
-                Player p = owner == null ? null : Bukkit.getPlayer(owner);
-                if (p != null) manager.onKill(p, dead, false);
-            }
-            return;
-        }
         if (dead instanceof Player && !rogue) return;
         if (!rogue) event.getDrops().clear(); // tutorial mobs drop nothing real
-        manager.onKill(killer, dead, rogue);
+        java.util.UUID owner = rogue ? TutorialManager.traineeOf(dead) : manager.mobOwner(dead.getUniqueId());
+        Player p = owner == null ? null : Bukkit.getPlayer(owner);
+        if (p != null) manager.onKill(p, dead, rogue);
     }
 
     // ---- tutorial item guards ----

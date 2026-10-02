@@ -411,7 +411,7 @@ final class TutorialManager {
         }
         if (!rogue && r.step == Step.MOBS) {
             Set<UUID> mine = mobs.get(p.getUniqueId());
-            if (mine != null) mine.remove(dead.getUniqueId());
+            if (mine == null || !mine.remove(dead.getUniqueId())) return; // not one of this player's mobs
             r.progress++;
             store.markDirty();
             if (r.progress >= cfg().getInt("mobs.count", 3)) sayThenAdvance(p, "mobs-done");
@@ -593,7 +593,7 @@ final class TutorialManager {
     private void tickRogue(Player p, long since) {
         boolean alive = false;
         for (Entity e : p.getWorld().getNearbyEntities(p.getLocation(), 160, 64, 160)) {
-            if (com.theglitch.common.Bots.isBot(e) && !e.isDead() && e.getName().startsWith("Rogue ")) {
+            if (com.theglitch.common.Bots.isBot(e) && !e.isDead() && p.getUniqueId().equals(traineeOf(e))) {
                 alive = true;
                 break;
             }
@@ -789,6 +789,18 @@ final class TutorialManager {
     boolean hasMob(UUID player, UUID mob) {
         Set<UUID> mine = mobs.get(player);
         return mine != null && mine.contains(mob);
+    }
+
+    /** The player a GlitchBots training rogue belongs to (its {@code glitch_trainee_<uuid>} tag), or null. */
+    static UUID traineeOf(Entity e) {
+        for (String tag : e.getScoreboardTags()) {
+            if (!tag.startsWith("glitch_trainee_")) continue;
+            try {
+                return UUID.fromString(tag.substring("glitch_trainee_".length()));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return null;
     }
 
     UUID mobOwner(UUID mob) {

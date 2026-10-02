@@ -31,6 +31,9 @@ final class RogueBot {
 
     enum State { ROAM, LOOT, FLEE, EXTRACT }
 
+    /** Scoreboard tag prefix on a training rogue's body: {@code glitch_trainee_<player uuid>}. */
+    static final String TRAINEE_TAG = "glitch_trainee_";
+
     private static final String[] MELEE = {"BLADE", "GREATBLADE"};
     private static final String[] ARMOR = {"HELMET", "CHESTPLATE", "LEGGINGS", "BOOTS"};
 
@@ -149,7 +152,10 @@ final class RogueBot {
         s.needsAmmo = false;
 
         if (!npc.spawn(at)) return false;
-        if (npc.getEntity() != null) entityId = npc.getEntity().getUniqueId();
+        if (npc.getEntity() != null) {
+            entityId = npc.getEntity().getUniqueId();
+            if (tutorialTarget != null) npc.getEntity().addScoreboardTag(TRAINEE_TAG + tutorialTarget);
+        }
         lastPos = at.clone();
         return true;
     }
@@ -174,6 +180,9 @@ final class RogueBot {
             // Training rogue: no roaming/looting/extracting — just taunt and fight its one trainee.
             org.bukkit.entity.Player trainee = org.bukkit.Bukkit.getPlayer(tutorialTarget);
             if (trainee == null || !trainee.getWorld().equals(body.getWorld())) return false;
+            // GlitchTutorial finds "its" rogue by this tag (several newcomers can train at once);
+            // re-applied every second because Citizens may respawn the body
+            body.addScoreboardTag(TRAINEE_TAG + tutorialTarget);
             spotCheck(body, s);
             if (s.chasing == null && trainee.getLocation().distanceSquared(body.getLocation()) > 9) {
                 npc.getNavigator().setTarget(trainee, true);

@@ -245,6 +245,12 @@ public final class RaidListener implements Listener {
         return manager.restoreSoloRaid(player, endMillis);
     }
 
+    /** /leave is a deliberate MIA death — a Totem of Undying must not leave the player stuck in the raid. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onAbandonResurrect(org.bukkit.event.entity.EntityResurrectEvent event) {
+        if (event.getEntity() instanceof Player p && manager.isAbandoning(p.getUniqueId())) event.setCancelled(true);
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
