@@ -224,6 +224,7 @@ Easiest test: offline mode is on, so join with a never-used name (e.g. `Tutorial
 - [ ] Training rogue appears, trash-talks (Gemini line), fights only you; kill it → tagged loot drops
 - [ ] Extraction beam: stand in it 5 s ("Extracting… 3/5"), stepping out resets → "EXTRACTED" → teleported to the hub
 - [ ] Hub tour: action-bar arrow + distance + particle trail → Stash Keeper, Red Zone Gate, Hideout, Bazaar, Insurance, one Echo line each
+- [ ] In Goblin Hollow during the tutorial: "Echo's blessing" message, you deal 3× and take 0.35× damage (config `combat.*`) — the boss should be beatable solo with the lent kit
 - [ ] Iron Dungeon Key given → `/dungeons` → Goblin Hollow → clear it → back at the hub: "You're ready", +500 Shards, all tutorial items gone, anything you had before is back
 - [ ] Leaving/dying in the dungeon without clearing → a new key + "try again" line
 - [ ] Tutorial items can't be dropped, put in the stash/chests/Bazaar sell/insurance, or used as Hideout crafting material

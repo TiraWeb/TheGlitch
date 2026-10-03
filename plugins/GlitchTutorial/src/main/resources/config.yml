@@ -91,6 +91,17 @@ blessing:
   - RESISTANCE:1
   - REGENERATION:0
 
+# Combat buff while the tutorial is active (multiplies the final damage, after gear):
+# lent gear alone can't carry a newcomer through Goblin Hollow (boss: 900 HP, 8-32 per hit).
+combat:
+  tutorial-world:
+    damage-dealt: 1.5
+    damage-taken: 0.6
+  dungeon:
+    damage-dealt: 3.0
+    damage-taken: 0.35
+    message: "Echo's blessing follows you in here: you hit <green>3× harder</green> and take <green>far less damage</green> — for this first run only."
+
 # What each tutorial crate gives (tagged too) — "nexo id:amount" or "minecraft:material:amount"
 crate-loot:
   crate1: [scrap_plating:2, frayed_wiring:1]

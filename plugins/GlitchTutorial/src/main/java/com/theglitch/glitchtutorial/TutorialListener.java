@@ -134,6 +134,53 @@ final class TutorialListener implements Listener {
         if (p != null) manager.onKill(p, dead, rogue);
     }
 
+    // ---- tutorial combat buff ----
+
+    /**
+     * Lent gear alone can't carry a newcomer through a boss built for geared parties (Goblin
+     * Hollow's boss: 900 HP, 8-32 per hit), so active tutorial players hit harder and take less:
+     * {@code combat.tutorial-world} inside their tutorial world, {@code combat.dungeon} during
+     * the dungeon step (anywhere but the hub — the Red Zone is closed to them).
+     * Runs after GlitchItems' gear modifiers (NORMAL) so it scales the final number.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onCombat(org.bukkit.event.entity.EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player victim && !Bots.isBot(victim)) {
+            String zone = buffZone(victim);
+            if (zone != null) event.setDamage(event.getDamage() * plugin.getConfig().getDouble("combat." + zone + ".damage-taken", 1.0));
+        }
+        if (event instanceof org.bukkit.event.entity.EntityDamageByEntityEvent byEntity) {
+            org.bukkit.entity.Entity d = byEntity.getDamager();
+            if (d instanceof org.bukkit.entity.Projectile proj && proj.getShooter() instanceof org.bukkit.entity.Entity shooter) d = shooter;
+            if (d instanceof Player attacker && !Bots.isBot(attacker) && !(event.getEntity() instanceof Player victim && !Bots.isBot(victim))) {
+                String zone = buffZone(attacker);
+                if (zone != null) event.setDamage(event.getDamage() * plugin.getConfig().getDouble("combat." + zone + ".damage-dealt", 1.0));
+            }
+        }
+    }
+
+    /** "tutorial-world", "dungeon" or null (no buff). */
+    private String buffZone(Player p) {
+        TutorialStore.Record r = manager.record(p);
+        if (r == null || r.status != TutorialStore.Status.ACTIVE) return null;
+        String w = p.getWorld().getName();
+        if (manager.inTutorialWorld(p)) return "tutorial-world";
+        if (r.step == Step.DUNGEON && !w.equals("hub") && !w.startsWith("glitch_red")) return "dungeon";
+        return null;
+    }
+
+    /** Tell them about the dungeon buff when they arrive. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEnterDungeon(PlayerChangedWorldEvent event) {
+        Player p = event.getPlayer();
+        if (Bots.isBot(p) || !"dungeon".equals(buffZone(p))) return;
+        String msg = plugin.getConfig().getString("combat.dungeon.message", "");
+        if (msg.isBlank()) return;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (p.isOnline()) manager.sayLines(p, java.util.List.of(msg), null, 0);
+        }, 40L);
+    }
+
     // ---- tutorial item guards ----
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
