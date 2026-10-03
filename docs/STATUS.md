@@ -163,7 +163,7 @@ Pre-generation alone did **not** fix Eleria's point count (still ~1/3), ruling o
 3. Remaining older playtests: variant-key arming bonus, Bedrock join, class abilities/ultimates, Hideout, insurance, events.
 4. Economy balance pass with real alpha data (GAME_DESIGN §8 targets; rogue bounty + gear drop rates).
 5. Operations: scheduled daily restart, off-site backup copy, load test, launch checklist.
-6. Advanced features (ROADMAP "Advanced features": Nemesis Rogues, disguised invasions) — plan first.
+6. Advanced features (ROADMAP "Advanced features": Nemesis Rogues, disguised invasions, talking rogues) — plan first.
 
 ## Documentation Rules
 

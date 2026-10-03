@@ -200,6 +200,9 @@ Hard-to-build, technically unusual systems meant to be the server's signature ho
   - _Needs:_ packet-level disguise (profile, tab removal, nametag team), Sentinel rogues ignoring invaders, rogue movement close enough to human that tells aren't obvious, invasion queue + rewards/penalties, anti-abuse (no invading your own party).
   - _Honesty rule:_ the server rules state that some rogues may be humans in disguise; bots themselves still never claim to be human.
   - _Why:_ paranoia gameplay — every rogue is a puzzle, very clip- and stream-friendly.
+- [ ] **A3 Talking rogues (proximity voice)** — rogues speak their lines out loud. Gemini writes the line, a text-to-speech service voices it, and the audio plays from the rogue's position through Simple Voice Chat, so players hear a bot taunting them through a wall before they see it (distortion near anomalies; radios found in raids pick up rogue "comms").
+  - _Needs:_ the Simple Voice Chat mod/plugin (players install the client mod; without it they still get the chat line), a TTS provider + its quota/cost, streaming positional audio through the voice chat API, a cache for repeated lines, distinct voices per dialect (British/American) and per rogue, the same content filters as chat.
+  - _Why:_ no Minecraft server has AI enemies that talk out loud — a guaranteed clip. Builds directly on A1 (a nemesis that taunts you by voice).
 
 ---
 
