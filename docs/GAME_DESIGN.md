@@ -1,5 +1,7 @@
 # The Glitch — Game Design Document
 
+> **Note (2026-10-03):** design intent, not live status (see docs/STATUS.md). Where this mentions `glitch_pve` or tiered wave dungeons, the live implementation is 11 MythicDungeons boss dungeons (docs/DUNGEONS.md); `glitch_pve` was removed 2026-09-25.
+
 > Extraction loop, class system, mob design, loot tiers, hideout progression, dungeon scaling.
 > All systems designed for Minecraft (MythicMobs + VelKoth + custom plugins).
 > Arcane Ruins aesthetic: corrupted magical anomaly — no guns, no techy/circuit items.

@@ -1,6 +1,6 @@
 # Low-Level Bug Tracker - Custom Plugins
 
-Updated: 2026-09-14 — custom ModelEngine rigs (warden walk + feet, winged wisp)
+Updated: 2026-10-03 — newer audits are recorded in docs/STATUS.md: the full bug audit of 2026-10-01 (~70 fixes, checklist in docs/TESTING.md "Audit fixes") and the 2026-10-02 pre-alpha sweep (tutorial kill ownership, `/leave` vs totems, async bot check). Sections below for removed plugins (GlitchDungeons, GlitchHUD) and Oraxen-era code are historical.
 
 This tracker lists known implementation issues. It is not a substitute for
 runtime testing. Source-only plugins must be built and tested on the target

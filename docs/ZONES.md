@@ -1,5 +1,7 @@
 # The Glitch — Zone Architecture Blueprint (Phase 4.1)
 
+> **Update 2026-10-03:** `glitch_pve` was removed on 2026-09-25 — dungeons are MythicDungeons instance worlds (`<dungeon>_<n>`, docs/DUNGEONS.md) and the new-player tutorial runs in per-player copies of the `tutorial` template (`tutorial_<n>`). Everything below about `glitch_pve`, its slot grid and its staging area is historical. The live worlds are `hub`, `glitch_red`, `glitch_red_eleria`, `glitch_red_horizons` and `tutorial` (template).
+
 Three worlds on one server. Multi-world beats raw coordinate-offsetting inside a
 single world because gamerules (`keep_inventory`!), world borders, time/weather,
 and Paper per-world configs are all **per-world** — we get zone-specific rules

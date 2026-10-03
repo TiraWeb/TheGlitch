@@ -1,5 +1,7 @@
 # The Glitch — Custom Mob Models (ModelEngine)
 
+> **Update 2026-10-03:** ModelEngine **Premium R4.1.1** has been installed since 2026-09-26, so the free-tier 12-model cap below no longer applies (128 blueprints are loaded, including the 117 dungeon-boss models — docs/DUNGEONS.md). The roster and pipeline notes below are still accurate for the Red Zone mobs.
+
 > Authority on the custom-rig pipeline: source packages → blueprint
 > conversion → live deploy. Updated 2026-09-21.
 >

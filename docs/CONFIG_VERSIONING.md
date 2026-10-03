@@ -1,6 +1,6 @@
 # Config Versioning
 
-How `config.yml` upgrades work for The Glitch custom plugins: GlitchItems, GlitchShops, GlitchStash, GlitchClasses, GlitchHideout, GlitchDeathRules, GlitchRaid, GlitchInsurance, and GlitchEvents. (GlitchCommon has no config. GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed 2026-09-22 — see docs/STATUS.md.) GlitchItems is now config-version 3 (2026-09-02 armor-upgrade + piece-identity + vault buff + scatter rift_vault=6); others remain 1.
+How `config.yml` upgrades work for The Glitch custom plugins: GlitchItems, GlitchShops, GlitchStash, GlitchClasses, GlitchHideout, GlitchDeathRules, GlitchRaid, GlitchInsurance, GlitchEvents, GlitchQuests, GlitchBots and GlitchTutorial (GlitchWorldGen has no config). (GlitchCommon has no config. GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed 2026-09-22 — see docs/STATUS.md.) GlitchItems is now config-version 3 (2026-09-02 armor-upgrade + piece-identity + vault buff + scatter rift_vault=6); others remain 1.
 
 ## Rule: live configs are seeded only if missing
 
@@ -16,6 +16,8 @@ fi
 Same guard exists for `messages.yml` and `shops.yml`. This is intentional — we **never overwrite** live edits (timer tweaks, zone bounds, payout numbers) on a redeploy.
 
 Consequence: changing the default `src/main/resources/config.yml` in the repo **does not** propagate to `/opt/theglitch/server/plugins/<Plugin>/config.yml` on the next `build.sh`.
+
+**Since 2026-10-01 — `GlitchCommon.ConfigDefaults.merge(plugin)`:** every plugin calls it on enable. It adds keys that exist in the bundled `config.yml` but are missing from the live file, and saves (never over a live file that failed to parse). It **never overwrites** an existing value — including whole lists and sections — so a changed default for an existing key (e.g. a list entry, a renamed option) must still be applied on the host by hand, then `chown -R minecraft:minecraft /opt/theglitch/server/plugins`.
 
 ## `config-version: 3 (GlitchItems, 2026-09-02) — other plugins still 1`
 

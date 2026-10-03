@@ -8,11 +8,11 @@
 
 - [ ] `git pull && sudo ./bootstrap.sh` (seeds new MythicMobs SpawnAreas + Spawners subdirs)
 - [ ] Build all changed plugins:
-  - `sudo ./scripts/build-all.sh`  *(preferred: 10-module reactor, topological order — covers all 9 deployable plugins incl. GlitchRaid/GlitchInsurance/GlitchEvents; also syncs Nexo `itemname:` config v3)*
-  - or per-plugin in topological order: `GlitchItems → GlitchShops → GlitchStash → GlitchClasses → GlitchHideout → GlitchDeathRules` (GlitchRaid/GlitchInsurance/GlitchEvents are reactor-only)
+  - `sudo ./scripts/build-all.sh [Plugin...]`  *(preferred: 14-module reactor, topological order — all 13 deployable plugins incl. GlitchBots/GlitchTutorial, or just the ones named)*
+  - (the old per-plugin `build.sh` scripts only cover the original six plugins; use the reactor)
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./scripts/setup-mythicmobs.sh` (`mm reload` + verify mobs list)
-- [ ] Confirm no plugin errors in the log for GlitchDeathRules / GlitchItems / GlitchStash / GlitchClasses / GlitchRaid / GlitchInsurance / GlitchEvents (GlitchDungeons/GlitchHUD/GlitchHealthBar/GlitchLoot removed 2026-09-22 — see docs/STATUS.md; check MythicHUD/MythicDungeons instead once configured)
+- [ ] Confirm no plugin errors in the log for any Glitch* plugin (`grep -E "ERROR|Exception" logs/latest.log`) — GlitchTutorial logs "Tutorial ready (... template found)", GlitchBots "Rogue Raiders ready"
 - [ ] Model deploys (docs/MODELS.md): blueprint + mob yml copied live → `meg reload models` (`Importing <mid>.bbmodel` → `N models loaded`) → `mm reload` → pack merged to `10_modelengine.zip` → `nexo reload` → **relog** (pack changes need re-download)
 
 ## Custom mob models (ModelEngine, 2026-09-14)
@@ -21,7 +21,7 @@
 - [ ] Warden: `/spawnmythicmob GlitchWarden` → furnace golem faces you (geometric nose forward), feet on grass in idle AND mid-stride (no sinking, no floating)
 - [ ] Warden walks toward you playing the user's 2.4s walk cycle (legs/arms swing, body bob) — not gliding in idle pose
 - [ ] Wisp: `/spawnmythicmob GlitchWisp` → winged rig sweeps up behind it (no twisted/clipped wing slabs), glides while the vex base flies, hovers ~1 unit (no ground clip when it dips)
-- [ ] Both show name + HP bar above the model (MythicMobs native `HealthBar` field, replaced GlitchHealthBar 2026-09-22 — offsets are unverified guesses, adjust `Offset:` in the mob yml if the bar floats wrong)
+- [ ] Both show name + HP bar above the model (`littleroom healthbar` MythicMobs pack, replaced GlitchHealthBar and then the native `HealthBar` field on 2026-09-22)
 - [ ] Note hitbox feel: warden hits like a golem, wisp like a vex — visuals are bigger than hitboxes by design; wisp scale (~4 blocks) gets an explicit keep/shrink call
 - [ ] Bedrock client check: base entity visible, rig not rendered (known MEG/Geyser limit — Java-only eye candy)
 
@@ -87,7 +87,7 @@
 ## Class abilities + ultimates (GlitchClasses)
 
 - [ ] Class select grants NO ability items (only the starter kit)
-- [ ] Entering glitch_red/glitch_pve shows the keybind hint action bar (F <prime> Sneak+F <tactical> Sneak+Q <ultimate> — hold any item)
+- [ ] Entering a red world (or a dungeon / your tutorial world) shows the keybind hint action bar (F <prime> Sneak+F <tactical> Sneak+Q <ultimate> — hold any item)
 - [ ] Pressing F activates the prime ability (cooldown message if on cooldown)
 - [ ] Sneak + F activates the tactical ability
 - [ ] Sneak + Q (holding any item in hand) activates the ultimate — "Ultimate locked" below level 10, works at level 10; right-click with an item in hand still eats/places normally
@@ -218,7 +218,7 @@
 Easiest test: offline mode is on, so join with a never-used name (e.g. `TutorialTest1`) — or `/tutorial` on any account (replay, no reward if already paid).
 - [ ] Brand-new name → after ~2 s you're in the tutorial world: title "Welcome to The Glitch", Echo (aqua NPC) nearby, top-left HUD card "Tutorial · 1/8"
 - [ ] Intro lines `[1/4] Echo: …`, then a clickable **[▶ Continue]** (or it moves on by itself after ~35 s)
-- [ ] Class GUI opens → pick one → starter kit as usual + tutorial loadout (rare blade, uncommon armor worn, potions) with the "Tutorial item" lore line
+- [ ] Class GUI opens → pick one → starter kit as usual + tutorial loadout (legendary blade, epic armor worn, healing potions, ward salves, golden apples) + tutorial blessing (Strength II, Resistance II, Regeneration) with the "Tutorial item" lore line
 - [ ] 3 barrels marked with particles → each gives its loot once; HUD counts 1/3, 2/3, 3/3
 - [ ] 3 Corrupted Crawlers spawn → kill them (HUD 3/3); they drop nothing
 - [ ] Training rogue appears, trash-talks (Gemini line), fights only you; kill it → tagged loot drops

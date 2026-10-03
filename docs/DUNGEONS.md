@@ -14,7 +14,9 @@ The maps (BreadBuilds "Mega Dungeon Bundle") and the boss packs are **licensed p
   - It is left out of the build. The Pirate dungeon uses `Dungeon_GlitchReaver` (Glitch Reaver template, 1500 HP) as a stand-in.
   - To restore it, re-enable `archer` in `scripts/dungeon_bosses.py` once the FULL pack is in `Dungeon_bosses/`.
 - **Mage** has one skill line using `PlayersInRingNearOrigin`, a custom targeter this server doesn't have. That one attack variant won't target.
-- **Parties:** MythicDungeons' own party system (`/party`). The Parties plugin and its HUD are gone.
+- **Parties (since 2026-10-01):** the shared GlitchRaid `/party` — MythicDungeons' own `/party`, `/dparty` and `/recruit` are rerouted to it, and `DungeonPartyBridge` attaches it to MythicDungeons (PartyPlugin stays `Default`). `/dungeons` is leader-only and needs the whole party in the hub, out of raids.
+- **Leaving:** `/leave` (or `/abandon`) inside an instance asks for a confirm, then runs MythicDungeons' leave (no clear rewards, key not refunded). Map `Rules.AllowedCommands` include `raid`/`abandon` (`scripts/dungeon_md.py`).
+- **Tutorial:** Goblin Hollow (`small`) is the tutorial's first dungeon; tutorial players get a combat buff there (GlitchTutorial `combat.dungeon`).
 
 ## Dungeons
 

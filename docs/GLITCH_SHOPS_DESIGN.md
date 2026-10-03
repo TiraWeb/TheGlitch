@@ -1,5 +1,7 @@
 # GlitchShops Plugin Architecture (Phase 5.12)
 
+> **Note (2026-10-03):** custom items now come from **Nexo** (migrated from Oraxen 2026-09-20; `GlitchCommon.NexoUtil`); read Oraxen references below as Nexo. Since this was written the Bazaar also gained Mystic weapons, armour sets, dungeon keys and pagination (docs/STATUS.md).
+
 > **Status:** Implemented in source under `plugins/GlitchShops/`, deployed and
 > live-tested (`/shop` buy/sell, gear vendor restock). Grand Bazaar NPC
 > placement and name binding (`bazaar-npc-names`) remain live-only, and prices

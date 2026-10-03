@@ -12,7 +12,13 @@ Centralizes duplicated code so updates are easy — fix once, all plugins benefi
 | `MiniMessageUtil` | `MM = MiniMessage.miniMessage()` + `deserialize(raw)` with fallback | 8+ duplicated `MM` fields |
 | `InventoryUtil` | `mergeStack(List<ItemStack>, ItemStack)` — manual stacking without `Bukkit.createInventory` | `StashManager.mergeStack` |
 | `ColorUtil` | `colorize(String)` — `&` → `§` via compiled `Pattern` | GlitchDungeons `colorize` copy-pasta |
-| `Worlds` | `GAME_WORLDS`, `GLITCH_RED`, `GLITCH_PVE`, `isGameWorld()` | Hard-coded `Set.of("glitch_pve","glitch_red")` |
+| `Worlds` | `GAME_WORLDS` (the three red worlds), `GLITCH_RED`, `TUTORIAL`, `isGameWorld()`, `isTutorialWorld()` (template or `tutorial_<n>` instance) | Hard-coded world-name sets |
+| `Bots` | `isBot(entity)` (Citizens `NPC` metadata) + `realPlayers(world)` — Rogue Raider bots are Bukkit Players, every plugin must skip them | — |
+| `TutorialItems` | PDC tag `glitchtutorial:tutorial_item`: `tag`, `isTutorial`, `strip`, `stripAll` for lent tutorial items | — |
+| `ConfigDefaults` | `merge(plugin)`: adds missing default keys to the live config on enable, never overwrites | Manual live config patching |
+| `ChatConfirm` | Clickable chat [YES]/[NO] confirmations | Dialog UIs |
+| `MenuTitles` / `PanelFootprint` / `PanelReach` | Textured menu-title glyphs and floating hub-panel helpers | Per-plugin copies |
+| `FoliaScheduler` | Folia-safe scheduling/teleport wrapper | Direct `Bukkit.getScheduler()` calls |
 
 `Rarity` and `Resonance` are **not** moved yet — they remain in GlitchItems to avoid breaking existing APIs. A follow-up can relocate them here.
 

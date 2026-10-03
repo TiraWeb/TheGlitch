@@ -1,5 +1,7 @@
 # The Glitch — Dungeon Shell Blueprint (Phase 4.6)
 
+> **Obsolete (2026-10-03):** this blueprint targeted the `glitch_pve` world, removed 2026-09-25. Dungeons are 11 MythicDungeons boss maps now (docs/DUNGEONS.md). Kept for history only.
+
 > **Status:** Deferred physical-build blueprint. The slot grid and scripts are
 > documentation/provisioning aids; the shell, regions, spawners, and objectives
 > are not verified as a complete live dungeon.

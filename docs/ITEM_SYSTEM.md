@@ -1,5 +1,7 @@
 # The Glitch — Item System (Arcane Ruins)
 
+> **Note (2026-10-03):** items are served by **Nexo** (migrated from Oraxen 2026-09-20) — older Oraxen paths below map to `server/plugins/Nexo/`. `glitch_pve` mentions are historical (removed 2026-09-25; dungeons are MythicDungeons instances).
+
 > Design for the unique item/economy/loot loop. Replaces the "techy" naming and flat loot
 > tables in `GAME_DESIGN.md` (§2, §3, §4) with the **Arcane Ruins** identity — a magical rift
 > leaking chaos, NOT a computer virus.

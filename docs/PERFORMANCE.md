@@ -1,5 +1,7 @@
 # The Glitch — Performance Tuning & Baseline (Phase 2)
 
+> **Note (2026-10-03):** `glitch_pve` (referenced in the per-world table below) was removed 2026-09-25; its per-world settings no longer apply.
+
 > **Status:** The idle baseline is recorded. A live-play Red Zone baseline,
 > dungeon-wave profile, Bedrock profile, and multi-player load test are still
 > pending. Values in this document must match the current repository config,
@@ -8,10 +10,12 @@
 ## The budget
 
 At 20 TPS the server has **50ms per tick**. Everything in Phase 2 exists to
-keep the *median* tick well under that on 2 Ampere cores, and to make the
-*worst* tick (chunk load + mob wave + autosave colliding) survivable. RAM is
-not the constraint — the 8GB heap barely breathes at this player count; every
-tuning decision targets CPU.
+keep the *median* tick well under that, and to make the *worst* tick (chunk
+load + mob wave + autosave colliding) survivable. Written for the original 2
+Ampere cores / 8GB heap; since 2026-09-24 the host is a 4 vCPU Ryzen 9 9950X
+with a 10GB heap, so there is more headroom, but the same rule holds: RAM is
+not the constraint, every tuning decision targets CPU. Per-player tutorial
+worlds and dungeon instances are created on demand and unloaded after use.
 
 ## Recording the baseline (Phase 2.3)
 
