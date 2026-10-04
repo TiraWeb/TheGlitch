@@ -88,10 +88,16 @@ public final class GlitchBots extends JavaPlugin {
                     for (RogueBot b : here) {
                         Location l = b.location();
                         if (l == null && b.parkedAt != null) {
-                            states.append(" ").append(b.handle).append(":parked@").append(b.parkedAt.getBlockX()).append(",").append(b.parkedAt.getBlockZ());
+                            states.append(" ").append(b.handle).append("[").append(b.disposition.name().substring(0, 1).toLowerCase()).append("]:parked@").append(b.parkedAt.getBlockX()).append(",").append(b.parkedAt.getBlockZ());
                             continue;
                         }
-                        states.append(" ").append(b.handle).append(":").append(b.state.name().toLowerCase())
+                        // admin-only view: hidden disposition (f friendly, b betrayer, B betrayed, h hostile)
+                        String disp = switch (b.disposition) {
+                            case FRIENDLY -> "f";
+                            case BETRAYER -> b.betrayed ? "B" : "b";
+                            case HOSTILE -> "h";
+                        };
+                        states.append(" ").append(b.handle).append("[").append(disp).append("]:").append(b.state.name().toLowerCase())
                                 .append(l == null ? "" : "@" + l.getBlockX() + "," + l.getBlockY() + "," + l.getBlockZ());
                     }
                     sender.sendMessage(MM.deserialize("<gray>" + name + ": <white>" + real + "</white> real, <red>" + here.size()
