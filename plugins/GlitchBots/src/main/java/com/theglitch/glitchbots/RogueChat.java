@@ -68,6 +68,7 @@ final class RogueChat {
     private int replyRadius, replyCooldownSec, replyWords, historyLines;
     private String replyInstruction;
     private List<String> replyFallback;
+    private List<String> betrayLines;
     private java.util.regex.Pattern blocked;
     /** Style rejects (forced similes etc.) — same effect as blocked words: use a fallback. */
     private final List<java.util.regex.Pattern> rejects = new java.util.ArrayList<>();
@@ -111,6 +112,7 @@ final class RogueChat {
         historyLines = Math.max(2, c.getInt("chat.replies.memory-lines", 8));
         replyInstruction = c.getString("chat.replies.instruction", "");
         replyFallback = c.getStringList("chat.replies.fallback-lines");
+        betrayLines = c.getStringList("chat.betray-lines");
         // Lines matching any blocked word are thrown away for a fallback (identity insults,
         // slurs, sexual accusations etc. the prompt forbids but the model occasionally emits)
         List<String> words = c.getStringList("chat.blocked-words");
@@ -245,6 +247,7 @@ final class RogueChat {
         StringBuilder convo = new StringBuilder("Chat so far between you (").append(bot.handle)
                 .append(") and the raider ").append(player.getName()).append(":\n");
         for (String l : history.getOrDefault(key(bot, player), new ArrayDeque<>())) convo.append(l).append("\n");
+        convo.append(dispositionHint(bot).trim()).append("\n");
         convo.append("Reply to their last message now.");
 
         if (apiKey.isEmpty() || now < backoffUntil || !takeAiSlot(now)) {
@@ -258,6 +261,38 @@ final class RogueChat {
         }
         deliver(bot, player, ask(bot, convo.toString(), replyInstruction.replace("<reply_words>", String.valueOf(replyWords))),
                 () -> replyFallbackLine(player));
+    }
+
+    /**
+     * Friendly rogues and betrayers keeping up the act must sound the same, so players can never
+     * tell from chat whether a rogue will turn on them.
+     */
+    private static String dispositionHint(RogueBot bot) {
+        if (bot.peaceful()) {
+            return " Secret, never state it: you are not attacking this raider right now unless they hit you first."
+                    + " Keep it ambiguous - trash talk, suspicious fake-friendliness or empty threats; never clearly promise"
+                    + " peace and never clearly announce an attack. If asked whether you're friendly, dodge or tease.";
+        }
+        return " You're hostile and about to attack them.";
+    }
+
+    /** A betrayer drops the act — one line, right now (no cooldowns). */
+    void onBetray(RogueBot bot, Player target) {
+        if (!enabled) return;
+        botCooldown.put(bot.npc.getUniqueId(), System.currentTimeMillis());
+        String context = "You've been pretending to be friendly to the raider " + target.getName()
+                + " and are turning on them RIGHT NOW to kill them and take their loot. Shout ONE gloating betrayal line.";
+        long now = System.currentTimeMillis();
+        if (apiKey.isEmpty() || now < backoffUntil || !takeAiSlot(now)) {
+            say(bot, betrayLine(target));
+            return;
+        }
+        deliver(bot, target, ask(bot, context, null), () -> betrayLine(target));
+    }
+
+    private String betrayLine(Player p) {
+        if (betrayLines.isEmpty()) return "sorry mate. not sorry.";
+        return betrayLines.get(ThreadLocalRandom.current().nextInt(betrayLines.size())).replace("<player>", p.getName());
     }
 
     private String key(RogueBot bot, Player p) {
@@ -301,6 +336,7 @@ final class RogueChat {
         long t = target.getWorld().getTime();
         sb.append(t > 13000 && t < 23000 ? " It's night." : " It's daytime.");
         sb.append(" You've looted ").append(bot.cratesLooted()).append(" crates this raid.");
+        sb.append(dispositionHint(bot));
         sb.append(" Shout your line now.");
         return sb.toString();
     }

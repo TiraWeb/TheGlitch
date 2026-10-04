@@ -31,6 +31,14 @@ final class RogueBot {
 
     enum State { ROAM, LOOT, FLEE, EXTRACT }
 
+    /**
+     * Hidden personality — nothing about a rogue (name, chat, minimap, gear) gives it away.
+     * FRIENDLY: never attacks raiders unless hit, helps against mobs, may toss a gift.
+     * BETRAYER: acts exactly like a friendly one, then turns on the raider it's with.
+     * HOSTILE: attacks raiders on sight.
+     */
+    enum Disposition { HOSTILE, FRIENDLY, BETRAYER }
+
     /** Scoreboard tag prefix on a training rogue's body: {@code glitch_trainee_<player uuid>}. */
     static final String TRAINEE_TAG = "glitch_trainee_";
 
@@ -47,6 +55,13 @@ final class RogueBot {
     /** "british" or "american" — picks the chat style. */
     final String dialect;
     final List<ItemStack> bag = new ArrayList<>();
+    final Disposition disposition;
+    /** A betrayer that has dropped the act (attacks raiders from now on). */
+    boolean betrayed;
+    private final int betrayAfter;
+    private final java.util.Map<java.util.UUID, Integer> closeSeconds = new java.util.HashMap<>();
+    private final Set<java.util.UUID> gifted = new HashSet<>();
+    private final Set<java.util.UUID> provoked = new HashSet<>();
     private final Set<String> skippedCrates = new HashSet<>();
 
     State state = State.ROAM;
@@ -79,6 +94,13 @@ final class RogueBot {
         this.rarity = rarity;
         this.quirk = plugin.chat().randomQuirk();
         this.dialect = plugin.chat().randomDialect();
+        this.disposition = plugin.cfg().rollDisposition();
+        this.betrayAfter = ThreadLocalRandom.current().nextInt(plugin.cfg().betrayAfterMin, plugin.cfg().betrayAfterMax + 1);
+    }
+
+    /** Leaves raiders alone right now (friendly, or a betrayer still keeping up the act). Training rogues never. */
+    boolean peaceful() {
+        return tutorialTarget == null && (disposition == Disposition.FRIENDLY || (disposition == Disposition.BETRAYER && !betrayed));
     }
 
     int cratesLooted() {
@@ -126,9 +148,11 @@ final class RogueBot {
         org.bukkit.entity.Player trainee = tutorialTarget == null ? null : org.bukkit.Bukkit.getPlayer(tutorialTarget);
         if (trainee != null) {
             s.addTarget("player:" + trainee.getName());
-        } else {
+        } else if (disposition == Disposition.HOSTILE) {
             s.addTarget("players");
             s.addTarget("monsters");
+        } else {
+            s.addTarget("monsters"); // friendly (or pretending to be): fights mobs, fights back if hit
         }
         s.addIgnore("npcs");
         s.squad = "glitch_rogues";
@@ -228,6 +252,7 @@ final class RogueBot {
         }
         spotCheck(body, s);
         if (s.chasing != null) return true; // Sentinel is fighting — let it
+        if (socialTick(body)) return true;  // hanging around a raider (friendly or pretending)
 
         // Stuck detection while walking
         Location here = body.getLocation();
@@ -295,6 +320,116 @@ final class RogueBot {
         npc.getNavigator().setTarget(to);
         fleeUntil = System.currentTimeMillis() + millis;
         state = State.FLEE;
+    }
+
+    // ---- friendly / betrayer ----
+
+    /**
+     * A peaceful rogue near a raider tags along for a while: a friendly one tosses a gift after
+     * {@code gift-after-seconds}; a betrayer turns on them after its own random delay, as soon as
+     * they drop below {@code betray-when-health-below}, or (sometimes) when they turn their back.
+     */
+    private boolean socialTick(LivingEntity body) {
+        if (!peaceful() || state == State.EXTRACT || state == State.FLEE) return false;
+        BotConfig cfg = plugin.cfg();
+        Player p = null;
+        double best = 10 * 10;
+        for (Player c : com.theglitch.common.Bots.realPlayers(body.getWorld())) {
+            if (c.getGameMode() != org.bukkit.GameMode.SURVIVAL && c.getGameMode() != org.bukkit.GameMode.ADVENTURE) continue;
+            double d = c.getLocation().distanceSquared(body.getLocation());
+            if (d < best && body.hasLineOfSight(c)) {
+                best = d;
+                p = c;
+            }
+        }
+        if (p == null) return false;
+        int t = closeSeconds.merge(p.getUniqueId(), 1, Integer::sum);
+        if (t > cfg.tagAlongSeconds) return false; // lost interest — back to looting
+        if (state == State.LOOT) {
+            crateTarget = null;
+            state = State.ROAM;
+        }
+        if (disposition == Disposition.BETRAYER) {
+            boolean weak = p.getHealth() / maxHealth(p) < cfg.betrayHealth;
+            boolean backTurned = t >= 5 && backTurned(p, body) && ThreadLocalRandom.current().nextDouble() < cfg.backTurnedChance;
+            if (t >= betrayAfter || weak || backTurned) {
+                betray(p);
+                return true;
+            }
+        } else if (t >= cfg.giftAfterSeconds && !provoked.contains(p.getUniqueId()) && gifted.add(p.getUniqueId())) {
+            gift(p, body);
+        }
+        if (body.getLocation().distanceSquared(p.getLocation()) > 16) npc.getNavigator().setTarget(p, false);
+        else npc.getNavigator().cancelNavigation();
+        return true;
+    }
+
+    private static boolean backTurned(Player p, LivingEntity body) {
+        Vector look = p.getLocation().getDirection().setY(0);
+        Vector toRogue = body.getLocation().toVector().subtract(p.getLocation().toVector()).setY(0);
+        if (look.lengthSquared() < 1e-4 || toRogue.lengthSquared() < 1e-4) return false;
+        return look.normalize().dot(toRogue.normalize()) < -0.3;
+    }
+
+    /** The betrayer drops the act: hunts this raider now, and any raider after. */
+    void betray(Player p) {
+        if (disposition != Disposition.BETRAYER || betrayed) return;
+        betrayed = true;
+        SentinelTrait s = npc.getOrAddTrait(SentinelTrait.class);
+        s.addTarget("player:" + p.getName());
+        s.addTarget("players");
+        s.range = normalRange;
+        s.chasing = p;
+        plugin.chat().onBetray(this, p);
+    }
+
+    /** A raider hit this rogue: a friendly one fights that raider from now on; a betrayer drops the act. */
+    void onHurtBy(Player p) {
+        if (tutorialTarget != null || disposition == Disposition.HOSTILE) return;
+        if (disposition == Disposition.BETRAYER && !betrayed) {
+            betray(p);
+            return;
+        }
+        if (disposition == Disposition.FRIENDLY && provoked.add(p.getUniqueId())) {
+            npc.getOrAddTrait(SentinelTrait.class).addTarget("player:" + p.getName());
+        }
+    }
+
+    /** A friendly rogue tosses one thing from its bag (or a small gift) to the raider it's with. */
+    private void gift(Player p, LivingEntity body) {
+        ItemStack item = null;
+        for (java.util.Iterator<ItemStack> it = bag.iterator(); it.hasNext(); ) {
+            ItemStack b = it.next();
+            if (b != null && !b.getType().isAir()) {
+                item = b;
+                it.remove();
+                break;
+            }
+        }
+        List<String> gifts = plugin.cfg().giftItems;
+        if (item == null && !gifts.isEmpty()) item = giftItem(gifts.get(ThreadLocalRandom.current().nextInt(gifts.size())));
+        if (item == null) return;
+        Location from = body.getEyeLocation();
+        org.bukkit.entity.Item drop = body.getWorld().dropItem(from, item);
+        drop.setVelocity(p.getLocation().toVector().subtract(from.toVector()).normalize().multiply(0.35).setY(0.25));
+        p.sendActionBar(plugin.mm().deserialize("<gray>Rogue <red>" + handle + "</red> tossed you something.</gray>"));
+        body.getWorld().playSound(from, Sound.ENTITY_ITEM_PICKUP, 0.8f, 0.7f);
+    }
+
+    /** "nexo_id:amount" or "minecraft:material:amount". */
+    private static ItemStack giftItem(String spec) {
+        String[] s = spec.split(":");
+        try {
+            if (s[0].equalsIgnoreCase("minecraft") && s.length >= 2) {
+                Material m = Material.matchMaterial(s[1]);
+                return m == null ? null : new ItemStack(m, s.length > 2 ? Integer.parseInt(s[2]) : 1);
+            }
+            ItemStack it = com.theglitch.common.NexoUtil.build(s[0]);
+            if (it != null && s.length > 1) it.setAmount(Math.max(1, Math.min(it.getMaxStackSize(), Integer.parseInt(s[1]))));
+            return it;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /** The real raider this rogue is fighting right now, or null. */

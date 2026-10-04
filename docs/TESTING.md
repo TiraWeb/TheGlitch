@@ -251,6 +251,7 @@ Easiest test: offline mode is on, so join with a never-used name (e.g. `Tutorial
 - [ ] `/bots status` lists all 3 red worlds; enter a Red Zone alone → up to 9 rogues (10 − 1 real) appear in the list, mostly `parked@x,z` spread over the map; walking towards one (<100 blocks) gives it a body out of sight
 - [ ] Never more than 2 live rogues around you and never more than 2 fighting you at once (a third breaks off and runs); walking away >150 blocks parks them again
 - [ ] Rogue hits do 1.5–3 hearts before armor (3/3.5/4/5/6 by rarity), about one hit per second
+- [ ] Some rogues don't attack on sight: they follow you a few blocks away still trash-talking; a friendly one tosses an item after ~15 s ("tossed you something"); a betrayer gloats and attacks after a while / when you're low / when you turn your back; hitting a friendly one makes it fight back
 - [ ] Rogues never appear in the tab list, `/list` or the server-list player count; nametag reads `Rogue <name>` in red
 - [ ] Rogues show on the minimap as a purple chevron within ~48 blocks (not red mob dots, not player markers)
 - [ ] A rogue that spots you shouts one `[Rogue X]` line in chat (Gemini-written once `gemini.key` is set, else a fallback line); no spam (max once/min per rogue)

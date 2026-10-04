@@ -35,6 +35,29 @@ spread:
   # ...and at most this many fighting the same raider at once (the rest break off)
   max-chasers-per-player: 2
 
+# Hidden personality per rogue. Nothing gives it away: same names, trash talk, minimap icon
+# and gear — players have to gamble.
+#  friendly: never attacks raiders unless hit (then fights that raider), helps against mobs,
+#            tags along for a bit and tosses a gift after gift-after-seconds.
+#  betrayer: acts exactly like a friendly one, then turns on the raider it's with — after a
+#            random delay, as soon as they're low on health, or sometimes when they turn their back.
+#  hostile:  attacks raiders on sight (the rest).
+disposition:
+  friendly-share: 0.5          # share of all rogues
+  betrayer-share: 0.4          # share of the NON-friendly rogues (0.4 of the other half = 20% overall)
+  betray-after-seconds: [8, 25]
+  betray-when-health-below: 0.4
+  back-turned-chance: 0.25     # per second, once they've been together 5 s and you look away
+  tag-along-seconds: 45        # a peaceful rogue follows a raider this long, then wanders off
+  gift-after-seconds: 15
+  # Gift = something from its looted bag, else one of these ("nexo_id:amount" or "minecraft:material:amount")
+  gift-items:
+    - healing_potion:1
+    - scrap_plating:2
+    - frayed_wiring:2
+    - polymer_goo:2
+    - minecraft:golden_apple:1
+
 # /bots spawn <world> [n] (admin test without x/z) spawns live rogues this far from a raider
 spawn-ring:
   min: 40
@@ -279,6 +302,16 @@ chat:
     - muslim
     - islam
     - christian
+  # A betrayer dropping the act (when Gemini isn't available)
+  betray-lines:
+    - "sorry <player>. not sorry."
+    - "you really thought we were mates? that's adorable"
+    - "nothing personal, your boots just look better on me"
+    - "trust is a loot table and you rolled common"
+    - "should've kept walking, <player>"
+    - "bro I literally told you not to trust me. ok I didn't. still"
+    - "friendship over. hand over the loot"
+
   fallback-lines:
     - "right <player>, I'm going to need your boots, your sword and honestly your whole family tree"
     - "stand still, I've only got one arrow and it's emotionally important to me"

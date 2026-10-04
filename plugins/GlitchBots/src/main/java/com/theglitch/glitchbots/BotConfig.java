@@ -34,6 +34,10 @@ final class BotConfig {
     final double nearShare;
     final int nearMin, nearMax, materializeRadius, parkRadius, maxNearPlayer, maxChasers;
     private final Map<String, Double> damage = new LinkedHashMap<>();
+    // hidden personality: friendly / betrayer / hostile
+    final double friendlyShare, betrayerShare, betrayHealth, backTurnedChance;
+    final int betrayAfterMin, betrayAfterMax, giftAfterSeconds, tagAlongSeconds;
+    final List<String> giftItems;
 
     BotConfig(FileConfiguration c) {
         enabled = c.getBoolean("enabled", true);
@@ -88,6 +92,16 @@ final class BotConfig {
         parkRadius = Math.max(materializeRadius + 16, c.getInt("spread.park-radius", 150));
         maxNearPlayer = Math.max(1, c.getInt("spread.max-near-player", 2));
         maxChasers = Math.max(1, c.getInt("spread.max-chasers-per-player", 2));
+        friendlyShare = Math.max(0, Math.min(1, c.getDouble("disposition.friendly-share", 0.5)));
+        betrayerShare = Math.max(0, Math.min(1, c.getDouble("disposition.betrayer-share", 0.4)));
+        List<Integer> ba = c.getIntegerList("disposition.betray-after-seconds");
+        betrayAfterMin = Math.max(3, ba.size() > 0 ? ba.get(0) : 8);
+        betrayAfterMax = Math.max(betrayAfterMin, ba.size() > 1 ? ba.get(1) : 25);
+        betrayHealth = c.getDouble("disposition.betray-when-health-below", 0.4);
+        backTurnedChance = c.getDouble("disposition.back-turned-chance", 0.25);
+        giftAfterSeconds = Math.max(3, c.getInt("disposition.gift-after-seconds", 15));
+        tagAlongSeconds = Math.max(10, c.getInt("disposition.tag-along-seconds", 45));
+        giftItems = c.getStringList("disposition.gift-items");
         ConfigurationSection dmg = c.getConfigurationSection("combat.damage");
         if (dmg != null) {
             for (String k : dmg.getKeys(false)) damage.put(k.toUpperCase(Locale.ROOT), dmg.getDouble(k));
@@ -96,6 +110,13 @@ final class BotConfig {
 
     double accuracy(String rarity) {
         return accuracy.getOrDefault(rarity, 2.0);
+    }
+
+    /** Rolls a new rogue's hidden personality. */
+    RogueBot.Disposition rollDisposition() {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        if (r.nextDouble() < friendlyShare) return RogueBot.Disposition.FRIENDLY;
+        return r.nextDouble() < betrayerShare ? RogueBot.Disposition.BETRAYER : RogueBot.Disposition.HOSTILE;
     }
 
     /** Fixed damage per hit (half-hearts, before the victim's armor) by gear rarity. */

@@ -35,6 +35,18 @@ final class BotListener implements Listener {
         if (npc != null && plugin.director().bot(npc.getUniqueId()) != null) event.setCancelled(true);
     }
 
+    /** A raider hitting a peaceful rogue: friendly ones fight back from then on, betrayers drop the act. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onRogueHurt(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        if (!Bots.isBot(event.getEntity())) return;
+        org.bukkit.entity.Entity d = event.getDamager();
+        if (d instanceof org.bukkit.entity.Projectile proj && proj.getShooter() instanceof org.bukkit.entity.Entity shooter) d = shooter;
+        if (!(d instanceof Player hitter) || Bots.isBot(hitter)) return;
+        NPC npc = plugin.director().registry().getNPC(event.getEntity());
+        RogueBot bot = npc == null ? null : plugin.director().bot(npc.getUniqueId());
+        if (bot != null) bot.onHurtBy(hitter);
+    }
+
     /** Raiders can talk to rogues: chat near one (or say its name) and it answers in character. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onChat(io.papermc.paper.event.player.AsyncChatEvent event) {
