@@ -1,6 +1,6 @@
 # The Glitch
 
-A non-Pay-to-Win, EULA-compliant **rogue-lite extraction hybrid** Minecraft server with Java + Bedrock cross-play, running on **Purpur 26.2 (Java 25)** on a Skrime KVM VPS (x86_64, 4 vCPU / 16GB; migrated from Oracle Always Free 2026-09-24). Currently in **alpha** (offline mode, no whitelist).
+A non-Pay-to-Win, EULA-compliant **rogue-lite extraction hybrid** Minecraft server with Java + Bedrock cross-play, running on **Purpur 26.2 (Java 25)** on a Skrime KVM VPS (x86_64, 4 vCPU / 16GB; migrated from Oracle Always Free 2026-09-24). Currently in **alpha** (online mode, no whitelist).
 
 This repo is the source for the server scripts, configuration, and custom plugin code. It does not contain external world saves, generated live files such as VelKoth `arenas.yml`, or deployed third-party jars. See [docs/STATUS.md](docs/STATUS.md) for the distinction between repository work and live-server verification.
 
@@ -51,7 +51,7 @@ Live server data (worlds, edited configs) is never overwritten; `start.sh` and t
 
 ## Current live state (2026-10-03)
 
-- **Alpha / testing mode:** `online-mode=false` (offline UUIDs, so cracked friends can join) and the whitelist is **off** — both stay that way until the operator says otherwise. Anyone can join under any name in this mode, so pick online mode or an auth plugin before going public. The owner rank lives on the online UUID; offline accounts get `alpha`, never op.
+- **Alpha:** `online-mode=true` (back on 2026-10-04 after a 3-day offline-mode test), whitelist **off**. Owner rank and op are on the owner's online UUID; testers get `alpha`.
 - **Ranks:** default (member) has chest/loot-crate and QoL permissions; `alpha` (weight 50, `[Alpha]`) is the trusted-tester tier — more than member, nothing destructive (`scripts/setup-luckperms.sh`).
 - **Red worlds** (`glitch_red`, `glitch_red_eleria`, `glitch_red_horizons`) each have a square world border around the whole imported map, red-only HUD + minimap, and no heavy mobs near the entry spawn. During the 1-minute raid buffer nobody (except `glitchraid.admin`) can enter a red world — they get a "maintenance" message.
 - **Loot line:** salvage/refined parts, Recycler (`/recycle`), sell-only trinkets, 16 blueprints that unlock Workbench recipes, 6 gadgets, Secure Pouch (docs/ITEM_SYSTEM.md §14).

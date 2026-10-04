@@ -21,7 +21,7 @@ jars, generated VelKoth arenas, player data or API keys.
 ## Live server
 
 - Host `94.249.187.125` (Skrime KVM, 4 vCPU / 16GB), Purpur 26.2, Java 25, service `theglitch`, server at `/opt/theglitch/server`, repo checkout at `/home/ubuntu/TheGlitch`.
-- **Alpha:** `online-mode=false`, whitelist off. Owner rank sits on the online UUID; never op an offline UUID. Decide online mode vs an auth plugin before going public.
+- **Alpha:** online mode on (since 2026-10-04; offline 10-01 → 10-04), whitelist off. Owner rank + op on the online UUID.
 - Backups: `theglitch-backup.timer` → `scripts/backup-now.sh` → `/opt/theglitch/backups/`; `scripts/pull-backup.ps1` copies them off-server (the repo-root `backups/` folder is intentional — don't clean it up).
 
 ## Custom plugins (14-module Maven reactor)
@@ -70,4 +70,4 @@ Live `config.yml` files are seeded once; `ConfigDefaults.merge` adds new keys on
 
 ## Next up
 
-See docs/STATUS.md "Highest-Priority Remaining Work": auth decision, playtests of the tutorial/bots/`/leave`/party, economy pass with alpha data, operations (daily restart, load test), then the ROADMAP "Advanced features" (Nemesis Rogues, disguised invasions).
+See docs/STATUS.md "Highest-Priority Remaining Work": playtests of the tutorial/bots/`/leave`/party, economy pass with alpha data, operations (daily restart, load test), then the ROADMAP "Advanced features" (Nemesis Rogues, disguised invasions).

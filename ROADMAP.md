@@ -187,7 +187,7 @@ stays keep-inventory (training floor)._
 
 - [ ] **8.1 Backups & restarts** — Automated world backups, scheduled daily restart, log rotation. _Partial: `theglitch-backup.timer` on the host runs `scripts/backup-now.sh` (worlds + plugin data tarballs + sha256 in `/opt/theglitch/backups/`); `scripts/pull-backup.ps1` copies them off-server. Off-site object storage and a scheduled daily restart are still open._
 - [ ] **8.2 Protection & moderation** — Anti-cheat, anti-grief/rollback (CoreProtect), moderation commands and staff permissions. _Partial: GrimAC (log/alert only) and CoreProtect are installed; staff ranks exist (Helper → Moderator → Admin → Owner). Open: GrimAC enforcement decision, staff moderation tooling/playbook._
-- [ ] **8.3 Launch** — Pre-launch checklist, load test, soft launch, then open. _Alpha (2026-10): server runs **offline mode with no whitelist** for testers — before going public decide between online mode or an auth plugin (anyone can join under another player's name in offline mode). Load test still open._
+- [ ] **8.3 Launch** — Pre-launch checklist, load test, soft launch, then open. _Alpha (2026-10): online mode, no whitelist (an offline-mode test ran 2026-10-01 → 10-04). Load test still open._
 
 ## Advanced features (ambitious, not started)
 

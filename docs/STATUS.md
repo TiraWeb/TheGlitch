@@ -25,7 +25,7 @@ _Historical summary (written 2026-09-01; module counts and plugin names here are
 Newer than the long "Overall" paragraph and the older rows below; where they disagree, this snapshot wins.
 
 - **Build:** 13 deployable plugins (Stash, Classes, Items, Shops, DeathRules, Hideout, Raid, Insurance, Events, Quests, WorldGen, **Bots**, **Tutorial**) + `GlitchCommon` = 14 reactor modules (`scripts/build-all.sh [Plugin...]`). `GlitchItems`/`GlitchStash` also compile against the gitignored `NMinimap.jar` + `AnvilORM.jar` (`build-all.sh` seeds them from the live plugins dir). Code compiles against the Paper 1.21.4 API (Java 21 target) and runs on Purpur 26.2.
-- **Host:** Skrime KVM VPS (Ryzen 9 9950X, 4 vCPU / 16GB, 10GB heap), Purpur 26.2 / Java 25. **Alpha testing: `online-mode=false`, whitelist off** (since 2026-10-01) — anyone can join under any name, so before going public pick online mode or an auth plugin. Owner rank is on the online UUID only (never op an offline UUID). GrimAC log-only, ViaVersion/ViaBackwards present. Automated backups: `theglitch-backup.timer` → `scripts/backup-now.sh` (tarball + sha256 in `/opt/theglitch/backups/`).
+- **Host:** Skrime KVM VPS (Ryzen 9 9950X, 4 vCPU / 16GB, 10GB heap), Purpur 26.2 / Java 25. **Online mode back on (2026-10-04)**, whitelist off. (Offline mode ran 2026-10-01 → 10-04 for testing; progress made on offline UUIDs stays on those UUIDs and doesn't follow the player to their real account unless migrated.) Owner rank + op are on the online UUID. GrimAC log-only, ViaVersion/ViaBackwards present. Automated backups: `theglitch-backup.timer` → `scripts/backup-now.sh` (tarball + sha256 in `/opt/theglitch/backups/`).
 - **Worlds:** `hub` + `glitch_red`, `glitch_red_eleria`, `glitch_red_horizons` (each square-bordered around its whole map, void + barrier walls outside it via GlitchWorldGen; `glitch_pve` removed 2026-09-25), the `tutorial` template, and on-demand instance worlds: MythicDungeons `<dungeon>_<n>` and per-player tutorial copies `tutorial_<n>` (both deleted after use).
 - **HUD/minimap:** MythicHUD (red-world card + quests, `scripts/gen-hud.py`) and NMinimap (round, red worlds only, `render-new-chunks: false`) — Live. Shader `core/text` is merged between the two packs.
 - **Loot/gameplay:** Arc-style loot line + Recycler + blueprints + gadgets + Secure Pouch (Live); 11 boss dungeons (Live, licensed assets live-only); Mystic tiers (Live); `alpha` tester rank (Live); raid-buffer red-world lockout with "maintenance" message; 15 s post-extraction grace so extractors always reach the hub.
@@ -161,7 +161,7 @@ Pre-generation alone did **not** fix Eleria's point count (still ~1/3), ruling o
 
 ## Highest-Priority Remaining Work (2026-10-03)
 
-1. **Auth before going public:** offline mode lets anyone join under another player's name (stash/Shards/rank takeover). Choose online mode or an auth plugin (AuthMe/LibreLogin).
+1. ~~Auth before going public~~ — done: online mode back on 2026-10-04. Optional: migrate testers' offline-UUID progress (stash, classes, rank, Shards) to their online UUIDs.
 2. Playtest the newest systems per docs/TESTING.md: tutorial (private worlds, combat buff vs Goblin Hollow), Rogue Raiders (combat, looting, extraction, chat), `/leave` in raids and dungeons, shared `/party` with 2+ real players.
 3. Remaining older playtests: variant-key arming bonus, Bedrock join, class abilities/ultimates, Hideout, insurance, events.
 4. Economy balance pass with real alpha data (GAME_DESIGN §8 targets; rogue bounty + gear drop rates).
