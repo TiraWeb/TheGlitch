@@ -49,7 +49,8 @@ public final class CombatListener implements Listener {
         if (!(event.getEntity() instanceof LivingEntity victim)) return;
         double damage = event.getDamage();
 
-        if (event.getDamager() instanceof Player attacker) {
+        // Rogue Raider bots are Players too, but their damage is fixed by GlitchBots (combat.damage)
+        if (event.getDamager() instanceof Player attacker && !com.theglitch.common.Bots.isBot(attacker)) {
             damage = applyWeaponModifiers(attacker, victim, damage, event);
         }
 

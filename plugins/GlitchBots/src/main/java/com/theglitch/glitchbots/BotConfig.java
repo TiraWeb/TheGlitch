@@ -30,6 +30,10 @@ final class BotConfig {
     final double crateSearchRadius;
     final int extractWhenRemaining;
     final double gearDropChance;
+    // spread over the map (parked rogues materialise near raiders)
+    final double nearShare;
+    final int nearMin, nearMax, materializeRadius, parkRadius, maxNearPlayer, maxChasers;
+    private final Map<String, Double> damage = new LinkedHashMap<>();
 
     BotConfig(FileConfiguration c) {
         enabled = c.getBoolean("enabled", true);
@@ -77,10 +81,26 @@ final class BotConfig {
         crateSearchRadius = Math.max(8, c.getDouble("loot.crate-search-radius", 80));
         extractWhenRemaining = Math.max(0, c.getInt("loot.extract-when-remaining", 240));
         gearDropChance = c.getDouble("drops.gear-chance", 0.35);
+        nearShare = Math.max(0, Math.min(1, c.getDouble("spread.near-share", 0.3)));
+        nearMin = Math.max(32, c.getInt("spread.near-ring.min", 140));
+        nearMax = Math.max(nearMin + 8, c.getInt("spread.near-ring.max", 320));
+        materializeRadius = Math.max(32, c.getInt("spread.materialize-radius", 100));
+        parkRadius = Math.max(materializeRadius + 16, c.getInt("spread.park-radius", 150));
+        maxNearPlayer = Math.max(1, c.getInt("spread.max-near-player", 2));
+        maxChasers = Math.max(1, c.getInt("spread.max-chasers-per-player", 2));
+        ConfigurationSection dmg = c.getConfigurationSection("combat.damage");
+        if (dmg != null) {
+            for (String k : dmg.getKeys(false)) damage.put(k.toUpperCase(Locale.ROOT), dmg.getDouble(k));
+        }
     }
 
     double accuracy(String rarity) {
         return accuracy.getOrDefault(rarity, 2.0);
+    }
+
+    /** Fixed damage per hit (half-hearts, before the victim's armor) by gear rarity. */
+    double damage(String rarity) {
+        return damage.getOrDefault(rarity, 3.0);
     }
 
     String rollRarity() {

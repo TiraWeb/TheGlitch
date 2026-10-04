@@ -83,14 +83,19 @@ public final class GlitchBots extends JavaPlugin {
                     int real = BotDirector.raiders(w).size();
                     List<RogueBot> here = director.inWorld(name);
                     long leaving = here.stream().filter(b -> b.leaving || b.state == RogueBot.State.EXTRACT).count();
+                    long parked = here.stream().filter(b -> b.parkedAt != null).count();
                     StringBuilder states = new StringBuilder();
                     for (RogueBot b : here) {
                         Location l = b.location();
+                        if (l == null && b.parkedAt != null) {
+                            states.append(" ").append(b.handle).append(":parked@").append(b.parkedAt.getBlockX()).append(",").append(b.parkedAt.getBlockZ());
+                            continue;
+                        }
                         states.append(" ").append(b.handle).append(":").append(b.state.name().toLowerCase())
                                 .append(l == null ? "" : "@" + l.getBlockX() + "," + l.getBlockY() + "," + l.getBlockZ());
                     }
                     sender.sendMessage(MM.deserialize("<gray>" + name + ": <white>" + real + "</white> real, <red>" + here.size()
-                            + "</red> rogues (" + leaving + " leaving)" + (hooks.inBuffer(name) ? " <yellow>[buffer]</yellow>" : "") + "</gray>"));
+                            + "</red> rogues (" + parked + " parked, " + leaving + " leaving)" + (hooks.inBuffer(name) ? " <yellow>[buffer]</yellow>" : "") + "</gray>"));
                     if (!here.isEmpty()) sender.sendMessage(MM.deserialize("<dark_gray>" + states.toString().trim() + "</dark_gray>"));
                 }
             }

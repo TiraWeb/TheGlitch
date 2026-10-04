@@ -27,9 +27,15 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Keeps each red world at {@code target − real players} rogues while anyone real is
- * there: spawns out of sight near real players (entities only tick within the
- * simulation distance of a player), sends surplus rogues to extract, and clears a
- * world once it has been empty for the grace period or enters the scatter buffer.
+ * there. Rogues are spread over the whole imported map: new ones start <em>parked</em>
+ * (no body) at random spots on the map footprint (GlitchWorldGen {@code <world>.keep}),
+ * or some in a wide ring around raiders; a parked rogue gets its body when a raider comes
+ * within {@code spread.materialize-radius} and parks again once nobody is within
+ * {@code spread.park-radius}. At most {@code spread.max-near-player} rogues are live
+ * around one raider and at most {@code spread.max-chasers-per-player} fight the same
+ * raider (extras break off), so meeting one rogue doesn't pull in the whole lobby.
+ * Surplus rogues extract; a world is cleared once it has been empty for the grace period
+ * or enters the scatter buffer.
  */
 final class BotDirector {
 
@@ -40,6 +46,8 @@ final class BotDirector {
     /** Admin test spawns (/bots spawn ... x z) keep a world's rogues even with nobody there, until this time. */
     private final Map<String, Long> testHoldUntil = new HashMap<>();
     private final Set<String> namesInUse = new HashSet<>();
+    /** Imported-map chunks per world (GlitchWorldGen footprint), for spreading rogues over the real map. */
+    private final Map<String, List<long[]>> footprints = new HashMap<>();
     private BukkitTask directorTask;
     private BukkitTask brainTask;
 
@@ -107,20 +115,25 @@ final class BotDirector {
                 continue;
             }
             emptySince.remove(name);
+            // Parked rogues "extract" off-screen once the raid is nearly over
+            int left = plugin.hooks().raidSecondsLeft(name);
+            if (left >= 0 && left < cfg.extractWhenRemaining) {
+                for (RogueBot b : inWorld(name)) if (b.parkedAt != null) remove(b);
+            }
             int target = Math.max(0, cfg.targetPerWorld - real.size());
-            List<RogueBot> here = inWorld(name);
             List<RogueBot> active = new ArrayList<>();
-            for (RogueBot b : here) if (!b.leaving) active.add(b);
+            for (RogueBot b : inWorld(name)) if (!b.leaving) active.add(b);
 
             if (active.size() < target) {
-                int toSpawn = Math.min(cfg.maxSpawnPerTick, target - active.size());
-                for (int i = 0; i < toSpawn; i++) spawnNear(w, real);
+                // parked spawns cost nothing (no body yet), so top up quickly
+                int toSpawn = Math.min(5, target - active.size());
+                for (int i = 0; i < toSpawn; i++) spawnParked(w, real);
             } else if (active.size() > target) {
-                // Surplus: the rogue farthest from everyone leaves (quietly when nobody can see it)
+                // Surplus: a parked rogue simply goes; otherwise the one farthest from everyone leaves
                 RogueBot far = null;
                 double farD = -1;
                 for (RogueBot b : active) {
-                    double d = nearestRealDistance(b.location(), real);
+                    double d = b.parkedAt != null ? Double.MAX_VALUE : nearestRealDistance(b.location(), real);
                     if (d > farD) {
                         farD = d;
                         far = b;
@@ -131,10 +144,176 @@ final class BotDirector {
                     else far.leaving = true;
                 }
             }
+            materialize(w, real);
+            parkIdle(w, real);
         }
     }
 
+    // ---- spread: parked rogues ----
+
+    /** Gives parked rogues near a raider their body, up to the per-raider cap. */
+    private void materialize(World w, List<Player> real) {
+        BotConfig cfg = plugin.cfg();
+        for (RogueBot b : inWorld(w.getName())) {
+            if (b.parkedAt == null) continue;
+            Player near = nearestPlayer(b.parkedAt, real);
+            if (near == null) continue;
+            double d = flat(b.parkedAt, near.getLocation());
+            if (d > cfg.materializeRadius || liveNear(w, near.getLocation(), cfg.materializeRadius) >= cfg.maxNearPlayer) continue;
+            double x = b.parkedAt.getX(), z = b.parkedAt.getZ();
+            if (d < cfg.minPlayerDistance) {
+                // they walked right onto the spot: appear a little way off instead of in their face
+                double dx = x - near.getLocation().getX(), dz = z - near.getLocation().getZ();
+                double len = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
+                x = near.getLocation().getX() + dx / len * (cfg.minPlayerDistance + 8);
+                z = near.getLocation().getZ() + dz / len * (cfg.minPlayerDistance + 8);
+            }
+            int bx = (int) Math.floor(x), bz = (int) Math.floor(z);
+            if (!w.isChunkLoaded(bx >> 4, bz >> 4)) continue;
+            Location spot = groundNear(w, bx, bz, 12);
+            if (spot == null || plugin.hooks().isProtected(spot)) {
+                remove(b); // void/water/protected after all — the director places a new one
+                continue;
+            }
+            if (!b.spawn(spot)) remove(b);
+        }
+    }
+
+    /** Live rogues with no raider within the park radius (and not fighting) drop their body. */
+    private void parkIdle(World w, List<Player> real) {
+        BotConfig cfg = plugin.cfg();
+        for (RogueBot b : inWorld(w.getName())) {
+            if (b.parkedAt != null || b.tutorialTarget != null || b.fighting()) continue;
+            Location l = b.location();
+            if (l == null) continue;
+            if (nearestRealDistance(l, real) > cfg.parkRadius) b.park();
+        }
+    }
+
+    /** Creates a parked rogue somewhere on the map (or in a wide ring around a raider). */
+    boolean spawnParked(World w, List<Player> real) {
+        BotConfig cfg = plugin.cfg();
+        java.util.concurrent.ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        List<long[]> map = footprint(w.getName());
+        for (int attempt = 0; attempt < 24; attempt++) {
+            double x, z;
+            if (!real.isEmpty() && rnd.nextDouble() < cfg.nearShare) {
+                Location base = real.get(rnd.nextInt(real.size())).getLocation();
+                double ang = rnd.nextDouble(Math.PI * 2), dist = rnd.nextDouble(cfg.nearMin, cfg.nearMax);
+                x = base.getX() + Math.cos(ang) * dist;
+                z = base.getZ() + Math.sin(ang) * dist;
+            } else if (!map.isEmpty()) {
+                long[] c = map.get(rnd.nextInt(map.size()));
+                x = c[0] * 16 + rnd.nextDouble(16);
+                z = c[1] * 16 + rnd.nextDouble(16);
+            } else {
+                org.bukkit.WorldBorder wb = w.getWorldBorder();
+                double half = wb.getSize() / 2 - 8;
+                x = wb.getCenter().getX() + rnd.nextDouble(-half, half);
+                z = wb.getCenter().getZ() + rnd.nextDouble(-half, half);
+            }
+            int bx = (int) Math.floor(x), bz = (int) Math.floor(z);
+            Location at = new Location(w, bx + 0.5, w.getMinHeight(), bz + 0.5);
+            if (!w.getWorldBorder().isInside(at)) continue;
+            // never pops into view: parked spots start outside the materialise radius
+            if (nearestRealDistance(at, real) < cfg.materializeRadius + 24) continue;
+            if (w.isChunkLoaded(bx >> 4, bz >> 4)) {
+                Location g = groundSpot(w, bx, bz);
+                if (g == null || plugin.hooks().isProtected(g)) continue;
+                at = g;
+            }
+            String handle = pickName();
+            NPC npc = registry.createNPC(EntityType.PLAYER, cfg.nameFormat.replace("<name>", handle));
+            RogueBot bot = new RogueBot(plugin, npc, handle, w.getName(), cfg.rollRarity());
+            bot.parkedAt = at;
+            bots.put(npc.getUniqueId(), bot);
+            return true;
+        }
+        return false;
+    }
+
+    private List<long[]> footprint(String world) {
+        return footprints.computeIfAbsent(world, k -> {
+            List<long[]> out = new ArrayList<>();
+            org.bukkit.plugin.Plugin gen = Bukkit.getPluginManager().getPlugin("GlitchWorldGen");
+            if (gen == null) return out;
+            java.io.File f = new java.io.File(gen.getDataFolder(), k + ".keep");
+            if (!f.isFile()) return out;
+            try {
+                for (String line : java.nio.file.Files.readAllLines(f.toPath())) {
+                    String[] p = line.trim().split("\\s+");
+                    if (p.length == 2) out.add(new long[]{Long.parseLong(p[0]), Long.parseLong(p[1])});
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Couldn't read map footprint " + f + ": " + e);
+            }
+            return out;
+        });
+    }
+
+    /** Walkable ground at or near x/z (spiral up to {@code r} blocks), or null. */
+    private static Location groundNear(World w, int x0, int z0, int r) {
+        for (int ring = 0; ring <= r; ring += 2) {
+            for (int dx = -ring; dx <= ring; dx += 2) {
+                for (int dz = -ring; dz <= ring; dz += 2) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != ring) continue;
+                    Location g = groundSpot(w, x0 + dx, z0 + dz);
+                    if (g != null && w.getWorldBorder().isInside(g)) return g;
+                }
+            }
+        }
+        return null;
+    }
+
+    private int liveNear(World w, Location at, double radius) {
+        int n = 0;
+        for (RogueBot b : inWorld(w.getName())) {
+            Location l = b.location();
+            if (l != null && flat(l, at) <= radius) n++;
+        }
+        return n;
+    }
+
+    private static Player nearestPlayer(Location at, List<Player> real) {
+        Player best = null;
+        double bestD = Double.MAX_VALUE;
+        for (Player p : real) {
+            if (p.getWorld() != at.getWorld()) continue;
+            double d = flat(at, p.getLocation());
+            if (d < bestD) {
+                bestD = d;
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    private static double flat(Location a, Location b) {
+        double dx = a.getX() - b.getX(), dz = a.getZ() - b.getZ();
+        return Math.sqrt(dx * dx + dz * dz);
+    }
+
     private void think() {
+        // No pile-ons: only the closest few rogues may fight the same raider, the rest back off
+        Map<UUID, List<RogueBot>> chasers = new HashMap<>();
+        for (RogueBot b : bots.values()) {
+            if (b.tutorialTarget != null) continue;
+            Player t = b.chasingPlayer();
+            if (t != null) chasers.computeIfAbsent(t.getUniqueId(), k -> new ArrayList<>()).add(b);
+        }
+        int max = plugin.cfg().maxChasers;
+        for (Map.Entry<UUID, List<RogueBot>> e : chasers.entrySet()) {
+            if (e.getValue().size() <= max) continue;
+            Player t = Bukkit.getPlayer(e.getKey());
+            if (t == null) continue;
+            Location tl = t.getLocation();
+            List<RogueBot> list = e.getValue();
+            list.sort(java.util.Comparator.comparingDouble(b -> {
+                Location l = b.location();
+                return l == null || l.getWorld() != tl.getWorld() ? Double.MAX_VALUE : l.distanceSquared(tl);
+            }));
+            for (int i = max; i < list.size(); i++) list.get(i).breakOff(tl);
+        }
         for (RogueBot b : new ArrayList<>(bots.values())) {
             try {
                 if (!b.tick()) remove(b);
@@ -159,16 +338,20 @@ final class BotDirector {
         double best = Double.MAX_VALUE;
         for (Player p : real) {
             if (p.getWorld() != at.getWorld()) continue;
-            best = Math.min(best, p.getLocation().distance(at));
+            best = Math.min(best, flat(p.getLocation(), at));
         }
         return best;
     }
 
     private void pruneDead(String world) {
         for (RogueBot b : inWorld(world)) {
-            // Chunk unloaded (no player near) or killed — drop it; the director refills near players.
-            // Fresh spawns get a few seconds: Citizens can finish spawning a tick later.
-            if (!b.npc.isSpawned() && System.currentTimeMillis() - b.spawnedAt > 10_000L) remove(b);
+            // A body that vanished on its own (chunk unload) just becomes a parked rogue at its last
+            // spot; killed rogues are removed by BotListener. Fresh spawns get a few seconds first.
+            if (b.parkedAt != null || b.tutorialTarget != null || b.npc.isSpawned()) continue;
+            if (System.currentTimeMillis() - b.lastSpawnAt < 10_000L) continue;
+            Location stored = b.npc.getStoredLocation();
+            if (stored != null && stored.getWorld() != null) b.parkedAt = stored;
+            else remove(b);
         }
     }
 

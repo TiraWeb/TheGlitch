@@ -53,6 +53,11 @@ final class RogueBot {
     /** Set for the GlitchTutorial training rogue: fights only this player, weak, drops nothing real. */
     java.util.UUID tutorialTarget;
     final long spawnedAt = System.currentTimeMillis();
+    /** Last time the body was (re)spawned — Citizens may finish a spawn a tick later. */
+    long lastSpawnAt = System.currentTimeMillis();
+    /** Where a parked rogue (no body) waits for a raider to come near; null while it's live. */
+    Location parkedAt;
+    private boolean prepared;
     /** The spawned body's UUID (for Essentials userdata cleanup). */
     java.util.UUID entityId;
     /** Leaving because the world has more rogues than it needs (not because it's done looting). */
@@ -82,8 +87,8 @@ final class RogueBot {
 
     // ---- spawn / gear ----
 
-    /** Configures traits + gear and spawns at {@code at}. Returns false if the spawn failed. */
-    boolean spawn(Location at) {
+    /** Traits + gear, once per rogue (a parked rogue is prepared on its first spawn). */
+    private void prepare() {
         BotConfig cfg = plugin.cfg();
         npc.data().setPersistent(NPC.Metadata.SHOULD_SAVE, false);
         npc.data().setPersistent(NPC.Metadata.REMOVE_FROM_TABLIST, true);
@@ -142,6 +147,7 @@ final class RogueBot {
         s.attackRate = cfg.attackRateTicks;
         s.attackRateRanged = cfg.attackRateTicks + 6;
         s.accuracy = cfg.accuracy(rarity);
+        s.damage = cfg.damage(rarity); // fixed per hit — not the weapon's (gear) damage
         if (tutorialTarget != null) {
             s.damage = 2.0;          // a training dummy with opinions
             s.attackRate = 24;
@@ -150,8 +156,22 @@ final class RogueBot {
         }
         s.allowKnockback = true;
         s.needsAmmo = false;
+    }
 
+    /** Spawns (or re-spawns a parked rogue) at {@code at}. Returns false if the spawn failed. */
+    boolean spawn(Location at) {
+        if (!prepared) {
+            prepare();
+            prepared = true;
+        }
         if (!npc.spawn(at)) return false;
+        parkedAt = null;
+        lastSpawnAt = System.currentTimeMillis();
+        lastMovedAt = lastSpawnAt;
+        if (state == State.FLEE || state == State.LOOT) state = State.ROAM;
+        crateTarget = null;
+        exitTarget = null;
+        npc.getOrAddTrait(SentinelTrait.class).range = normalRange;
         if (npc.getEntity() != null) {
             entityId = npc.getEntity().getUniqueId();
             if (tutorialTarget != null) npc.getEntity().addScoreboardTag(TRAINEE_TAG + tutorialTarget);
@@ -175,7 +195,7 @@ final class RogueBot {
     boolean tick() {
         Entity e = entity();
         if (!(e instanceof LivingEntity body)) {
-            // a training rogue whose private tutorial world was unloaded is done for good
+            // parked rogues just wait; a training rogue whose private tutorial world was unloaded is done for good
             return tutorialTarget == null || System.currentTimeMillis() - spawnedAt < 10_000L;
         }
         SentinelTrait s = npc.getOrAddTrait(SentinelTrait.class);
@@ -198,16 +218,7 @@ final class RogueBot {
         // Flee: break off at low health, run straight away from the attacker for a few seconds
         double max = maxHealth(body);
         if (state != State.FLEE && s.chasing != null && body.getHealth() / max < cfg.fleeHealth) {
-            Location from = s.chasing.getLocation();
-            Vector away = body.getLocation().toVector().subtract(from.toVector()).setY(0);
-            if (away.lengthSquared() < 0.01) away = new Vector(1, 0, 0);
-            Location to = body.getLocation().add(away.normalize().multiply(18));
-            to.setY(body.getWorld().getHighestBlockYAt(to) + 1);
-            s.range = 2;
-            s.chasing = null;
-            npc.getNavigator().setTarget(to);
-            fleeUntil = now + cfg.fleeSeconds * 1000L;
-            state = State.FLEE;
+            retreat(body, s, s.chasing.getLocation(), cfg.fleeSeconds * 1000L);
             return true;
         }
         if (state == State.FLEE) {
@@ -271,6 +282,45 @@ final class RogueBot {
             }
         }
         return true;
+    }
+
+    /** Break off and run straight away from {@code from} for a while (low health, or too many on one raider). */
+    private void retreat(LivingEntity body, SentinelTrait s, Location from, long millis) {
+        Vector away = body.getLocation().toVector().subtract(from.toVector()).setY(0);
+        if (away.lengthSquared() < 0.01) away = new Vector(1, 0, 0);
+        Location to = body.getLocation().add(away.normalize().multiply(18));
+        to.setY(body.getWorld().getHighestBlockYAt(to) + 1);
+        s.range = 2;
+        s.chasing = null;
+        npc.getNavigator().setTarget(to);
+        fleeUntil = System.currentTimeMillis() + millis;
+        state = State.FLEE;
+    }
+
+    /** The real raider this rogue is fighting right now, or null. */
+    Player chasingPlayer() {
+        if (!npc.isSpawned()) return null;
+        SentinelTrait s = npc.getOrAddTrait(SentinelTrait.class);
+        return s.chasing instanceof Player p && !com.theglitch.common.Bots.isBot(p) ? p : null;
+    }
+
+    boolean fighting() {
+        return npc.isSpawned() && npc.getOrAddTrait(SentinelTrait.class).chasing != null;
+    }
+
+    /** Too many rogues on one raider: this one backs off for a while instead of piling on. */
+    void breakOff(Location from) {
+        if (!(entity() instanceof LivingEntity body) || state == State.FLEE) return;
+        retreat(body, npc.getOrAddTrait(SentinelTrait.class), from, 10_000L);
+    }
+
+    /** No raider anywhere near: drop the body and wait here (entities only tick near players anyway). */
+    void park() {
+        Location l = location();
+        if (l == null) return;
+        npc.getNavigator().cancelNavigation();
+        parkedAt = l;
+        npc.despawn(net.citizensnpcs.api.event.DespawnReason.PLUGIN);
     }
 
     /** Shout at a real raider when we start chasing one, or first see one close by. */

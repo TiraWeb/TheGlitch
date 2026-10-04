@@ -17,12 +17,29 @@ worlds:
 # Rogues only exist while at least one real player is in the world.
 target-per-world: 10
 
-# New rogues appear out of sight, this many blocks from a random real player in the world
-# (entities only tick within simulation-distance of a player, so keep max under ~110).
+# Rogues are spread over the whole map instead of all spawning around you. New rogues start
+# "parked" (no body, costs nothing) at random spots on the imported map (GlitchWorldGen
+# <world>.keep footprint) — near-share of them in a wide ring around a raider instead, so
+# you still run into some. A parked rogue gets its body when a raider comes within
+# materialize-radius (keep it under simulation-distance x 16 = 128) and parks again once
+# nobody is within park-radius.
+spread:
+  near-share: 0.3
+  near-ring:
+    min: 140
+    max: 320
+  materialize-radius: 100
+  park-radius: 150
+  # At most this many live rogues around one raider...
+  max-near-player: 2
+  # ...and at most this many fighting the same raider at once (the rest break off)
+  max-chasers-per-player: 2
+
+# /bots spawn <world> [n] (admin test without x/z) spawns live rogues this far from a raider
 spawn-ring:
   min: 40
   max: 96
-# ...and never closer than this to ANY real player
+# A rogue materialising on top of a raider is moved at least this far away
 min-player-distance: 24
 max-spawn-per-tick: 1
 # Director tick (seconds)
@@ -110,7 +127,15 @@ combat:
   health: 20.0
   range: 24.0          # how far they notice targets
   chase-range: 40.0
-  attack-rate-ticks: 14
+  # Fixed damage per hit (half-hearts, before your armor) by the rogue's gear rarity —
+  # their weapon's own damage and GlitchItems gear bonuses don't apply to rogues
+  damage:
+    common: 3.0
+    uncommon: 3.5
+    rare: 4.0
+    epic: 5.0
+    legendary: 6.0
+  attack-rate-ticks: 20
   # Lower = better aim (Sentinel accuracy spread) per rarity tier
   accuracy:
     common: 2.5
