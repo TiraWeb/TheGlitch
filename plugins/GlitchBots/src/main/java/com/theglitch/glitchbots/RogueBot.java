@@ -73,8 +73,8 @@ final class RogueBot {
     /** Where a parked rogue (no body) waits for a raider to come near; null while it's live. */
     Location parkedAt;
     private boolean prepared;
-    /** The spawned body's UUID (for Essentials userdata cleanup). */
-    java.util.UUID entityId;
+    /** UUIDs of every body this rogue has had (Essentials makes a userdata file per body). */
+    final Set<java.util.UUID> bodyIds = new HashSet<>();
     /** Leaving because the world has more rogues than it needs (not because it's done looting). */
     boolean leaving;
     private int cratesLooted;
@@ -85,6 +85,9 @@ final class RogueBot {
     private double normalRange;
     private Location lastPos;
     private long lastMovedAt = System.currentTimeMillis();
+    /** No crate in reach last time — don't scan the crate list again before this. */
+    private long nextCrateSearch;
+    private long nextExitPick;
 
     RogueBot(GlitchBots plugin, NPC npc, String handle, String world, String rarity) {
         this.plugin = plugin;
@@ -117,6 +120,9 @@ final class RogueBot {
         npc.data().setPersistent(NPC.Metadata.DROPS_ITEMS, false);
         npc.data().setPersistent(NPC.Metadata.PICKUP_ITEMS, false);
         npc.setProtected(false);
+        // Citizens' default pathfinding range is shorter than a crate search / wander leg —
+        // paths past it fail instantly and the rogue just stands there re-planning
+        npc.getNavigator().getDefaultParameters().range(110f);
         // Never fetch a skin by name: the name isn't an account, and we must not wear a
         // real player's skin. Citizens then shows one of Minecraft's default skins.
         SkinTrait skin = npc.getOrAddTrait(SkinTrait.class);
@@ -197,7 +203,7 @@ final class RogueBot {
         exitTarget = null;
         npc.getOrAddTrait(SentinelTrait.class).range = normalRange;
         if (npc.getEntity() != null) {
-            entityId = npc.getEntity().getUniqueId();
+            bodyIds.add(npc.getEntity().getUniqueId());
             if (tutorialTarget != null) npc.getEntity().addScoreboardTag(TRAINEE_TAG + tutorialTarget);
         }
         lastPos = at.clone();
@@ -275,7 +281,10 @@ final class RogueBot {
 
         switch (state) {
             case EXTRACT -> {
-                if (exitTarget == null || !npc.getNavigator().isNavigating()) pickExit(here);
+                if ((exitTarget == null || !npc.getNavigator().isNavigating()) && now >= nextExitPick) {
+                    nextExitPick = now + 3000L;
+                    pickExit(here);
+                }
                 if (exitTarget != null && flatDistance(here, exitTarget) <= exitRadius) {
                     extractEffect(here);
                     return false;
@@ -303,7 +312,9 @@ final class RogueBot {
             }
             default -> {
                 if (npc.getNavigator().isNavigating()) return true;
-                if (!pickCrate(here)) wander(here);
+                if (now >= nextCrateSearch && pickCrate(here)) return true;
+                nextCrateSearch = now + 5000L; // nothing in reach: wander, look again in a few seconds
+                wander(here);
             }
         }
         return true;
@@ -336,6 +347,7 @@ final class RogueBot {
         double best = 10 * 10;
         for (Player c : com.theglitch.common.Bots.realPlayers(body.getWorld())) {
             if (c.getGameMode() != org.bukkit.GameMode.SURVIVAL && c.getGameMode() != org.bukkit.GameMode.ADVENTURE) continue;
+            if (provoked.contains(c.getUniqueId())) continue; // they hit us — not tagging along with them
             double d = c.getLocation().distanceSquared(body.getLocation());
             if (d < best && body.hasLineOfSight(c)) {
                 best = d;
@@ -411,7 +423,8 @@ final class RogueBot {
         if (item == null) return;
         Location from = body.getEyeLocation();
         org.bukkit.entity.Item drop = body.getWorld().dropItem(from, item);
-        drop.setVelocity(p.getLocation().toVector().subtract(from.toVector()).normalize().multiply(0.35).setY(0.25));
+        Vector toss = p.getLocation().toVector().subtract(from.toVector()).setY(0);
+        if (toss.lengthSquared() > 1e-4) drop.setVelocity(toss.normalize().multiply(0.35).setY(0.25));
         p.sendActionBar(plugin.mm().deserialize("<gray>Rogue <red>" + handle + "</red> tossed you something.</gray>"));
         body.getWorld().playSound(from, Sound.ENTITY_ITEM_PICKUP, 0.8f, 0.7f);
     }
@@ -511,8 +524,24 @@ final class RogueBot {
         }
         exitTarget = best.center();
         exitRadius = Math.max(2, best.radius() - 1);
-        Location dest = exitTarget.clone();
-        dest.setY(here.getWorld().getHighestBlockYAt(dest) + 1);
+        // Far exits are walked in legs: the pathfinder can't plan hundreds of blocks, and looking
+        // up the ground at the exit itself would load its chunk synchronously every few seconds
+        World w = here.getWorld();
+        double dist = flatDistance(here, exitTarget);
+        double x = exitTarget.getX(), z = exitTarget.getZ();
+        if (dist > 70) {
+            x = here.getX() + (x - here.getX()) / dist * 60;
+            z = here.getZ() + (z - here.getZ()) / dist * 60;
+        }
+        int bx = (int) Math.floor(x), bz = (int) Math.floor(z);
+        if (!w.isChunkLoaded(bx >> 4, bz >> 4)) {
+            wander(here);
+            return;
+        }
+        Location dest = BotDirector.groundSpot(w, bx, bz);
+        if (dest == null) {
+            dest = new Location(w, bx + 0.5, w.getHighestBlockYAt(bx, bz) + 1, bz + 0.5);
+        }
         npc.getNavigator().setTarget(dest);
     }
 

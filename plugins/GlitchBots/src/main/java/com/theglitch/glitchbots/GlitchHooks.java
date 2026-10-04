@@ -112,8 +112,19 @@ final class GlitchHooks {
         }
     }
 
-    /** Seconds left on the world's shared raid timer, or -1 when none is running. */
+    private final Map<String, long[]> raidLeftCache = new ConcurrentHashMap<>();
+
+    /** Seconds left on the world's shared raid timer, or -1 when none is running (cached ~1 s). */
     int raidSecondsLeft(String world) {
+        long now = System.currentTimeMillis();
+        long[] c = raidLeftCache.get(world);
+        if (c != null && now - c[0] < 1000L) return (int) c[1];
+        int left = raidSecondsLeftUncached(world);
+        raidLeftCache.put(world, new long[]{now, left});
+        return left;
+    }
+
+    private int raidSecondsLeftUncached(String world) {
         Object rm = raidManager();
         if (rm == null) return -1;
         try {

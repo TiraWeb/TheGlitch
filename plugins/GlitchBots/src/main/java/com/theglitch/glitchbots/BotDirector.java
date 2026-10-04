@@ -156,6 +156,10 @@ final class BotDirector {
         BotConfig cfg = plugin.cfg();
         for (RogueBot b : inWorld(w.getName())) {
             if (b.parkedAt == null) continue;
+            if (b.npc.isSpawned()) { // Citizens brought the body back on a chunk load
+                b.parkedAt = null;
+                continue;
+            }
             Player near = nearestPlayer(b.parkedAt, real);
             if (near == null) continue;
             double d = flat(b.parkedAt, near.getLocation());
@@ -431,12 +435,11 @@ final class BotDirector {
         bots.remove(b.npc.getUniqueId());
         namesInUse.remove(b.handle);
         plugin.chat().forget(b.npc.getUniqueId());
-        UUID entityId = b.entityId;
         try {
             b.npc.destroy();
         } catch (Exception ignored) {
         }
-        forgetEssentialsUser(entityId);
+        for (UUID body : b.bodyIds) forgetEssentialsUser(body);
     }
 
     /**
