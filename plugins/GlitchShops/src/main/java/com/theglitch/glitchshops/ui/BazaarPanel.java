@@ -43,10 +43,14 @@ public final class BazaarPanel implements Listener {
 
     private static final NamespacedKey PANEL_KEY = new NamespacedKey("glitchshops", "panel");
     private static final NamespacedKey VALUE_KEY = new NamespacedKey("glitchshops", "value");
-    // y offsets from the floor the wall was placed on; rows 1.15 apart so each label fits fully
-    // under its item (a TextDisplay grows upward from its anchor) without touching the row below
-    private static final double[] GRID_ROW_Y = {3.05D, 1.90D, 0.75D};
+    // y offsets from the floor the wall was placed on: ONE item row at chest height with its label
+    // fully underneath (a TextDisplay grows upward from its anchor); 7 items per page, ◀ / ▶ arrows
+    // at both ends page through the category (2026-10-05 — was a 3-row, 21-item wall)
+    private static final double ROW_Y = 1.3D;
     private static final double LABEL_DY = 0.68D;
+    private static final int PER_PAGE = 7;
+    private static final double TAB_Y = 2.35D;
+    private static final double HEADER_Y = 3.1D;
     private static final int LABEL_MAX = 14;
 
     // Fix 3: single yaw source = configured `modern-ui.world-panel.facing` (south/north/east/west)
@@ -84,6 +88,8 @@ public final class BazaarPanel implements Listener {
     private final Set<UUID> gridEntities = new HashSet<>();
 
     private String activeCategory;
+    /** Current page of the active category (shared by everyone looking at the wall). */
+    private int page;
 
     private World world;
     private double wx;
@@ -318,6 +324,7 @@ public final class BazaarPanel implements Listener {
             if (!isLive()) return;
             if (category != null && !category.isBlank()) {
                 activeCategory = category;
+                page = 0;
             }
         } catch (Throwable ignored) {
         }
@@ -422,7 +429,7 @@ public final class BazaarPanel implements Listener {
 
     private void spawnHeader() {
         try {
-            Location loc = point(0.0D, 4.6D);
+            Location loc = point(0.0D, HEADER_Y);
             final float yaw = panelYaw();
             TextDisplay d = world.spawn(loc, TextDisplay.class, t -> {
                 try {
@@ -521,9 +528,9 @@ public final class BazaarPanel implements Listener {
                 double off = (i - (n - 1) / 2.0D) * spacing;
                 String mini = (active ? "<gold><bold>" : "<gray><bold>")
                         + gui.categoryLabel(category) + "</bold>";
-                spawnText(point(off, 3.85D), mini, TAB_TEXT_SCALE, false);
+                spawnText(point(off, TAB_Y), mini, TAB_TEXT_SCALE, false);
                 float tabW = (float) Math.min(TAB_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
-                spawnHitbox(point(off, 3.8D), tabW, TAB_HITBOX_HEIGHT, "tab", category, false);
+                spawnHitbox(point(off, TAB_Y - 0.05D), tabW, TAB_HITBOX_HEIGHT, "tab", category, false);
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("tabs spawn failed: " + t.getClass().getSimpleName());
@@ -543,16 +550,18 @@ public final class BazaarPanel implements Listener {
     }
 
     private void spawnShopGrid(String category) {
-        List<String> ids = gui.stockIds(category);
-        for (int idx = 0; idx < 21; idx++) {
-            if (idx >= ids.size()) break;
+        List<String> ids = new java.util.ArrayList<>();
+        for (String id : gui.stockIds(category)) {
+            Integer price = gui.buyPriceFor(category, id);
+            if (price != null && price > 0) ids.add(id);
+        }
+        int pages = pageCount(ids.size());
+        int from = page * PER_PAGE;
+        for (int idx = from; idx < Math.min(ids.size(), from + PER_PAGE); idx++) {
             final String id = ids.get(idx);
             Integer price = gui.buyPriceFor(category, id);
-            if (price == null || price <= 0) continue;
-            int c = idx % 7;
-            int r = idx / 7;
-            double off = (c - 3) * spacing;
-            double dy = GRID_ROW_Y[Math.min(r, 2)];
+            double off = (idx - from - 3) * spacing;
+            double dy = ROW_Y;
             final ItemStack stack = buildStack(id);
             final String name = truncateName(gui.displayNameOf(id));
             final String mini = "<white>" + name + "</white>\n<aqua>"
@@ -562,17 +571,20 @@ public final class BazaarPanel implements Listener {
             float rowW = (float) Math.min(ROW_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
             spawnHitbox(point(off, dy + HITBOX_DY_OFFSET), rowW, ROW_HITBOX_HEIGHT, "item", category + "|" + id, true);
         }
+        spawnPager(pages);
     }
 
     private void spawnGearGrid() {
-        List<ShopManager.GearStockEntry> stock = plugin.getShopManager().getGearStock();
-        for (int i = 0; i < stock.size() && i < 21; i++) {
+        List<ShopManager.GearStockEntry> stock = new java.util.ArrayList<>();
+        for (ShopManager.GearStockEntry entry : plugin.getShopManager().getGearStock()) {
+            if (entry != null && entry.item() != null && entry.price() > 0) stock.add(entry);
+        }
+        int pages = pageCount(stock.size());
+        int from = page * PER_PAGE;
+        for (int i = from; i < Math.min(stock.size(), from + PER_PAGE); i++) {
             ShopManager.GearStockEntry entry = stock.get(i);
-            if (entry == null || entry.item() == null || entry.price() <= 0) continue;
-            int c = i % 7;
-            int r = i / 7;
-            double off = (c - 3) * spacing;
-            double dy = GRID_ROW_Y[Math.min(r, 2)];
+            double off = (i - from - 3) * spacing;
+            double dy = ROW_Y;
             final ItemStack stack = entry.item().clone();
             final String mini = "<white>" + truncateName(plainName(stack)) + "</white>\n<aqua>"
                     + UiKit.SHARD_GLYPH + " " + entry.price() + " Shards</aqua>";
@@ -581,6 +593,29 @@ public final class BazaarPanel implements Listener {
             float rowW = (float) Math.min(ROW_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
             spawnHitbox(point(off, dy + HITBOX_DY_OFFSET), rowW, ROW_HITBOX_HEIGHT, "item", "gear|" + entry.id(), true);
         }
+        spawnPager(pages);
+    }
+
+    /** Clamps the page to the category's size and returns the page count. */
+    private int pageCount(int items) {
+        int pages = Math.max(1, (items + PER_PAGE - 1) / PER_PAGE);
+        if (page >= pages) page = pages - 1;
+        if (page < 0) page = 0;
+        return pages;
+    }
+
+    /** ◀ / ▶ at both ends of the row (only when the category has more than one page). */
+    private void spawnPager(int pages) {
+        if (pages <= 1) return;
+        float w = (float) Math.min(ROW_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
+        String counter = "<gray>" + (page + 1) + "/" + pages + "</gray>";
+        double left = -4 * spacing, right = 4 * spacing;
+        spawnItem(point(left, ROW_Y), new ItemStack(Material.SPECTRAL_ARROW));
+        spawnText(point(left, ROW_Y - LABEL_DY), "<yellow><bold>◀ PREV</bold></yellow>\n" + counter, ROW_TEXT_SCALE, true);
+        spawnHitbox(point(left, ROW_Y + HITBOX_DY_OFFSET), w, ROW_HITBOX_HEIGHT, "page", "prev", true);
+        spawnItem(point(right, ROW_Y), new ItemStack(Material.SPECTRAL_ARROW));
+        spawnText(point(right, ROW_Y - LABEL_DY), "<yellow><bold>NEXT ▶</bold></yellow>\n" + counter, ROW_TEXT_SCALE, true);
+        spawnHitbox(point(right, ROW_Y + HITBOX_DY_OFFSET), w, ROW_HITBOX_HEIGHT, "page", "next", true);
     }
 
     private String truncateName(String name) {
@@ -685,12 +720,41 @@ public final class BazaarPanel implements Listener {
                 flipTo(value);
                 return;
             }
+            if ("page".equals(kind)) {
+                try {
+                    player.playSound(player.getLocation(), Sound.ITEM_BOOK_PAGE_TURN, 1.0F, 1.2F);
+                } catch (Throwable ignored) {
+                }
+                page += "prev".equals(value) ? -1 : 1;
+                int pages = pageCount("gear".equals(activeCategory()) ? gearCount() : priced(activeCategory()));
+                if (page < 0) page = pages - 1; // wrap around both ways
+                if (page >= pages) page = 0;
+                refreshContents();
+                return;
+            }
             if ("item".equals(kind)) {
                 handleItemClick(player, value);
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("panel click failed: " + t.getClass().getSimpleName());
         }
+    }
+
+    private int gearCount() {
+        int n = 0;
+        for (ShopManager.GearStockEntry e : plugin.getShopManager().getGearStock()) {
+            if (e != null && e.item() != null && e.price() > 0) n++;
+        }
+        return n;
+    }
+
+    private int priced(String category) {
+        int n = 0;
+        for (String id : gui.stockIds(category)) {
+            Integer price = gui.buyPriceFor(category, id);
+            if (price != null && price > 0) n++;
+        }
+        return n;
     }
 
     private void handleItemClick(Player player, String value) {

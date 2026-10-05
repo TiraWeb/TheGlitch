@@ -36,34 +36,34 @@ points:
 hub-tour:
   - name: Stash Keeper
     world: hub
-    x: 65.0
+    x: 64.95
     y: -46.0
-    z: -5.6
-    line: "This is your <green>stash</green>. Everything you extract lands here — it's the only place loot is safe."
+    z: -5.59
+    line: "This is your <green>stash</green>. Everything you extract lands here — it's the only place loot is safe. Right-click the Stash Keeper or type <yellow>/stash</yellow>."
   - name: Red Zone Gate
     world: hub
-    x: 65.0
+    x: 65.04
     y: -46.0
     z: 9.5
-    line: "The <red>Red Zone Gate</red>. Walk through to raid — or use <yellow>/redzone</yellow> to pick a map. Your party leader brings the party."
-  - name: Hideout
-    world: hub
-    x: 90.0
-    y: -33.5
-    z: 10.0
-    line: "Your <aqua>Hideout</aqua>: craft upgrades, train skills and heal up between raids."
+    line: "The <red>Red Zone Gate</red>. Talk to it — or walk into the portal right next to it — and pick a map. Your party leader brings the party."
   - name: Grand Bazaar
     world: hub
-    x: 102.2
+    x: 102.16
     y: -36.0
-    z: 62.6
-    line: "The <gold>Grand Bazaar</gold>. Sell loot for Shards, buy gear, keys and potions."
+    z: 62.59
+    line: "The <gold>Grand Bazaar</gold>. Sell loot for Shards, buy gear, keys and potions — browse the wall with the arrows."
   - name: Insurance
     world: hub
-    x: 54.5
-    y: -35.0
-    z: 79.5
+    x: 56.62
+    y: -36.0
+    z: 95.01
     line: "<yellow>Insurance</yellow>: pay a little before a raid and that gear comes back if you die. Worth it on your best stuff."
+  - name: Hideout
+    world: hub
+    x: 35.29
+    y: -36.0
+    z: 93.31
+    line: "Your <aqua>Hideout</aqua>: upgrade stations, craft at the Workbench and heal up between raids."
 
 dungeon:
   # MythicDungeons map id of the first dungeon (Goblin Hollow)

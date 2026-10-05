@@ -153,8 +153,8 @@ public final class ShopUICommand implements CommandExecutor {
         double bx = loc.getX();
         double by = loc.getY(); // the floor you're standing on
         double bz = loc.getZ();
-        double width = 7 * plugin.getConfig().getDouble("modern-ui.world-panel.spacing", 1.35D) + 1.0;
-        var clash = com.theglitch.common.PanelFootprint.overlaps(loc, width, 6.0, "glitchshops");
+        double width = 9 * plugin.getConfig().getDouble("modern-ui.world-panel.spacing", 1.35D) + 1.0; // 7 items + ◀ ▶
+        var clash = com.theglitch.common.PanelFootprint.overlaps(loc, width, 4.0, "glitchshops");
         if (clash.isPresent() && !force) {
             player.sendMessage(MM.deserialize("<red>That overlaps the " + clash.get()
                     + " panel — step a few blocks away, or use /shopui panel here force.</red>"));
