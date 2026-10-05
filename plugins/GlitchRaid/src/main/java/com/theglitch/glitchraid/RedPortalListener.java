@@ -18,29 +18,29 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Walk-in redirect from the hub portal floor into the raid world.
+ * The hub's walk-in Red Zone portal opens the same zone picker as the Red Zone Gate NPC
+ * ({@link com.theglitch.glitchraid.gui.RedZoneSelectGUI}), so players choose the world.
  * <p>
- * Primary trigger is movement: entering the marked region sends the player to
- * the raid world spawn. This deliberately does not depend on vanilla portal
- * mechanics (END_PORTAL blocks never fire a teleport event when the box has no
- * End dimension). A vanilla END_PORTAL teleport in hub is redirected too, as a
- * backup. Entering the world auto-starts/joins the raid via
- * {@link RaidListener#onWorldChange} and pulls the party along.
+ * Trigger is movement: stepping <em>into</em> the marked region opens the picker once (standing
+ * in it doesn't re-open it; walk out and back in). This doesn't depend on vanilla portal
+ * mechanics — END_PORTAL blocks never fire a teleport event when the box has no End dimension —
+ * and any vanilla END_PORTAL teleport in the hub is cancelled. Picking a zone teleports through
+ * the picker, which auto-starts/joins the raid via {@link RaidListener#onWorldChange}.
  * </p>
  */
 public final class RedPortalListener implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
-    private final GlitchRaid plugin;
     private final RaidManager manager;
     private final RedPortalManager portals;
+    private final com.theglitch.glitchraid.gui.RedZoneSelectGUI picker;
     private final Map<UUID, Long> cooldown = new ConcurrentHashMap<>();
 
-    public RedPortalListener(GlitchRaid plugin, RaidManager manager, RedPortalManager portals) {
-        this.plugin = plugin;
+    public RedPortalListener(RaidManager manager, RedPortalManager portals, com.theglitch.glitchraid.gui.RedZoneSelectGUI picker) {
         this.manager = manager;
         this.portals = portals;
+        this.picker = picker;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -48,23 +48,13 @@ public final class RedPortalListener implements Listener {
         if (event.getCause() != PlayerTeleportEvent.TeleportCause.END_PORTAL) return;
         if (!event.getPlayer().getWorld().getName().equalsIgnoreCase(manager.getHubWorld())) return;
         if (!portals.isEnabled()) return;
-        // When a region is configured, only it teleports (stray end portals stay dead).
-        if (portals.hasRegion() && !portals.contains(event.getFrom())) return;
-        // Fix 1: scatter buffer — swallow the portal teleport and bounce to hub; never touch red.
-        if (manager.denyRedEntryDuringBuffer(event.getPlayer())) {
-            event.setCancelled(true);
-            return;
-        }
-        if (!trySend(event.getPlayer())) return;
-        event.setCancelled(true);
+        event.setCancelled(true); // never the vanilla End teleport from the hub
+        // With a marked region the walk-in trigger below opens the picker; without one, any hub
+        // end portal does (cooldown-gated, vanilla fires this repeatedly while standing in it).
+        if (!portals.hasRegion()) openPicker(event.getPlayer());
     }
 
-    /**
-     * Movement trigger — does not depend on vanilla portal mechanics at all.
-     * (END_PORTAL blocks never fire a teleport event when the box has no End
-     * dimension, which is exactly our setup.) Entering the marked region sends
-     * the player straight to the raid world.
-     */
+    /** Stepping into the marked region opens the zone picker. */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onMove(org.bukkit.event.player.PlayerMoveEvent event) {
         if (!portals.isEnabled() || !portals.hasRegion()) return;
@@ -73,51 +63,19 @@ public final class RedPortalListener implements Listener {
         if (event.getFrom().getBlockX() == event.getTo().getBlockX()
                 && event.getFrom().getBlockY() == event.getTo().getBlockY()
                 && event.getFrom().getBlockZ() == event.getTo().getBlockZ()) return;
-        if (!portals.contains(event.getTo())) return;
-        trySend(event.getPlayer());
+        if (!portals.contains(event.getTo()) || portals.contains(event.getFrom())) return;
+        openPicker(event.getPlayer());
     }
 
-    /**
-     * Sends the player to the raid world spawn unless on cooldown.
-     *
-     * @return true when the player was sent
-     */
-    private boolean trySend(Player player) {
-        // Fix 1: walk-in redirect is also blocked during the scatter buffer (bounce to hub instead).
-        // Checked before the cooldown gate so a bounce never consumes cooldown for post-buffer entry.
-        if (manager.denyRedEntryDuringBuffer(player)) {
-            return false;
-        }
+    private void openPicker(Player player) {
+        // Scatter buffer: the Red Zone is closed — the buffer check explains why.
+        if (manager.denyRedEntryDuringBuffer(player)) return;
         long now = System.currentTimeMillis();
         long last = cooldown.getOrDefault(player.getUniqueId(), 0L);
-        if (now - last < portals.cooldownSeconds() * 1000L) {
-            return false;
-        }
+        if (now - last < portals.cooldownSeconds() * 1000L) return;
         cooldown.put(player.getUniqueId(), now);
-
-        // Dormant/unconfigured on live (portal.region.world is empty) — the supported multi-world
-        // entry point is the hub NPC's RedZoneSelectGUI. If ever activated, this defaults to the
-        // first configured red world; it has no 3-way picker of its own.
-        World red = Bukkit.getWorld(manager.getAutoStartWorld());
-        if (red == null) {
-            player.sendMessage(MM.deserialize("<red>The rift is dormant (raid world missing).</red>"));
-            return false;
-        }
-        Location dest;
-        try {
-            dest = manager.findSafeEntry(red);
-        } catch (Exception e) {
-            player.sendMessage(MM.deserialize("<red>The rift is dormant (no spawn).</red>"));
-            return false;
-        }
-        Location from = player.getLocation().clone();
-        FoliaScheduler.teleportEntity(player, plugin, dest);
-        player.sendMessage(MM.deserialize("<light_purple><bold>The Glitch takes you.</bold></light_purple>"));
-        try {
-            dest.getWorld().playSound(dest, Sound.BLOCK_PORTAL_TRAVEL, 0.5f, 1.2f);
-            dest.getWorld().spawnParticle(Particle.PORTAL, dest.clone().add(0, 1, 0), 40, 0.5, 1.0, 0.5, 0.2);
-            from.getWorld().spawnParticle(Particle.PORTAL, from.add(0, 1, 0), 30, 0.5, 1.0, 0.5, 0.2);
-        } catch (Exception ignored) {}
-        return true;
+        player.playSound(player.getLocation(), Sound.BLOCK_PORTAL_TRIGGER, 0.4f, 1.4f);
+        player.spawnParticle(Particle.PORTAL, player.getLocation().add(0, 1, 0), 30, 0.5, 1.0, 0.5, 0.2);
+        picker.open(player);
     }
 }

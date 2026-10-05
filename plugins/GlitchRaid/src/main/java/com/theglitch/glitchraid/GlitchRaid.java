@@ -33,7 +33,7 @@ public final class GlitchRaid extends JavaPlugin {
 
         // Register listeners
         Bukkit.getPluginManager().registerEvents(new RaidListener(this, raidManager), this);
-        Bukkit.getPluginManager().registerEvents(new RedPortalListener(this, raidManager, portalManager), this);
+        Bukkit.getPluginManager().registerEvents(new RedPortalListener(raidManager, portalManager, redZoneSelectGui), this);
         Bukkit.getPluginManager().registerEvents(redZoneSelectGui, this);
         com.theglitch.glitchraid.gui.DungeonSelectGUI dungeonGui = new com.theglitch.glitchraid.gui.DungeonSelectGUI(this);
         Bukkit.getPluginManager().registerEvents(dungeonGui, this);
