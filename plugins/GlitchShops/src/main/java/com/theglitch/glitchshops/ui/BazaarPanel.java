@@ -43,8 +43,10 @@ public final class BazaarPanel implements Listener {
 
     private static final NamespacedKey PANEL_KEY = new NamespacedKey("glitchshops", "panel");
     private static final NamespacedKey VALUE_KEY = new NamespacedKey("glitchshops", "value");
-    private static final double[] GRID_ROW_Y = {2.55D, 1.50D, 0.45D};
-    private static final double LABEL_DY = 0.42D;
+    // y offsets from the floor the wall was placed on; rows 1.15 apart so each label fits fully
+    // under its item (a TextDisplay grows upward from its anchor) without touching the row below
+    private static final double[] GRID_ROW_Y = {3.05D, 1.90D, 0.75D};
+    private static final double LABEL_DY = 0.68D;
     private static final int LABEL_MAX = 14;
 
     // Fix 3: single yaw source = configured `modern-ui.world-panel.facing` (south/north/east/west)
@@ -62,11 +64,11 @@ public final class BazaarPanel implements Listener {
     private static final float HEADER_SCALE = 1.1F;
     private static final float TAB_TEXT_SCALE = 0.75F;
     private static final float ROW_TEXT_SCALE = 0.5F;
-    private static final float ROW_ITEM_SCALE = 0.85F;
+    private static final float ROW_ITEM_SCALE = 0.7F;
     private static final double ROW_PITCH = 1.05D;
-    private static final double HITBOX_DY_OFFSET = -0.15D;
+    private static final double HITBOX_DY_OFFSET = -0.70D; // box starts under the label...
     private static final float ROW_HITBOX_WIDTH = 1.2F;
-    private static final float ROW_HITBOX_HEIGHT = 0.9F;
+    private static final float ROW_HITBOX_HEIGHT = 1.1F;   // ...and ends at the item's top
     private static final float TAB_HITBOX_WIDTH = 1.2F;
     private static final float TAB_HITBOX_HEIGHT = 0.7F;
     private static final float HITBOX_DEAD_GAP = 0.15F;
@@ -420,7 +422,7 @@ public final class BazaarPanel implements Listener {
 
     private void spawnHeader() {
         try {
-            Location loc = point(0.0D, 4.3D);
+            Location loc = point(0.0D, 4.6D);
             final float yaw = panelYaw();
             TextDisplay d = world.spawn(loc, TextDisplay.class, t -> {
                 try {
@@ -519,9 +521,9 @@ public final class BazaarPanel implements Listener {
                 double off = (i - (n - 1) / 2.0D) * spacing;
                 String mini = (active ? "<gold><bold>" : "<gray><bold>")
                         + gui.categoryLabel(category) + "</bold>";
-                spawnText(point(off, 3.3D), mini, TAB_TEXT_SCALE, false);
+                spawnText(point(off, 3.85D), mini, TAB_TEXT_SCALE, false);
                 float tabW = (float) Math.min(TAB_HITBOX_WIDTH, Math.max(0.6D, spacing - HITBOX_DEAD_GAP));
-                spawnHitbox(point(off, 3.3D), tabW, TAB_HITBOX_HEIGHT, "tab", category, false);
+                spawnHitbox(point(off, 3.8D), tabW, TAB_HITBOX_HEIGHT, "tab", category, false);
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("tabs spawn failed: " + t.getClass().getSimpleName());

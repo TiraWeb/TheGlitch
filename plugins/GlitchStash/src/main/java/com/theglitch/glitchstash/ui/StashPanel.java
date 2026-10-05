@@ -70,9 +70,26 @@ public final class StashPanel implements Listener {
             return;
         }
         if (!enabled(pl)) {
+            // Disabled: its display entities are saved with the world — clear any left from before
+            pl.getServer().getScheduler().runTaskLater(pl, StashPanel::purgeLeftovers, 100L);
             return;
         }
         arm(pl);
+    }
+
+    /** Removes every stash-panel entity (tagged with the panel key) in all loaded worlds. */
+    private static void purgeLeftovers() {
+        int n = 0;
+        for (org.bukkit.World w : org.bukkit.Bukkit.getWorlds()) {
+            for (Entity e : w.getEntities()) {
+                if ((e instanceof ItemDisplay || e instanceof TextDisplay || e instanceof Interaction)
+                        && e.getPersistentDataContainer().has(PANEL_KEY, PersistentDataType.STRING)) {
+                    e.remove();
+                    n++;
+                }
+            }
+        }
+        if (n > 0 && plugin != null) plugin.getLogger().info("Stash wall panel is disabled - removed " + n + " leftover panel entities.");
     }
 
     public static void shutdown(GlitchStash pl) {

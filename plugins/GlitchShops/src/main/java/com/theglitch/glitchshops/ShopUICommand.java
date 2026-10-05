@@ -151,7 +151,7 @@ public final class ShopUICommand implements CommandExecutor {
         Location loc = player.getLocation();
         World world = loc.getWorld();
         double bx = loc.getX();
-        double by = loc.getY() + 1.0D;
+        double by = loc.getY(); // the floor you're standing on
         double bz = loc.getZ();
         double width = 7 * plugin.getConfig().getDouble("modern-ui.world-panel.spacing", 1.35D) + 1.0;
         var clash = com.theglitch.common.PanelFootprint.overlaps(loc, width, 6.0, "glitchshops");

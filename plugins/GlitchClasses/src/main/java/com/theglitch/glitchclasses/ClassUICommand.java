@@ -100,7 +100,7 @@ public final class ClassUICommand implements CommandExecutor {
         plugin.getConfig().set("modern-ui.class-panel.world",
                 loc.getWorld() != null ? loc.getWorld().getName() : "hub");
         plugin.getConfig().set("modern-ui.class-panel.x", loc.getX());
-        plugin.getConfig().set("modern-ui.class-panel.y", loc.getY() + 1.0D);
+        plugin.getConfig().set("modern-ui.class-panel.y", loc.getY()); // the floor you're standing on
         plugin.getConfig().set("modern-ui.class-panel.z", loc.getZ());
         plugin.getConfig().set("modern-ui.class-panel.facing", facing);
         plugin.getConfig().set("modern-ui.class-panel.enabled", true);

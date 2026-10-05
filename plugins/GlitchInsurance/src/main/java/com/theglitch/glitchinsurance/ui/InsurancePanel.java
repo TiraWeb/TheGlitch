@@ -39,7 +39,12 @@ public final class InsurancePanel implements Listener {
     private static final NamespacedKey VALUE_KEY = new NamespacedKey("glitchinsurance", "value");
     private static final String HEADER = "\uE049 <gradient:#C084FC:#F0ABFC><bold>INSURANCE OFFICE</bold></gradient>";
     private static final String SUBROW = "<gray>pay shards \u00b7 protect your gear</gray>";
-    private static final float[] ROW_Y = {2.55F, 1.5F, 0.45F};
+    // y offsets from the floor the panel was placed on: item row at eye level, label under it
+    private static final float[] ROW_Y = {1.6F, 1.6F, 1.6F};
+    private static final double LABEL_DY = 0.8D;      // label anchor below the item centre (text grows upward)
+    private static final float HITBOX_HEIGHT = 1.25F; // covers label + item
+    private static final double HEADER_Y = 3.2D;
+    private static final double SUB_Y = 2.6D;
     private static final float ITEM_SCALE = 0.85F;
     private static final int TRUNC = 14;
 
@@ -125,7 +130,7 @@ public final class InsurancePanel implements Listener {
             }
             plugin.getConfig().set("modern-ui.world-panel.world", w.getName());
             plugin.getConfig().set("modern-ui.world-panel.x", loc.getX());
-            plugin.getConfig().set("modern-ui.world-panel.y", loc.getBlockY() + 1.0D);
+            plugin.getConfig().set("modern-ui.world-panel.y", loc.getY()); // the floor you're standing on
             plugin.getConfig().set("modern-ui.world-panel.z", loc.getZ());
             plugin.getConfig().set("modern-ui.world-panel.facing", face);
             plugin.getConfig().set("modern-ui.world-panel.enabled", true);
@@ -411,7 +416,7 @@ public final class InsurancePanel implements Listener {
 
     private void spawnHeader() {
         try {
-            TextDisplay d = world.spawn(point(0.0D, 4.3D), TextDisplay.class, t -> {
+            TextDisplay d = world.spawn(point(0.0D, HEADER_Y), TextDisplay.class, t -> {
                 try {
                     t.text(GlitchInsurance.mm().deserialize(HEADER));
                     styleShared(t);
@@ -436,7 +441,7 @@ public final class InsurancePanel implements Listener {
 
     private void spawnSubRow() {
         try {
-            TextDisplay d = world.spawn(point(0.0D, 3.3D), TextDisplay.class, t -> {
+            TextDisplay d = world.spawn(point(0.0D, SUB_Y), TextDisplay.class, t -> {
                 try {
                     t.text(GlitchInsurance.mm().deserialize(SUBROW));
                     styleShared(t);
@@ -554,8 +559,8 @@ public final class InsurancePanel implements Listener {
                     default -> "<gray>" + trunc(window + "s after death") + "</gray>";
                 };
                 spawnItem(point(off, rowY), new ItemStack(mat));
-                spawnText(point(off, rowY - 0.42D), trunc(line1) + "\n" + line2, 0.5F);
-                spawnHitbox(point(off, rowY), 0.85F, 1.0F, value);
+                spawnText(point(off, rowY - LABEL_DY), trunc(line1) + "\n" + line2, 0.5F);
+                spawnHitbox(point(off, rowY - LABEL_DY), 0.95F, HITBOX_HEIGHT, value);
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("cells spawn failed: " + t.getClass().getSimpleName());

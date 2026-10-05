@@ -44,9 +44,10 @@ public final class HideoutPanel implements Listener {
     // Resolved Material.matchMaterial results — config icon strings are a tiny fixed set
     private static final Map<String, Material> ICON_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
-    private static final double HEADER_Y = 4.3D;
+    private static final double HEADER_Y = 3.2D;
     private static final float HEADER_SCALE = 1.1F;
-    private static final double[] ROW_Y = {2.55D, 1.5D, 0.45D};
+    private static final double[] ROW_Y = {1.6D, 1.6D, 1.6D}; // eye level above the floor the panel was placed on
+    private static final double LABEL_DY = 0.8D;               // label anchor below the item centre (text grows upward)
     private static final float ITEM_SCALE = 0.85F;
     private static final float LABEL_SCALE = 0.5F;
     private static final int MAX_CELLS = 7;
@@ -423,8 +424,8 @@ public final class HideoutPanel implements Listener {
         try {
             Interaction hit = world.spawn(loc, Interaction.class, h -> {
                 try {
-                    h.setInteractionWidth(0.85F);
-                    h.setInteractionHeight(1.0F);
+                    h.setInteractionWidth(0.95F);
+                    h.setInteractionHeight(1.25F); // covers label + item
                     h.setResponsive(true);
                     h.setPersistent(true);
                 } catch (Throwable err) {
@@ -494,8 +495,8 @@ public final class HideoutPanel implements Listener {
                         : 0;
                 String mini = "<white>" + truncate(plainName(station.display()), 14)
                         + "</white>\n<gold>Lv " + lvl + "/" + station.costs().length + "</gold>";
-                spawnText(point(colOff, rowY - 0.42D), mini, LABEL_SCALE, true);
-                spawnHitbox(point(colOff, rowY), "cell", "station|" + station.id(), true);
+                spawnText(point(colOff, rowY - LABEL_DY), mini, LABEL_SCALE, true);
+                spawnHitbox(point(colOff, rowY - LABEL_DY), "cell", "station|" + station.id(), true);
             }
         } catch (Throwable t) {
             plugin.getLogger().fine("grid spawn failed: " + t.getClass().getSimpleName());

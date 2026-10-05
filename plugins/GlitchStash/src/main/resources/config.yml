@@ -131,8 +131,10 @@ modern-ui:
   # Permission that unlocks the ENDER_EYE "stash remote" kiosk cell (dialog stash)
   remote-perm: "theglitch.remoteui"
   # Kiosk wall rendered with display entities in the hub lobby
+  # Off (2026-10-05): the stash is opened from the Stash Keeper NPC / /stash; leftover panel
+  # entities are removed on startup while this is false
   world-panel:
-    enabled: true
+    enabled: false
     world: hub
     x: 67.5
     y: -43.5

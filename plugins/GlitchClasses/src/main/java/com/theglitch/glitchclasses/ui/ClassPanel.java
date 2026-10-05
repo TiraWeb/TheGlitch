@@ -45,14 +45,14 @@ public final class ClassPanel implements Listener {
     // Successful Material.valueOf results — failures fall back to SHIELD, never cached
     private static final Map<String, Material> ICON_CACHE = new ConcurrentHashMap<>();
 
-    private static final double HEADER_Y = 4.3D;
+    private static final double HEADER_Y = 3.2D;
     private static final float HEADER_SCALE = 1.1F;
-    private static final double GRID_Y = 2.55D;
-    private static final double LABEL_DY = 0.42D;
+    private static final double GRID_Y = 1.6D;    // eye level above the floor the panel was placed on
+    private static final double LABEL_DY = 0.8D;  // label anchor below the item centre (text grows upward)
     private static final float ITEM_SCALE = 0.85F;
     private static final float LABEL_SCALE = 0.5F;
-    private static final float HITBOX_WIDTH = 0.85F;
-    private static final float HITBOX_HEIGHT = 1.0F;
+    private static final float HITBOX_WIDTH = 0.95F;
+    private static final float HITBOX_HEIGHT = 1.25F; // covers label + item
     private static final double CELL_CENTER = 2.5D;
     private static final int MAX_CLASS_CELLS = 4;
 
@@ -440,7 +440,7 @@ public final class ClassPanel implements Listener {
     private void spawnCell(double off, ItemStack stack, String labelMini, String value) {
         spawnItem(point(off, GRID_Y), stack);
         spawnText(point(off, GRID_Y - LABEL_DY), labelMini, LABEL_SCALE);
-        spawnHitbox(point(off, GRID_Y), HITBOX_WIDTH, HITBOX_HEIGHT, "cell", value);
+        spawnHitbox(point(off, GRID_Y - LABEL_DY), HITBOX_WIDTH, HITBOX_HEIGHT, "cell", value);
     }
 
     private Material iconOf(String className) {
@@ -531,8 +531,9 @@ public final class ClassPanel implements Listener {
                 plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                     try {
                         var g = plugin.getClassGUI();
-                        // Select directly from the floating panel — no chest-GUI redirect (2026-09-20).
-                        if (g != null) g.requestClassSelect(player, arg, null);
+                        // Opens that class's menu (abilities, levels, select button) — selecting
+                        // straight from a click felt like nothing happened (2026-10-05)
+                        if (g != null) g.openClassMenu(player, arg);
                     } catch (Throwable t) {
                         plugin.getLogger().fine("panel class select failed: " + t.getClass().getSimpleName());
                     }

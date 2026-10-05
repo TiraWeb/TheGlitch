@@ -250,6 +250,7 @@ Easiest test: offline mode is on, so join with a never-used name (e.g. `Tutorial
 
 - [ ] `/bots status` lists all 3 red worlds; enter a Red Zone alone → up to 9 rogues (10 − 1 real) appear in the list, mostly `parked@x,z` spread over the map; walking towards one (<100 blocks) gives it a body out of sight
 - [ ] Hub portal: walking into the Red Zone portal floor opens the Red Zone picker (same as the NPC) — standing in it doesn't spam it; picking a zone sends you there; during the 1-minute buffer you get the maintenance message instead
+- [ ] Hub panels: `/<shop|class|hideout|insure>ui panel here` puts the items at about eye level where you stand; no label overlaps its item; clicking anywhere on an item or its label works; clicking a class on the class panel opens that class's menu; no stash wall panel anymore
 - [ ] Never more than 2 live rogues around you and never more than 2 fighting you at once (a third breaks off and runs); walking away >150 blocks parks them again
 - [ ] Rogue hits do 1.5–3 hearts before armor (3/3.5/4/5/6 by rarity), about one hit per second
 - [ ] Some rogues don't attack on sight: they follow you a few blocks away still trash-talking; a friendly one tosses an item after ~15 s ("tossed you something"); a betrayer gloats and attacks after a while / when you're low / when you turn your back; hitting a friendly one makes it fight back
