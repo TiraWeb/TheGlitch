@@ -1,8 +1,7 @@
 # `scripts/lib` — shared shell libraries for The Glitch
 
 This directory holds **deduplicated helpers** that were previously copy-pasted
-across `setup-*.sh`, `scripts/*.sh`, and `plugins/*/build.sh`. New setup or
-build scripts **should source these libs** instead of re-implementing the same
+across `setup-*.sh` and `scripts/*.sh`. New setup scripts **should source these libs** instead of re-implementing the same
 loops, gamerule tables, or Maven boilerplate. This avoids drift (e.g. stale
 camelCase gamerules silently doing nothing on MC 26.x).
 
@@ -30,10 +29,6 @@ source "${REPO_DIR}/scripts/lib/preflight.sh"
 # From scripts/ (reapply-world-config.sh, build-all.sh):
 source "$(dirname "$0")/lib/preflight.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/lib/preflight.sh"
-
-# From plugins/*/build.sh:
-source "${REPO_DIR}/scripts/lib/preflight.sh"
-source "$(dirname "$0")/../../scripts/lib/preflight.sh"
 ```
 
 `REPO_DIR` is auto-detected if not already set (walks up to find `bootstrap.sh`
@@ -100,57 +95,6 @@ apply_rule "spawn_mobs" "false" "overworld"
 `scripts/setup-worlds.sh` is the reference for the canonical values; `scripts/reapply-world-config.sh`
 sources this file directly so the two scripts can never drift.
 
-## `scripts/build-common.sh` / `plugins/build-common.sh` — shared build helpers
-
-Canonical at `scripts/build-common.sh`, mirrored at `plugins/build-common.sh`
-so either path works from `plugins/*/build.sh`.
-
-| Helper | What it does |
-|--------|--------------|
-| `log`/`warn`/`die` | Same guards as preflight |
-| `ensure_maven_java` / `require_maven_java` | Check `mvn` + `java` |
-| `seed_lib <plugin> <jar> [--required] [src...]` | Copy `VaultUnlocked.jar` etc from `LIVE_PLUGIN_DIR` or `server/plugins` into `plugins/<plugin>/lib/` for compile. Searches live + repo + inter-plugin targets. |
-| `seed_velkoth <plugin>` | Versioned `VelKoth-*.jar` variant of `seed_lib` |
-| `mvn_build <plugin> [args]` | `cd plugins/<plugin> && mvn clean package -DskipTests` + verify `target/*.jar` |
-| `deploy_jar <plugin> [jar]` | Copy `target/<plugin>-*.jar` → `/opt/theglitch/server/plugins/<plugin>.jar` + repo `server/plugins/` |
-| `seed_config <plugin> <cfg>` | Copy `src/main/resources/<cfg>` → live `plugins/<plugin>/` if missing (box copy wins) |
-| `build_plugin <plugin> --needs a,b,c` | High-level: `ensure_maven_java` + seed each `needs` + `mvn_build` + `deploy_jar` + seed configs |
-
-**Sourcing:**
-
-```bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-if [[ -f "${REPO_DIR}/scripts/build-common.sh" ]]; then
-  source "${REPO_DIR}/scripts/build-common.sh"
-elif [[ -f "${REPO_DIR}/plugins/build-common.sh" ]]; then
-  source "${REPO_DIR}/plugins/build-common.sh"
-fi
-```
-
-**Example — minimal per-plugin build.sh (see `plugins/GlitchDeathRules/build.sh`):**
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-source "${REPO_DIR}/scripts/build-common.sh"  # or plugins/build-common.sh mirror
-PLUGIN="GlitchDeathRules"
-ensure_maven_java
-mvn_build "${PLUGIN}"
-deploy_jar "${PLUGIN}"
-seed_config "${PLUGIN}" "config.yml"
-```
-
-Or the one-liner for plugins with deps:
-
-```bash
-build_plugin GlitchItems --needs VaultUnlocked,Nexo,PlaceholderAPI
-build_plugin GlitchShops --needs VaultUnlocked,Nexo,FancyNpcs,GlitchItems
-build_plugin GlitchStash --needs VaultUnlocked,GlitchItems,GlitchShops,VelKoth
-```
-
 ## Conventions for new scripts
 
 1. **Always `set -euo pipefail`** at the top.
@@ -160,9 +104,8 @@ build_plugin GlitchStash --needs VaultUnlocked,GlitchItems,GlitchShops,VelKoth
 3. **For gamerules, source `gamerules.sh`** — never hard-code
    `doMobSpawning`/`keepInventory` etc. Use the `GAMERULES_*_SNAKE` arrays and
    `apply_world_gamerules`.
-4. **For plugin builds, source `build-common.sh`** — use `seed_lib`,
-   `mvn_build`, `deploy_jar`, `seed_config` or the `build_plugin` wrapper
-   instead of copy-pasting `cp …/lib/*.jar` blocks.
+4. **Plugins are built only by `scripts/build-all.sh`** (Maven reactor), which
+   also seeds third-party `lib/*.jar` files and deploys.
 5. **Do not edit `bootstrap.sh` to source libs yet** — too risky for the
    one-shot bootstrap. It keeps its inline `log`/`die`/`fetch_jar` for now.
    Future work can consolidate once libs are battle-tested via `setup-*.sh`.
@@ -181,5 +124,4 @@ build_plugin GlitchStash --needs VaultUnlocked,GlitchItems,GlitchShops,VelKoth
 
 - `scripts/setup-worlds.sh` — canonical gamerule values and WorldGuard flags
 - `scripts/reapply-world-config.sh` — example consumer of `gamerules.sh`
-- `plugins/GlitchDeathRules/build.sh` — example consumer of `build-common.sh`
-- `scripts/build-all.sh` — reactor build that already deduplicates `seed_lib` logic (now shares helpers via `build-common.sh`)
+- `scripts/build-all.sh` — the plugin build (Maven reactor + lib seeding + deploy)

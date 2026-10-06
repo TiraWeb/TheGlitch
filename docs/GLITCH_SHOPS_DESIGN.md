@@ -12,7 +12,7 @@ Hub merchant NPCs for the item economy. Players **sell** any custom item for Gli
 and **buy** shop stock (materials, keys, rifts, potions). Prices follow docs/ITEM_SYSTEM.md §11
 (sell < buy; only sell price is visible on items; buy price shown only in the shop GUI).
 
-Fits the established pattern: custom plugin built from source (`plugins/<Name>/` + `build.sh`),
+Fits the established pattern: custom plugin built from source (`plugins/<Name>/`, built by `scripts/build-all.sh`),
 Maven, Paper API, no premium dependencies. Currency via Vault/Coins (Glitch Shards).
 
 ## Overview
@@ -124,7 +124,6 @@ shops:
 
 ```
 plugins/GlitchShops/
-  build.sh
   pom.xml
   src/main/java/com/theglitch/glitchshops/GlitchShops.java   (main, command executors)
   src/main/java/com/theglitch/glitchshops/ShopManager.java   (config load, price lookup)

@@ -234,9 +234,8 @@ install_modrinth_plugin "eco.jar"                eco-plugin
 install_modrinth_plugin "DecentHolograms.jar"     decentholograms
 install_modrinth_plugin "ajLeaderboards.jar"      ajleaderboards
 
-# GlitchStash is built from source (custom plugin) — not on Modrinth.
-# Built separately via: sudo ./plugins/GlitchStash/build.sh
-# JAR is deployed to plugins/ by the build script.
+# The Glitch* plugins are built from source — not on Modrinth.
+# Built and deployed separately via: sudo ./scripts/build-all.sh
 
 # ---------------------------------------------------------------------------
 # Phase 2.1 — tuning configs: always synced from the repo (config-as-code)
@@ -325,7 +324,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # Phase 5.9 — seed GlitchStash configs (once; box's copy wins)
-# GlitchStash is built from source — JAR deployed by plugins/GlitchStash/build.sh
+# GlitchStash is built from source — JAR deployed by scripts/build-all.sh
 # ---------------------------------------------------------------------------
 if [[ -d "${REPO_DIR}/plugins/GlitchStash/src/main/resources" ]]; then
   log "Phase 5.9 — seeding GlitchStash configs"

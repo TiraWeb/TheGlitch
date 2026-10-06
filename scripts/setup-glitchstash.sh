@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # The Glitch — GlitchStash reload & verification.
-# Run AFTER building the plugin (plugins/GlitchStash/build.sh) + server restart:
+# Run AFTER building the plugin (scripts/build-all.sh GlitchStash) + server restart:
 #   sudo ./scripts/setup-glitchstash.sh
 #
 # Reloads GlitchStash config, verifies extraction stash system.

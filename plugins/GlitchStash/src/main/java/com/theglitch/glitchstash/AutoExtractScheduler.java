@@ -4,7 +4,9 @@ import com.theglitch.common.FoliaScheduler;
 import com.theglitch.common.Worlds;
 import com.theglitch.glitchitems.GlitchItems;
 import com.theglitch.glitchstash.extract.DynamicExtractionManager;
+import com.theglitch.glitchstash.extract.QuietKoth;
 import dev.velmax.velkoth.VelKothPlugin;
+import dev.velmax.velkoth.arena.Arena;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
@@ -517,7 +519,7 @@ public final class AutoExtractScheduler {
         }
     }
 
-    /** Starts one arena through VelKoth's console command, which needs no players nearby. */
+    /** Starts one arena without VelKoth's server-wide announcement (see {@link QuietKoth}). */
     private void startArena(String arena, int cycle) {
         if (arena == null || arena.isBlank()) {
             plugin.getLogger().warning("[AutoExtract] Cycle #" + cycle + " — blank arena name skipped.");
@@ -525,14 +527,15 @@ public final class AutoExtractScheduler {
         }
         String name = arena.trim();
         try {
-            boolean dispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "koth start " + name);
-            if (dispatched) {
-                plugin.getLogger().info("[AutoExtract] Dispatched 'koth start " + name + "' (cycle #" + cycle + ").");
-            } else {
-                plugin.getLogger().warning("[AutoExtract] 'koth start " + name + "' was not recognised. VelKoth loaded: " + (pluginManager.getPlugin(VELKOTH_PLUGIN_NAME) != null));
+            VelKothPlugin velKoth = VelKothPlugin.getInstance();
+            Arena found = velKoth == null ? null : velKoth.getArenaManager().getArena(name);
+            if (found == null) {
+                plugin.getLogger().warning("[AutoExtract] Arena '" + name + "' not found in VelKoth (cycle #" + cycle + ").");
+            } else if (QuietKoth.start(velKoth, found)) {
+                plugin.getLogger().info("[AutoExtract] Started arena '" + name + "' (cycle #" + cycle + ").");
             }
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.WARNING, "[AutoExtract] dispatchCommand 'koth start " + name + "' failed (cycle #" + cycle + ")", e);
+        } catch (RuntimeException | LinkageError e) {
+            plugin.getLogger().log(Level.WARNING, "[AutoExtract] Failed to start arena '" + name + "' (cycle #" + cycle + ")", e);
         }
     }
 

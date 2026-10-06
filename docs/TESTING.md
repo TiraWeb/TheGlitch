@@ -9,7 +9,6 @@
 - [ ] `git pull && sudo ./bootstrap.sh` (seeds new MythicMobs SpawnAreas + Spawners subdirs)
 - [ ] Build all changed plugins:
   - `sudo ./scripts/build-all.sh [Plugin...]`  *(preferred: 14-module reactor, topological order — all 13 deployable plugins incl. GlitchBots/GlitchTutorial, or just the ones named)*
-  - (the old per-plugin `build.sh` scripts only cover the original six plugins; use the reactor)
 - [ ] `sudo systemctl restart theglitch`
 - [ ] `sudo ./scripts/setup-mythicmobs.sh` (`mm reload` + verify mobs list)
 - [ ] Confirm no plugin errors in the log for any Glitch* plugin (`grep -E "ERROR|Exception" logs/latest.log`) — GlitchTutorial logs "Tutorial ready (... template found)", GlitchBots "Rogue Raiders ready"

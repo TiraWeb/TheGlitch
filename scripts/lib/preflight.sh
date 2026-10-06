@@ -10,10 +10,6 @@
 #   source "$(dirname "$0")/lib/preflight.sh"
 #   source "$(dirname "${BASH_SOURCE[0]}")/lib/preflight.sh"
 #
-#   # From plugins/*/build.sh via REPO_DIR:
-#   source "${REPO_DIR}/scripts/lib/preflight.sh"
-#   source "$(dirname "$0")/../../scripts/lib/preflight.sh"
-#
 # Features:
 #   - log / warn / die  (no-op if caller already defined them)
 #   - require_root()    — die unless EUID 0
@@ -175,7 +171,7 @@ require_maven_java() {
   command -v java >/dev/null 2>&1 || die "Java not found. Install: sudo apt install openjdk-25-jdk-headless (or openjdk-25-jre-headless for runtime only)"
 }
 
-# Alias for callers that expect ensure_* naming (build-common.sh uses ensure_maven_java)
+# Alias for callers that expect ensure_* naming
 ensure_maven_java() { require_maven_java "$@"; }
 
 # ---------------------------------------------------------------------------

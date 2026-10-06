@@ -10,7 +10,7 @@ Runs on `push` and `pull_request` to `main`. Job `validate` on `ubuntu-latest` w
 |------|------|----------------|
 | Checkout | `actions/checkout@v4` | — |
 | Java | `actions/setup-java@v4` (21, `temurin`, `cache: maven`) | `java -version`, `mvn --version` |
-| ShellCheck | `ludeeus/action-shellcheck@master` (`scandir: ./scripts`, `additional_files: bootstrap.sh console.sh recover-worlds.sh plugins/*/build.sh`) + fallback `apt-get install shellcheck && shellcheck …` | `scripts/*.sh` (incl. `scripts/setup-*.sh`), `bootstrap.sh`, `console.sh`, `recover-worlds.sh`, `plugins/*/build.sh` |
+| ShellCheck | `ludeeus/action-shellcheck@master` (`scandir: ./scripts`, `additional_files: bootstrap.sh console.sh`) + fallback `apt-get install shellcheck && shellcheck …` | `scripts/*.sh` (incl. `scripts/setup-*.sh`), `bootstrap.sh`, `console.sh` |
 | YAML lint | `python -c "import yaml; yaml.safe_load(...)"` over all `*.yml`/`*.yaml` (skips `target/`, `server/world*`) | parse errors |
 | Maven validate | `mvn -B --no-transfer-progress -DskipTests validate` (offline `mvn -o validate` fallback) | POMs, reactor, deps |
 | Maven package | `mvn -B --no-transfer-progress -DskipTests -Dmaven.test.skip=true package` (`continue-on-error: true`) | compile + jar (best-effort, needs network for Paper) |
@@ -24,10 +24,9 @@ Prereqs: `shellcheck`, `python3 + pyyaml`, `java 21`, `maven 3.9`.
 
 ```bash
 # 1. ShellCheck — same files as CI (plus 2026-09-02 deploy scripts)
-shellcheck -S warning -x scripts/*.sh bootstrap.sh console.sh recover-worlds.sh plugins/*/build.sh
+shellcheck -S warning -x scripts/*.sh bootstrap.sh console.sh
 # or file-by-file:
 shellcheck scripts/build-all.sh
-shellcheck plugins/GlitchItems/build.sh
 shellcheck bootstrap.sh
 # Nexo itemname + config-version checks (not wired into CI — run manually; see table note above)
 ! grep -qr "displayname:" server/plugins/Nexo/items/oraxen_items/*.yml || (echo "FAIL: displayname: still present (expected itemname:)" && exit 1)
@@ -63,7 +62,7 @@ mvn -T 1C -B -DskipTests -Dmaven.test.skip=true package
 
 ## Keep it green
 
-- Make scripts executable: `chmod +x scripts/*.sh plugins/*/build.sh bootstrap.sh` (fix with `sudo bash scripts/fix-script-modes.sh`)
+- Make scripts executable: `chmod +x scripts/*.sh bootstrap.sh console.sh` (fix with `sudo bash scripts/fix-script-modes.sh`)
 - Keep YAML `indent_size: 2` (see `.editorconfig`)
 - Pin Java/Paper once in root `pom.xml` (`<java.version>21</java.version>`, `<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`) — applies to all 14 modules (GlitchItems v3 still 21; verify scatter rift_vault=6 and itemname count=20)
 - (The 2026-09-02 one-off deploy-balance/deploy-armor scripts were removed 2026-10-01 — they targeted the retired Oraxen folder.) The itemname/displayname/config-version checks above are documented but not wired into CI — see the table note.

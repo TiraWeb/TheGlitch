@@ -290,7 +290,7 @@ sudo ./scripts/build-all.sh              # all 13 deployable plugins in topologi
 sudo systemctl restart theglitch
 ```
 
-Plugins that use each other's classes (Shops → Items, Stash → Items/Shops, Raid → Stash/Shops) depend on the sibling **reactor module**, so they always compile against current source; only third-party jars live in the gitignored `plugins/<name>/lib/` (seeded from the live server by `build-all.sh`). The old per-plugin `plugins/*/build.sh` scripts predate the shared modules and can't build a plugin on their own any more. Use `build-all.sh <Plugin>` instead.
+Plugins that use each other's classes (Shops → Items, Stash → Items/Shops, Raid → Stash/Shops) depend on the sibling **reactor module**, so they always compile against current source; only third-party jars live in the gitignored `plugins/<name>/lib/` (seeded from the live server by `build-all.sh`). `build-all.sh` is the only build entry point (the old per-plugin `build.sh` scripts were removed 2026-10-07).
 
 Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **14** modules. The compiler runs with `-Xlint:all` (minus deprecation: VaultUnlocked deprecates the whole legacy Vault API) and the build is warning-free; keep it that way. CI validate: `./scripts/build-all.sh --no-deploy`. GlitchItems `config-version` is now 3 (2026-09-02, was 1) — armor upgrade + per-slot identity (see `plugins/GlitchItems/src/main/resources/config.yml`).
 
@@ -316,7 +316,6 @@ sudo ./scripts/setup-nexo-items.sh    # deploy item/glyph/pack configs, reload
 ```
 bootstrap.sh                        one-shot / re-runnable box setup (Phases 0–5.9)
 console.sh                          attach to the live server console
-recover-worlds.sh                   restore worlds from a backup
 scripts/setup-worlds.sh             Phase 4: creates/imports the three zones, rules, protections
 scripts/reapply-world-config.sh     Phase 4: re-apply gamerules/flags/borders after world import
 scripts/prune-generated-terrain.py  drop chunks absent from a reference backup or a .keep list (server stopped)
@@ -353,20 +352,21 @@ scripts/build-all.sh                reactor build + deploy all custom plugins (s
 scripts/mc-cmd.py                   local RCON client
 scripts/backup-now.sh               worlds+data backup
 scripts/lib/                        shared shell helpers (preflight.sh, gamerules.sh — see scripts/lib/README.md)
+plugins/GlitchCommon/     shared library (no plugin.yml) — shaded into every plugin that uses it
+plugins/GlitchItems/      GlitchItems source — gear, residual, containers, loot scatter
+plugins/GlitchShops/      GlitchShops source — bazaar, merchants, sell prices
 plugins/GlitchStash/      GlitchStash source — vault + dynamic extraction (SpotPicker/DynamicExtractionManager)
-plugins/GlitchClasses/    GlitchClasses source (built via build.sh)
-plugins/GlitchItems/      GlitchItems source (built via build.sh) — gear, residual, containers
-plugins/GlitchShops/      GlitchShops source (built via build.sh)
-plugins/GlitchDeathRules/ GlitchDeathRules source (built via build.sh)
-plugins/GlitchHideout/    GlitchHideout source (built via build.sh)
-plugins/GlitchCommon/     shared library module (no plugin.yml — reference/shade, not deployed)
-plugins/GlitchRaid/       GlitchRaid source (reactor-only build)
-plugins/GlitchInsurance/  GlitchInsurance source (reactor-only; needs lib/VaultUnlocked.jar)
-plugins/GlitchEvents/     GlitchEvents source (reactor-only build)
-plugins/GlitchQuests/     GlitchQuests source (reactor-only build)
-plugins/GlitchWorldGen/   GlitchWorldGen source — void/barrier generator for imported maps (reactor-only)
-plugins/GlitchBots/       GlitchBots source — Rogue Raider bots + Gemini chat (reactor-only; gemini.key live-only)
-plugins/GlitchTutorial/   GlitchTutorial source — new-player tutorial + private instance worlds (reactor-only)
+plugins/GlitchRaid/       GlitchRaid source — raid lifecycle, parties, Red Zone portal, Raider Rank
+plugins/GlitchClasses/    GlitchClasses source — classes, abilities, ultimates
+plugins/GlitchHideout/    GlitchHideout source — stations, crafting, recycler
+plugins/GlitchDeathRules/ GlitchDeathRules source — mercy keep + Red Zone entry invulnerability
+plugins/GlitchInsurance/  GlitchInsurance source — insured gear kept on death
+plugins/GlitchEvents/     GlitchEvents source — world events
+plugins/GlitchQuests/     GlitchQuests source — daily/weekly quests and rewards
+plugins/GlitchWorldGen/   GlitchWorldGen source — void/barrier generator for imported maps
+plugins/GlitchBots/       GlitchBots source — Rogue Raider bots + Gemini chat (gemini.key live-only)
+plugins/GlitchTutorial/   GlitchTutorial source — new-player tutorial + private instance worlds
+                          (all built by scripts/build-all.sh; third-party compile jars in each lib/)
 # GlitchDungeons, GlitchHUD, GlitchHealthBar, GlitchLoot removed 2026-09-22 — see docs/STATUS.md
 server/plugins/Nexo/      Nexo item/glyph configs + pack assets (migrated from Oraxen 2026-09-20)
 server/plugins/ModelEngine/blueprints/  MEG rig blueprints (generated, tracked — source zips at repo root)

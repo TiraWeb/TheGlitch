@@ -1,5 +1,6 @@
 package com.theglitch.glitchstash.extract;
 
+import com.theglitch.common.OpNotice;
 import com.theglitch.common.Worlds;
 import com.theglitch.glitchstash.ExtractionVariantManager;
 import com.theglitch.glitchstash.GlitchStash;
@@ -8,6 +9,7 @@ import dev.velmax.velkoth.arena.Arena;
 import dev.velmax.velkoth.arena.Arena.CaptureMode;
 import dev.velmax.velkoth.arena.region.CuboidRegion;
 import dev.velmax.velkoth.manager.ArenaManager;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
@@ -17,14 +19,16 @@ import java.util.logging.Level;
 
 /**
  * Orchestrates one dynamic extraction cycle: pick random validated spots,
- * create/move the VelKoth arenas there, start them via the console path,
- * point the variant-key zones at them and show markers.
+ * create/move the VelKoth arenas there, start them quietly ({@link QuietKoth}),
+ * point the variant-key zones at them and show markers. Only operators are told
+ * when the cycle's beacons switch on and off.
  *
  * Cycle flow lives in {@link com.theglitch.glitchstash.AutoExtractScheduler}; the scheduler skips its
  * legacy arena discovery whenever {@link #runCycle(int)} returns true.
  */
 public final class DynamicExtractionManager {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final int DEFAULT_GRACE_PERIOD = 5;
     private static final int DEFAULT_MAX_SCORE = 30;
     private static final int ZONE_MARGIN_BLOCKS = 2;
@@ -133,9 +137,10 @@ public final class DynamicExtractionManager {
         List<ExtractionPoint> picked = spotPicker.pick(world, points, arenaPrefix, openUntil, spec);
         if (picked.isEmpty()) return false;
 
+        VelKothPlugin velkoth;
         ArenaManager arenaManager = null;
         try {
-            VelKothPlugin velkoth = VelKothPlugin.getInstance();
+            velkoth = VelKothPlugin.getInstance();
             if (velkoth != null) arenaManager = velkoth.getArenaManager();
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "[DynamicExtract] VelKoth unavailable — falling back to legacy arenas for cycle #" + cycleNumber, e);
@@ -163,7 +168,8 @@ public final class DynamicExtractionManager {
             if (dirty) arenaManager.saveArenas();
 
             for (ExtractionPoint p : picked) {
-                if (startArena(p.arenaId())) started.add(p.arenaId());
+                Arena arena = arenaManager.getArena(p.arenaId());
+                if (arena != null && QuietKoth.start(velkoth, arena)) started.add(p.arenaId());
             }
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "[DynamicExtract] Arena setup failed for cycle #" + cycleNumber + " — falling back to legacy arenas.", e);
@@ -190,6 +196,8 @@ public final class DynamicExtractionManager {
         }
         plugin.getLogger().info("[DynamicExtract] Cycle #" + cycleNumber + ": " + started.size() + "/" + picked.size()
                 + " started at " + coords + " (world=" + redWorld + ", open " + (raidMs / 60000L) + "m)");
+        OpNotice.send(MM.deserialize("<dark_gray>[OP]</dark_gray> <gray>Extraction round started in <white>" + redWorld
+                + "</white> — <green>" + started.size() + "</green> beacon(s) on at " + coords + ".</gray>"));
         return true;
     }
 
@@ -205,30 +213,23 @@ public final class DynamicExtractionManager {
             toStop = currentPoints;
             currentPoints = List.of();
         }
-        for (ExtractionPoint p : toStop) {
-            try {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "koth stop " + p.arenaId());
-            } catch (Exception ignored) {
-                // Arena may already have ended — VelKoth owns the authoritative stop
+        int stopped = 0;
+        try {
+            VelKothPlugin velkoth = VelKothPlugin.getInstance();
+            for (ExtractionPoint p : toStop) {
+                Arena arena = velkoth == null ? null : velkoth.getArenaManager().getArena(p.arenaId());
+                // A captured beacon is already idle: VelKoth stopped it (and announced it) itself
+                if (arena != null && QuietKoth.stop(velkoth, arena)) stopped++;
             }
+        } catch (Exception | LinkageError e) {
+            plugin.getLogger().log(Level.WARNING, "[DynamicExtract] Failed to stop the cycle's beacons", e);
         }
+        OpNotice.send(MM.deserialize("<dark_gray>[OP]</dark_gray> <gray>Extraction round ended in <white>" + redWorld
+                + "</white> — <red>" + stopped + "</red> unused beacon(s) off.</gray>"));
         try {
             markers.clear();
         } catch (Exception e) {
             plugin.getLogger().fine("[DynamicExtract] Marker clear failed: " + e.getMessage());
-        }
-    }
-
-    private boolean startArena(String arenaId) {
-        try {
-            boolean dispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "koth start " + arenaId);
-            if (!dispatched) {
-                plugin.getLogger().warning("[DynamicExtract] 'koth start " + arenaId + "' dispatch returned false — command may be unknown.");
-            }
-            return dispatched;
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.WARNING, "[DynamicExtract] Failed to dispatch 'koth start " + arenaId + "'", e);
-            return false;
         }
     }
 

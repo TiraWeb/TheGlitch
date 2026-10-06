@@ -4,7 +4,7 @@ How `config.yml` upgrades work for The Glitch custom plugins: GlitchItems, Glitc
 
 ## Rule: live configs are seeded only if missing
 
-Every `plugins/<Plugin>/build.sh` and `scripts/build-all.sh` deploys configs with:
+`scripts/build-all.sh` deploys configs with:
 
 ```bash
 if [[ ! -f "${LIVE_PLUGIN_DIR}/<Plugin>/config.yml" ]]; then
@@ -15,7 +15,7 @@ fi
 
 Same guard exists for `messages.yml` and `shops.yml`. This is intentional — we **never overwrite** live edits (timer tweaks, zone bounds, payout numbers) on a redeploy.
 
-Consequence: changing the default `src/main/resources/config.yml` in the repo **does not** propagate to `/opt/theglitch/server/plugins/<Plugin>/config.yml` on the next `build.sh`.
+Consequence: changing the default `src/main/resources/config.yml` in the repo **does not** propagate to `/opt/theglitch/server/plugins/<Plugin>/config.yml` on the next build.
 
 **Since 2026-10-01 — `GlitchCommon.ConfigDefaults.merge(plugin)`:** every plugin calls it on enable. It adds keys that exist in the bundled `config.yml` but are missing from the live file, and saves (never over a live file that failed to parse). It **never overwrites** an existing value — including whole lists and sections — so a changed default for an existing key (e.g. a list entry, a renamed option) must still be applied on the host by hand, then `chown -R minecraft:minecraft /opt/theglitch/server/plugins`.
 
@@ -98,14 +98,14 @@ Notes:
 ### Which plugins use which?
 
 - Current default for all custom plugins is **auto-migration off** (manual). Add `copyDefaults(true)` only where you want silent healing. (GlitchCommon is a library — no config.)
-- If you enable auto-merge, keep the `if [[ ! -f ... ]]` guard in `build.sh` — it still protects live files at deploy time; the merge happens at **plugin enable** instead.
+- If you enable auto-merge, keep the `if [[ ! -f ... ]]` guard in `scripts/build-all.sh` — it still protects live files at deploy time; the merge happens at **plugin enable** instead.
 
 ## Checklist for a config change
 
 1. Edit `plugins/<Plugin>/src/main/resources/config.yml`
 2. Bump `config-version: 2→3 (GlitchItems)` (history v1→v2→v3; higher for future bumps)
 3. Add `copyDefaults(true)` handling if you want auto-merge (see above) — otherwise document manual step here and in `HANDOFF.md`
-4. `mvn -B -DskipTests validate` (and `shellcheck` if you touched `build.sh`)
+4. `mvn -B -DskipTests validate` (and `shellcheck` if you touched `scripts/build-all.sh`)
 5. Deploy: `sudo ./scripts/build-all.sh && sudo systemctl restart theglitch`
 6. On live: verify `/<plugin> reload` or restart applied the new key; `grep config-version /opt/theglitch/server/plugins/<Plugin>/config.yml` # expect 3 (2026-09-02), others 1
 
@@ -126,5 +126,4 @@ Deployed via `scripts/deploy-balance-2026-09-02.sh` + `scripts/deploy-armor-2026
 ## See also
 
 - `docs/CI.md` — local CI parity (`shellcheck`, `mvn validate`)
-- `plugins/*/build.sh` — seeding guards (`if [[ ! -f ... ]]`)
-- `scripts/build-all.sh` — same guard + reactor build
+- `scripts/build-all.sh` — seeding guard (`if [[ ! -f ... ]]`) + reactor build

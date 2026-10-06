@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # The Glitch — Build all custom plugins in correct topological order via Maven reactor.
-# Replaces the individual per-plugin `sudo ./plugins/<name>/build.sh` calls for routine deploys.
+# The only supported way to build the plugins (GlitchCommon and the inter-plugin
+# dependencies need the reactor).
 #
 # Usage:
 #   sudo ./scripts/build-all.sh              # build + deploy all Track 1 plugins (reactor -T 1C)
@@ -132,14 +133,14 @@ for plugin in "${SELECTED[@]}"; do
     GlitchItems)
       for jar in VaultUnlocked PlaceholderAPI NMinimap AnvilORM; do
         if [[ ! -f "${REPO_DIR}/plugins/GlitchItems/lib/${jar}.jar" ]]; then
-          seed_lib GlitchItems "$jar" || warn "Missing ${jar}.jar for GlitchItems — run sudo ./plugins/GlitchItems/build.sh once"
+          seed_lib GlitchItems "$jar" || warn "Missing ${jar}.jar for GlitchItems — copy it into plugins/GlitchItems/lib/"
         fi
       done
       ;;
     GlitchClasses)
       for jar in VaultUnlocked PlaceholderAPI; do
         if [[ ! -f "${REPO_DIR}/plugins/GlitchClasses/lib/${jar}.jar" ]]; then
-          seed_lib GlitchClasses "$jar" || warn "Missing ${jar}.jar for GlitchClasses — run sudo ./plugins/GlitchClasses/build.sh once"
+          seed_lib GlitchClasses "$jar" || warn "Missing ${jar}.jar for GlitchClasses — copy it into plugins/GlitchClasses/lib/"
         fi
       done
       ;;

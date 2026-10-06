@@ -1,6 +1,7 @@
 package com.theglitch.glitchraid;
 
 import com.theglitch.common.FoliaScheduler;
+import com.theglitch.common.OpNotice;
 import com.theglitch.common.VaultHook;
 import com.theglitch.common.Worlds;
 import com.theglitch.glitchshops.GlitchShops;
@@ -1950,14 +1951,8 @@ public final class RaidManager {
                 // Future: spawn item entities at death locations proportional to loot value
                 // For now we avoid spawning to prevent duplicate drops and Folia region issues.
             }
-            // Broadcast scatter start
-            String scatterRaw = msgRaidScatterStart;
-            Component msg = MM.deserialize(scatterRaw.replace("<world>", worldKey));
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p.getWorld().getName().equalsIgnoreCase(hubWorld) || p.getWorld().getName().equalsIgnoreCase(worldKey)) {
-                    try { p.sendMessage(msg); } catch (Exception ignored) {}
-                }
-            }
+            // Round-end automation notice: operators only
+            OpNotice.send(MM.deserialize("<dark_gray>[OP]</dark_gray> " + msgRaidScatterStart.replace("<world>", worldKey)));
         } catch (Exception e) {
             plugin.getLogger().warning("Failed scatter buffer for " + worldKey + ": " + e.getMessage());
         }
