@@ -354,6 +354,13 @@ public final class HideoutGUI implements Listener {
         }
     }
 
+    /** Same as left-clicking the station's card in the hideout menu (used by the hub wall panel). */
+    public void useStation(Player player, String stationId) {
+        if (!usableHere(player)) return;
+        HideoutManager.Station station = manager.getStation(stationId);
+        if (station != null) useStation(player, station);
+    }
+
     private void useStation(Player player, HideoutManager.Station station) {
         switch (station.id()) {
             case "workbench" -> openWorkbench(player);

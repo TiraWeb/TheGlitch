@@ -40,7 +40,8 @@ final class TutorialManager {
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final String[] CRATES = {"crate1", "crate2", "crate3"};
 
-    record HubStop(String name, Location location, String line) {}
+    /** A hub-tour stop: Echo's lines when reached, and an optional command the player runs after them (e.g. open a menu). */
+    record HubStop(String name, Location location, List<String> lines, String command) {}
 
     private final GlitchTutorial plugin;
     private final TutorialStore store;
@@ -99,8 +100,16 @@ final class TutorialManager {
         for (Map<?, ?> m : cfg().getMapList("hub-tour")) {
             World w = Bukkit.getWorld(String.valueOf(m.get("world")));
             if (w == null) continue;
+            List<String> lines = new ArrayList<>();
+            if (m.get("lines") instanceof List<?> l) {
+                for (Object o : l) lines.add(String.valueOf(o));
+            } else if (m.get("line") != null) {
+                lines.add(String.valueOf(m.get("line")));
+            }
+            Object cmd = m.get("command");
             out.add(new HubStop(String.valueOf(m.get("name")),
-                    new Location(w, num(m.get("x")), num(m.get("y")), num(m.get("z"))), String.valueOf(m.get("line"))));
+                    new Location(w, num(m.get("x")), num(m.get("y")), num(m.get("z"))), lines,
+                    cmd == null ? null : String.valueOf(cmd)));
         }
         return out;
     }
@@ -737,7 +746,10 @@ final class TutorialManager {
             r.progress++;
             store.markDirty();
             busy.add(p.getUniqueId());
-            sayLines(p, List.of(stop.line()), () -> busy.remove(p.getUniqueId()), 0);
+            sayLines(p, stop.lines(), () -> {
+                busy.remove(p.getUniqueId());
+                if (stop.command() != null && !stop.command().isBlank() && stepIs(p, Step.HUB)) p.performCommand(stop.command());
+            }, 0);
             return;
         }
         p.sendActionBar(MM.deserialize("<aqua>" + stop.name() + "</aqua> <gray>" + (int) d + "m</gray> <white>" + arrow(p, stop.location()) + "</white>"));

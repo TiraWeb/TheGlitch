@@ -34,36 +34,60 @@ points:
 
 # Hub tour (step 7): walk to each stop in order
 hub-tour:
+  # Walking order from the hub spawn (147.8, 23). A stop takes "line" or "lines"; "command" is run
+  # by the player after Echo finishes (used to open the hideout menu). Where a stop has both an
+  # NPC and a wall panel, Echo says either works — the panels are experimental.
+  - name: Class Master
+    world: hub
+    x: 174.57
+    y: -36.0
+    z: -59.36
+    lines:
+      - "The <gold>Class Master</gold>. Switch class any time — every class keeps its own level, so switching back costs nothing."
+      - "The wall next to him does the same: click a class to see its abilities. The wall is experimental — if it acts up, talk to the Class Master or type <yellow>/class</yellow>."
   - name: Stash Keeper
     world: hub
-    x: 64.95
+    x: 96.44
     y: -46.0
-    z: -5.59
+    z: -6.54
     line: "This is your <green>stash</green>. Everything you extract lands here — it's the only place loot is safe. Right-click the Stash Keeper or type <yellow>/stash</yellow>."
-  - name: Red Zone Gate
+  - name: Red Zone Portal
     world: hub
-    x: 65.04
+    x: 96.0
     y: -46.0
-    z: 9.5
-    line: "The <red>Red Zone Gate</red>. Talk to it — or walk into the portal right next to it — and pick a map. Your party leader brings the party."
+    z: 3.0
+    line: "The <red>Red Zone portal</red>. Walk in and pick one of three maps, each with its own raid timer. Your party leader brings the party."
+  - name: Dungeon Master
+    world: hub
+    x: 96.8
+    y: -46.0
+    z: 13.71
+    line: "The <light_purple>Dungeon Master</light_purple> runs the boss dungeons — private runs for you and your party, one key each. You'll do your first one at the end of this tour (<yellow>/dungeons</yellow> works too)."
   - name: Grand Bazaar
     world: hub
     x: 102.16
     y: -36.0
     z: 62.59
-    line: "The <gold>Grand Bazaar</gold>. Sell loot for Shards, buy gear, keys and potions — browse the wall with the arrows."
+    lines:
+      - "The <gold>Grand Bazaar</gold>. Sell loot for Shards, buy gear, keys and potions."
+      - "Talk to the merchant, or browse the wall behind with its arrows. The wall is experimental — the merchant (or <yellow>/shop</yellow>) always works."
   - name: Insurance
     world: hub
     x: 56.62
     y: -36.0
     z: 95.01
-    line: "<yellow>Insurance</yellow>: pay a little before a raid and that gear comes back if you die. Worth it on your best stuff."
+    line: "<yellow>Insurance</yellow>: pay a little before a raid and that gear comes back if you die. Use the wall here or <yellow>/insurance</yellow> — the wall is experimental."
   - name: Hideout
     world: hub
     x: 35.29
     y: -36.0
     z: 93.31
-    line: "Your <aqua>Hideout</aqua>: upgrade stations, craft at the Workbench and heal up between raids."
+    lines:
+      - "Your <aqua>Hideout</aqua>. Every station levels up with Shards and gives you something permanent."
+      - "<gold>Workbench</gold>: craft gadgets, the Secure Pouch and gear from blueprints you find in raids. The Recycler next to it turns junk into parts."
+      - "<green>Med Station</green> heals you, <dark_purple>Stash</dark_purple> and <blue>Armory</blue> add storage, <red>Skill Trainer</red> boosts your class, <light_purple>Arcane Core</light_purple> and <aqua>Intel Center</aqua> unlock higher tiers."
+      - "On this wall: left-click a station to use it, right-click to upgrade. It's experimental — <yellow>/hideout</yellow> opens the same menu. Here, have a look."
+    command: hideout
 
 dungeon:
   # MythicDungeons map id of the first dungeon (Goblin Hollow)

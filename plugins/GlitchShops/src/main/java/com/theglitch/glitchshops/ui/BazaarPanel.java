@@ -687,6 +687,15 @@ public final class BazaarPanel implements Listener {
         }
     }
 
+    /** Left-click (an attack on the Interaction box) works like right-click. */
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOW)
+    public void onLeftClick(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Interaction hit) || !(event.getDamager() instanceof Player player)) return;
+        if (!hit.getPersistentDataContainer().has(PANEL_KEY, PersistentDataType.STRING)) return;
+        event.setCancelled(true);
+        onInteract(new PlayerInteractEntityEvent(player, hit, EquipmentSlot.HAND));
+    }
+
     @EventHandler
     public void onInteract(PlayerInteractEntityEvent event) {
         try {

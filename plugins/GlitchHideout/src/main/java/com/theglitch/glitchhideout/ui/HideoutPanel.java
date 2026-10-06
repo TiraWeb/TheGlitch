@@ -384,6 +384,8 @@ public final class HideoutPanel implements Listener {
         } catch (Throwable t) {
             plugin.getLogger().fine("header spawn failed: " + t.getClass().getSimpleName());
         }
+        spawnText(point(0.0D, HEADER_Y - 0.55D),
+                "<gray>Left-click: <white>use</white> \u00b7 Right-click: <white>upgrade</white></gray>", 0.6F, false);
     }
 
     private void styleShared(TextDisplay t) {
@@ -532,6 +534,38 @@ public final class HideoutPanel implements Listener {
         }
     }
 
+    /**
+     * Left-click on a cell (an attack on the Interaction box): use the station, like left-clicking
+     * its card in the hideout menu — the Workbench opens crafting, the Med Station heals...
+     */
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOW)
+    public void onLeftClick(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        try {
+            if (!(event.getEntity() instanceof Interaction hit) || !(event.getDamager() instanceof Player player)) return;
+            String kind = hit.getPersistentDataContainer().get(PANEL_KEY, PersistentDataType.STRING);
+            String value = hit.getPersistentDataContainer().get(VALUE_KEY, PersistentDataType.STRING);
+            if (kind == null) return;
+            event.setCancelled(true);
+            if (!"cell".equals(kind) || value == null || !value.startsWith("station|")) return;
+            long now = System.currentTimeMillis();
+            Long prior = lastClick.get(player.getUniqueId());
+            if (prior != null && now - prior < 400L) return;
+            lastClick.put(player.getUniqueId(), now);
+            String stationId = value.substring("station|".length());
+            try {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0F, 1.2F);
+            } catch (Throwable ignored) {
+            }
+            enqueue(() -> {
+                var gui = plugin.getGui();
+                if (gui != null) gui.useStation(player, stationId);
+            });
+        } catch (Throwable t) {
+            plugin.getLogger().fine("panel left-click failed: " + t.getClass().getSimpleName());
+        }
+    }
+
+    /** Right-click on a cell: upgrade the station (chat confirm first). */
     @EventHandler
     public void onInteract(PlayerInteractEntityEvent event) {
         try {
