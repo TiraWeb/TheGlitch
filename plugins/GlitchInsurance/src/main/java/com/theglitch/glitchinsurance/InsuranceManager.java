@@ -1,24 +1,24 @@
 package com.theglitch.glitchinsurance;
 
+import com.theglitch.common.AtomicFiles;
+import com.theglitch.common.ItemCodec;
+import com.theglitch.common.Worlds;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.io.BukkitObjectInputStream;
-import org.bukkit.util.io.BukkitObjectOutputStream;
+import org.bukkit.inventory.meta.ItemMeta;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -93,7 +93,7 @@ public final class InsuranceManager {
     /** How long a bought policy protects the item (independent of the old claim window). */
     private volatile int policyDurationSeconds = 3600;
     private volatile int cooldownSeconds = 60;
-    private volatile Set<String> enabledWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
+    private volatile Set<String> enabledWorlds = Worlds.GAME_WORLDS;
 
     public InsuranceManager(GlitchInsurance plugin) {
         this.plugin = plugin;
@@ -247,25 +247,6 @@ public final class InsuranceManager {
         cooldowns.put(uuid, now);
         saveInsurance(uuid);
         return InsureResult.SUCCESS;
-    }
-
-    /**
-     * Claim all insured items for the player and clear storage.
-     * Returns the list of ItemStacks to give back; empty if none or expired.
-     */
-    public List<ItemStack> claim(UUID uuid) {
-        List<InsuredItem> list = insured.remove(uuid);
-        if (list == null || list.isEmpty()) return List.of();
-        // Expired items are dropped (still removed); only valid ones are returned.
-        long now = System.currentTimeMillis();
-        List<ItemStack> result = new ArrayList<>();
-        for (InsuredItem it : list) {
-            if (now <= it.expiresAt()) {
-                result.add(it.item());
-            }
-        }
-        deleteFile(uuid);
-        return result;
     }
 
     public ItemStack claimOrdinal(UUID uuid, int ordinal) {
@@ -436,7 +417,7 @@ public final class InsuranceManager {
                         long expiresAt = toLong(map.get("expiresAt"));
                         String itemName = (String) map.getOrDefault("itemName", "item");
                         if (encoded == null) continue;
-                        ItemStack stack = deserializeItemStack(encoded);
+                        ItemStack stack = ItemCodec.decode(encoded);
                         if (stack == null) continue;
                         // Skip already expired on load
                         if (System.currentTimeMillis() > expiresAt) continue;
@@ -481,7 +462,7 @@ public final class InsuranceManager {
         YamlConfiguration yaml = new YamlConfiguration();
         List<Map<String, Object>> serialized = new ArrayList<>();
         for (InsuredItem it : snapshot) {
-            String encoded = serializeItemStack(it.rawItem());
+            String encoded = ItemCodec.encode(it.rawItem());
             if (encoded == null) continue;
             Map<String, Object> map = new java.util.LinkedHashMap<>();
             map.put("item", encoded);
@@ -505,7 +486,7 @@ public final class InsuranceManager {
                 synchronized (lock) {
                     // Write-latest-wins: skip if a newer generation or tombstone is pending
                     if (generation.get() != gen) return;
-                    atomicSave(payload, file);
+                    AtomicFiles.write(payload, file, plugin.getLogger());
                 }
             });
         } catch (Throwable t) {
@@ -513,11 +494,11 @@ public final class InsuranceManager {
                 plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                     synchronized (lock) {
                         if (generation.get() != gen) return;
-                        atomicSave(payload, file);
+                        AtomicFiles.write(payload, file, plugin.getLogger());
                     }
                 });
             } catch (Throwable t2) {
-                atomicSave(payload, file);
+                AtomicFiles.write(payload, file, plugin.getLogger());
                 plugin.getLogger().log(Level.WARNING, "Async scheduler unavailable, saved synchronously for " + uuid, t2);
             }
         }
@@ -532,7 +513,7 @@ public final class InsuranceManager {
         YamlConfiguration yaml = new YamlConfiguration();
         List<Map<String, Object>> serialized = new ArrayList<>();
         for (InsuredItem it : list) {
-            String encoded = serializeItemStack(it.rawItem());
+            String encoded = ItemCodec.encode(it.rawItem());
             if (encoded == null) continue;
             Map<String, Object> map = new java.util.LinkedHashMap<>();
             map.put("item", encoded);
@@ -545,47 +526,7 @@ public final class InsuranceManager {
         Long cd = cooldowns.get(uuid);
         if (cd != null) yaml.set("cooldown", cd);
         yaml.set("uuid", uuid.toString());
-        try {
-            Path parent = file.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path tmp = Files.createTempFile(parent, uuid.toString() + "-", ".tmp");
-            try {
-                yaml.save(tmp.toFile());
-                try {
-                    Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
-            }
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to save insurance for " + uuid, e);
-        }
-    }
-
-    static void atomicSave(String yamlPayload, Path target) {
-        atomicSave(yamlPayload, target, Bukkit.getLogger());
-    }
-
-    static void atomicSave(String yamlPayload, Path target, java.util.logging.Logger logger) {
-        try {
-            Path parent = target.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path tmp = Files.createTempFile(parent, target.getFileName().toString() + "-", ".tmp");
-            try {
-                Files.writeString(tmp, yamlPayload);
-                try {
-                    Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to atomically save " + target, e);
-        }
+        AtomicFiles.save(yaml, file, plugin.getLogger());
     }
 
     private void deleteFile(UUID uuid) {
@@ -634,44 +575,12 @@ public final class InsuranceManager {
         saveAll();
     }
 
-    public static String serializeItemStack(ItemStack item) {
-        if (item == null) return null;
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-             BukkitObjectOutputStream oos = new BukkitObjectOutputStream(bos)) {
-            oos.writeObject(item);
-            return Base64.getEncoder().encodeToString(bos.toByteArray());
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public static ItemStack deserializeItemStack(String encoded) {
-        if (encoded == null || encoded.isEmpty()) return null;
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(Base64.getDecoder().decode(encoded));
-             BukkitObjectInputStream ois = new BukkitObjectInputStream(bis)) {
-            return (ItemStack) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            return null;
-        }
-    }
-
-    private static String displayName(ItemStack stack) {
+    /** Plain-text item name for messages: the custom display name, else the material name. */
+    static String displayName(ItemStack stack) {
         if (stack == null) return "AIR";
-        var meta = stack.getItemMeta();
-        if (meta != null && meta.hasDisplayName()) {
-            // Use plain text fallback
-            try {
-                var comp = meta.displayName();
-                if (comp != null) {
-                    return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(comp);
-                }
-            } catch (Throwable ignored) {}
-            // Fallback to legacy
-            String d = meta.getDisplayName();
-            if (d != null && !d.isBlank()) return d;
-        }
-        // Use material name
-        String mat = stack.getType().name().toLowerCase().replace('_', ' ');
-        return mat;
+        ItemMeta meta = stack.getItemMeta();
+        Component name = meta == null || !meta.hasDisplayName() ? null : meta.displayName();
+        if (name != null) return PlainTextComponentSerializer.plainText().serialize(name);
+        return stack.getType().name().toLowerCase(Locale.ROOT).replace('_', ' ');
     }
 }

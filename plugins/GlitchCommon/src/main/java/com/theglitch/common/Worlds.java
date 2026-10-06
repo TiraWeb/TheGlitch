@@ -3,20 +3,22 @@ package com.theglitch.common;
 import java.util.Set;
 
 /**
- * Shared world constants — centralizes the hard-coded world names scattered across plugins.
- * <p>
- * Rarity and Resonance enums are not duplicated here yet; they could be moved from
- * GlitchItems in a follow-up. This class covers the world constants and provides
- * a single import for game-world checks.
- * </p>
+ * World names shared by every plugin. Config files may override which worlds a
+ * feature runs in; these constants are the built-in defaults.
  */
 public final class Worlds {
 
-    /** All game worlds where abilities, shops, extraction, etc. are active. */
-    public static final Set<String> GAME_WORLDS = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
-
-    /** Open-world PvE/PvP extraction zone. */
+    /** The original Red Zone map, and the default when a config names no world. */
     public static final String GLITCH_RED = "glitch_red";
+
+    /** The Eleria Red Zone map. */
+    public static final String GLITCH_RED_ELERIA = "glitch_red_eleria";
+
+    /** The Horizons Red Zone map. */
+    public static final String GLITCH_RED_HORIZONS = "glitch_red_horizons";
+
+    /** All Red Zone worlds, where abilities, containers, insurance and extraction are active. */
+    public static final Set<String> GAME_WORLDS = Set.of(GLITCH_RED, GLITCH_RED_ELERIA, GLITCH_RED_HORIZONS);
 
     /** Hub / spawn world (if needed). */
     public static final String HUB = "world";

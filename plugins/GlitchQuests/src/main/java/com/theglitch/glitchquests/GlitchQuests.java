@@ -1,5 +1,6 @@
 package com.theglitch.glitchquests;
 
+import com.theglitch.common.VaultHook;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
@@ -11,7 +12,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -28,7 +28,6 @@ public final class GlitchQuests extends JavaPlugin implements TabCompleter, List
 
     private QuestManager quests;
     private Menus menus;
-    private volatile Economy economy;
 
     public static GlitchQuests get() { return instance; }
 
@@ -93,11 +92,7 @@ public final class GlitchQuests extends JavaPlugin implements TabCompleter, List
     }
 
     public Economy getEconomy() {
-        if (economy == null) {
-            RegisteredServiceProvider<Economy> rsp = Bukkit.getServicesManager().getRegistration(Economy.class);
-            if (rsp != null) economy = rsp.getProvider();
-        }
-        return economy;
+        return VaultHook.economy(this, Economy.class);
     }
 
     @Override

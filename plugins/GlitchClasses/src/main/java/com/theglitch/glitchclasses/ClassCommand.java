@@ -1,5 +1,6 @@
 package com.theglitch.glitchclasses;
 
+import com.theglitch.common.VaultHook;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.milkbowl.vault.economy.Economy;
@@ -7,7 +8,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
 
 /**
  * Handles /class command — opens GUI or direct class operations.
@@ -16,8 +16,6 @@ public final class ClassCommand implements CommandExecutor {
 
     private final GlitchClasses plugin;
     private final ClassManager classManager;
-    private Economy cachedEconomy;
-    private long economyCacheTime;
 
     public ClassCommand(GlitchClasses plugin, ClassManager classManager) {
         this.plugin = plugin;
@@ -25,12 +23,7 @@ public final class ClassCommand implements CommandExecutor {
     }
 
     private Economy getEconomy() {
-        long now = System.currentTimeMillis();
-        if (cachedEconomy != null && now - economyCacheTime < 30_000L) return cachedEconomy;
-        RegisteredServiceProvider<Economy> reg = org.bukkit.Bukkit.getServicesManager().getRegistration(Economy.class);
-        cachedEconomy = reg != null ? reg.getProvider() : null;
-        economyCacheTime = now;
-        return cachedEconomy;
+        return VaultHook.economy(plugin, Economy.class);
     }
 
     @Override

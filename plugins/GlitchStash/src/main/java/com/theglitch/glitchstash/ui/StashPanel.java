@@ -135,7 +135,7 @@ public final class StashPanel implements Listener {
             instance = null;
             return;
         }
-        panel.buildTask = pl.getServer().getScheduler().runTaskLater(pl, panel::build, BUILD_DELAY_TICKS);
+        buildTask = pl.getServer().getScheduler().runTaskLater(pl, panel::build, BUILD_DELAY_TICKS);
         pl.getLogger().info("Stash kiosk wall panel armed at "
                 + (panel.world == null ? "?" : panel.world.getName()) + ".");
     }

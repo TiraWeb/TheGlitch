@@ -1,6 +1,5 @@
 package com.theglitch.common;
 
-import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -29,15 +28,6 @@ public final class Bots {
         List<Player> out = new ArrayList<>();
         if (world == null) return out;
         for (Player p : world.getPlayers()) {
-            if (!isBot(p)) out.add(p);
-        }
-        return out;
-    }
-
-    /** Real (non-NPC) online players. */
-    public static List<Player> realOnline() {
-        List<Player> out = new ArrayList<>();
-        for (Player p : Bukkit.getOnlinePlayers()) {
             if (!isBot(p)) out.add(p);
         }
         return out;

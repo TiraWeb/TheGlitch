@@ -1,5 +1,8 @@
 package com.theglitch.glitchstash;
 
+import com.theglitch.common.AtomicFiles;
+import com.theglitch.common.InventoryUtil;
+import com.theglitch.common.ItemCodec;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -9,15 +12,16 @@ import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.io.BukkitObjectInputStream;
-import org.bukkit.util.io.BukkitObjectOutputStream;
 
-import java.io.*;
-import java.nio.file.AtomicMoveNotSupportedException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
@@ -79,7 +83,7 @@ public final class StashManager {
             // Add existing stash items first, stacking where possible
             for (ItemStack item : existing.contents()) {
                 if (item != null && item.getType() != Material.AIR) {
-                    mergeStack(merged, item.clone());
+                    InventoryUtil.mergeStack(merged, item.clone());
                 }
             }
             // Previously stashed armor/offhand move into the contents list. The old code
@@ -96,7 +100,7 @@ public final class StashManager {
             // Add new extraction items
             for (ItemStack item : contents) {
                 if (item != null && item.getType() != Material.AIR) {
-                    mergeStack(merged, item.clone());
+                    InventoryUtil.mergeStack(merged, item.clone());
                 }
             }
 
@@ -143,30 +147,6 @@ public final class StashManager {
             out[i] = items[i] == null ? null : items[i].clone();
         }
         return out;
-    }
-
-    private static void mergeStack(List<ItemStack> target, ItemStack stack) {
-        if (stack == null || stack.getType().isAir()) return;
-        int remaining = stack.getAmount();
-        int max = stack.getMaxStackSize();
-        // Try to top-up existing similar stacks
-        for (ItemStack existing : target) {
-            if (existing.isSimilar(stack) && existing.getAmount() < existing.getMaxStackSize()) {
-                int space = existing.getMaxStackSize() - existing.getAmount();
-                int toAdd = Math.min(remaining, space);
-                existing.setAmount(existing.getAmount() + toAdd);
-                remaining -= toAdd;
-                if (remaining <= 0) return;
-            }
-        }
-        // Add remainder as new stack(s), splitting if > max
-        while (remaining > 0) {
-            int chunk = Math.min(remaining, max);
-            ItemStack part = stack.clone();
-            part.setAmount(chunk);
-            target.add(part);
-            remaining -= chunk;
-        }
     }
 
     /**
@@ -302,9 +282,9 @@ public final class StashManager {
                     String playerName = yaml.getString("player-name", "Unknown");
                     long timestamp = yaml.getLong("timestamp", System.currentTimeMillis());
 
-                    ItemStack[] contents = deserializeItemStacks(yaml.getStringList("contents"));
-                    ItemStack[] armor = deserializeItemStacks(yaml.getStringList("armor"));
-                    ItemStack offhand = deserializeItemStack(yaml.getString("offhand"));
+                    ItemStack[] contents = ItemCodec.decodeAll(yaml.getStringList("contents"));
+                    ItemStack[] armor = ItemCodec.decodeAll(yaml.getStringList("armor"));
+                    ItemStack offhand = ItemCodec.decode(yaml.getString("offhand"));
 
                     StashData data = new StashData(uuid, playerName, contents, armor, offhand, timestamp);
                     stashes.put(uuid, data);
@@ -325,18 +305,18 @@ public final class StashManager {
         try {
             Bukkit.getAsyncScheduler().runNow(plugin, task -> {
                 if (saveGens.get(uuid) == gen) {
-                    atomicSave(yaml, file);
+                    AtomicFiles.save(yaml, file, plugin.getLogger());
                 }
             });
         } catch (Throwable t) {
             try {
                 plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                     if (saveGens.get(uuid) == gen) {
-                        atomicSave(yaml, file);
+                        AtomicFiles.save(yaml, file, plugin.getLogger());
                     }
                 });
             } catch (Throwable t2) {
-                atomicSave(yaml, file);
+                AtomicFiles.save(yaml, file, plugin.getLogger());
                 plugin.getLogger().log(Level.WARNING, "Async scheduler unavailable, saved synchronously for " + uuid, t2);
             }
         }
@@ -345,7 +325,7 @@ public final class StashManager {
     private void saveToFileSync(UUID uuid, StashData data) {
         Path file = stashDir.resolve(uuid.toString() + ".yml");
         YamlConfiguration yaml = buildYaml(data);
-        atomicSave(yaml, file, plugin.getLogger());
+        AtomicFiles.save(yaml, file, plugin.getLogger());
     }
 
     /** Single helper for YAML snapshot — saveToFile/saveToFileSync share it. */
@@ -353,39 +333,10 @@ public final class StashManager {
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("player-name", data.playerName());
         yaml.set("timestamp", data.timestamp());
-        yaml.set("contents", serializeItemStacks(data.contents()));
-        yaml.set("armor", serializeItemStacks(data.armor()));
-        yaml.set("offhand", serializeItemStack(data.offhand()));
+        yaml.set("contents", ItemCodec.encodeAll(data.contents()));
+        yaml.set("armor", ItemCodec.encodeAll(data.armor()));
+        yaml.set("offhand", ItemCodec.encode(data.offhand()));
         return yaml;
-    }
-
-    /**
-     * Static utility for atomic YAML persistence.
-     * Writes to a temp file in the same directory then atomically moves to target.
-     * Falls back to non-atomic move if ATOMIC_MOVE is unsupported.
-     */
-    static void atomicSave(YamlConfiguration yaml, Path target) {
-        atomicSave(yaml, target, Bukkit.getLogger());
-    }
-
-    static void atomicSave(YamlConfiguration yaml, Path target, java.util.logging.Logger logger) {
-        try {
-            Path parent = target.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path tmp = Files.createTempFile(parent, target.getFileName().toString() + "-", ".tmp");
-            try {
-                yaml.save(tmp.toFile());
-                try {
-                    Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to atomically save " + target, e);
-        }
     }
 
     private void deleteFile(UUID uuid) {
@@ -395,43 +346,6 @@ public final class StashManager {
         } catch (IOException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to delete stash file for " + uuid, e);
         }
-    }
-
-    public static String serializeItemStack(ItemStack item) {
-        if (item == null) return null;
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-              BukkitObjectOutputStream oos = new BukkitObjectOutputStream(bos)) {
-            oos.writeObject(item);
-            return Base64.getEncoder().encodeToString(bos.toByteArray());
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    public static ItemStack deserializeItemStack(String encoded) {
-        if (encoded == null || encoded.isEmpty()) return null;
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(Base64.getDecoder().decode(encoded));
-              BukkitObjectInputStream ois = new BukkitObjectInputStream(bis)) {
-            return (ItemStack) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            return null;
-        }
-    }
-
-    public static List<String> serializeItemStacks(ItemStack[] items) {
-        List<String> result = new ArrayList<>();
-        for (ItemStack item : items) {
-            result.add(serializeItemStack(item));
-        }
-        return result;
-    }
-
-    public static ItemStack[] deserializeItemStacks(List<String> encoded) {
-        ItemStack[] items = new ItemStack[encoded.size()];
-        for (int i = 0; i < encoded.size(); i++) {
-            items[i] = deserializeItemStack(encoded.get(i));
-        }
-        return items;
     }
 
     public void saveAll() {

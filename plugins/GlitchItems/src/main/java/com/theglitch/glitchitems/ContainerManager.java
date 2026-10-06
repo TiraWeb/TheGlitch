@@ -4,7 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.nexomc.nexo.api.NexoFurniture;
 import com.nexomc.nexo.mechanics.furniture.FurnitureMechanic;
+import com.theglitch.common.AtomicFiles;
 import com.theglitch.common.NexoUtil;
+import com.theglitch.common.ScavengeTag;
+import com.theglitch.common.Worlds;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
@@ -26,13 +29,12 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
 import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,8 +68,6 @@ public final class ContainerManager {
 
     private static final NamespacedKey NEXO_KEY = new NamespacedKey("nexo", "id");
     private static final MiniMessage MM = MiniMessage.miniMessage();
-    /** Must match AbilityListener.SCAVENGE_TAG — scoreboard tag that grants bonus rolls. */
-    public static final String SCAVENGE_TAG = "specter_scavenge";
 
     // Cached GlitchRaid bridge reflection — avoids per-open getMethod scans on the loot path.
     // Keyed by runtime class so plugin reloads (new classloaders) re-resolve instead of reusing stale Methods.
@@ -214,7 +214,7 @@ public final class ContainerManager {
     private volatile Map<String, ContainerType> furnitureTypes = new HashMap<>();
 
     // Cached config
-    private volatile Set<String> enabledWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
+    private volatile Set<String> enabledWorlds = Worlds.GAME_WORLDS;
     private volatile int scavengeBonusRolls = 1;
     private volatile Map<String, String> messagesRaw = new HashMap<>();
 
@@ -328,7 +328,7 @@ public final class ContainerManager {
         }
         furnitureTypes = furnIndex;
         enabledWorlds = Set.copyOf(plugin.getConfig().getStringList("containers.enabled-worlds"));
-        if (enabledWorlds.isEmpty()) enabledWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
+        if (enabledWorlds.isEmpty()) enabledWorlds = Worlds.GAME_WORLDS;
         scavengeBonusRolls = plugin.getConfig().getInt("containers.scavenge-bonus-rolls", 1);
         Map<String, String> msgs = new HashMap<>();
         ConfigurationSection msgSec = plugin.getConfig().getConfigurationSection("containers.messages");
@@ -618,36 +618,18 @@ public final class ContainerManager {
         if (!dirty.compareAndSet(true, false)) return;
         List<ContainerRecord> snapshot = new ArrayList<>(byLocation.values());
         try {
-            File dir = dataFile.getParentFile();
-            if (dir != null && !dir.exists() && !dir.mkdirs() && !dir.exists()) {
-                plugin.getLogger().warning("[Containers] Could not create data dir " + dir.getPath());
-                return;
-            }
-            File tmp = new File(dir, dataFile.getName() + ".tmp");
-            try (Writer w = Files.newBufferedWriter(tmp.toPath(), StandardCharsets.UTF_8)) {
-                GSON.toJson(snapshot, w);
-            }
-            try {
-                Files.move(tmp.toPath(), dataFile.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                Files.move(tmp.toPath(), dataFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (Exception e) {
+            AtomicFiles.write(GSON.toJson(snapshot), dataFile.toPath(), plugin.getLogger());
+        } catch (RuntimeException e) {
             plugin.getLogger().log(Level.WARNING, "[Containers] Failed to save " + dataFile.getPath(), e);
         }
     }
 
-    // ---- Scatter bridge (for GlitchStash AutoExtractScheduler reflection) ----
-    // GlitchStash probes GlitchItems#getContainerManager() for scatter entry points.
-    // These aliases delegate to ScatterManager so extracted cycles can trigger
-    // scatter even if the event hook is not yet wired.
-    public void scatter() { try { GlitchItems.getInstance().getScatterManager().scatterForCycle(); } catch (Exception ignored) {} }
-    public void resetContainers() { scatter(); }
-    public void onCycleEnd() { scatter(); }
-    public void handleCycleEnd() { scatter(); }
-    public void doScatter() { scatter(); }
+    /** Cycle-end loot re-scatter, called by GlitchStash's AutoExtractScheduler (debounced in ScatterManager). */
+    public void scatter() {
+        try {
+            GlitchItems.getInstance().getScatterManager().scatterForCycle();
+        } catch (Exception ignored) {}
+    }
 
     public boolean open(Player player, Block block) {
         return block != null && open(player, block.getLocation());
@@ -706,7 +688,7 @@ public final class ContainerManager {
 
         int luck = plugin.getGlitchManager().lootLuckBonus(player);
         int rolls = type.maxRolls();
-        if (player.getScoreboardTags().contains(SCAVENGE_TAG)) {
+        if (player.getScoreboardTags().contains(ScavengeTag.TAG)) {
             rolls += scavengeBonusRolls;
         }
         List<ItemStack> loot = new ArrayList<>();

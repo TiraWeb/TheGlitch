@@ -1,7 +1,10 @@
 package com.theglitch.common;
 
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -21,6 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * </p>
  */
 public final class NexoUtil {
+
+    /** PDC key Nexo stores an item's id under. */
+    public static final NamespacedKey ID_KEY = new NamespacedKey("nexo", "id");
 
     /** How long an {@link #available()} lookup is cached (ms). Short TTL keeps late-enable correct. */
     private static final long AVAILABLE_CACHE_MS = 5000L;
@@ -146,5 +152,26 @@ public final class NexoUtil {
             }
             return idFromItemMethod;
         }
+    }
+
+    /**
+     * Nexo id read straight from the item's PDC, without calling the Nexo API.
+     * Prefers the {@code nexo:id} key; otherwise the first id-shaped string value
+     * (covers items tagged by older pack versions). {@code null} when neither exists.
+     */
+    public static String pdcId(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return null;
+        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        String fallback = null;
+        for (NamespacedKey key : pdc.getKeys()) {
+            try {
+                if (!pdc.has(key, PersistentDataType.STRING)) continue;
+                String value = pdc.get(key, PersistentDataType.STRING);
+                if (value == null || value.isEmpty()) continue;
+                if (key.equals(ID_KEY)) return value;
+                if (fallback == null && isIdShaped(value)) fallback = value;
+            } catch (Exception ignored) {}
+        }
+        return fallback;
     }
 }

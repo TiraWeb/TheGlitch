@@ -1,10 +1,9 @@
 package com.theglitch.glitchshops;
 
-import com.theglitch.glitchshops.ui.FloatingBanner;
-import com.theglitch.glitchshops.ui.ModernLayout;
-import com.theglitch.glitchshops.ui.UiKit;
 import com.nexomc.nexo.api.NexoItems;
 import com.nexomc.nexo.items.ItemBuilder;
+import com.theglitch.glitchshops.ui.ModernLayout;
+import com.theglitch.glitchshops.ui.UiKit;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -71,7 +70,6 @@ public final class ShopGUI implements Listener {
     private volatile List<String> cachedTabOrder;
     private volatile String cachedDefaultTab;
     private volatile int cachedBuyStackSize;
-    private volatile Economy cachedEconomy;
     private volatile boolean holoEnabled;
     private volatile boolean dialogsEnabled;
 
@@ -86,7 +84,6 @@ public final class ShopGUI implements Listener {
         this.cachedTabOrder = shopManager.getTabOrder();
         this.cachedDefaultTab = shopManager.getDefaultTab();
         this.cachedBuyStackSize = shopManager.getBuyStackSize();
-        this.cachedEconomy = plugin.getEconomy(); // invalidated already in plugin
         this.holoEnabled = plugin.getConfig().getBoolean("modern-ui.hologram-banner", true);
         this.dialogsEnabled = plugin.getConfig().getBoolean("modern-ui.dialogs", false);
         if (this.cachedTabOrder == null || this.cachedTabOrder.isEmpty()) {
@@ -98,11 +95,8 @@ public final class ShopGUI implements Listener {
         }
     }
 
-    // Centralized cached economy access — same semantics as before (plugin cache, no TTL change)
     private Economy economy() {
-        Economy economy = cachedEconomy != null ? cachedEconomy : plugin.getEconomy();
-        if (cachedEconomy == null) cachedEconomy = economy;
-        return economy;
+        return plugin.getEconomy();
     }
 
     public void open(Player player, String category) {
@@ -780,10 +774,6 @@ public final class ShopGUI implements Listener {
 
     public String defaultTab() {
         return cachedDefaultTab;
-    }
-
-    public int buyStackSizePublic() {
-        return buyStackSize();
     }
 
     public java.util.List<String> stockIds(String category) {

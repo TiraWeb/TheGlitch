@@ -1,6 +1,12 @@
 package com.theglitch.glitchraid;
 
 import com.theglitch.common.FoliaScheduler;
+import com.theglitch.common.VaultHook;
+import com.theglitch.common.Worlds;
+import com.theglitch.glitchshops.GlitchShops;
+import com.theglitch.glitchshops.ShopManager;
+import com.theglitch.glitchstash.AutoExtractScheduler;
+import com.theglitch.glitchstash.GlitchStash;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -8,14 +14,13 @@ import net.kyori.adventure.title.Title;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.RegisteredServiceProvider;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -83,7 +88,7 @@ public final class RaidManager {
     private volatile int partyMaxSize = 4;
     private volatile double payoutMultiplier = 1.0;
     private volatile String hubWorld = "hub";
-    private volatile List<String> autoStartWorlds = List.of("glitch_red");
+    private volatile List<String> autoStartWorlds = List.of(Worlds.GLITCH_RED);
     private volatile Map<String, String> worldDisplayNames = Map.of();
     private volatile Map<String, String> worldDescriptions = Map.of();
     private volatile String joinMode = "global-remaining";
@@ -157,10 +162,10 @@ public final class RaidManager {
             }
             if (normalizedAuto.isEmpty()) {
                 // Back-compat: fall back to the deprecated singular key, then a hard default.
-                String legacy = plugin.getConfig().getString("raid.auto-start-world", "glitch_red");
+                String legacy = plugin.getConfig().getString("raid.auto-start-world", Worlds.GLITCH_RED);
                 if (legacy != null && !legacy.isBlank()) normalizedAuto.add(legacy.trim());
             }
-            if (normalizedAuto.isEmpty()) normalizedAuto.add("glitch_red");
+            if (normalizedAuto.isEmpty()) normalizedAuto.add(Worlds.GLITCH_RED);
             autoStartWorlds = List.copyOf(normalizedAuto);
 
             worldDisplayNames = readWorldMap("raid.world-display-names");
@@ -245,10 +250,9 @@ public final class RaidManager {
         return hubWorld;
     }
 
-    /** @deprecated use {@link #getAutoStartWorlds()} — returns the first configured red world for legacy callers. */
-    @Deprecated
-    public String getAutoStartWorld() {
-        return autoStartWorlds.isEmpty() ? "glitch_red" : autoStartWorlds.get(0);
+    /** The first configured red world; the fallback when a session or caller names no world. */
+    public String getDefaultRedWorld() {
+        return autoStartWorlds.isEmpty() ? Worlds.GLITCH_RED : autoStartWorlds.get(0);
     }
 
     /** All configured Red Zone worlds (e.g. glitch_red, glitch_red_eleria, glitch_red_horizons). */
@@ -447,7 +451,7 @@ public final class RaidManager {
     // ---- Global session helpers ------------------------------------------------
 
     private String normalizeWorldKey(String world) {
-        if (world == null || world.isBlank()) return getAutoStartWorld().toLowerCase(java.util.Locale.ROOT);
+        if (world == null || world.isBlank()) return getDefaultRedWorld().toLowerCase(java.util.Locale.ROOT);
         return world.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
@@ -505,7 +509,7 @@ public final class RaidManager {
      * </p>
      */
     public synchronized RaidSession startGlobalRaid(String world, boolean auto) {
-        if (world == null || world.isBlank()) world = getAutoStartWorld();
+        if (world == null || world.isBlank()) world = getDefaultRedWorld();
         String key = normalizeWorldKey(world);
         RaidSession existing = globalSessions.get(key);
         if (existing != null && existing.getRemainingSeconds() > 0) {
@@ -525,12 +529,11 @@ public final class RaidManager {
         long end = now + (durationSeconds * 1000L);
         // Try to anchor to GlitchStash AutoExtract cycle so extraction remaining is authoritative
         try {
-            long[] stashInfo = getStashCycleInfo(world); // [cycleStartMillis, raidDurationMinutes]
-            if (stashInfo != null && stashInfo[0] > 0 && stashInfo[1] > 0) {
-                long stashStart = stashInfo[0];
-                long stashRaidMs = stashInfo[1] * 60_000L;
-                long stashEnd = stashStart + stashRaidMs;
-                long stashNext = stashStart + (stashInfo.length > 2 ? stashInfo[2] * 60_000L : stashRaidMs + 60_000L);
+            StashCycle cycle = getStashCycle(world);
+            if (cycle != null && cycle.startMillis() > 0 && cycle.raidMinutes() > 0) {
+                long stashStart = cycle.startMillis();
+                long stashEnd = cycle.raidEndMillis();
+                long stashNext = cycle.nextStartMillis();
                 // If we are inside the active raid window (t0 .. t0+30m) use stashEnd
                 if (stashEnd > now && stashStart <= now && stashEnd < end) {
                     end = stashEnd;
@@ -566,93 +569,47 @@ public final class RaidManager {
         return session;
     }
 
+    /** Timing of one GlitchStash auto-extract cycle. */
+    private record StashCycle(long startMillis, int raidMinutes, int intervalMinutes) {
+        long raidEndMillis() { return startMillis + raidMinutes * 60_000L; }
+        long nextStartMillis() { return startMillis + intervalMinutes * 60_000L; }
+        boolean valid() { return startMillis > 0 && raidMinutes > 0 && intervalMinutes > 0; }
+    }
+
     /**
-     * Tries to get Stash cycle info via reflection: [lastCycleStartMillis, raidDurationMinutes, intervalMinutes].
-     * Returns null if Stash not present or reflection fails. Prefers the per-world scheduler
-     * accessor ({@code getAutoExtractScheduler(String)}) so each red world's buffer/cycle
-     * timing is independent; falls back to the legacy no-arg accessor for older Stash builds.
+     * The current auto-extract cycle of {@code world}'s GlitchStash scheduler, or null
+     * when GlitchStash is absent or runs no scheduler for that world. Each red world
+     * cycles independently.
      */
-    private long[] getStashCycleInfo(String world) {
+    private StashCycle getStashCycle(String world) {
+        Plugin stashPlugin = Bukkit.getPluginManager().getPlugin("GlitchStash");
+        if (stashPlugin == null || !stashPlugin.isEnabled()) return null;
         try {
-            Plugin stashPlugin = Bukkit.getPluginManager().getPlugin("GlitchStash");
-            if (stashPlugin == null || !stashPlugin.isEnabled()) return null;
-            Object stashInstance = stashPlugin;
-            try {
-                java.lang.reflect.Method getInstance = stashPlugin.getClass().getMethod("getInstance");
-                Object maybe = getInstance.invoke(null);
-                if (maybe != null) stashInstance = maybe;
-            } catch (Exception ignored) {}
-            Object scheduler = null;
-            if (world != null && !world.isBlank()) {
-                for (String m : new String[]{"getAutoExtractScheduler", "getScheduler", "getExtractScheduler"}) {
-                    try {
-                        java.lang.reflect.Method method = stashInstance.getClass().getMethod(m, String.class);
-                        scheduler = method.invoke(stashInstance, world);
-                        if (scheduler != null) break;
-                    } catch (NoSuchMethodException ignored) {}
-                }
-            }
-            if (scheduler == null) {
-                for (String m : new String[]{"getAutoExtractScheduler", "getScheduler", "getExtractScheduler"}) {
-                    try {
-                        java.lang.reflect.Method method = stashInstance.getClass().getMethod(m);
-                        scheduler = method.invoke(stashInstance);
-                        if (scheduler != null) break;
-                    } catch (NoSuchMethodException ignored) {}
-                }
-            }
+            String key = world == null || world.isBlank() ? getDefaultRedWorld() : world;
+            AutoExtractScheduler scheduler = ((GlitchStash) stashPlugin).getAutoExtractScheduler(key);
             if (scheduler == null) return null;
-            java.lang.reflect.Method getLast = scheduler.getClass().getMethod("getLastCycleStartMillis");
-            java.lang.reflect.Method getRaidDur = scheduler.getClass().getMethod("getRaidDurationMinutes");
-            java.lang.reflect.Method getInterval = scheduler.getClass().getMethod("getIntervalMinutes");
-            long last = (long) getLast.invoke(scheduler);
-            int raidDur = (int) getRaidDur.invoke(scheduler);
-            int interval = (int) getInterval.invoke(scheduler);
-            return new long[]{last, raidDur, interval};
-        } catch (Exception e) {
+            return new StashCycle(scheduler.getLastCycleStartMillis(), scheduler.getRaidDurationMinutes(), scheduler.getIntervalMinutes());
+        } catch (RuntimeException | LinkageError e) {
             return null;
         }
     }
 
     /** Whether world is inside the 1m buffer between raid end and next cycle. */
     public boolean isInBufferPeriod(String world) {
-        long[] info = getStashCycleInfo(world);
-        if (info == null) return false;
-        long start = info[0];
-        int raidMins = (int) info[1];
-        int intervalMins = (int) info[2];
-        if (start <= 0 || raidMins <= 0 || intervalMins <= 0) return false;
-        long raidEnd = start + raidMins * 60_000L;
-        long nextStart = start + intervalMins * 60_000L;
+        StashCycle cycle = getStashCycle(world);
+        if (cycle == null || !cycle.valid()) return false;
         long now = System.currentTimeMillis();
-        return now >= raidEnd && now < nextStart;
-    }
-
-    /** @deprecated use {@link #isInBufferPeriod(String)} — checks the first configured red world only. */
-    @Deprecated
-    public boolean isInBufferPeriod() {
-        return isInBufferPeriod(getAutoStartWorld());
+        return now >= cycle.raidEndMillis() && now < cycle.nextStartMillis();
     }
 
     public long getMillisUntilNextCycle(String world) {
-        long[] info = getStashCycleInfo(world);
-        if (info == null) return -1;
-        long start = info[0];
-        int intervalMins = (int) info[2];
-        if (start <= 0 || intervalMins <= 0) return -1;
-        long next = start + intervalMins * 60_000L;
-        long remain = next - System.currentTimeMillis();
-        return Math.max(0, remain);
-    }
-
-    /** @deprecated use {@link #getMillisUntilNextCycle(String)} — checks the first configured red world only. */
-    @Deprecated
-    public long getMillisUntilNextCycle() {
-        return getMillisUntilNextCycle(getAutoStartWorld());
+        StashCycle cycle = getStashCycle(world);
+        if (cycle == null || cycle.startMillis() <= 0 || cycle.intervalMinutes() <= 0) return -1;
+        return Math.max(0, cycle.nextStartMillis() - System.currentTimeMillis());
     }
 
     /**
-     * Fix 1: hard block on ENTERING glitch_red during the 1m scatter buffer.
+     * Hard block on ENTERING glitch_red during the 1m scatter buffer.
      * If we are in the buffer and the player lacks {@code glitchraid.admin},
      * message them with the remaining buffer time and bounce them to hub.
      *
@@ -798,7 +755,7 @@ public final class RaidManager {
      * Used by the 30m timeout handler and at the end of the 31m cycle.
      */
     public void endGlobalRaid(String world, RaidEndReason reason) {
-        if (world == null || world.isBlank()) world = getAutoStartWorld();
+        if (world == null || world.isBlank()) world = getDefaultRedWorld();
         String key = normalizeWorldKey(world);
         RaidSession session = globalSessions.remove(key);
         if (session == null) return;
@@ -1035,7 +992,7 @@ public final class RaidManager {
 
         // Teleport party members not yet in the raid world to the leader (Folia-safe)
         if (party != null) {
-            // Fix 1: never pull members toward red during the 1m scatter buffer (except bypass).
+            // Never pull members toward red during the 1m scatter buffer (except bypass).
             boolean inBuffer = isInBufferPeriod(leader.getWorld().getName());
             String bufferRemain = inBuffer ? formatTime((int) Math.max(0, getMillisUntilNextCycle(leader.getWorld().getName()) / 1000)) : null;
             for (UUID mid : members) {
@@ -1212,7 +1169,7 @@ public final class RaidManager {
                         if (e.getValue() == session) { worldKey = e.getKey(); break; }
                     }
                 }
-                if (worldKey == null) worldKey = normalizeWorldKey(getAutoStartWorld());
+                if (worldKey == null) worldKey = normalizeWorldKey(getDefaultRedWorld());
                 endGlobalRaid(worldKey, reason);
                 return;
             }
@@ -1271,7 +1228,7 @@ public final class RaidManager {
 
         boolean lost = (reason == RaidEndReason.TIMEOUT || reason == RaidEndReason.TIMEOUT_DEATH);
         // Per-player payout handling happens in sendSummary; base for logging is total
-        int totalLoot = session.getLootValue();
+        int totalLoot = session.getTotalLootValue();
 
         Component endedComp;
         if (reason == RaidEndReason.EXTRACTED) {
@@ -1401,14 +1358,11 @@ public final class RaidManager {
                 Player p = Bukkit.getPlayer(mid);
                 if (p != null) {
                     try {
-                        RegisteredServiceProvider<Economy> rsp = Bukkit.getServicesManager().getRegistration(Economy.class);
-                        if (rsp != null) {
-                            Economy econ = rsp.getProvider();
-                            if (econ != null) {
-                                EconomyResponse resp = econ.depositPlayer(p, payout);
-                                if (resp.transactionSuccess()) {
-                                    p.sendMessage(MM.deserialize("<green>+" + payout + " Shards kill bounty for extracting! <gray>(" + myLoot + " ×" + payoutMultiplier + ")</gray></green>"));
-                                }
+                        Economy econ = VaultHook.economy(plugin, Economy.class);
+                        if (econ != null) {
+                            EconomyResponse resp = econ.depositPlayer(p, payout);
+                            if (resp.transactionSuccess()) {
+                                p.sendMessage(MM.deserialize("<green>+" + payout + " Shards kill bounty for extracting! <gray>(" + myLoot + " ×" + payoutMultiplier + ")</gray></green>"));
                             }
                         }
                     } catch (Exception e) {
@@ -1417,9 +1371,8 @@ public final class RaidManager {
                 } else {
                     // Offline payout — deposit via OfflinePlayer
                     try {
-                        RegisteredServiceProvider<Economy> rsp = Bukkit.getServicesManager().getRegistration(Economy.class);
-                        if (rsp != null && rsp.getProvider() != null) {
-                            Economy econ = rsp.getProvider();
+                        Economy econ = VaultHook.economy(plugin, Economy.class);
+                        if (econ != null) {
                             org.bukkit.OfflinePlayer offline = Bukkit.getOfflinePlayer(mid);
                             EconomyResponse resp = econ.depositPlayer(offline, payout);
                             if (!resp.transactionSuccess()) {
@@ -1482,24 +1435,6 @@ public final class RaidManager {
                 plugin.getLogger().warning("Party pull failed for " + member.getName() + ": " + e.getMessage());
             }
         }
-    }
-
-    /** Adds a party member who accepted mid-raid to the ongoing session. */
-    public void handlePartyMemberAddedToActiveRaid(Player newMember, RaidSession session) {
-        UUID nid = newMember.getUniqueId();
-        if (isInRaid(nid)) return;
-        session.getMembers().add(nid);
-        activeRaids.put(nid, session);
-        // Prefer global BossBar if this is a global session (single shared timer)
-        BossBar bar = null;
-        if (isGlobalSession(session) && session.getWorldKey() != null) {
-            bar = globalBossBars.get(session.getWorldKey());
-        }
-        if (bar == null) bar = bossBars.get(session.getLeader());
-        if (bar != null) {
-            try { newMember.showBossBar(bar); } catch (Exception ignored) {}
-        }
-        newMember.sendMessage(MM.deserialize("<green>Joined ongoing raid! <gray>Time left: <white>" + formatTime(session.getRemainingSeconds()) + "</white></gray>"));
     }
 
     public BossBar getBossBarForSession(RaidSession session) {
@@ -1579,29 +1514,17 @@ public final class RaidManager {
     /** Total GlitchShops sell value of the stacks (0 for unsellable items or without GlitchShops). */
     public int itemValue(Collection<ItemStack> items) {
         if (items == null || items.isEmpty()) return 0;
+        Plugin shopsPlugin = Bukkit.getPluginManager().getPlugin("GlitchShops");
+        if (shopsPlugin == null || !shopsPlugin.isEnabled()) return 0;
         int value = 0;
         try {
-            Plugin shopsPlugin = Bukkit.getPluginManager().getPlugin("GlitchShops");
-            if (shopsPlugin != null && shopsPlugin.isEnabled()) {
-                Object manager = null;
-                try {
-                    manager = shopsPlugin.getClass().getMethod("getShopManager").invoke(shopsPlugin);
-                } catch (NoSuchMethodException e) {
-                    Object inst = shopsPlugin.getClass().getMethod("getInstance").invoke(null);
-                    if (inst != null) manager = inst.getClass().getMethod("getShopManager").invoke(inst);
-                }
-                if (manager != null) {
-                    java.lang.reflect.Method sellMethod = manager.getClass().getMethod("sellPrice", ItemStack.class);
-                    for (ItemStack item : items) {
-                        if (item == null || item.getType().isAir()) continue;
-                        Integer price = (Integer) sellMethod.invoke(manager, item);
-                        if (price != null && price > 0) {
-                            value += price * item.getAmount();
-                        }
-                    }
-                }
+            ShopManager shops = ((GlitchShops) shopsPlugin).getShopManager();
+            for (ItemStack item : items) {
+                if (item == null || item.getType().isAir()) continue;
+                Integer price = shops.sellPrice(item);
+                if (price != null && price > 0) value += price * item.getAmount();
             }
-        } catch (Exception ignored) {
+        } catch (RuntimeException | LinkageError ignored) {
         }
         return value;
     }
@@ -1656,7 +1579,7 @@ public final class RaidManager {
         if (isGlobalSession(session)) {
             // Ensure global tick drives the bossbar; avoid double ticking per-member
             // Still need to handle case where global timer was lost — fallback to global tick
-            String key = session.getWorldKey() != null ? session.getWorldKey() : normalizeWorldKey(getAutoStartWorld());
+            String key = session.getWorldKey() != null ? session.getWorldKey() : normalizeWorldKey(getDefaultRedWorld());
             tickGlobal(key);
             return;
         }
@@ -1728,7 +1651,7 @@ public final class RaidManager {
         }
         Title.Times times = Title.Times.times(Duration.ofMillis(200), Duration.ofMillis(800), Duration.ofMillis(200));
         Component title = MM.deserialize("<red><bold>" + remainingSeconds + "</bold></red>");
-        String sessionWorld = session.getWorldKey() != null ? session.getWorldKey() : getAutoStartWorld();
+        String sessionWorld = session.getWorldKey() != null ? session.getWorldKey() : getDefaultRedWorld();
         for (UUID memberId : session.getMembers()) {
             Player p = Bukkit.getPlayer(memberId);
             if (p == null) continue;
@@ -1761,13 +1684,13 @@ public final class RaidManager {
                     if (e.getValue() == session) { worldKey = e.getKey(); break; }
                 }
             }
-            if (worldKey == null) worldKey = normalizeWorldKey(getAutoStartWorld());
+            if (worldKey == null) worldKey = normalizeWorldKey(getDefaultRedWorld());
             handleGlobalTimeout(worldKey);
             return;
         }
         Set<UUID> membersSnapshot = new HashSet<>(session.getMembers());
         membersSnapshot.add(leaderId);
-        String sessionWorld = session.getWorldKey() != null ? session.getWorldKey() : getAutoStartWorld();
+        String sessionWorld = session.getWorldKey() != null ? session.getWorldKey() : getDefaultRedWorld();
         for (UUID memberId : membersSnapshot) {
             Player p = Bukkit.getPlayer(memberId);
             if (p == null) continue;
@@ -2018,7 +1941,7 @@ public final class RaidManager {
     private void scatterLootForBuffer(RaidSession session, String worldKey) {
         try {
             World world = Bukkit.getWorld(worldKey);
-            if (world == null) world = Bukkit.getWorld(getAutoStartWorld());
+            if (world == null) world = Bukkit.getWorld(getDefaultRedWorld());
             if (world == null) return;
             for (UUID memberId : session.getMembers()) {
                 int loot = session.getLootValue(memberId);
@@ -2132,7 +2055,7 @@ public final class RaidManager {
             }
             // Party loot recap for context
             if (session.getMembers().size() > 1) {
-                p.sendMessage(MM.deserialize("<dark_gray>Party loot total: <gray>" + session.getLootValue() + "</gray></dark_gray>"));
+                p.sendMessage(MM.deserialize("<dark_gray>Party loot total: <gray>" + session.getTotalLootValue() + "</gray></dark_gray>"));
             }
             p.sendMessage(Component.empty());
 

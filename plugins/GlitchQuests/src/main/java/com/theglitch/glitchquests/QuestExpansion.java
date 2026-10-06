@@ -40,7 +40,7 @@ public final class QuestExpansion extends PlaceholderExpansion {
 
     @Override
     public String getVersion() {
-        return plugin.getDescription().getVersion();
+        return plugin.getPluginMeta().getVersion();
     }
 
     @Override

@@ -1,12 +1,12 @@
 package com.theglitch.glitchshops;
 
+import com.theglitch.common.NexoUtil;
 import com.theglitch.glitchitems.GearRolls;
 import com.theglitch.glitchitems.GlitchItems;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
@@ -19,7 +19,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class ShopManager {
 
-    private static final NamespacedKey NEXO_ID_KEY = new NamespacedKey("nexo", "id");
     private static final NamespacedKey GEAR_KEY = new NamespacedKey("glitchitems", "gear");
 
     public record StockEntry(int buy, int sell) {
@@ -332,33 +331,8 @@ public final class ShopManager {
         return null;
     }
 
-    private static boolean isIdShaped(String value) {
-        if (value == null || value.isEmpty()) return false;
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (c != '_' && (c < 'a' || c > 'z')) return false;
-        }
-        return true;
-    }
-
     public String nexoId(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return null;
-        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-        // Single-pass scan: direct Nexo key wins immediately, otherwise first id-shaped fallback.
-        // Identical priority to the previous direct-get-then-loop (empty direct ids are ignored).
-        String fallback = null;
-        for (NamespacedKey key : pdc.getKeys()) {
-            try {
-                if (!pdc.has(key, PersistentDataType.STRING)) continue;
-                String value = pdc.get(key, PersistentDataType.STRING);
-                if (value == null || value.isEmpty()) continue;
-                if (key.equals(NEXO_ID_KEY)) return value;
-                if (fallback == null && isIdShaped(value)) {
-                    fallback = value;
-                }
-            } catch (Exception ignored) {}
-        }
-        return fallback;
+        return NexoUtil.pdcId(item);
     }
 
     public GearRolls gearRolls(ItemStack item) {

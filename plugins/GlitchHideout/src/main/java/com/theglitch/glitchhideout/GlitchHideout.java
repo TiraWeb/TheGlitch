@@ -1,5 +1,6 @@
 package com.theglitch.glitchhideout;
 
+import com.theglitch.common.VaultHook;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
@@ -9,7 +10,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -28,7 +28,6 @@ public final class GlitchHideout extends JavaPlugin {
 
     // Cached hot-path & economy
     private volatile int medCooldownSeconds = 30;
-    private volatile Economy cachedEconomy;
     private final Map<String, String> messageCache = new ConcurrentHashMap<>();
 
     @Override
@@ -178,9 +177,6 @@ public final class GlitchHideout extends JavaPlugin {
                 cd = Math.max(1, Math.min(cd, 3600));
             }
             medCooldownSeconds = cd;
-
-            // Invalidate economy cache
-            cachedEconomy = null;
         } catch (Exception e) {
             getLogger().warning("Failed to cache GlitchHideout config: " + e.getMessage());
         }
@@ -192,7 +188,6 @@ public final class GlitchHideout extends JavaPlugin {
         cacheConfig();
         if (manager != null) {
             manager.reload();
-            manager.invalidateEconomy();
         }
         getLogger().info("GlitchHideout reloaded (medCooldown=" + medCooldownSeconds + "s).");
     }
@@ -220,13 +215,7 @@ public final class GlitchHideout extends JavaPlugin {
     }
 
     public Economy getEconomy() {
-        if (cachedEconomy != null) return cachedEconomy;
-        RegisteredServiceProvider<Economy> prov = Bukkit.getServicesManager().getRegistration(Economy.class);
-        if (prov != null) {
-            cachedEconomy = prov.getProvider();
-            if (cachedEconomy != null) getLogger().info("Economy provider found: " + cachedEconomy.getName());
-        }
-        return cachedEconomy;
+        return VaultHook.economy(this, Economy.class);
     }
 
     public int getMedCooldownSeconds() {

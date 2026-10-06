@@ -61,9 +61,8 @@ public final class RaidSession {
         return lootByPlayer.getOrDefault(playerId, 0);
     }
 
-    /** @deprecated use {@link #getLootValue(UUID)} — total across party */
-    @Deprecated
-    public int getLootValue() {
+    /** Loot value summed across every member of the session (party total). */
+    public int getTotalLootValue() {
         int total = 0;
         for (int v : lootByPlayer.values()) total += v;
         return total;
@@ -96,8 +95,8 @@ public final class RaidSession {
         return deathsByPlayer.getOrDefault(playerId, 0);
     }
 
-    @Deprecated
-    public int getDeaths() {
+    /** Deaths summed across every member of the session. */
+    public int getTotalDeaths() {
         int total = 0;
         for (int v : deathsByPlayer.values()) total += v;
         return total;

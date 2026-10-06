@@ -1,5 +1,6 @@
 package com.theglitch.glitchclasses.ui;
 
+import com.theglitch.common.FoliaScheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -25,20 +26,9 @@ import java.util.function.Consumer;
  */
 public final class FloatingBanner {
 
-    private static final boolean REGIONIZED_RUNTIME = probeRegionized();
-
     private static final Map<UUID, TextDisplay> ACTIVE = new ConcurrentHashMap<>();
 
     private FloatingBanner() {
-    }
-
-    private static boolean probeRegionized() {
-        try {
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
     }
 
     public static void show(JavaPlugin plugin, Player player, String miniText, long ticks) {
@@ -84,7 +74,7 @@ public final class FloatingBanner {
     }
 
     private static void scheduleRemoval(JavaPlugin plugin, Player player, TextDisplay display, long ticks) {
-        if (REGIONIZED_RUNTIME && runOnEntityScheduler(plugin, player,
+        if (FoliaScheduler.isFolia() && runOnEntityScheduler(plugin, player,
                 () -> retire(display, player.getUniqueId()), ticks)) {
             return;
         }

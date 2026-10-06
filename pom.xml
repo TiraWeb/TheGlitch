@@ -13,7 +13,7 @@
     <description>Parent POM for all Glitch plugins — single source for Java version, Paper API, and build plugins</description>
 
     <properties>
-        <!-- Single place to bump Java / Paper for ALL 8 plugins -->
+        <!-- Single place to bump Java / Paper / shared dependency versions for every module -->
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>
@@ -21,20 +21,22 @@
         <papi.version>2.12.3</papi.version>
         <nexo.version>1.25.0</nexo.version>
         <fancynpcs.version>2.0.0</fancynpcs.version>
-        <mythicmobs.version>5.13.0</mythicmobs.version>
         <luckperms.version>5.4</luckperms.version>
+        <citizens.version>2.0.44-SNAPSHOT</citizens.version>
+        <sentinel.version>2.9.4-SNAPSHOT</sentinel.version>
         <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
         <maven.shade.plugin.version>3.5.1</maven.shade.plugin.version>
     </properties>
 
+    <!-- Listed in dependency order; Maven also sorts the reactor by inter-module dependencies. -->
     <modules>
         <module>plugins/GlitchCommon</module>
-        <module>plugins/GlitchRaid</module>
         <module>plugins/GlitchItems</module>
-        <module>plugins/GlitchClasses</module>
         <module>plugins/GlitchShops</module>
         <module>plugins/GlitchStash</module>
+        <module>plugins/GlitchRaid</module>
+        <module>plugins/GlitchClasses</module>
         <module>plugins/GlitchHideout</module>
         <module>plugins/GlitchDeathRules</module>
         <module>plugins/GlitchInsurance</module>
@@ -89,8 +91,13 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven.compiler.plugin.version}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <release>${java.version}</release>
+                        <showWarnings>true</showWarnings>
+                        <compilerArgs>
+                            <!-- All lint checks except deprecation: VaultUnlocked deprecates the
+                                 whole legacy Vault Economy API every plugin still targets. -->
+                            <arg>-Xlint:all,-deprecation,-processing,-serial,-options</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
                 <plugin>

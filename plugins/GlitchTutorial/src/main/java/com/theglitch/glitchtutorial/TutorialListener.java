@@ -2,11 +2,11 @@ package com.theglitch.glitchtutorial;
 
 import com.theglitch.common.Bots;
 import com.theglitch.common.TutorialItems;
+import com.theglitch.common.Worlds;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -81,7 +81,7 @@ final class TutorialListener implements Listener {
         Location to = event.getTo();
         if (to == null || to.getWorld() == null || !manager.isActive(p)) return;
         String w = to.getWorld().getName();
-        if (w.startsWith("glitch_red")) {
+        if (w.startsWith(Worlds.GLITCH_RED)) {
             event.setCancelled(true);
             p.sendMessage(MM.deserialize("<yellow>Finish the tutorial first</yellow> <gray>(or <yellow>/tutorial skip</yellow>) — then the Red Zone is all yours.</gray>"));
         }
@@ -165,7 +165,7 @@ final class TutorialListener implements Listener {
         if (r == null || r.status != TutorialStore.Status.ACTIVE) return null;
         String w = p.getWorld().getName();
         if (manager.inTutorialWorld(p)) return "tutorial-world";
-        if (r.step == Step.DUNGEON && !w.equals("hub") && !w.startsWith("glitch_red")) return "dungeon";
+        if (r.step == Step.DUNGEON && !w.equals("hub") && !w.startsWith(Worlds.GLITCH_RED)) return "dungeon";
         return null;
     }
 

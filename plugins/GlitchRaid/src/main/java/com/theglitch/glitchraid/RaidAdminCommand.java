@@ -50,8 +50,8 @@ public final class RaidAdminCommand implements CommandExecutor {
                     int remaining = session.getRemainingSeconds();
                     String line = "<gray>- Leader: <white>" + leaderName + "</white>"
                             + " <gray>Time left: <white>" + manager.formatTime(remaining) + "</white>"
-                            + " <gray>Loot: <gold>" + session.getLootValue() + "</gold>"
-                            + " <gray>Deaths: <red>" + session.getDeaths() + "</red>"
+                            + " <gray>Loot: <gold>" + session.getTotalLootValue() + "</gold>"
+                            + " <gray>Deaths: <red>" + session.getTotalDeaths() + "</red>"
                             + " <gray>Members: <white>" + session.getMembers().size() + "/" + manager.getPartyMaxSize() + "</white>";
                     sender.sendMessage(MM.deserialize(line));
                 }

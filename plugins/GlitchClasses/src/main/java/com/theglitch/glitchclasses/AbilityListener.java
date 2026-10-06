@@ -1,12 +1,41 @@
 package com.theglitch.glitchclasses;
 
+import com.theglitch.common.ScavengeTag;
+import com.theglitch.common.Worlds;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.*;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.*;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Creeper;
+import org.bukkit.entity.Enderman;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Evoker;
+import org.bukkit.entity.Illusioner;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.Monster;
+import org.bukkit.entity.Phantom;
+import org.bukkit.entity.Pillager;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Ravager;
+import org.bukkit.entity.Skeleton;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.Spider;
+import org.bukkit.entity.Vex;
+import org.bukkit.entity.Vindicator;
+import org.bukkit.entity.Witch;
+import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -28,17 +57,21 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Handles all class abilities — activation, cooldowns, effects.
  * Keybind activation (F, Sneak+F, Sneak+Q) for prime/tactical/ultimate abilities.
  * Event-based passive abilities (traits).
  */
-public class AbilityListener implements Listener {
-
-    /** Scoreboard tag that marks a Specter with Scavenge active — read by GlitchItems containers. */
-    public static final String SCAVENGE_TAG = "specter_scavenge";
+public final class AbilityListener implements Listener {
 
     private final GlitchClasses plugin;
     private final ClassManager classManager;
@@ -47,7 +80,7 @@ public class AbilityListener implements Listener {
     private volatile int cooldownReduction = 2;
     private volatile int cooldownFloor = 12;
     private volatile int ultimateLevel = 10;
-    private volatile Set<String> gameWorlds = Set.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
+    private volatile Set<String> gameWorlds = Worlds.GAME_WORLDS;
     /** MythicDungeons instance worlds are named "<dungeon>_<n>" (e.g. small_0). */
     private volatile java.util.regex.Pattern gameWorldPattern = null;
     private volatile Component lastVigilanceBar = Component.empty();
@@ -109,7 +142,7 @@ public class AbilityListener implements Listener {
         cooldownFloor = plugin.getConfig().getInt("cooldown-floor", 12);
         ultimateLevel = plugin.getConfig().getInt("ultimate-level", 10);
         List<String> worlds = plugin.getConfig().getStringList("game-worlds");
-        if (worlds == null || worlds.isEmpty()) worlds = List.of("glitch_red", "glitch_red_eleria", "glitch_red_horizons");
+        if (worlds == null || worlds.isEmpty()) worlds = List.of(Worlds.GLITCH_RED, Worlds.GLITCH_RED_ELERIA, Worlds.GLITCH_RED_HORIZONS);
         gameWorlds = Set.copyOf(worlds);
         String regex = plugin.getConfig().getString("game-world-pattern", "");
         try {
@@ -673,7 +706,7 @@ public class AbilityListener implements Listener {
 
         // Create turret — armor stand with dispenser head
         ArmorStand turret = player.getWorld().spawn(turretLoc, ArmorStand.class);
-        turret.setCustomName("§bTURRET");
+        turret.customName(Component.text("TURRET", NamedTextColor.AQUA));
         turret.setCustomNameVisible(true);
         turret.setGravity(false);
         turret.setInvulnerable(true);
@@ -699,10 +732,6 @@ public class AbilityListener implements Listener {
         scheduleTurretRemoval(uuid, durationTicks);
     }
 
-    /**
-     * Remove orphaned turret armor stands left over from a previous run
-     * (mirrors ClassPanel's stale-entity purge). Called on plugin enable.
-     */
     /** Shield Wall barriers and Revive Beacons are temporary — remove them all on shutdown/reload. */
     public void removeTemporaryBlocks() {
         for (List<Block> blocks : turretBlocks.values()) {
@@ -717,6 +746,10 @@ public class AbilityListener implements Listener {
         tempBeacons.clear();
     }
 
+    /**
+     * Remove orphaned turret armor stands left over from a previous run
+     * (mirrors ClassPanel's stale-entity purge). Called on plugin enable.
+     */
     public void purgeStaleTurrets() {
         for (World world : Bukkit.getWorlds()) {
             for (ArmorStand stand : world.getEntitiesByClass(ArmorStand.class)) {
@@ -1074,10 +1107,10 @@ public class AbilityListener implements Listener {
 
                 // Scavenge tag sync — only mutate when state flips (saves NBT + packet)
                 boolean shouldHave = data.className().equals("specter") && data.level() >= 3;
-                boolean has = player.getScoreboardTags().contains(SCAVENGE_TAG);
+                boolean has = player.getScoreboardTags().contains(ScavengeTag.TAG);
                 if (shouldHave != has) {
-                    if (shouldHave) player.addScoreboardTag(SCAVENGE_TAG);
-                    else player.removeScoreboardTag(SCAVENGE_TAG);
+                    if (shouldHave) player.addScoreboardTag(ScavengeTag.TAG);
+                    else player.removeScoreboardTag(ScavengeTag.TAG);
                 }
 
                 // Ghost Protocol — clear hostiles' targets while active
@@ -1176,8 +1209,9 @@ public class AbilityListener implements Listener {
         if (mob instanceof Ravager) return true;
         if (mob instanceof Illusioner) return true;
         // Check for MythicMobs by display name — our Glitch mobs are custom-named
-        if (mob.getCustomName() != null) {
-            String name = mob.getCustomName();
+        Component customName = mob.customName();
+        if (customName != null) {
+            String name = PlainTextComponentSerializer.plainText().serialize(customName);
             if (name.contains("Glitch") || name.contains("Corrupted")) return true;
         }
         // Final fallback: any Monster is hostile (covers Husk, Stray, Drowned, WitherSkeleton, Zoglin, etc.)

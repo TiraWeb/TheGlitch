@@ -1,6 +1,5 @@
 package com.theglitch.glitchshops.ui;
 
-import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -44,26 +43,6 @@ public final class ModernLayout {
                 col += (7 - rem) / 2;
             }
             inv.setItem(STOCK_SLOTS[row * 7 + col], items.get(i));
-        }
-    }
-
-    public static void paintBands(Inventory inv, int size) {
-        int cells = Math.min(size, inv.getSize());
-        int rows = cells / 9;
-        if (rows < 3) return;
-        int footerRow = rows - 1;
-        for (int slot = 0; slot < cells; slot++) {
-            if (slot == STATE_SLOT) continue;
-            if (inv.getItem(slot) != null) continue;
-            int row = slot / 9;
-            int col = slot % 9;
-            if (row == 0) {
-                inv.setItem(slot, UiKit.blankPane(UiKit.RAMP[Math.min(col, UiKit.RAMP.length - 1)]));
-            } else if (row == footerRow) {
-                inv.setItem(slot, UiKit.blankPane(Material.BLACK_STAINED_GLASS_PANE));
-            } else if (col == 0 || col == 8) {
-                inv.setItem(slot, UiKit.blankPane(UiKit.RAMP[4]));
-            }
         }
     }
 

@@ -34,9 +34,14 @@
         <dependency>
             <groupId>com.theglitch</groupId>
             <artifactId>GlitchStash</artifactId>
-            <version>1.0.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/GlitchStash.jar</systemPath>
+            <version>1.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.theglitch</groupId>
+            <artifactId>GlitchShops</artifactId>
+            <version>1.4.0</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.milkbowl.vault</groupId>
@@ -48,7 +53,7 @@
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
-            <version>2.12.3</version>
+            <version>${papi.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

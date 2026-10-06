@@ -9,11 +9,12 @@
 #   sudo ./scripts/build-all.sh --clean      # mvn clean package (default: package only)
 #   ./scripts/build-all.sh --no-deploy       # CI / local validate only (no copy to /opt/theglitch)
 #   sudo ./scripts/build-all.sh GlitchItems GlitchShops  # subset (still respects deps via -am)
+#   sudo ./scripts/build-all.sh --no-reactor  # single-threaded reactor build (no -T 1C)
 #
-# The individual per-plugin build.sh scripts remain for:
-#   - first-time bootstrap (they handle lib/*.jar fetching)
-#   - debugging a single plugin
-# This script assumes lib/*.jar are already seeded (run any build.sh once or bootstrap).
+# Plugins that use each other's classes (Shops -> Items, Stash -> Items/Shops,
+# Raid -> Stash) depend on the sibling reactor module, so they always compile
+# against current source. Only third-party jars live in plugins/<name>/lib/;
+# missing ones are seeded from the live server below.
 #
 
 set -euo pipefail
@@ -148,16 +149,6 @@ for plugin in "${SELECTED[@]}"; do
           seed_lib GlitchShops "$jar" || warn "Missing ${jar}.jar for GlitchShops"
         fi
       done
-      # GlitchItems inter-plugin jar — seed from live/target if missing
-      if [[ ! -f "${REPO_DIR}/plugins/GlitchShops/lib/GlitchItems.jar" ]]; then
-        if ! seed_lib GlitchShops GlitchItems; then
-          if [[ -f "${REPO_DIR}/plugins/GlitchItems/target/GlitchItems-1.0.0.jar" ]]; then
-            mkdir -p "${REPO_DIR}/plugins/GlitchShops/lib"
-            cp -f "${REPO_DIR}/plugins/GlitchItems/target/GlitchItems-1.0.0.jar" "${REPO_DIR}/plugins/GlitchShops/lib/GlitchItems.jar"
-            log "Seeded GlitchShops/lib/GlitchItems.jar from GlitchItems/target"
-          fi
-        fi
-      fi
       ;;
     GlitchStash)
       for jar in VaultUnlocked NMinimap AnvilORM; do
@@ -168,18 +159,6 @@ for plugin in "${SELECTED[@]}"; do
       if [[ ! -f "${REPO_DIR}/plugins/GlitchStash/lib/VelKoth.jar" ]]; then
         seed_velkoth GlitchStash || warn "Missing VelKoth.jar for GlitchStash"
       fi
-      for jar in GlitchItems GlitchShops; do
-        if [[ ! -f "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar" ]]; then
-          seed_lib GlitchStash "$jar" || {
-            src2="${REPO_DIR}/plugins/${jar}/target/${jar}-1.0.0.jar"
-            if [[ -f "$src2" ]]; then
-              mkdir -p "${REPO_DIR}/plugins/GlitchStash/lib"
-              cp -f "$src2" "${REPO_DIR}/plugins/GlitchStash/lib/${jar}.jar"
-              log "Seeded GlitchStash/lib/${jar}.jar from ${src2}"
-            fi
-          }
-        fi
-      done
       ;;
     GlitchQuests)
       if [[ ! -f "${REPO_DIR}/plugins/GlitchQuests/lib/VaultUnlocked.jar" ]]; then
@@ -202,20 +181,9 @@ for plugin in "${SELECTED[@]}"; do
       if [[ ! -f "${REPO_DIR}/plugins/GlitchRaid/lib/VelKoth.jar" ]]; then
         seed_velkoth GlitchRaid || warn "Missing VelKoth.jar for GlitchRaid"
       fi
-      for jar in GlitchStash VaultUnlocked; do
-        if [[ ! -f "${REPO_DIR}/plugins/GlitchRaid/lib/${jar}.jar" ]]; then
-          if ! seed_lib GlitchRaid "$jar"; then
-            src2="${REPO_DIR}/plugins/${jar}/target/${jar}-1.0.0.jar"
-            if [[ -f "$src2" ]]; then
-              mkdir -p "${REPO_DIR}/plugins/GlitchRaid/lib"
-              cp -f "$src2" "${REPO_DIR}/plugins/GlitchRaid/lib/${jar}.jar"
-              log "Seeded GlitchRaid/lib/${jar}.jar from ${src2}"
-            else
-              warn "Missing ${jar}.jar for GlitchRaid"
-            fi
-          fi
-        fi
-      done
+      if [[ ! -f "${REPO_DIR}/plugins/GlitchRaid/lib/VaultUnlocked.jar" ]]; then
+        seed_lib GlitchRaid VaultUnlocked || warn "Missing VaultUnlocked.jar for GlitchRaid"
+      fi
       ;;
     GlitchInsurance)
       # systemPath dependency — must exist before compile (seeded from live server or repo)
@@ -226,49 +194,18 @@ for plugin in "${SELECTED[@]}"; do
   esac
 done
 
-# If any inter-plugin lib is still missing, reactor parallel will race — force sequential
-needs_sequential=false
-for jar in "${REPO_DIR}/plugins/GlitchShops/lib/GlitchItems.jar" "${REPO_DIR}/plugins/GlitchStash/lib/GlitchItems.jar" "${REPO_DIR}/plugins/GlitchStash/lib/GlitchShops.jar" "${REPO_DIR}/plugins/GlitchRaid/lib/GlitchStash.jar" "${REPO_DIR}/plugins/GlitchRaid/lib/VelKoth.jar"; do
-  if [[ ! -f "$jar" ]]; then
-    # Check if respective plugin is in SELECTED and would provide it
-    needs_sequential=true
-    break
-  fi
-done
-if $needs_sequential && $USE_REACTOR; then
-  warn "Inter-plugin jars still missing (first build) — switching to sequential build to avoid race"
-  USE_REACTOR=false
-fi
-
 # --- Build ---
 MVN_ARGS=()
 $DO_CLEAN && MVN_ARGS+=("clean")
 MVN_ARGS+=("package" "-DskipTests")
 $OFFLINE && MVN_ARGS+=("-o")
-if $USE_REACTOR; then
-  # Reactor: resolve Paper once, parallel build, only build selected + deps
-  # Map plugin names to reactor -pl coordinates
-  PL_ARGS=$(IFS=,; echo "${SELECTED[*]/#/com.theglitch:}")
-  # Use -pl with artifactIds; Maven matches by artifactId when parent is reactor root.
-  # Fallback: build all modules if -pl fails (older Maven).
-  MVN_ARGS+=("-T" "1C")
-  # Build subset with -am (also make dependencies)
-  # Translate to Maven module paths: :GlitchItems,:GlitchShops etc.
-  PL_SELECTOR=$(IFS=,; echo "${SELECTED[*]/#/:}")
-  log "Running: mvn ${MVN_ARGS[*]} -pl $PL_SELECTOR -am (reactor, parallel)"
-  if ! mvn -f "$PARENT_POM" "${MVN_ARGS[@]}" -pl "$PL_SELECTOR" -am 2>&1; then
-    warn "Reactor selective build failed, falling back to full reactor build..."
-    mvn -f "$PARENT_POM" "${MVN_ARGS[@]}" 2>&1 || die "Maven reactor build failed"
-  fi
-else
-  # Sequential per-plugin (legacy path, respects order array)
-  for plugin in "${SELECTED[@]}"; do
-    log "Building $plugin (sequential)..."
-    mvn -f "${REPO_DIR}/plugins/${plugin}/pom.xml" "${MVN_ARGS[@]}" 2>&1 || die "Build failed: $plugin"
-  done
-fi
+# Reactor build of the selected plugins plus everything they depend on (-am).
+$USE_REACTOR && MVN_ARGS+=("-T" "1C")
+PL_SELECTOR=$(IFS=,; echo "${SELECTED[*]/#/:}")
+log "Running: mvn ${MVN_ARGS[*]} -pl $PL_SELECTOR -am"
+mvn -f "$PARENT_POM" "${MVN_ARGS[@]}" -pl "$PL_SELECTOR" -am 2>&1 || die "Maven reactor build failed"
 
-log "Maven build(s) succeeded."
+log "Maven build succeeded."
 
 # --- Deploy ---
 if $NO_DEPLOY; then
@@ -317,9 +254,6 @@ cat <<'EOF'
   Next:
     sudo systemctl restart theglitch
     # or: sudo ./scripts/build-all.sh --offline  (repeat)
-
-  Individual plugin deploys still work:
-    sudo ./plugins/GlitchItems/build.sh   # seeds lib jars
 
   Paper/Java version is pinned in the root pom.xml:
     <paper.version>  <java.version>  (bump once for all)

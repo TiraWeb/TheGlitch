@@ -1,5 +1,6 @@
 package com.theglitch.glitchitems;
 
+import com.theglitch.common.Worlds;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -32,7 +33,7 @@ public final class ResidualGlitchManager {
     private record SavedXp(int level, float exp) {}
 
     // Cached config
-    private volatile Set<String> enabledWorlds = Set.of("glitch_red");
+    private volatile Set<String> enabledWorlds = Set.of(Worlds.GLITCH_RED);
     private volatile int intervalMinutes = 5;
     private volatile int maxStacks = 8;
     private volatile int damageTakenPerStack = 5;
@@ -64,7 +65,7 @@ public final class ResidualGlitchManager {
 
     public void reload() {
         enabledWorlds = Set.copyOf(plugin.getConfig().getStringList("residual-glitch.enabled-worlds"));
-        if (enabledWorlds.isEmpty()) enabledWorlds = Set.of("glitch_red");
+        if (enabledWorlds.isEmpty()) enabledWorlds = Set.of(Worlds.GLITCH_RED);
         intervalMinutes = Math.max(1, plugin.getConfig().getInt("residual-glitch.stack-interval-minutes", 5));
         maxStacks = Math.max(1, plugin.getConfig().getInt("residual-glitch.max-stacks", 8));
         damageTakenPerStack = plugin.getConfig().getInt("residual-glitch.damage-taken-per-stack", 5);

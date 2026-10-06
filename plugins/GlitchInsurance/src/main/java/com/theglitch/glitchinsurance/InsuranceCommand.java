@@ -47,7 +47,7 @@ public final class InsuranceCommand implements CommandExecutor, TabCompleter {
                 InsuranceManager.InsureResult result = manager.insureItem(player, held);
                 switch (result) {
                     case SUCCESS -> {
-                        String itemName = displayName(held);
+                        String itemName = InsuranceManager.displayName(held);
                         int count = manager.countInsured(player.getUniqueId());
                         player.sendMessage(plugin.getComponent("insured",
                                 "<item>", itemName,
@@ -111,21 +111,5 @@ public final class InsuranceCommand implements CommandExecutor, TabCompleter {
             return out;
         }
         return List.of();
-    }
-
-    private static String displayName(ItemStack stack) {
-        if (stack == null) return "AIR";
-        var meta = stack.getItemMeta();
-        if (meta != null && meta.hasDisplayName()) {
-            try {
-                var comp = meta.displayName();
-                if (comp != null) {
-                    return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(comp);
-                }
-            } catch (Throwable ignored) {}
-            String d = meta.getDisplayName();
-            if (d != null && !d.isBlank()) return d;
-        }
-        return stack.getType().name().toLowerCase().replace('_', ' ');
     }
 }

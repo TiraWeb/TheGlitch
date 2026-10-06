@@ -1,5 +1,6 @@
 package com.theglitch.glitchstash.extract;
 
+import com.theglitch.common.WorldGuardRegions;
 import com.theglitch.glitchstash.GlitchStash;
 import dev.velmax.velkoth.VelKothPlugin;
 import dev.velmax.velkoth.arena.Arena;
@@ -11,7 +12,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.Plugin;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -245,7 +245,7 @@ public final class SpotPicker {
     }
 
     // ------------------------------------------------------------------------
-    // WorldGuard — ported from GlitchItems ScatterManager (reflective, no hard dep)
+    // WorldGuard (via GlitchCommon's reflective WorldGuardRegions, no hard dep)
     // ------------------------------------------------------------------------
 
     private boolean isProtectedRegion(Location loc) {
@@ -257,7 +257,7 @@ public final class SpotPicker {
         }
         if (wg == null || !wg.isEnabled()) return false;
         try {
-            return isProtectedReflective(loc);
+            return WorldGuardRegions.isProtected(loc);
         } catch (Throwable t) {
             if (wgWarned) {
                 plugin.getLogger().fine("[DynamicExtract] WG check failed: " + t.getMessage());
@@ -267,60 +267,5 @@ public final class SpotPicker {
             }
             return false;
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean isProtectedReflective(Location loc) throws Exception {
-        Class<?> wgClass = Class.forName("com.sk89q.worldguard.WorldGuard");
-        Method getInstance = wgClass.getMethod("getInstance");
-        Object wgInstance = getInstance.invoke(null);
-        Method getPlatform = wgInstance.getClass().getMethod("getPlatform");
-        Object platform = getPlatform.invoke(wgInstance);
-        Method getRegionContainer = platform.getClass().getMethod("getRegionContainer");
-        Object container = getRegionContainer.invoke(platform);
-        if (container == null) return false;
-
-        Class<?> bukkitAdapter = Class.forName("com.sk89q.worldedit.bukkit.BukkitAdapter");
-        Method adaptWorld = bukkitAdapter.getMethod("adapt", World.class);
-        Object weWorld = adaptWorld.invoke(null, loc.getWorld());
-
-        Class<?> weWorldClass = Class.forName("com.sk89q.worldedit.world.World");
-        Method get = container.getClass().getMethod("get", weWorldClass);
-        Object regionManager = get.invoke(container, weWorld);
-        if (regionManager == null) return false;
-
-        Class<?> bv3 = Class.forName("com.sk89q.worldedit.math.BlockVector3");
-        Method at = bv3.getMethod("at", int.class, int.class, int.class);
-        Object vec = at.invoke(null, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-
-        Method getApplicable = regionManager.getClass().getMethod("getApplicableRegions", bv3);
-        Object regionSet = getApplicable.invoke(regionManager, vec);
-        if (regionSet == null) return false;
-
-        Method sizeM = regionSet.getClass().getMethod("size");
-        int size = (int) sizeM.invoke(regionSet);
-        if (size == 0) return false;
-
-        try {
-            Method getRegions = regionSet.getClass().getMethod("getRegions");
-            Object regions = getRegions.invoke(regionSet);
-            if (regions instanceof java.util.Collection<?> col) {
-                if (col.isEmpty()) return false;
-                if (col.size() == 1) {
-                    Object r = col.iterator().next();
-                    try {
-                        Method getId = r.getClass().getMethod("getId");
-                        String id = (String) getId.invoke(r);
-                        if ("__global__".equalsIgnoreCase(id)) return false;
-                    } catch (Exception ignored) {
-                        // Cannot read id — assume protected
-                    }
-                }
-                return true;
-            }
-        } catch (Exception ignored) {
-            // getRegions unavailable — fall through to size heuristic
-        }
-        return true;
     }
 }

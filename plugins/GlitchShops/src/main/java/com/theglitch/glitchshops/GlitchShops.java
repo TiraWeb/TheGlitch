@@ -1,9 +1,9 @@
 package com.theglitch.glitchshops;
 
+import com.theglitch.common.VaultHook;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashSet;
@@ -16,7 +16,6 @@ public final class GlitchShops extends JavaPlugin {
     private static GlitchShops instance;
     private ShopManager shopManager;
     private ShopGUI shopGUI;
-    private Economy economy;
 
     // Cached config — refreshed on reload, read without getConfig() polling on hot paths
     private Set<String> bazaarNpcNames = new HashSet<>();
@@ -67,15 +66,12 @@ public final class GlitchShops extends JavaPlugin {
     }
 
     public void reloadPlugin() {
-        this.economy = null; // invalidate cached Vault provider
         reloadConfig();
         cacheConfig();
         shopManager.reload();
         if (shopGUI != null) {
             shopGUI.refreshCache();
         }
-        // Re-resolve economy eagerly so next transaction is lock-free
-        getEconomy();
         getLogger().info("GlitchShops reloaded (bazaarNpcs=" + bazaarNpcNames.size()
                 + ", defaultTab=" + defaultTab + ").");
     }
@@ -97,18 +93,7 @@ public final class GlitchShops extends JavaPlugin {
     }
 
     public Economy getEconomy() {
-        if (economy != null) {
-            return economy;
-        }
-        RegisteredServiceProvider<Economy> provider =
-                getServer().getServicesManager().getRegistration(Economy.class);
-        if (provider != null) {
-            economy = provider.getProvider();
-            if (economy != null) {
-                getLogger().info("Economy provider found: " + economy.getName());
-            }
-        }
-        return economy;
+        return VaultHook.economy(this, Economy.class);
     }
 
     public Set<String> getBazaarNpcNames() {

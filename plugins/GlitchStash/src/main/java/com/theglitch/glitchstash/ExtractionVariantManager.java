@@ -1,5 +1,6 @@
 package com.theglitch.glitchstash;
 
+import com.theglitch.common.NexoUtil;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -8,7 +9,6 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
@@ -21,8 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * key-requiring extraction zones with shorter VelKoth capture timers.
  */
 public final class ExtractionVariantManager {
-
-    private static final NamespacedKey NEXO_KEY = new NamespacedKey("nexo", "id");
 
     private final GlitchStash plugin;
     private final NamespacedKey variantKey;
@@ -106,25 +104,6 @@ public final class ExtractionVariantManager {
     }
 
     /**
-     * Replaces the in-memory zones used by the arm/consume lookup (variantAt)
-     * with the given runtime zones — used by the dynamic extraction manager so
-     * zones follow the randomly-picked arenas each cycle. Config zones remain
-     * the template/fallback: passing null/empty (or a reload) restores them.
-     *
-     * @deprecated replaces the ENTIRE cross-world zone map — with multiple red
-     * worlds running concurrent cycles this wipes every other world's zones.
-     * Use {@link #setRuntimeZonesForWorld(String, List)} instead.
-     */
-    @Deprecated
-    public void setRuntimeZones(List<Variant> zones) {
-        if (zones == null || zones.isEmpty()) {
-            byWorld = indexByWorld(variants);
-            return;
-        }
-        byWorld = indexByWorld(zones);
-    }
-
-    /**
      * Replaces only {@code world}'s entry in the zone map, leaving every other
      * world's zones (config-defined or another world's own runtime cycle) untouched.
      * Empty/null zones restore that world's config-defined template zones.
@@ -180,38 +159,6 @@ public final class ExtractionVariantManager {
                 && z >= Math.min(variant.z1(), variant.z2()) && z <= Math.max(variant.z1(), variant.z2());
     }
 
-    /**
-     * Mirror of GlitchItems' NexoUtil.isIdShaped — avoids a cross-plugin dependency
-     * while eliminating the costly regex {@code value.matches("[a-z_]+")} on the hot path.
-     */
-    private static boolean isIdShaped(String value) {
-        if (value == null || value.isEmpty()) return false;
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (c != '_' && (c < 'a' || c > 'z')) return false;
-        }
-        return true;
-    }
-
-    private String nexoId(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return null;
-        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-        try {
-            String id = pdc.get(NEXO_KEY, PersistentDataType.STRING);
-            if (id != null && !id.isEmpty()) return id;
-        } catch (Exception ignored) {}
-        for (NamespacedKey key : pdc.getKeys()) {
-            try {
-                if (!pdc.has(key, PersistentDataType.STRING)) continue;
-                String value = pdc.get(key, PersistentDataType.STRING);
-                if (isIdShaped(value)) {
-                    return value;
-                }
-            } catch (Exception ignored) {}
-        }
-        return null;
-    }
-
     public boolean hasKey(Player player, Variant variant) {
         for (ItemStack stack : player.getInventory().getContents()) {
             if (stack != null && isKey(stack, variant)) {
@@ -225,7 +172,7 @@ public final class ExtractionVariantManager {
         if (stack == null || stack.getType().isAir()) return false;
 
         if (!variant.keyId().isEmpty()) {
-            String id = nexoId(stack);
+            String id = NexoUtil.pdcId(stack);
             if (variant.keyId().equalsIgnoreCase(id)) {
                 return true;
             }

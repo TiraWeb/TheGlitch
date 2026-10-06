@@ -95,7 +95,7 @@ public final class CombatListener implements Listener {
             out *= 1.0 + (gearManager.weaponResonanceBase() + rolls.boost) / 100.0;
         }
 
-        Map<String, Integer> attributes = gearManager.parseAttributes(rolls.attributes);
+        Map<String, Integer> attributes = GearManager.parseAttributes(rolls.attributes);
         Integer lifesteal = attributes.get("lifesteal");
         double healed = 0.0;
         double maxHp = 0.0;
@@ -211,7 +211,7 @@ public final class CombatListener implements Listener {
                 resonanceReduction += perPiece;
             }
             armorPoints += rolls.armor;
-            Map<String, Integer> attributes = gearManager.parseAttributes(rolls.attributes);
+            Map<String, Integer> attributes = GearManager.parseAttributes(rolls.attributes);
             Integer reduction = attributes.get("damage-reduction");
             if (reduction != null) {
                 attributeReduction += reduction;

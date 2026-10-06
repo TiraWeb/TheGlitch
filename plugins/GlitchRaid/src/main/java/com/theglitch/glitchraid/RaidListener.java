@@ -5,8 +5,6 @@ import com.theglitch.common.FoliaScheduler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-
-import java.util.UUID;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -15,8 +13,10 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+
+import java.util.UUID;
 
 /**
  * Handles death recap, quit handling, loot accounting, auto-start on glitch_red entry,
@@ -44,7 +44,7 @@ public final class RaidListener implements Listener {
         String from = event.getFrom().getName();
         String hubWorld = manager.getHubWorld();
 
-        // Fix 1: hard block on physical entry during the 1m scatter buffer —
+        // Hard block on physical entry during the 1m scatter buffer —
         // bounce non-bypass players straight back to hub (no raid join/start).
         if (manager.isRedWorld(to) && manager.denyRedEntryDuringBuffer(player)) {
             return;
@@ -124,7 +124,7 @@ public final class RaidListener implements Listener {
                         + " (cancelled=" + cancelled + ")");
                 return;
             }
-            // Fix 1: joining while standing in red during the 1m scatter buffer — bounce to hub.
+            // Joining while standing in red during the 1m scatter buffer — bounce to hub.
             if (manager.isRedWorld(spawnWorld)
                     && manager.denyRedEntryDuringBuffer(player)) {
                 return;
@@ -317,7 +317,7 @@ public final class RaidListener implements Listener {
         if (session == null) {
             return;
         }
-        String raidWorld = session.getWorldKey() != null ? session.getWorldKey() : manager.getAutoStartWorld();
+        String raidWorld = session.getWorldKey() != null ? session.getWorldKey() : manager.getDefaultRedWorld();
         if (!player.getWorld().getName().equalsIgnoreCase(raidWorld)) {
             // Quit outside the raid world (e.g. hub) — keep the old resume behavior
             if (!manager.isSessionGlobal(session)) {
@@ -355,12 +355,6 @@ public final class RaidListener implements Listener {
     }
 
     /**
-     * In-raid players may only leave a red world by extracting (the KOTH capture ends
-     * the raid before its hub teleport), dying, or being moved by the raid system.
-     * Without this, /spawn, /warp or an accepted /tpahere carried the whole inventory
-     * out and counted as an extraction.
-     */
-    /**
      * The 1-minute buffer between extraction cycles is maintenance: the red world
      * is re-scattered, so nobody may enter it (portal, /redzone, party pull, warps).
      * Checked on the destination world, before the teleport happens.
@@ -382,6 +376,12 @@ public final class RaidListener implements Listener {
         player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 1f, 0.6f);
     }
 
+    /**
+     * In-raid players may only leave a red world by extracting (the KOTH capture ends
+     * the raid before its hub teleport), dying, or being moved by the raid system.
+     * Without this, /spawn, /warp or an accepted /tpahere carried the whole inventory
+     * out and counted as an extraction.
+     */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onLeaveRedWorld(org.bukkit.event.player.PlayerTeleportEvent event) {
         Player player = event.getPlayer();

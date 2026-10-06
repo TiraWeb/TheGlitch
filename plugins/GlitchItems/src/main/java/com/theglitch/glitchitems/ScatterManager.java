@@ -1,9 +1,12 @@
 package com.theglitch.glitchitems;
 
-import com.theglitch.common.FoliaScheduler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.theglitch.common.AtomicFiles;
+import com.theglitch.common.FoliaScheduler;
+import com.theglitch.common.WorldGuardRegions;
+import com.theglitch.common.Worlds;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -18,13 +21,11 @@ import org.bukkit.plugin.Plugin;
 
 import java.io.File;
 import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -149,7 +150,7 @@ public final class ScatterManager {
     // Cached config (volatile for cross-thread reads on Folia)
     private volatile boolean enabled = true;
     private volatile int intervalMinutes = DEFAULT_INTERVAL_MINUTES;
-    private volatile Set<String> enabledWorlds = Set.of("glitch_red");
+    private volatile Set<String> enabledWorlds = Set.of(Worlds.GLITCH_RED);
     private volatile boolean clearPrevious = DEFAULT_CLEAR_PREVIOUS;
     private volatile boolean onTopOnly = DEFAULT_ON_TOP_ONLY;
     private volatile int borderRadius = DEFAULT_BORDER_RADIUS;
@@ -246,14 +247,14 @@ public final class ScatterManager {
         List<String> worlds = sec.getStringList("enabled-worlds");
         if (worlds == null || worlds.isEmpty()) {
             plugin.getLogger().warning("[Scatter] enabled-worlds empty — defaulting to [glitch_red].");
-            enabledWorlds = Set.of("glitch_red");
+            enabledWorlds = Set.of(Worlds.GLITCH_RED);
         } else {
             // Requirement: RED WORLD only — honor the allow-list but normalize
             Set<String> norm = new java.util.HashSet<>();
             for (String w : worlds) {
                 if (w != null && !w.isBlank()) norm.add(w.trim());
             }
-            if (norm.isEmpty()) norm.add("glitch_red");
+            if (norm.isEmpty()) norm.add(Worlds.GLITCH_RED);
             enabledWorlds = Set.copyOf(norm);
         }
 
@@ -364,7 +365,7 @@ public final class ScatterManager {
     private void applyDefaults() {
         enabled = true;
         intervalMinutes = DEFAULT_INTERVAL_MINUTES;
-        enabledWorlds = Set.of("glitch_red");
+        enabledWorlds = Set.of(Worlds.GLITCH_RED);
         clearPrevious = DEFAULT_CLEAR_PREVIOUS;
         onTopOnly = DEFAULT_ON_TOP_ONLY;
         evenSpread = true;
@@ -430,26 +431,8 @@ public final class ScatterManager {
             snapshot = new ArrayList<>(scattered);
         }
         try {
-            File dir = dataFile.getParentFile();
-            if (dir != null && !dir.exists()) {
-                if (!dir.mkdirs() && !dir.exists()) {
-                    plugin.getLogger().warning("[Scatter] Could not create data dir " + dir.getPath());
-                    return;
-                }
-            }
-            File tmp = new File(dir, dataFile.getName() + ".tmp");
-            try (Writer w = Files.newBufferedWriter(tmp.toPath(), StandardCharsets.UTF_8)) {
-                GSON.toJson(snapshot, w);
-            }
-            // Atomic replace
-            try {
-                Files.move(tmp.toPath(), dataFile.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-                Files.move(tmp.toPath(), dataFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (Exception e) {
+            AtomicFiles.write(GSON.toJson(snapshot), dataFile.toPath(), plugin.getLogger());
+        } catch (RuntimeException e) {
             plugin.getLogger().log(Level.WARNING, "[Scatter] Failed to save " + dataFile.getPath(), e);
         }
     }
@@ -563,15 +546,6 @@ public final class ScatterManager {
     // ------------------------------------------------------------------------
 
     /**
-     * Public entry for manual/command or event-driven scatter. Clears previous
-     * then places new sparse loot. Thread-safe — concurrent calls are coalesced.
-     * <p>
-     * This is the integration point for the extraction team: call
-     * {@code GlitchItems.getInstance().getScatterManager().scatterNow()} from
-     * {@code AutoExtractCycleEndEvent} if the reflective hook is not desired.
-     * </p>
-     */
-    /**
      * Cycle-end entry point. Every red world's scheduler fires the cycle-end event
      * (and GlitchStash also calls ContainerManager#scatter), all at the same moment,
      * and one scatter covers every world — so repeat calls within a minute are no-ops.
@@ -585,6 +559,15 @@ public final class ScatterManager {
 
     private volatile long lastCycleScatter;
 
+    /**
+     * Public entry for manual/command or event-driven scatter. Clears previous
+     * then places new sparse loot. Thread-safe — concurrent calls are coalesced.
+     * <p>
+     * This is the integration point for the extraction team: call
+     * {@code GlitchItems.getInstance().getScatterManager().scatterNow()} from
+     * {@code AutoExtractCycleEndEvent} if the reflective hook is not desired.
+     * </p>
+     */
     public void scatterNow() {
         if (!enabled) {
             plugin.getLogger().info("[Scatter] scatterNow() called but scatter is disabled — ignoring.");
@@ -1611,7 +1594,7 @@ public final class ScatterManager {
         Plugin wg = Bukkit.getPluginManager().getPlugin("WorldGuard");
         if (wg == null || !wg.isEnabled()) return false;
         try {
-            return isProtectedReflective(loc);
+            return WorldGuardRegions.isProtected(loc);
         } catch (Throwable t) {
             if (wgWarned.compareAndSet(false, true)) {
                 plugin.getLogger().log(Level.WARNING, "[Scatter] WorldGuard check failed — allowing placement (error logged once)", t);
@@ -1620,69 +1603,6 @@ public final class ScatterManager {
             }
             return false;
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean isProtectedReflective(Location loc) throws Exception {
-        // Try modern WorldGuard 7+ API: WorldGuard.getInstance().getPlatform().getRegionContainer()
-        Class<?> wgClass = Class.forName("com.sk89q.worldguard.WorldGuard");
-        Method getInstance = wgClass.getMethod("getInstance");
-        Object wgInstance = getInstance.invoke(null);
-        Method getPlatform = wgInstance.getClass().getMethod("getPlatform");
-        Object platform = getPlatform.invoke(wgInstance);
-        Method getRegionContainer = platform.getClass().getMethod("getRegionContainer");
-        Object container = getRegionContainer.invoke(platform);
-        if (container == null) return false;
-
-        // Adapt Bukkit world to WorldEdit world
-        Class<?> bukkitAdapter = Class.forName("com.sk89q.worldedit.bukkit.BukkitAdapter");
-        Method adaptWorld = bukkitAdapter.getMethod("adapt", World.class);
-        Object weWorld = adaptWorld.invoke(null, loc.getWorld());
-
-        Class<?> weWorldClass = Class.forName("com.sk89q.worldedit.world.World");
-        Method get = container.getClass().getMethod("get", weWorldClass);
-        Object regionManager = get.invoke(container, weWorld);
-        if (regionManager == null) return false;
-
-        // Build BlockVector3 at target
-        Class<?> bv3 = Class.forName("com.sk89q.worldedit.math.BlockVector3");
-        Method at = bv3.getMethod("at", int.class, int.class, int.class);
-        Object vec = at.invoke(null, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-
-        Method getApplicable = regionManager.getClass().getMethod("getApplicableRegions", bv3);
-        Object regionSet = getApplicable.invoke(regionManager, vec);
-        if (regionSet == null) return false;
-
-        // Check size
-        Method sizeM = regionSet.getClass().getMethod("size");
-        int size = (int) sizeM.invoke(regionSet);
-        if (size == 0) return false;
-
-        // Inspect regions — if only __global__, allow
-        try {
-            Method getRegions = regionSet.getClass().getMethod("getRegions");
-            Object regions = getRegions.invoke(regionSet);
-            if (regions instanceof Collection<?> col) {
-                if (col.isEmpty()) return false;
-                if (col.size() == 1) {
-                    Object r = col.iterator().next();
-                    try {
-                        Method getId = r.getClass().getMethod("getId");
-                        String id = (String) getId.invoke(r);
-                        if ("__global__".equalsIgnoreCase(id)) return false;
-                    } catch (Exception ignored) {
-                        // If we can't get id, assume protected
-                    }
-                }
-                // More than one region, or single non-global → protected
-                return true;
-            }
-        } catch (NoSuchMethodException ignored) {
-            // Fallback: if size >0 and not just global, consider protected
-        }
-        // If we couldn't introspect regions, be conservative: if size >0, treat as protected
-        // But allow if size==1 and we couldn't check — assume not protected to avoid false positives
-        return size > 1;
     }
 
     // ------------------------------------------------------------------------

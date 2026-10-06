@@ -1,12 +1,7 @@
 package com.theglitch.glitchraid;
 
-import com.theglitch.common.FoliaScheduler;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -29,8 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * </p>
  */
 public final class RedPortalListener implements Listener {
-
-    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private final RaidManager manager;
     private final RedPortalManager portals;

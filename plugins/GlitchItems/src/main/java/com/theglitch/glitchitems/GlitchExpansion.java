@@ -23,7 +23,7 @@ public final class GlitchExpansion extends PlaceholderExpansion {
 
     @Override
     public String getVersion() {
-        return plugin.getDescription().getVersion();
+        return plugin.getPluginMeta().getVersion();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.theglitch.glitchinsurance;
 
+import com.theglitch.common.VaultHook;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -7,7 +8,6 @@ import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
@@ -19,7 +19,6 @@ public final class GlitchInsurance extends JavaPlugin {
 
     private static GlitchInsurance instance;
     private InsuranceManager manager;
-    private volatile Economy cachedEconomy;
     private final Map<String, String> messageCache = new ConcurrentHashMap<>();
 
     @Override
@@ -65,7 +64,6 @@ public final class GlitchInsurance extends JavaPlugin {
     }
 
     public void reloadPlugin() {
-        this.cachedEconomy = null;
         reloadConfig();
         cacheMessages();
         if (manager != null) {
@@ -113,13 +111,7 @@ public final class GlitchInsurance extends JavaPlugin {
     }
 
     public Economy getEconomy() {
-        if (cachedEconomy != null) return cachedEconomy;
-        RegisteredServiceProvider<Economy> provider = Bukkit.getServicesManager().getRegistration(Economy.class);
-        if (provider != null) {
-            cachedEconomy = provider.getProvider();
-            if (cachedEconomy != null) getLogger().info("Economy provider found: " + cachedEconomy.getName());
-        }
-        return cachedEconomy;
+        return VaultHook.economy(this, Economy.class);
     }
 
     public InsuranceManager getManager() {

@@ -168,17 +168,4 @@ public final class PartyManager {
             syncDungeons(party, Set.of(playerUuid));
         }
     }
-
-    /**
-     * Returns the party members including leader, or empty set if no party.
-     */
-    public Set<UUID> getPartyMembers(UUID playerUuid) {
-        Party party = getParty(playerUuid);
-        if (party == null) return Set.of();
-        return party.getMembers();
-    }
-
-    public Set<UUID> getPartyMembersIncludingLeader(Player player) {
-        return getPartyMembers(player.getUniqueId());
-    }
 }

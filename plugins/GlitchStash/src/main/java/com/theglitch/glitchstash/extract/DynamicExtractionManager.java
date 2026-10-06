@@ -1,5 +1,6 @@
 package com.theglitch.glitchstash.extract;
 
+import com.theglitch.common.Worlds;
 import com.theglitch.glitchstash.ExtractionVariantManager;
 import com.theglitch.glitchstash.GlitchStash;
 import dev.velmax.velkoth.VelKothPlugin;
@@ -56,7 +57,7 @@ public final class DynamicExtractionManager {
     public DynamicExtractionManager(GlitchStash plugin, ExtractionMarkers markers, String world) {
         this.plugin = plugin;
         this.markers = markers;
-        this.redWorld = (world == null || world.isBlank()) ? "glitch_red" : world.trim();
+        this.redWorld = (world == null || world.isBlank()) ? Worlds.GLITCH_RED : world.trim();
         this.spotPicker = new SpotPicker(plugin);
         reload();
     }

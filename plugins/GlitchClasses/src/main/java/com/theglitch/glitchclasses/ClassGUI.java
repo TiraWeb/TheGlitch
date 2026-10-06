@@ -1,32 +1,28 @@
 package com.theglitch.glitchclasses;
 
-import com.theglitch.glitchclasses.ui.FloatingBanner;
+import com.theglitch.common.VaultHook;
 import com.theglitch.glitchclasses.ui.UiKit;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -38,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Class menu (45 slots): ability info row (prime / tactical / traits /
  * ultimate), the 10-level upgrade path, and select / upgrade / back controls.
  */
-public class ClassGUI implements Listener {
+public final class ClassGUI implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
@@ -88,8 +84,6 @@ public class ClassGUI implements Listener {
     private final ClassManager classManager;
     private volatile int cachedUltimateLevel = 10;
     private volatile boolean holoEnabled = true;
-    private net.milkbowl.vault.economy.Economy cachedEconomy;
-    private long economyCacheTime;
 
     public ClassGUI(GlitchClasses plugin, ClassManager classManager) {
         this.plugin = plugin;
@@ -100,16 +94,10 @@ public class ClassGUI implements Listener {
     public void reloadConfig() {
         cachedUltimateLevel = plugin.getConfig().getInt("ultimate-level", 10);
         holoEnabled = plugin.getConfig().getBoolean("modern-ui.hologram-banner", true);
-        cachedEconomy = null;
     }
 
-    private net.milkbowl.vault.economy.Economy getEconomy() {
-        long now = System.currentTimeMillis();
-        if (cachedEconomy != null && now - economyCacheTime < 30_000L) return cachedEconomy;
-        var reg = org.bukkit.Bukkit.getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
-        cachedEconomy = reg != null ? reg.getProvider() : null;
-        economyCacheTime = now;
-        return cachedEconomy;
+    private Economy getEconomy() {
+        return VaultHook.economy(plugin, Economy.class);
     }
 
     // ==================== MAIN MENU (54 slots) ====================

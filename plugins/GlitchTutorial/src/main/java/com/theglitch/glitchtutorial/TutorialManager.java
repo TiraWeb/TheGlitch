@@ -2,6 +2,9 @@ package com.theglitch.glitchtutorial;
 
 import com.theglitch.common.NexoUtil;
 import com.theglitch.common.TutorialItems;
+import com.theglitch.common.Worlds;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -25,7 +28,6 @@ import org.bukkit.util.Vector;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -218,7 +220,7 @@ final class TutorialManager {
         TutorialStore.Record r = record(p);
         if (r == null) return;
         if (r.step.inTutorialWorld()) {
-            if (p.getWorld().getName().startsWith("glitch_red")) return; // never out of a raid
+            if (p.getWorld().getName().startsWith(Worlds.GLITCH_RED)) return; // never out of a raid
             instances.open(p, w -> {
                 if (w == null) {
                     p.sendMessage(MM.deserialize("<red>Couldn't open a tutorial world right now. Try <yellow>/tutorial</yellow> again in a minute.</red>"));
@@ -372,7 +374,7 @@ final class TutorialManager {
     private void enchantWeapon(ItemStack weapon) {
         for (String spec : cfg().getStringList("loadout.weapon-enchants")) {
             String[] e = spec.split(":");
-            org.bukkit.enchantments.Enchantment ench = org.bukkit.Registry.ENCHANTMENT.get(
+            org.bukkit.enchantments.Enchantment ench = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(
                     org.bukkit.NamespacedKey.minecraft(e[0].trim().toLowerCase(Locale.ROOT)));
             if (ench == null) continue;
             int lvl;
@@ -874,11 +876,6 @@ final class TutorialManager {
         return "Tutorial · " + (r.step.ordinal() + 1) + "/" + (Step.DUNGEON.ordinal() + 1);
     }
 
-    boolean hasMob(UUID player, UUID mob) {
-        Set<UUID> mine = mobs.get(player);
-        return mine != null && mine.contains(mob);
-    }
-
     /** The player a GlitchBots training rogue belongs to (its {@code glitch_trainee_<uuid>} tag), or null. */
     static UUID traineeOf(Entity e) {
         for (String tag : e.getScoreboardTags()) {
@@ -896,9 +893,5 @@ final class TutorialManager {
             if (e.getValue().contains(mob)) return e.getKey();
         }
         return null;
-    }
-
-    Map<UUID, Set<UUID>> mobsView() {
-        return new HashMap<>(mobs);
     }
 }

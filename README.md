@@ -290,22 +290,9 @@ sudo ./scripts/build-all.sh              # all 13 deployable plugins in topologi
 sudo systemctl restart theglitch
 ```
 
-Legacy per-plugin (still works for first-time lib seeding or single-plugin debug — order matters):
+Plugins that use each other's classes (Shops → Items, Stash → Items/Shops, Raid → Stash/Shops) depend on the sibling **reactor module**, so they always compile against current source; only third-party jars live in the gitignored `plugins/<name>/lib/` (seeded from the live server by `build-all.sh`). The old per-plugin `plugins/*/build.sh` scripts predate the shared modules and can't build a plugin on their own any more. Use `build-all.sh <Plugin>` instead.
 
-```bash
-# Topological order: Items → Shops → Stash → Classes → Hideout → DeathRules
-sudo ./plugins/GlitchItems/build.sh
-sudo ./plugins/GlitchShops/build.sh
-sudo ./plugins/GlitchStash/build.sh
-sudo ./plugins/GlitchClasses/build.sh
-sudo ./plugins/GlitchHideout/build.sh
-sudo ./plugins/GlitchDeathRules/build.sh
-# GlitchRaid / GlitchInsurance / GlitchEvents: reactor-only
-#   mvn -B -DskipTests package -pl :GlitchRaid -am   (etc.)
-sudo systemctl restart theglitch
-```
-
-Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **10** modules. CI validate: `./scripts/build-all.sh --no-deploy`. GlitchItems `config-version` is now 3 (2026-09-02, was 1) — armor upgrade + per-slot identity (see `plugins/GlitchItems/src/main/resources/config.yml`).
+Requires: Maven (`sudo apt install maven`) and Java. **Paper / Java versions are pinned once** in the root `pom.xml` (`<paper.version>1.21.4-R0.1-SNAPSHOT</paper.version>`, `<java.version>21</java.version>`, `papi.version` `2.12.3` via `https://repo.extendedclip.com/content/repositories/placeholderapi/` `pom.xml:53`) — bump there for all **14** modules. The compiler runs with `-Xlint:all` (minus deprecation: VaultUnlocked deprecates the whole legacy Vault API) and the build is warning-free; keep it that way. CI validate: `./scripts/build-all.sh --no-deploy`. GlitchItems `config-version` is now 3 (2026-09-02, was 1) — armor upgrade + per-slot identity (see `plugins/GlitchItems/src/main/resources/config.yml`).
 
 **2026-09-22: GlitchDungeons, GlitchHUD, GlitchHealthBar, and GlitchLoot were removed** from the reactor entirely — replaced by MythicDungeons (11 boss dungeons, live), MythicHUD (red-world card + quests, live), the `littleroom healthbar` MythicMobs pack, and plain MythicMobs DropTables.
 

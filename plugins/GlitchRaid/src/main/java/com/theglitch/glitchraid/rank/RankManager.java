@@ -211,14 +211,6 @@ public final class RankManager {
         dirty = true;
     }
 
-    public void rememberName(Player p) {
-        Entry e = data.get(p.getUniqueId());
-        if (e != null && !p.getName().equals(e.name)) {
-            e.name = p.getName();
-            dirty = true;
-        }
-    }
-
     private void change(UUID id, int delta, String why) {
         Entry e = entry(id);
         Player p = Bukkit.getPlayer(id);

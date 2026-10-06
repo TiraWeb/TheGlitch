@@ -1,21 +1,19 @@
 package com.theglitch.glitchhideout;
 
+import com.theglitch.common.AtomicFiles;
+import com.theglitch.common.NexoUtil;
 import net.kyori.adventure.text.Component;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -39,8 +37,6 @@ import java.util.logging.Level;
  * on disable.
  */
 public final class HideoutManager {
-
-    private static final NamespacedKey NEXO_KEY = new NamespacedKey("nexo", "id");
 
     public record Station(String id, String display, String icon, String description,
                           int[] costs, Map<Integer, String> requires) {
@@ -76,9 +72,6 @@ public final class HideoutManager {
     // prevents out-of-order async writes resurrecting stale/deleted data.
     private final Map<UUID, Long> saveGens = new ConcurrentHashMap<>();
 
-    // Cached economy — invalidated on reload
-    private volatile Economy cachedEconomy;
-
     public HideoutManager(GlitchHideout plugin) {
         this.plugin = plugin;
         this.dataDir = plugin.getDataFolder().toPath().resolve("players");
@@ -91,17 +84,11 @@ public final class HideoutManager {
     }
 
     public void reload() {
-        // Invalidate cached economy
-        cachedEconomy = null;
         stations = loadStations();
         recipes = loadRecipes();
         recycler = loadRecycler();
         plugin.getLogger().info("Hideout stations loaded: " + stations.size()
                 + ", recipes loaded: " + recipes.size() + ", recyclables: " + recycler.size());
-    }
-
-    public void invalidateEconomy() {
-        cachedEconomy = null;
     }
 
     private Map<String, Station> loadStations() {
@@ -232,7 +219,7 @@ public final class HideoutManager {
 
     /** Recipe id a blueprint item teaches, or null when the item isn't a known blueprint. */
     public String blueprintRecipe(ItemStack stack) {
-        String id = nexoIdOf(stack);
+        String id = NexoUtil.pdcId(stack);
         if (id == null || !id.startsWith("blueprint_")) return null;
         Recipe recipe = recipes.get(id.substring("blueprint_".length()));
         return recipe != null && recipe.blueprint() ? recipe.id() : null;
@@ -246,7 +233,7 @@ public final class HideoutManager {
      */
     public Map<String, Integer> recycleSlot(Player player, int slot) {
         ItemStack stack = player.getInventory().getItem(slot);
-        String id = nexoIdOf(stack);
+        String id = NexoUtil.pdcId(stack);
         Map<String, Integer> outputs = id == null ? null : recycler.get(id);
         if (outputs == null) return Map.of();
         int count = stack.getAmount();
@@ -260,11 +247,6 @@ public final class HideoutManager {
                     "nexo give " + out.getKey() + " " + out.getValue() + " " + player.getName());
         }
         return given;
-    }
-
-    public boolean isRecyclable(ItemStack stack) {
-        String id = nexoIdOf(stack);
-        return id != null && recycler.containsKey(id);
     }
 
     public Station getStation(String id) {
@@ -493,42 +475,10 @@ public final class HideoutManager {
         return consumed;
     }
 
-    /**
-     * Local mirror of NexoUtil.isIdShaped — avoids cross-plugin dependency
-     * and the regex cost of {@code value.matches("[a-z_]+")}.
-     */
-    private static boolean isIdShaped(String value) {
-        if (value == null || value.isEmpty()) return false;
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (c != '_' && (c < 'a' || c > 'z')) return false;
-        }
-        return true;
-    }
-
-    String nexoIdOf(ItemStack stack) {
-        if (stack == null || !stack.hasItemMeta()) return null;
-        org.bukkit.persistence.PersistentDataContainer pdc =
-                stack.getItemMeta().getPersistentDataContainer();
-        // Single-pass scan: direct Nexo key wins immediately, otherwise first id-shaped fallback.
-        // Identical priority to the previous direct-get-then-loop (empty direct ids are ignored).
-        String fallback = null;
-        for (NamespacedKey key : pdc.getKeys()) {
-            try {
-                if (!pdc.has(key, PersistentDataType.STRING)) continue;
-                String value = pdc.get(key, PersistentDataType.STRING);
-                if (value == null || value.isEmpty()) continue;
-                if (key.equals(NEXO_KEY)) return value;
-                if (fallback == null && isIdShaped(value)) fallback = value;
-            } catch (Exception ignored) {}
-        }
-        return fallback;
-    }
-
     private boolean isItem(ItemStack stack, String id) {
         // Lent tutorial items (GlitchTutorial) are never crafting material — they'd become permanent
         if (com.theglitch.common.TutorialItems.isTutorial(stack)) return false;
-        String found = nexoIdOf(stack);
+        String found = NexoUtil.pdcId(stack);
         return found != null && id.equalsIgnoreCase(found);
     }
 
@@ -664,7 +614,7 @@ public final class HideoutManager {
             Bukkit.getAsyncScheduler().runNow(plugin, task -> {
                 try {
                     if (saveGens.get(uuid) == gen) {
-                        atomicSave(yaml, file);
+                        AtomicFiles.save(yaml, file, plugin.getLogger());
                     }
                 } finally {
                     dirty.remove(uuid);
@@ -675,7 +625,7 @@ public final class HideoutManager {
                 plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                     try {
                         if (saveGens.get(uuid) == gen) {
-                            atomicSave(yaml, file);
+                            AtomicFiles.save(yaml, file, plugin.getLogger());
                         }
                     } finally {
                         dirty.remove(uuid);
@@ -683,7 +633,7 @@ public final class HideoutManager {
                 });
             } catch (Throwable t2) {
                 try {
-                    atomicSave(yaml, file);
+                    AtomicFiles.save(yaml, file, plugin.getLogger());
                 } finally {
                     dirty.remove(uuid);
                 }
@@ -721,52 +671,7 @@ public final class HideoutManager {
         Set<String> playerBlueprints = blueprints.get(uuid);
         yaml.set("blueprints", playerBlueprints == null ? List.of() : playerBlueprints.stream().sorted().toList());
         Path file = dataDir.resolve(uuid + ".yml");
-        try {
-            Path parent = file.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path tmp = Files.createTempFile(parent, uuid.toString() + "-", ".tmp");
-            try {
-                yaml.save(tmp.toFile());
-                try {
-                    Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
-            }
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to save hideout data for " + uuid, e);
-        }
-    }
-
-    /**
-     * Static utility for atomic YAML persistence.
-     * Writes to a temp file in the same directory then atomically moves to target.
-     * Falls back to non-atomic move if ATOMIC_MOVE is unsupported.
-     */
-    static void atomicSave(YamlConfiguration yaml, Path target) {
-        atomicSave(yaml, target, Bukkit.getLogger());
-    }
-
-    static void atomicSave(YamlConfiguration yaml, Path target, java.util.logging.Logger logger) {
-        try {
-            Path parent = target.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path tmp = Files.createTempFile(parent, target.getFileName().toString() + "-", ".tmp");
-            try {
-                yaml.save(tmp.toFile());
-                try {
-                    Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to atomically save " + target, e);
-        }
+        AtomicFiles.save(yaml, file, plugin.getLogger());
     }
 
     public void saveAll() {
@@ -783,10 +688,6 @@ public final class HideoutManager {
     }
 
     private Economy economy() {
-        if (cachedEconomy != null) return cachedEconomy;
-        // Delegate to plugin's cached economy — single provider lookup, invalidated on reload
-        Economy e = plugin.getEconomy();
-        cachedEconomy = e;
-        return e;
+        return plugin.getEconomy();
     }
 }

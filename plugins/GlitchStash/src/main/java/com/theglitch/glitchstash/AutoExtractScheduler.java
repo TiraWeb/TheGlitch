@@ -1,21 +1,19 @@
 package com.theglitch.glitchstash;
 
 import com.theglitch.common.FoliaScheduler;
+import com.theglitch.common.Worlds;
+import com.theglitch.glitchitems.GlitchItems;
 import com.theglitch.glitchstash.extract.DynamicExtractionManager;
+import dev.velmax.velkoth.VelKothPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.io.File;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -25,31 +23,23 @@ import java.util.logging.Level;
  * <ul>
  *   <li><b>t0</b>: discover and start every arena via VelKoth API or
  *       {@code /koth start <arena>} fallback; log every attempt</li>
- *   <li><b>t0 + raidDuration</b> (default 30 min): RED-world timeout kill.
- *       For now the GlitchRaid team owns the actual kill — we just log and
- *       fire a hook that GlitchRaid can listen for</li>
+ *   <li><b>t0 + raidDuration</b> (default 30 min): RED-world timeout. GlitchRaid
+ *       owns the kill; without GlitchRaid a local fallback kills red-world players</li>
  *   <li><b>t0 + raidDuration + 5s</b>: scatter loot — fire
- *       {@link AutoExtractCycleEndEvent} and, if available, invoke
- *       GlitchLoot / container scatter via reflection</li>
+ *       {@link AutoExtractCycleEndEvent} and ask GlitchItems to re-scatter
+ *       its containers</li>
  *   <li><b>t0 + interval</b> (default 31 min): next cycle (handled by the
  *       fixed-rate scheduler with a 1-minute buffer between scatter and
  *       restart)</li>
  * </ul>
  * <p>
- * Arena discovery tries, in order:
- * <ol>
- *   <li>VelKoth API via reflection (no hard compile-time dependency)</li>
- *   <li>{@code auto-extract.arenas} config list (empty = allow all discovered)</li>
- *   <li>{@code plugins/VelKoth/arenas.yml} file parse as last resort</li>
- * </ol>
- * If discovery yields multiple names, each is started independently. An
- * empty config list after failed discovery logs a warning and skips the cycle
- * rather than crashing.
+ * Each cycle first tries {@link DynamicExtractionManager} (random validated
+ * spots). Only when it declines does the legacy path start VelKoth's own
+ * arenas, filtered by the {@code auto-extract.arenas} allow-list when set.
  * <p>
  * Folia-safe: all scheduling goes through {@link FoliaScheduler}
  * ({@code runAtFixedRateGlobal / runLaterGlobal}) so the task runs on the
- * global region on both Paper/Purpur and Folia. See
- * {@link com.theglitch.glitchraid.FoliaScheduler} for the original pattern.
+ * global region on both Paper/Purpur and Folia.
  */
 public final class AutoExtractScheduler {
 
@@ -87,7 +77,7 @@ public final class AutoExtractScheduler {
     public AutoExtractScheduler(GlitchStash plugin, DynamicExtractionManager dynamicManager, String world) {
         this.plugin = plugin;
         this.dynamicManager = dynamicManager;
-        this.redWorld = (world == null || world.isBlank()) ? "glitch_red" : world.trim();
+        this.redWorld = (world == null || world.isBlank()) ? Worlds.GLITCH_RED : world.trim();
         this.pluginManager = Bukkit.getPluginManager();
         reload();
     }
@@ -336,11 +326,11 @@ public final class AutoExtractScheduler {
         endDynamicCycle(cycle);
         World red = Bukkit.getWorld(redWorld);
         if (red == null) {
-            red = Bukkit.getWorld("glitch_red");
+            red = Bukkit.getWorld(Worlds.GLITCH_RED);
         }
 
         // Notify GlitchRaid via reflection if available — it owns the real kill/timeout logic.
-        boolean raidHandled = tryNotifyRaidTimeout(cycle);
+        boolean raidHandled = tryNotifyRaidTimeout();
         if (raidHandled) {
             plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — GlitchRaid timeout handler invoked (RED kill owned by GlitchRaid).");
             return;
@@ -381,8 +371,7 @@ public final class AutoExtractScheduler {
 
     /**
      * At t0+raidDuration+5s: scatter loot. Fires {@link AutoExtractCycleEndEvent}
-     * so the loot/container team can react, and tries to invoke a scatter manager
-     * via reflection if GlitchLoot or GlitchItems is available.
+     * and asks GlitchItems to re-scatter its containers directly.
      */
     private void handleCycleEndScatter(int cycle, long cycleStartMillis) {
         plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — t0+" + raidDurationMinutes + "m+5s scatter phase. Firing AutoExtractCycleEndEvent.");
@@ -398,244 +387,117 @@ public final class AutoExtractScheduler {
             plugin.getLogger().log(Level.WARNING, "[AutoExtract] Failed to fire AutoExtractCycleEndEvent for cycle #" + cycle, e);
         }
 
-        // Best-effort direct scatter via reflection (GlitchLoot / container manager)
-        boolean scattered = tryDirectScatter(cycle);
+        // Direct GlitchItems container scatter
+        boolean scattered = tryDirectScatter();
         if (scattered) {
             plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — direct scatter manager invoked.");
         } else {
-            plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — no direct scatter manager found; event hook is the integration point for loot team.");
+            plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — GlitchItems unavailable; relying on the cycle-end event.");
         }
     }
 
     // ------------------------------------------------------------------------
-    // Reflection hooks (best-effort, never throw)
+    // Cross-plugin hooks (best-effort, never throw)
     // ------------------------------------------------------------------------
 
     /**
-     * Tries to notify GlitchRaid's RaidManager to start/anchor global extraction at t0.
-     * Returns true if we successfully invoked startGlobalRaid reflectively.
+     * GlitchRaid's RaidManager, or null when GlitchRaid is absent. GlitchRaid compiles
+     * against GlitchStash (not the other way round), so this direction uses reflection.
      */
+    private Object raidManager() {
+        Plugin raid = pluginManager.getPlugin("GlitchRaid");
+        if (raid == null || !raid.isEnabled()) return null;
+        try {
+            return raid.getClass().getMethod("getRaidManager").invoke(raid);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            plugin.getLogger().fine("[AutoExtract] GlitchRaid manager lookup failed: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /** Starts or re-anchors GlitchRaid's global raid for this world at t0. True when GlitchRaid accepted it. */
     private boolean tryNotifyRaidStart() {
-        Plugin raidPlugin = pluginManager.getPlugin("GlitchRaid");
-        if (raidPlugin == null) return false;
+        Object manager = raidManager();
+        if (manager == null) return false;
         try {
-            Object raidInstance = raidPlugin;
-            try {
-                Method getInstance = raidPlugin.getClass().getMethod("getInstance");
-                Object maybe = getInstance.invoke(null);
-                if (maybe != null) raidInstance = maybe;
-            } catch (Exception ignored) {}
-            Object manager = null;
-            for (String m : new String[]{"getRaidManager", "getManager", "getRaidController"}) {
-                try {
-                    Method method = raidInstance.getClass().getMethod(m);
-                    manager = method.invoke(raidInstance);
-                    if (manager != null) break;
-                } catch (NoSuchMethodException ignored) {}
-            }
-            if (manager == null) return false;
-            // Preferred: startGlobalRaid(String world, boolean auto) with redWorld
-            try {
-                Method m = manager.getClass().getMethod("startGlobalRaid", String.class, boolean.class);
-                Object result = m.invoke(manager, redWorld, true);
-                return result != null;
-            } catch (NoSuchMethodException ignored) {}
-            try {
-                Method m2 = manager.getClass().getMethod("startGlobalRaid", String.class);
-                Object result = m2.invoke(manager, redWorld);
-                return result != null;
-            } catch (NoSuchMethodException ignored2) {}
-            // Fallback: startGlobalRaid() no args
-            try {
-                Method m3 = manager.getClass().getMethod("startGlobalRaid");
-                Object result = m3.invoke(manager);
-                return result != null;
-            } catch (NoSuchMethodException ignored3) {}
-        } catch (Exception e) {
-            plugin.getLogger().fine("[AutoExtract] GlitchRaid start probe failed: " + e.getMessage());
+            Object session = manager.getClass().getMethod("startGlobalRaid", String.class, boolean.class)
+                    .invoke(manager, redWorld, true);
+            return session != null;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            plugin.getLogger().fine("[AutoExtract] GlitchRaid start hook failed: " + e.getMessage());
+            return false;
         }
-        return false;
+    }
+
+    /** Hands the t0+raidDuration timeout to GlitchRaid, which owns the red-world kill. True when delivered. */
+    private boolean tryNotifyRaidTimeout() {
+        Object manager = raidManager();
+        if (manager == null) return false;
+        try {
+            manager.getClass().getMethod("handleGlobalTimeout", String.class).invoke(manager, redWorld);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            plugin.getLogger().fine("[AutoExtract] GlitchRaid timeout hook failed: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
-     * Tries to notify GlitchRaid's RaidManager of the global timeout. Returns
-     * true if we successfully invoked a handler reflectively.
+     * Re-scatters GlitchItems' loot containers. GlitchItems also listens for
+     * {@link AutoExtractCycleEndEvent}; its scatter is debounced, so the double trigger is harmless.
      */
-    private boolean tryNotifyRaidTimeout(int cycle) {
-        Plugin raidPlugin = pluginManager.getPlugin("GlitchRaid");
-        if (raidPlugin == null) return false;
+    private boolean tryDirectScatter() {
+        Plugin items = pluginManager.getPlugin("GlitchItems");
+        if (items == null || !items.isEnabled()) return false;
         try {
-            Object raidInstance = raidPlugin;
-            try {
-                Method getInstance = raidPlugin.getClass().getMethod("getInstance");
-                Object maybe = getInstance.invoke(null);
-                if (maybe != null) raidInstance = maybe;
-            } catch (Exception ignored) {}
-
-            Object manager = null;
-            for (String m : new String[]{"getRaidManager", "getManager", "getRaidController"}) {
-                try {
-                    Method method = raidInstance.getClass().getMethod(m);
-                    manager = method.invoke(raidInstance);
-                    if (manager != null) break;
-                } catch (NoSuchMethodException ignored) {}
-            }
-            if (manager == null) return false;
-
-            // Try handleGlobalTimeout with worldKey (now public) — most specific
-            String targetWorld = redWorld != null && !redWorld.isBlank() ? redWorld : "glitch_red";
-            try {
-                Method method = manager.getClass().getMethod("handleGlobalTimeout", String.class);
-                method.invoke(manager, targetWorld);
-                return true;
-            } catch (NoSuchMethodException ignored) {}
-            try {
-                Method method2 = manager.getClass().getMethod("handleGlobalTimeout");
-                method2.invoke(manager);
-                return true;
-            } catch (NoSuchMethodException ignored2) {}
-            // Fallback to auto-extract specific handlers
-            for (String handler : new String[]{"handleAutoExtractTimeout", "onAutoExtractTimeout", "handleCycleTimeout", "globalTimeout"}) {
-                try {
-                    Method method = manager.getClass().getMethod(handler);
-                    method.invoke(manager);
-                    return true;
-                } catch (NoSuchMethodException ignored) {}
-                try {
-                    Method method2 = manager.getClass().getMethod(handler, int.class);
-                    method2.invoke(manager, cycle);
-                    return true;
-                } catch (NoSuchMethodException ignored2) {}
-                try {
-                    Method method3 = manager.getClass().getMethod(handler, String.class);
-                    method3.invoke(manager, targetWorld);
-                    return true;
-                } catch (NoSuchMethodException ignored3) {}
-            }
-        } catch (Exception e) {
-            plugin.getLogger().fine("[AutoExtract] GlitchRaid notify probe failed: " + e.getMessage());
+            GlitchItems.getInstance().getContainerManager().scatter();
+            return true;
+        } catch (RuntimeException | LinkageError e) {
+            plugin.getLogger().fine("[AutoExtract] GlitchItems scatter failed: " + e.getMessage());
+            return false;
         }
-        return false;
-    }
-
-    /**
-     * Best-effort direct scatter: tries GlitchLoot scatter / container reset via reflection.
-     */
-    private boolean tryDirectScatter(int cycle) {
-        // Try GlitchLoot
-        Plugin lootPlugin = pluginManager.getPlugin("GlitchLoot");
-        if (lootPlugin != null) {
-            try {
-                for (String m : new String[]{"getScatterManager", "getLootEngine", "getManager", "getContainerManager"}) {
-                    try {
-                        Method method = lootPlugin.getClass().getMethod(m);
-                        Object manager = method.invoke(lootPlugin);
-                        if (manager == null) continue;
-                        for (String scatter : new String[]{"scatter", "scatterLoot", "onCycleEnd", "handleCycleEnd", "doScatter"}) {
-                            try {
-                                Method sm = manager.getClass().getMethod(scatter);
-                                sm.invoke(manager);
-                                return true;
-                            } catch (NoSuchMethodException ignored) {}
-                            try {
-                                Method sm2 = manager.getClass().getMethod(scatter, int.class);
-                                sm2.invoke(manager, cycle);
-                                return true;
-                            } catch (NoSuchMethodException ignored2) {}
-                        }
-                    } catch (NoSuchMethodException ignored) {}
-                }
-            } catch (Exception e) {
-                plugin.getLogger().fine("[AutoExtract] GlitchLoot scatter probe failed: " + e.getMessage());
-            }
-        }
-        // Try GlitchItems containers
-        Plugin itemsPlugin = pluginManager.getPlugin("GlitchItems");
-        if (itemsPlugin != null) {
-            try {
-                for (String m : new String[]{"getContainerManager", "getLootManager", "getManager"}) {
-                    try {
-                        Method method = itemsPlugin.getClass().getMethod(m);
-                        Object manager = method.invoke(itemsPlugin);
-                        if (manager == null) continue;
-                        for (String scatter : new String[]{"scatter", "resetContainers", "onCycleEnd"}) {
-                            try {
-                                Method sm = manager.getClass().getMethod(scatter);
-                                sm.invoke(manager);
-                                return true;
-                            } catch (NoSuchMethodException ignored) {}
-                        }
-                    } catch (NoSuchMethodException ignored) {}
-                }
-            } catch (Exception e) {
-                plugin.getLogger().fine("[AutoExtract] GlitchItems scatter probe failed: " + e.getMessage());
-            }
-        }
-        return false;
     }
 
     // ------------------------------------------------------------------------
-    // Arena discovery & start
+    // Arena discovery & start (legacy path, used only when dynamic extraction declines)
     // ------------------------------------------------------------------------
 
     /**
-     * Discovers all VelKoth arena names. Order of attempts:
-     * <ol>
-     *   <li>VelKoth API via reflection</li>
-     *   <li>Config {@code auto-extract.arenas} filtering</li>
-     *   <li>Parse {@code plugins/VelKoth/arenas.yml} file directly</li>
-     * </ol>
-     * If reflection returns candidates and config list is non-empty, the list
-     * is filtered to only those in the config (config = allow-list). If config
-     * is empty, all discovered arenas are returned. If everything fails, returns
-     * an empty list (never null when config fallback is empty).
+     * Arenas to start this cycle: every VelKoth arena, filtered by the
+     * {@code auto-extract.arenas} allow-list when it is set. Falls back to the
+     * allow-list alone when VelKoth reports nothing. Never null.
      */
     private List<String> discoverArenas() {
-        List<String> viaApi = discoverViaReflection();
+        List<String> known = velKothArenaIds();
         List<String> config = getConfiguredArenas();
 
-        if (viaApi != null && !viaApi.isEmpty()) {
-            if (config != null && !config.isEmpty()) {
-                // Config is an allow-list — return intersection (or config if names differ only by case)
-                List<String> filtered = new ArrayList<>();
-                for (String name : viaApi) {
-                    for (String allowed : config) {
-                        if (allowed.equalsIgnoreCase(name)) {
-                            filtered.add(name);
-                            break;
-                        }
-                    }
-                }
-                if (!filtered.isEmpty()) {
-                    plugin.getLogger().info("[AutoExtract] Discovery: " + viaApi.size() + " via API, filtered to " + filtered.size() + " by config allow-list " + config);
-                    return filtered;
-                }
-                plugin.getLogger().warning("[AutoExtract] API discovered " + viaApi + " but none match config allow-list " + config + " — falling back to config list.");
+        if (known == null || known.isEmpty()) {
+            if (!config.isEmpty()) {
+                plugin.getLogger().info("[AutoExtract] Discovery fallback: using config arenas " + config);
                 return new ArrayList<>(config);
             }
-            plugin.getLogger().info("[AutoExtract] Discovery via VelKoth API: " + viaApi);
-            return viaApi;
+            plugin.getLogger().warning("[AutoExtract] No arenas discovered via VelKoth or config. Create one with /koth create <name>.");
+            return List.of();
         }
-
-        if (viaApi == null) {
-            plugin.getLogger().fine("[AutoExtract] No VelKoth API result — trying file/config fallback.");
-        } else {
-            plugin.getLogger().fine("[AutoExtract] VelKoth API returned empty — trying file/config fallback.");
+        if (config.isEmpty()) {
+            plugin.getLogger().info("[AutoExtract] Discovery via VelKoth API: " + known);
+            return known;
         }
-
-        if (config != null && !config.isEmpty()) {
-            plugin.getLogger().info("[AutoExtract] Discovery fallback: using config arenas " + config);
+        List<String> filtered = new ArrayList<>();
+        for (String name : known) {
+            for (String allowed : config) {
+                if (allowed.equalsIgnoreCase(name)) {
+                    filtered.add(name);
+                    break;
+                }
+            }
+        }
+        if (filtered.isEmpty()) {
+            plugin.getLogger().warning("[AutoExtract] VelKoth arenas " + known + " match none of the config allow-list " + config + " — using the config list.");
             return new ArrayList<>(config);
         }
-
-        List<String> viaFile = loadFromArenasYml();
-        if (viaFile != null && !viaFile.isEmpty()) {
-            plugin.getLogger().info("[AutoExtract] Discovery via arenas.yml file: " + viaFile);
-            return viaFile;
-        }
-
-        plugin.getLogger().warning("[AutoExtract] No arenas discovered via API, config, or arenas.yml. VelKoth may have no arenas yet — create one with /koth create <name>.");
-        return List.of();
+        plugin.getLogger().info("[AutoExtract] Discovery: " + known.size() + " via API, filtered to " + filtered.size() + " by config allow-list " + config);
+        return filtered;
     }
 
     public List<String> getConfiguredArenas() {
@@ -643,388 +505,35 @@ public final class AutoExtractScheduler {
         return cfg == null ? List.of() : List.copyOf(cfg);
     }
 
-    /**
-     * Attempts to discover arenas via VelKoth's live plugin instance using
-     * reflection. Probes multiple plausible API shapes to survive version
-     * changes without a hard compile-time dependency.
-     * <p>
-     * Returns null on total probe failure (caller will try fallback), or a
-     * possibly-empty list if probing succeeded but no arenas exist.
-     */
-    private List<String> discoverViaReflection() {
-        Plugin velKoth = pluginManager.getPlugin(VELKOTH_PLUGIN_NAME);
-        if (velKoth == null) {
-            plugin.getLogger().fine("[AutoExtract] VelKoth plugin not found — reflection discovery skipped.");
-            return null;
-        }
-
-        Class<?> pluginClass = velKoth.getClass();
-
-        // --- 1) Direct methods on the plugin instance (most common) ---
-        String[] managerMethods = {
-                "getArenaManager", "getKothManager", "getKothHandler",
-                "getManager", "getKoths", "getArenas", "getKothMap", "getArenaMap",
-                "getKothRegistry", "getArenaRegistry"
-        };
-
-        for (String methodName : managerMethods) {
-            try {
-                Method method = pluginClass.getMethod(methodName);
-                Object result = method.invoke(velKoth);
-                if (result == null) continue;
-                List<String> names = extractArenaNames(result);
-                if (names != null && !names.isEmpty()) {
-                    plugin.getLogger().info("[AutoExtract] Discovered " + names.size() + " arenas via VelKoth." + methodName + ": " + names);
-                    return names;
-                }
-                // Empty means probing succeeded but no arenas — return empty to signal "found but none"
-                List<String> emptyCheck = extractArenaNames(result);
-                if (emptyCheck != null) return emptyCheck; // empty list
-            } catch (NoSuchMethodException ignored) {
-            } catch (Exception e) {
-                plugin.getLogger().fine("[AutoExtract] Probe VelKoth." + methodName + " failed: " + e.getMessage());
-            }
-        }
-
-        // --- 2) VelKothAPI singleton (dev.velmax.velkoth.api.VelKothAPI) ---
+    /** VelKoth's arena ids, or null when VelKoth is not loaded. */
+    private List<String> velKothArenaIds() {
+        if (pluginManager.getPlugin(VELKOTH_PLUGIN_NAME) == null) return null;
         try {
-            Class<?> apiClass = Class.forName("dev.velmax.velkoth.api.VelKothAPI");
-            Method getInstance = apiClass.getMethod("getInstance");
-            Object api = getInstance.invoke(null);
-            if (api != null) {
-                for (String methodName : managerMethods) {
-                    try {
-                        Method method = api.getClass().getMethod(methodName);
-                        Object result = method.invoke(api);
-                        List<String> names = extractArenaNames(result);
-                        if (names != null && !names.isEmpty()) {
-                            plugin.getLogger().info("[AutoExtract] Discovered via VelKothAPI." + methodName + ": " + names);
-                            return names;
-                        }
-                    } catch (NoSuchMethodException ignored) {}
-                }
-                // Generic scan: any member containing arena/koth
-                for (Method m : api.getClass().getMethods()) {
-                    if (m.getParameterCount() != 0) continue;
-                    String n = m.getName().toLowerCase();
-                    if (!n.contains("arena") && !n.contains("koth")) continue;
-                    try {
-                        Object result = m.invoke(api);
-                        List<String> names = extractArenaNames(result);
-                        if (names != null && !names.isEmpty()) {
-                            plugin.getLogger().info("[AutoExtract] Discovered via VelKothAPI." + m.getName() + ": " + names);
-                            return names;
-                        }
-                    } catch (Exception ignored) {}
-                }
-            }
-        } catch (ClassNotFoundException ignored) {
-            // No VelKothAPI class — expected on older builds
-        } catch (Exception e) {
-            plugin.getLogger().fine("[AutoExtract] VelKothAPI probe failed: " + e.getMessage());
-        }
-
-        // --- 3) Generic scan of plugin class for any arena/koth accessor ---
-        for (Method method : pluginClass.getMethods()) {
-            if (method.getParameterCount() != 0) continue;
-            String lower = method.getName().toLowerCase();
-            if (!lower.contains("arena") && !lower.contains("koth")) continue;
-            try {
-                Object result = method.invoke(velKoth);
-                List<String> names = extractArenaNames(result);
-                if (names != null && !names.isEmpty()) {
-                    plugin.getLogger().info("[AutoExtract] Discovered via generic scan VelKoth." + method.getName() + ": " + names);
-                    return names;
-                }
-            } catch (Exception ignored) {}
-        }
-
-        // --- 4) Fields on plugin class ---
-        for (java.lang.reflect.Field field : pluginClass.getDeclaredFields()) {
-            String fname = field.getName().toLowerCase();
-            if (!fname.contains("arena") && !fname.contains("koth") && !fname.contains("map")) continue;
-            try {
-                field.setAccessible(true);
-                Object result = field.get(velKoth);
-                List<String> names = extractArenaNames(result);
-                if (names != null && !names.isEmpty()) {
-                    plugin.getLogger().info("[AutoExtract] Discovered via VelKoth field '" + field.getName() + "': " + names);
-                    return names;
-                }
-            } catch (Exception ignored) {}
-        }
-
-        return null; // total miss — caller will fallback
-    }
-
-    /**
-     * Tries to extract arena names from a manager result: Collection, Map, or
-     * an object whose methods/fields contain the arena collection/map.
-     */
-    private List<String> extractArenaNames(Object obj) {
-        if (obj == null) return null;
-        if (obj instanceof Collection<?> col) {
-            return tryNamesFromCollection(col);
-        }
-        if (obj instanceof Map<?, ?> map) {
-            // Prefer keys if they are strings, else values
-            if (!map.isEmpty()) {
-                Object firstKey = map.keySet().iterator().next();
-                if (firstKey instanceof String) {
-                    List<String> out = new ArrayList<>(map.size());
-                    for (Object k : map.keySet()) out.add(k.toString());
-                    return out;
-                }
-            }
-            List<String> fromValues = tryNamesFromCollection(map.values());
-            if (fromValues != null && !fromValues.isEmpty()) return fromValues;
-            List<String> out = new ArrayList<>(map.size());
-            for (Object k : map.keySet()) out.add(k.toString());
-            return out.isEmpty() ? null : out;
-        }
-
-        // Probe manager object for nested accessors
-        String[] nested = {"getArenas", "getKoths", "getAllArenas", "getAllKoths", "getKothMap", "getArenaMap", "getRegistry", "values", "keySet", "entrySet"};
-        for (String m : nested) {
-            try {
-                Method method = obj.getClass().getMethod(m);
-                if (method.getParameterCount() != 0) continue;
-                Object result = method.invoke(obj);
-                if (result instanceof Collection<?> col) {
-                    List<String> names = tryNamesFromCollection(col);
-                    if (names != null && !names.isEmpty()) return names;
-                }
-                if (result instanceof Map<?, ?> map) {
-                    List<String> names = tryNamesFromMap(map);
-                    if (names != null && !names.isEmpty()) return names;
-                }
-            } catch (Exception ignored) {}
-        }
-
-        // Field scan on manager
-        for (java.lang.reflect.Field field : obj.getClass().getDeclaredFields()) {
-            String fname = field.getName().toLowerCase();
-            if (!fname.contains("arena") && !fname.contains("koth") && !fname.contains("map") && !fname.contains("registry")) continue;
-            try {
-                field.setAccessible(true);
-                Object val = field.get(obj);
-                if (val instanceof Collection<?> col) {
-                    List<String> names = tryNamesFromCollection(col);
-                    if (names != null && !names.isEmpty()) return names;
-                }
-                if (val instanceof Map<?, ?> map) {
-                    List<String> names = tryNamesFromMap(map);
-                    if (names != null && !names.isEmpty()) return names;
-                }
-            } catch (Exception ignored) {}
-        }
-        return null;
-    }
-
-    private List<String> tryNamesFromCollection(Collection<?> col) {
-        if (col == null || col.isEmpty()) return List.of(); // empty but valid probe — return empty to short-circuit fallback
-        List<String> out = new ArrayList<>(col.size());
-        for (Object o : col) {
-            if (o == null) continue;
-            if (o instanceof String s) {
-                if (!s.isBlank()) out.add(s);
-                continue;
-            }
-            if (o instanceof Map.Entry<?, ?> entry) {
-                Object k = entry.getKey();
-                if (k != null) { out.add(k.toString()); continue; }
-            }
-            // Reflective getName / getId
-            String name = reflectiveName(o);
-            if (name != null && !name.isBlank()) out.add(name);
-            else out.add(o.toString());
-        }
-        return out.isEmpty() ? List.of() : out;
-    }
-
-    private List<String> tryNamesFromMap(Map<?, ?> map) {
-        if (map == null || map.isEmpty()) return List.of();
-        // Prefer string keys
-        boolean allStringKeys = true;
-        for (Object k : map.keySet()) {
-            if (!(k instanceof String)) { allStringKeys = false; break; }
-        }
-        if (allStringKeys) {
-            List<String> out = new ArrayList<>(map.size());
-            for (Object k : map.keySet()) out.add(k.toString());
-            return out;
-        }
-        List<String> viaValues = tryNamesFromCollection(map.values());
-        if (viaValues != null && !viaValues.isEmpty()) return viaValues;
-        List<String> out = new ArrayList<>(map.size());
-        for (Object k : map.keySet()) if (k != null) out.add(k.toString());
-        return out.isEmpty() ? List.of() : out;
-    }
-
-    private String reflectiveName(Object o) {
-        for (String m : new String[]{"getName", "getId", "getArenaName", "getKothName", "name", "id"}) {
-            try {
-                Method method = o.getClass().getMethod(m);
-                Object val = method.invoke(o);
-                if (val != null) return val.toString();
-            } catch (Exception ignored) {}
-        }
-        // Try field 'name'
-        try {
-            java.lang.reflect.Field f = o.getClass().getDeclaredField("name");
-            f.setAccessible(true);
-            Object val = f.get(o);
-            if (val != null) return val.toString();
-        } catch (Exception ignored) {}
-        return null;
-    }
-
-    /**
-     * Last-resort file parse: reads {@code plugins/VelKoth/arenas.yml} and
-     * returns top-level keys as arena names. Handles both possible server
-     * layouts: {@code plugins/VelKoth/arenas.yml} relative to CWD, and via
-     * {@code Bukkit.getWorldContainer()}.
-     */
-    private List<String> loadFromArenasYml() {
-        File file = null;
-        File[] candidates = {
-                new File("plugins" + File.separator + "VelKoth" + File.separator + "arenas.yml"),
-                new File(Bukkit.getWorldContainer(), "plugins" + File.separator + "VelKoth" + File.separator + "arenas.yml"),
-                new File(plugin.getDataFolder().getParentFile(), "VelKoth" + File.separator + "arenas.yml")
-        };
-        for (File c : candidates) {
-            if (c != null && c.exists() && c.isFile()) { file = c; break; }
-        }
-        if (file == null) {
-            plugin.getLogger().fine("[AutoExtract] arenas.yml not found in candidates.");
-            return null;
-        }
-        try {
-            YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
-            if (yaml.getKeys(false).isEmpty()) {
-                plugin.getLogger().info("[AutoExtract] arenas.yml exists but has no arenas at " + file.getPath());
-                return List.of();
-            }
-            List<String> out = new ArrayList<>(yaml.getKeys(false));
-            plugin.getLogger().info("[AutoExtract] Parsed " + out.size() + " arena(s) from " + file.getPath() + ": " + out);
-            return out;
-        } catch (Exception e) {
-            plugin.getLogger().log(Level.WARNING, "[AutoExtract] Failed to parse " + file.getPath(), e);
+            VelKothPlugin velKoth = VelKothPlugin.getInstance();
+            return velKoth == null ? null : new ArrayList<>(velKoth.getArenaManager().getArenaIds());
+        } catch (RuntimeException | LinkageError e) {
+            plugin.getLogger().fine("[AutoExtract] VelKoth arena lookup failed: " + e.getMessage());
             return null;
         }
     }
 
-    // ------------------------------------------------------------------------
-    // Start single arena
-    // ------------------------------------------------------------------------
-
+    /** Starts one arena through VelKoth's console command, which needs no players nearby. */
     private void startArena(String arena, int cycle) {
         if (arena == null || arena.isBlank()) {
             plugin.getLogger().warning("[AutoExtract] Cycle #" + cycle + " — blank arena name skipped.");
             return;
         }
         String name = arena.trim();
-        plugin.getLogger().info("[AutoExtract] Cycle #" + cycle + " — starting arena '" + name + "' (even if empty)...");
-
-        // 1) Try direct API start (no player check, no nearby-players gate)
-        boolean viaApi = tryStartViaApi(name, cycle);
-        if (viaApi) {
-            plugin.getLogger().info("[AutoExtract] Arena '" + name + "' started via VelKoth API (cycle #" + cycle + ").");
-            return;
-        }
-
-        // 2) Fallback: dispatch console command "koth start <arena>" — VelKoth
-        //    registers /koth start <arena> and does not require a player sender.
         try {
             boolean dispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "koth start " + name);
-            // dispatchCommand returns false only if command is unknown; still warn on false
             if (dispatched) {
-                plugin.getLogger().info("[AutoExtract] Dispatched 'koth start " + name + "' (cycle #" + cycle + ") — dispatched=true");
+                plugin.getLogger().info("[AutoExtract] Dispatched 'koth start " + name + "' (cycle #" + cycle + ").");
             } else {
-                plugin.getLogger().warning("[AutoExtract] Dispatched 'koth start " + name + "' but Bukkit returned false — command may be unknown. VelKoth loaded: " + (pluginManager.getPlugin(VELKOTH_PLUGIN_NAME) != null));
+                plugin.getLogger().warning("[AutoExtract] 'koth start " + name + "' was not recognised. VelKoth loaded: " + (pluginManager.getPlugin(VELKOTH_PLUGIN_NAME) != null));
             }
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "[AutoExtract] dispatchCommand 'koth start " + name + "' failed (cycle #" + cycle + ")", e);
         }
-    }
-
-    /**
-     * Tries to start the arena via VelKoth's internal API to avoid the command
-     * path. Probes multiple plausible signatures. Returns true if any probe
-     * reported success (we treat any non-exceptional reflection invoke as success
-     * unless it explicitly returns Boolean.FALSE).
-     */
-    private boolean tryStartViaApi(String arena, int cycle) {
-        Plugin velKoth = pluginManager.getPlugin(VELKOTH_PLUGIN_NAME);
-        if (velKoth == null) return false;
-
-        // Probe plugin instance methods like startArena/startKoth/activate/forceStart
-        String[] startMethods = {"startArena", "startKoth", "start", "activate", "activateKoth", "forceStart", "trigger", "begin"};
-        for (String m : startMethods) {
-            try {
-                Method method = velKoth.getClass().getMethod(m, String.class);
-                Object result = method.invoke(velKoth, arena);
-                if (result instanceof Boolean b) {
-                    if (b) return true;
-                    plugin.getLogger().fine("[AutoExtract] VelKoth." + m + "(\"" + arena + "\") returned false — trying fallback.");
-                    continue;
-                }
-                return true; // void or non-boolean = assume started
-            } catch (NoSuchMethodException ignored) {}
-            catch (Exception e) {
-                plugin.getLogger().fine("[AutoExtract] Probe VelKoth." + m + " reflection failed: " + e.getMessage());
-            }
-        }
-
-        // Probe manager.start(...)
-        for (String mm : new String[]{"getArenaManager", "getKothManager", "getKothHandler", "getManager"}) {
-            try {
-                Method gm = velKoth.getClass().getMethod(mm);
-                Object manager = gm.invoke(velKoth);
-                if (manager == null) continue;
-                for (String sm : startMethods) {
-                    try {
-                        Method method = manager.getClass().getMethod(sm, String.class);
-                        Object result = method.invoke(manager, arena);
-                        if (result instanceof Boolean b) {
-                            if (b) return true;
-                            continue;
-                        }
-                        return true;
-                    } catch (NoSuchMethodException ignored) {}
-                    try {
-                        // Try arena object form: manager.getArena(name).start()
-                        Method getOne = manager.getClass().getMethod("getArena", String.class);
-                        Object arenaObj = getOne.invoke(manager, arena);
-                        if (arenaObj == null) {
-                            getOne = manager.getClass().getMethod("getKoth", String.class);
-                            arenaObj = getOne.invoke(manager, arena);
-                        }
-                        if (arenaObj != null) {
-                            for (String am : new String[]{"start", "activate", "begin", "forceStart"}) {
-                                try {
-                                    Method amMethod = arenaObj.getClass().getMethod(am);
-                                    amMethod.invoke(arenaObj);
-                                    return true;
-                                } catch (NoSuchMethodException ignored2) {}
-                            }
-                        }
-                    } catch (Exception ignored2) {}
-                }
-            } catch (Exception ignored) {}
-        }
-
-        // Try Koth/Arena objects directly
-        List<String> candidates = List.of(arena);
-        for (String probeName : candidates) {
-            try {
-                World w = Bukkit.getWorld(redWorld);
-                // No arena object available without discovery — skip
-                break;
-            } catch (Exception ignored) {}
-        }
-
-        return false;
     }
 
     // ------------------------------------------------------------------------

@@ -1,10 +1,10 @@
 package com.theglitch.glitchshops.ui;
 
+import com.nexomc.nexo.api.NexoItems;
+import com.nexomc.nexo.items.ItemBuilder;
 import com.theglitch.glitchshops.GlitchShops;
 import com.theglitch.glitchshops.ShopGUI;
 import com.theglitch.glitchshops.ShopManager;
-import com.nexomc.nexo.api.NexoItems;
-import com.nexomc.nexo.items.ItemBuilder;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -53,23 +53,17 @@ public final class BazaarPanel implements Listener {
     private static final double HEADER_Y = 3.1D;
     private static final int LABEL_MAX = 14;
 
-    // Fix 3: single yaw source = configured `modern-ui.world-panel.facing` (south/north/east/west)
-    // mapped through wallYaw()/panelYaw(). Every TextDisplay + ItemDisplay of one build uses the
-    // SAME yaw with FIXED billboard + setRotation(yaw, 0) so item and label always agree.
-    // Interaction hitboxes cannot rotate — they stay axis-aligned, centered/sized to cover the
-    // row at that yaw.
-    // Layout: ROW_PITCH 1.05 between GRID_ROW_Y entries; hitbox height 0.9 leaves a 0.15 dead gap
-    // between adjacent rows; hitbox width 1.2 (< default spacing 1.35) leaves a 0.15 dead gap
-    // between columns (clamped to spacing - dead gap when spacing is tight). Hitbox center is
-    // shifted down by HITBOX_DY_OFFSET so one box covers both the item icon (row anchor) and its
-    // label below, plus margin, for easy 3-4 block clicks.
+    // Every display of one build takes its yaw from `modern-ui.world-panel.facing` (wallYaw()),
+    // so items and labels always agree. Interaction hitboxes cannot rotate: they stay
+    // axis-aligned, ROW_HITBOX_WIDTH wide (HITBOX_DEAD_GAP between neighbours, clamped when the
+    // spacing is tight), and shifted down by HITBOX_DY_OFFSET so one box covers the item icon
+    // and its label below.
     private static final float PANEL_PITCH = 0.0F;
     private static final Display.Billboard PANEL_BILLBOARD = Display.Billboard.CENTER; // text + icons face the viewer
     private static final float HEADER_SCALE = 1.1F;
     private static final float TAB_TEXT_SCALE = 0.75F;
     private static final float ROW_TEXT_SCALE = 0.5F;
     private static final float ROW_ITEM_SCALE = 0.7F;
-    private static final double ROW_PITCH = 1.05D;
     private static final double HITBOX_DY_OFFSET = -0.70D; // box starts under the label...
     private static final float ROW_HITBOX_WIDTH = 1.2F;
     private static final float ROW_HITBOX_HEIGHT = 1.1F;   // ...and ends at the item's top
@@ -421,7 +415,7 @@ public final class BazaarPanel implements Listener {
         }
     }
 
-    // Fix 3: single yaw source for the whole panel build. Currently the configured facing;
+    // Single yaw source for the whole panel build. Currently the configured facing;
     // placer-yaw placement should persist through the same config key so all rows agree.
     private float panelYaw() {
         return wallYaw();

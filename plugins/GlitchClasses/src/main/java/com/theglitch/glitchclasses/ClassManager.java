@@ -1,16 +1,19 @@
 package com.theglitch.glitchclasses;
 
+import com.theglitch.common.AtomicFiles;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
@@ -312,7 +315,7 @@ public final class ClassManager {
         try {
             YamlConfiguration snapshot;
             while ((snapshot = latestSnapshot.remove(uuid)) != null) {
-                atomicSave(snapshot, file);
+                AtomicFiles.save(snapshot, file, plugin.getLogger());
             }
         } finally {
             writePending.remove(uuid);
@@ -339,53 +342,7 @@ public final class ClassManager {
         yaml.set("level", data.level());
         yaml.set("xp", data.xp());
         writeProgress(yaml, uuid, data);
-        try {
-            Path parent = file.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path tmp = Files.createTempFile(parent, uuid.toString() + "-", ".tmp");
-            try {
-                yaml.save(tmp.toFile());
-                try {
-                    Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
-            }
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to save player data for " + uuid, e);
-        }
-    }
-
-    /**
-     * Static utility for atomic YAML persistence.
-     * Writes to a temp file in the same directory then atomically moves to target.
-     * Falls back to non-atomic move if ATOMIC_MOVE is unsupported.
-     * Logs warnings on failure via global logger (used for async tasks).
-     */
-    static void atomicSave(YamlConfiguration yaml, Path target) {
-        atomicSave(yaml, target, Bukkit.getLogger());
-    }
-
-    static void atomicSave(YamlConfiguration yaml, Path target, java.util.logging.Logger logger) {
-        try {
-            Path parent = target.getParent();
-            if (parent != null) Files.createDirectories(parent);
-            Path tmp = Files.createTempFile(parent, target.getFileName().toString() + "-", ".tmp");
-            try {
-                yaml.save(tmp.toFile());
-                try {
-                    Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-                } catch (AtomicMoveNotSupportedException ex) {
-                    Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            } finally {
-                try { Files.deleteIfExists(tmp); } catch (IOException ignored) {}
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to atomically save " + target, e);
-        }
+        AtomicFiles.save(yaml, file, plugin.getLogger());
     }
 
     public void saveAll() {

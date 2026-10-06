@@ -1,12 +1,15 @@
 package com.theglitch.glitchstash;
 
+import com.theglitch.common.VaultHook;
+import com.theglitch.common.Worlds;
+import com.theglitch.glitchstash.extract.DynamicExtractionManager;
+import com.theglitch.glitchstash.extract.ExtractionMarkers;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -14,9 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.theglitch.glitchstash.extract.DynamicExtractionManager;
-import com.theglitch.glitchstash.extract.ExtractionMarkers;
 
 public final class GlitchStash extends JavaPlugin {
 
@@ -37,7 +37,7 @@ public final class GlitchStash extends JavaPlugin {
     public com.theglitch.glitchstash.extract.ExtractionHud getExtractionHud() {
         return extractionHud;
     }
-    private volatile List<String> redWorlds = List.of("glitch_red");
+    private volatile List<String> redWorlds = List.of(Worlds.GLITCH_RED);
 
     public boolean isRedWorld(String world) {
         for (String w : redWorlds) {
@@ -49,7 +49,6 @@ public final class GlitchStash extends JavaPlugin {
     private File messagesFile;
 
     // Cached hot-path config & economy
-    private volatile Economy cachedEconomy;
     private volatile boolean payoutEnabledCache = true;
     private volatile boolean variantEnabledCache = true;
     private volatile boolean variantEnforceKeyCache = true;
@@ -111,10 +110,10 @@ public final class GlitchStash extends JavaPlugin {
             }
         }
         if (normalized.isEmpty()) {
-            String legacy = getConfig().getString("auto-extract.red-world", "glitch_red");
+            String legacy = getConfig().getString("auto-extract.red-world", Worlds.GLITCH_RED);
             if (legacy != null && !legacy.isBlank()) normalized.add(legacy.trim());
         }
-        if (normalized.isEmpty()) normalized.add("glitch_red");
+        if (normalized.isEmpty()) normalized.add(Worlds.GLITCH_RED);
         return List.copyOf(normalized);
     }
 
@@ -232,7 +231,6 @@ public final class GlitchStash extends JavaPlugin {
     }
 
     public void reloadPlugin() {
-        this.cachedEconomy = null;
         reloadConfig();
         loadMessages();
         cacheConfig();
@@ -273,13 +271,7 @@ public final class GlitchStash extends JavaPlugin {
     }
 
     public Economy getEconomy() {
-        if (cachedEconomy != null) return cachedEconomy;
-        RegisteredServiceProvider<Economy> provider = Bukkit.getServicesManager().getRegistration(Economy.class);
-        if (provider != null) {
-            cachedEconomy = provider.getProvider();
-            if (cachedEconomy != null) getLogger().info("Economy provider found: " + cachedEconomy.getName());
-        }
-        return cachedEconomy;
+        return VaultHook.economy(this, Economy.class);
     }
 
     public boolean isPayoutEnabled() {
@@ -318,23 +310,9 @@ public final class GlitchStash extends JavaPlugin {
         return variantManager;
     }
 
-    /** @deprecated use {@link #getAutoExtractScheduler(String)} — returns the first configured red world's scheduler. */
-    @Deprecated
-    public AutoExtractScheduler getAutoExtractScheduler() {
-        if (redWorlds.isEmpty()) return null;
-        return autoExtractSchedulers.get(redWorlds.get(0).toLowerCase(java.util.Locale.ROOT));
-    }
-
     public AutoExtractScheduler getAutoExtractScheduler(String world) {
         if (world == null) return null;
         return autoExtractSchedulers.get(world.toLowerCase(java.util.Locale.ROOT));
-    }
-
-    /** @deprecated use {@link #getDynamicExtractionManager(String)} — returns the first configured red world's manager. */
-    @Deprecated
-    public DynamicExtractionManager getDynamicExtractionManager() {
-        if (redWorlds.isEmpty()) return null;
-        return dynamicExtractionManagers.get(redWorlds.get(0).toLowerCase(java.util.Locale.ROOT));
     }
 
     public DynamicExtractionManager getDynamicExtractionManager(String world) {

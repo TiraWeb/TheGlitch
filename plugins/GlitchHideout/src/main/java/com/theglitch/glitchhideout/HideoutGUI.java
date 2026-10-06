@@ -1,8 +1,9 @@
 package com.theglitch.glitchhideout;
 
+import com.theglitch.common.ChatConfirm;
+import com.theglitch.common.MenuTitles;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -13,11 +14,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import com.theglitch.common.ChatConfirm;
-import com.theglitch.common.MenuTitles;
 
 import java.util.ArrayList;
 import java.util.HashMap;

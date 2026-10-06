@@ -24,8 +24,6 @@ public final class PanelConfig {
     public static final String FACING_DEFAULT = "west";
     public static final String SPACING_KEY = "modern-ui.world-panel.spacing";
     public static final double SPACING_DEFAULT = 1.35D;
-    public static final String REMOTE_PERM_KEY = "modern-ui.remote-perm";
-    public static final String REMOTE_PERM_DEFAULT = "theglitch.remoteui";
 
     public record Snapshot(String world, double x, double y, double z,
                            String facing, double spacing) {}
@@ -53,20 +51,5 @@ public final class PanelConfig {
         } catch (Throwable t) {
             return new Snapshot(WORLD_DEFAULT, X_DEFAULT, Y_DEFAULT, Z_DEFAULT, FACING_DEFAULT, SPACING_DEFAULT);
         }
-    }
-
-    /** Same fallback logic as before: blank/null falls back to default node. */
-    public static String remotePermNode(GlitchStash plugin) {
-        String node = REMOTE_PERM_DEFAULT;
-        if (plugin != null) {
-            try {
-                node = plugin.getConfig().getString(REMOTE_PERM_KEY, REMOTE_PERM_DEFAULT);
-            } catch (Throwable ignored) {
-            }
-        }
-        if (node == null || node.isBlank()) {
-            node = REMOTE_PERM_DEFAULT;
-        }
-        return node;
     }
 }

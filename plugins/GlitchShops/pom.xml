@@ -35,8 +35,7 @@
             <groupId>com.theglitch</groupId>
             <artifactId>GlitchItems</artifactId>
             <version>1.0.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/GlitchItems.jar</systemPath>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.nexomc</groupId>
