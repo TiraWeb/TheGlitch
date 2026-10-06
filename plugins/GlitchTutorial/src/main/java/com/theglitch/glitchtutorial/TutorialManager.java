@@ -345,8 +345,11 @@ final class TutorialManager {
         for (String spec : cfg().getStringList("loadout.gear")) {
             String[] s = spec.split(":");
             if (s.length != 2) continue;
-            ItemStack g = hooks.gear(s[0].toUpperCase(Locale.ROOT), s[1].toUpperCase(Locale.ROOT));
-            if (g != null) give.add(g);
+            String type = s[0].toUpperCase(Locale.ROOT);
+            ItemStack g = hooks.gear(type, s[1].toUpperCase(Locale.ROOT));
+            if (g == null) continue;
+            if (!java.util.Set.of("HELMET", "CHESTPLATE", "LEGGINGS", "BOOTS").contains(type)) enchantWeapon(g);
+            give.add(g);
         }
         for (String spec : cfg().getStringList("loadout.items")) {
             ItemStack it = item(spec);
@@ -362,6 +365,23 @@ final class TutorialManager {
             else if (t.endsWith("_LEGGINGS") && empty(inv.getLeggings())) inv.setLeggings(it);
             else if (t.endsWith("_BOOTS") && empty(inv.getBoots())) inv.setBoots(it);
             else inv.addItem(it).values().forEach(left -> p.getWorld().dropItemNaturally(p.getLocation(), left));
+        }
+    }
+
+    /** loadout.weapon-enchants ("sharpness:5") on the lent weapon — it should feel properly strong. */
+    private void enchantWeapon(ItemStack weapon) {
+        for (String spec : cfg().getStringList("loadout.weapon-enchants")) {
+            String[] e = spec.split(":");
+            org.bukkit.enchantments.Enchantment ench = org.bukkit.Registry.ENCHANTMENT.get(
+                    org.bukkit.NamespacedKey.minecraft(e[0].trim().toLowerCase(Locale.ROOT)));
+            if (ench == null) continue;
+            int lvl;
+            try {
+                lvl = e.length > 1 ? Integer.parseInt(e[1].trim()) : 1;
+            } catch (NumberFormatException ex) {
+                continue;
+            }
+            weapon.addUnsafeEnchantment(ench, lvl);
         }
     }
 

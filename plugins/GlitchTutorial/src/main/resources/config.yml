@@ -102,6 +102,11 @@ loadout:
     - CHESTPLATE:EPIC
     - LEGGINGS:EPIC
     - BOOTS:EPIC
+  # Extra enchants on the lent weapon ("enchant:level")
+  weapon-enchants:
+    - sharpness:7
+    - fire_aspect:2
+    - unbreaking:5
   items:
     - healing_potion:6
     - ward_salve:3
@@ -122,9 +127,9 @@ combat:
     damage-dealt: 1.5
     damage-taken: 0.6
   dungeon:
-    damage-dealt: 3.0
-    damage-taken: 0.35
-    message: "Echo's blessing follows you in here: you hit <green>3× harder</green> and take <green>far less damage</green> — for this first run only."
+    damage-dealt: 8.0
+    damage-taken: 0.15
+    message: "Echo's blessing follows you in here: you hit <green>8× harder</green> and barely feel their hits — for this first run only."
 
 # What each tutorial crate gives (tagged too) — "nexo id:amount" or "minecraft:material:amount"
 crate-loot:
