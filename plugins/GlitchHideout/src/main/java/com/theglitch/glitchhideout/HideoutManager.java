@@ -2,6 +2,7 @@ package com.theglitch.glitchhideout;
 
 import com.theglitch.common.AtomicFiles;
 import com.theglitch.common.NexoUtil;
+import com.theglitch.common.TutorialItems;
 import net.kyori.adventure.text.Component;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
@@ -233,6 +234,7 @@ public final class HideoutManager {
      */
     public Map<String, Integer> recycleSlot(Player player, int slot) {
         ItemStack stack = player.getInventory().getItem(slot);
+        if (TutorialItems.isTutorial(stack)) return Map.of(); // lent items never turn into real materials
         String id = NexoUtil.pdcId(stack);
         Map<String, Integer> outputs = id == null ? null : recycler.get(id);
         if (outputs == null) return Map.of();
@@ -477,7 +479,7 @@ public final class HideoutManager {
 
     private boolean isItem(ItemStack stack, String id) {
         // Lent tutorial items (GlitchTutorial) are never crafting material — they'd become permanent
-        if (com.theglitch.common.TutorialItems.isTutorial(stack)) return false;
+        if (TutorialItems.isTutorial(stack)) return false;
         String found = NexoUtil.pdcId(stack);
         return found != null && id.equalsIgnoreCase(found);
     }

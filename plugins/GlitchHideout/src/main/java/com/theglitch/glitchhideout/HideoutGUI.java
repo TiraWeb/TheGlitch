@@ -2,6 +2,7 @@ package com.theglitch.glitchhideout;
 
 import com.theglitch.common.ChatConfirm;
 import com.theglitch.common.MenuTitles;
+import com.theglitch.common.TutorialItems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -304,7 +305,13 @@ public final class HideoutGUI implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         Session session = sessions.get(player.getUniqueId());
         if (session == null) return;
+        if (event.getView().getTopInventory() != session.inventory()) {
+            // A stale session must never write another inventory's contents into the stash
+            sessions.remove(player.getUniqueId());
+            return;
+        }
 
+        boolean vetoed = event.isCancelled(); // e.g. the tutorial guard refusing a lent item
         event.setCancelled(true);
         if (!usableHere(player)) {
             player.closeInventory();
@@ -312,6 +319,7 @@ public final class HideoutGUI implements Listener {
         }
         if (event.getClickedInventory() == null) return;
         if (event.getClickedInventory() != event.getView().getTopInventory()) {
+            if (vetoed) return;
             // Clicking your own inventory while the stash/armory is open stores the item
             // (there was previously no way to put anything in).
             if (session.type().equals("stash") || session.type().equals("armory")) {
@@ -577,6 +585,10 @@ public final class HideoutGUI implements Listener {
     private void depositFromInventory(Player player, Session session, int invSlot) {
         ItemStack item = player.getInventory().getItem(invSlot);
         if (item == null || item.getType().isAir()) return;
+        if (TutorialItems.isTutorial(item)) {
+            player.sendActionBar(MM.deserialize("<gray>Tutorial items can't be stored — they go back at the end.</gray>"));
+            return;
+        }
         Inventory top = player.getOpenInventory().getTopInventory();
         for (int i = session.from(); i <= session.to(); i++) {
             ItemStack current = top.getItem(i);

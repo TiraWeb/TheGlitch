@@ -293,8 +293,13 @@ final class TutorialManager {
                 say(p, "hub", null);
             }
             case DUNGEON -> {
-                ensureKey(p);
-                say(p, "dungeon", null);
+                if (r.rewarded) {
+                    // A replay: a free key every run was a free boss reward every run
+                    sayThenAdvance(p, "dungeon-replay");
+                } else {
+                    ensureKey(p);
+                    say(p, "dungeon", null);
+                }
             }
             case DONE -> finish(p);
         }
@@ -466,7 +471,7 @@ final class TutorialManager {
         long alive = tracked == null ? 0 : tracked.stream().map(Bukkit::getEntity).filter(e -> e != null && !e.isDead()).count();
         int want = (int) Math.max(0, cfg().getInt("mobs.count", 3) - r.progress - alive);
         if (want == 0) return;
-        String type = cfg().getString("mobs.type", "CorruptedCrawler");
+        String type = cfg().getString("mobs.type", "TutorialCrawler");
         Set<UUID> before = new HashSet<>();
         for (Entity e : at.getWorld().getNearbyEntities(at, 6, 6, 6)) before.add(e.getUniqueId());
         for (int i = 0; i < want; i++) {
@@ -537,6 +542,8 @@ final class TutorialManager {
         if (!stepIs(p, Step.DUNGEON) || finishedDungeon.contains(p.getUniqueId())) return;
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!stepIs(p, Step.DUNGEON) || finishedDungeon.contains(p.getUniqueId())) return;
+            TutorialStore.Record r = record(p);
+            if (r == null || r.rewarded) return;
             ensureKey(p);
             say(p, "dungeon-retry", null);
         }, 60L);

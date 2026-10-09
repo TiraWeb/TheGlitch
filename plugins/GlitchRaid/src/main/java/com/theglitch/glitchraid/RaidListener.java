@@ -417,7 +417,7 @@ public final class RaidListener implements Listener {
         if (!manager.isInRaid(killer.getUniqueId())) {
             return;
         }
-        int value = 10;
+        int value;
         String typeName = event.getEntity().getType().name();
         if (Bots.isBot(event.getEntity())) {
             // Rogue Raider: bigger bounty, plus Raider Rank credit if the killer extracts
@@ -426,8 +426,10 @@ public final class RaidListener implements Listener {
             if (ranks != null) ranks.recordRogueKill(killer.getUniqueId());
         } else if (typeName.contains("BOSS") || typeName.contains("ELDER") || typeName.contains("WARDEN") || typeName.contains("ENDER_DRAGON")) {
             value = 50;
-        } else if (event.getEntity() instanceof org.bukkit.entity.Monster) {
+        } else if (event.getEntity() instanceof org.bukkit.entity.Enemy || event.getEntity() instanceof Player) {
             value = 10;
+        } else {
+            return; // passive animals, villagers, golems: no bounty (breed-and-kill was free shards)
         }
         manager.addBounty(killer.getUniqueId(), value);
         String lootRaw = plugin.getConfig().getString("messages.loot-added", "<gold>+<amount> loot value</gold>");

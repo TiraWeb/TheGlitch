@@ -284,7 +284,7 @@ frag_grenade:
   - '<gray>Throw: explodes on impact for heavy</gray>'
   - '<gray>damage to everything nearby.</gray>'
   - '<dark_gray>Uncommon</dark_gray>'
-  - ' <gray>Sell price: <aqua>40 Shards</aqua></gray>'
+  - ' <gray>Sell price: <aqua>25 Shards</aqua></gray>'
 
 smoke_grenade:
   itemname: '<green>Smoke Grenade</green>'
@@ -296,7 +296,7 @@ smoke_grenade:
   - '<gray>Throw: a thick cloud for 8s that</gray>'
   - '<gray>blinds players and makes mobs lose you.</gray>'
   - '<dark_gray>Uncommon</dark_gray>'
-  - ' <gray>Sell price: <aqua>30 Shards</aqua></gray>'
+  - ' <gray>Sell price: <aqua>18 Shards</aqua></gray>'
 
 lure_beacon:
   itemname: '<green>Lure Beacon</green>'
@@ -367,7 +367,7 @@ adrenaline_shot:
   - '<gray>Right-click: Speed III + Jump for 6s,</gray>'
   - '<gray>shakes off slowness.</gray>'
   - '<dark_gray>Uncommon</dark_gray>'
-  - ' <gray>Sell price: <aqua>40 Shards</aqua></gray>'
+  - ' <gray>Sell price: <aqua>25 Shards</aqua></gray>'
 
 secure_pouch:
   itemname: '<dark_purple>Secure Pouch</dark_purple>'

@@ -2,6 +2,7 @@ package com.theglitch.glitchinsurance;
 
 import com.theglitch.common.AtomicFiles;
 import com.theglitch.common.ItemCodec;
+import com.theglitch.common.TutorialItems;
 import com.theglitch.common.Worlds;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -34,7 +35,7 @@ import java.util.logging.Level;
 public final class InsuranceManager {
 
     public enum InsureResult {
-        SUCCESS, ALREADY_INSURED, MAX_REACHED, NOT_ENOUGH_SHARDS, COOLDOWN, AIR, NO_ECONOMY
+        SUCCESS, ALREADY_INSURED, MAX_REACHED, NOT_ENOUGH_SHARDS, COOLDOWN, AIR, NO_ECONOMY, NOT_INSURABLE
     }
 
     public static final class InsuredItem {
@@ -213,6 +214,7 @@ public final class InsuranceManager {
      */
     public InsureResult insureItem(Player player, ItemStack stack) {
         if (stack == null || stack.getType().isAir()) return InsureResult.AIR;
+        if (TutorialItems.isTutorial(stack)) return InsureResult.NOT_INSURABLE;
         UUID uuid = player.getUniqueId();
 
         // Cooldown check

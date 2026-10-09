@@ -3,6 +3,7 @@ package com.theglitch.glitchraid.gui;
 import com.theglitch.common.ChatConfirm;
 import com.theglitch.common.MenuTitles;
 import com.theglitch.common.NexoUtil;
+import com.theglitch.common.TutorialItems;
 import com.theglitch.glitchraid.GlitchRaid;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -78,6 +79,10 @@ public class DungeonSelectGUI implements Listener {
     private final GlitchRaid plugin;
     /** Players whose key was used but who haven't reached the dungeon instance yet (id -> dungeon id). */
     private final java.util.Map<java.util.UUID, String> awaitingEntry = new java.util.concurrent.ConcurrentHashMap<>();
+    /** Key refunded because the run hadn't started within REFUND_TICKS (e.g. still queued). */
+    private record Refund(String dungeonId, int tier, long expiresAt) {}
+    private final java.util.Map<java.util.UUID, Refund> refunded = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long REFUND_MEMORY_MS = 15 * 60_000L;
 
     public DungeonSelectGUI(GlitchRaid plugin) {
         this.plugin = plugin;
@@ -99,8 +104,8 @@ public class DungeonSelectGUI implements Listener {
                 "<gray>Entry uses one dungeon key of the dungeon's tier.</gray>",
                 "<gray>Keys: Bazaar → Keys tab.</gray>",
                 " ",
-                "<gray>Your keys: <white>" + keyCount(player, 1) + "</white> Iron, <white>"
-                        + keyCount(player, 2) + "</white> Golden, <white>" + keyCount(player, 3) + "</white> Mythic</gray>"));
+                "<gray>Your keys: <white>" + keyCount(player, 1, true) + "</white> Iron, <white>"
+                        + keyCount(player, 2, true) + "</white> Golden, <white>" + keyCount(player, 3, true) + "</white> Mythic</gray>"));
 
         for (Dungeon d : DUNGEONS) {
             String col = TIER_COLOUR[d.tier()];
@@ -112,7 +117,7 @@ public class DungeonSelectGUI implements Listener {
                     " "));
             if (!open() && !player.hasPermission("glitchraid.admin")) {
                 lore.add("<red>Opening soon</red>");
-            } else if (keyCount(player, d.tier()) > 0) {
+            } else if (keyCount(player, d.tier(), true) > 0) {
                 lore.add("<yellow>Click to enter</yellow>");
             } else {
                 lore.add("<red>You have no " + KEY_NAME[d.tier()] + " Dungeon Key</red>");
@@ -154,7 +159,13 @@ public class DungeonSelectGUI implements Listener {
             return;
         }
         String keyId = keyId(d.tier());
-        if (keyCount(player, d.tier()) < 1) {
+        // A lent tutorial key opens a solo run only: in a party every member got the boss rewards
+        boolean allowTutorialKey = !inParty(player);
+        if (keyCount(player, d.tier(), allowTutorialKey) < 1) {
+            if (!allowTutorialKey && keyCount(player, d.tier(), true) > 0) {
+                player.sendMessage(MM.deserialize("<red>Your tutorial key only works solo.</red> <gray>Leave with <yellow>/party leave</yellow>, or buy a key in the Bazaar.</gray>"));
+                return;
+            }
             player.sendMessage(MM.deserialize("<red>You need a " + KEY_NAME[d.tier()]
                     + " Dungeon Key — buy one in the Bazaar (Keys tab).</red>"));
             return;
@@ -169,7 +180,7 @@ public class DungeonSelectGUI implements Listener {
                 player.sendMessage(MM.deserialize(nowBlocked));
                 return;
             }
-            ItemStack usedKey = takeKey(player, keyId);
+            ItemStack usedKey = takeKey(player, keyId, !inParty(player));
             if (usedKey == null) {
                 player.sendMessage(MM.deserialize("<red>You no longer have that key.</red>"));
                 return;
@@ -201,6 +212,8 @@ public class DungeonSelectGUI implements Listener {
                             .forEach(left -> player.getWorld().dropItemNaturally(player.getLocation(), left));
                 }
                 player.sendMessage(MM.deserialize("<yellow>The dungeon didn't start — your key was returned.</yellow>"));
+                // A queued party can still get in later: the key is charged again on entry
+                refunded.put(player.getUniqueId(), new Refund(d.id(), d.tier(), System.currentTimeMillis() + REFUND_MEMORY_MS));
             }, REFUND_TICKS);
         });
     }
@@ -236,9 +249,28 @@ public class DungeonSelectGUI implements Listener {
 
     @EventHandler
     public void onEnterInstance(org.bukkit.event.player.PlayerChangedWorldEvent event) {
-        String id = awaitingEntry.get(event.getPlayer().getUniqueId());
-        if (id != null && event.getPlayer().getWorld().getName().startsWith(id + "_")) {
-            awaitingEntry.remove(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        String world = player.getWorld().getName();
+        String id = awaitingEntry.get(player.getUniqueId());
+        if (id != null && world.startsWith(id + "_")) {
+            awaitingEntry.remove(player.getUniqueId());
+        }
+        Refund refund = refunded.get(player.getUniqueId());
+        if (refund == null) return;
+        if (refund.expiresAt() < System.currentTimeMillis()) {
+            refunded.remove(player.getUniqueId());
+            return;
+        }
+        if (!world.startsWith(refund.dungeonId() + "_")) return;
+        refunded.remove(player.getUniqueId());
+        // The run started after the key came back: charge it now, or nobody plays for free
+        if (takeKey(player, keyId(refund.tier()), !inParty(player)) != null) {
+            player.sendMessage(MM.deserialize("<gray>Your dungeon started after all — the returned key was used.</gray>"));
+            return;
+        }
+        for (Player inside : com.theglitch.common.Bots.realPlayers(player.getWorld())) {
+            inside.sendMessage(MM.deserialize("<red>This run's key was refunded and is gone — leaving the dungeon.</red>"));
+            inside.performCommand("md leave");
         }
     }
 
@@ -246,21 +278,30 @@ public class DungeonSelectGUI implements Listener {
         return "dungeon_key_t" + tier;
     }
 
-    private static int keyCount(Player player, int tier) {
+    private boolean inParty(Player player) {
+        com.theglitch.glitchraid.Party party = plugin.getRaidManager().getPartyManager().getParty(player.getUniqueId());
+        return party != null && party.getSize() > 1;
+    }
+
+    private static boolean isKey(ItemStack it, String id, boolean allowTutorial) {
+        return it != null && id.equals(NexoUtil.idOf(it)) && (allowTutorial || !TutorialItems.isTutorial(it));
+    }
+
+    private static int keyCount(Player player, int tier, boolean allowTutorial) {
         String id = keyId(tier);
         int n = 0;
         for (ItemStack it : player.getInventory().getStorageContents()) {
-            if (it != null && id.equals(NexoUtil.idOf(it))) n += it.getAmount();
+            if (isKey(it, id, allowTutorial)) n += it.getAmount();
         }
         return n;
     }
 
     /** Takes one key; returns a single copy of the key that was taken, or null if none. */
-    private static ItemStack takeKey(Player player, String id) {
+    private static ItemStack takeKey(Player player, String id, boolean allowTutorial) {
         ItemStack[] contents = player.getInventory().getStorageContents();
         for (int i = 0; i < contents.length; i++) {
             ItemStack it = contents[i];
-            if (it != null && id.equals(NexoUtil.idOf(it))) {
+            if (isKey(it, id, allowTutorial)) {
                 ItemStack one = it.clone();
                 one.setAmount(1);
                 if (it.getAmount() > 1) {

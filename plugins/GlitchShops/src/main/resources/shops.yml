@@ -34,7 +34,7 @@ shops:
     tab-icon: "healing_potion"
     stock:
       healing_potion: { buy: 20, sell: 12 }
-      ward_salve: { buy: 100, sell: 50 }
+      ward_salve: { buy: 100, sell: 25 }
       aether_tonic: { buy: 70, sell: 35 }
       corrupted_heal: { buy: 250, sell: 150 }
       rift_reveal_pack: { buy: 300, sell: 150 }
@@ -46,9 +46,9 @@ shops:
     stock:
       unstable_rift_common: { buy: 10, sell: 3 }
       unstable_rift_uncommon: { buy: 40, sell: 12 }
-      unstable_rift_rare: { buy: 150, sell: 45 }
-      unstable_rift_epic: { buy: 500, sell: 150 }
-      unstable_rift_legendary: { buy: 1500, sell: 500 }
+      unstable_rift_rare: { buy: 190, sell: 45 }
+      unstable_rift_epic: { buy: 1100, sell: 150 }
+      unstable_rift_legendary: { buy: 6000, sell: 500 }
   mystic:
     title: "Mystic"
     tab-icon: "void_sword"
@@ -116,13 +116,13 @@ shops:
       void_music_box: { buy: 0, sell: 1200 }
       cursed_crown: { buy: 0, sell: 2500 }
       rift_idol: { buy: 0, sell: 5000 }
-      frag_grenade: { buy: 0, sell: 40 }
-      smoke_grenade: { buy: 0, sell: 30 }
+      frag_grenade: { buy: 0, sell: 25 }
+      smoke_grenade: { buy: 0, sell: 18 }
       lure_beacon: { buy: 0, sell: 35 }
       snap_hook: { buy: 0, sell: 50 }
       barricade_kit: { buy: 0, sell: 60 }
       pulse_mine: { buy: 0, sell: 60 }
-      adrenaline_shot: { buy: 0, sell: 40 }
+      adrenaline_shot: { buy: 0, sell: 25 }
       secure_pouch: { buy: 0, sell: 1500 }
       blueprint_adrenaline_shot: { buy: 0, sell: 200 }
       blueprint_frag_grenade: { buy: 0, sell: 200 }

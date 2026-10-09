@@ -58,9 +58,9 @@ TRINKETS = {
 
 # Right-click tools (GlitchItems GadgetListener). The Workbench recipe id matches the item id.
 GADGETS = {
-    "frag_grenade": ("Frag Grenade", "FIRE_CHARGE", "uncommon", 40,
+    "frag_grenade": ("Frag Grenade", "FIRE_CHARGE", "uncommon", 25,
                      ["Throw: explodes on impact for heavy", "damage to everything nearby."]),
-    "smoke_grenade": ("Smoke Grenade", "FIREWORK_STAR", "uncommon", 30,
+    "smoke_grenade": ("Smoke Grenade", "FIREWORK_STAR", "uncommon", 18,
                       ["Throw: a thick cloud for 8s that", "blinds players and makes mobs lose you."]),
     "lure_beacon": ("Lure Beacon", "BELL", "uncommon", 35,
                     ["Throw: nearby mobs chase the", "beacon instead of you for 8s."]),
@@ -72,7 +72,7 @@ GADGETS = {
                    ["Right-click a block to arm. Stuns and", "reveals the first enemy that steps near."]),
     "bandage": ("Bandage", "WHITE_CARPET", "common", 8,
                 ["Right-click: heals 3 hearts over 3s."]),
-    "adrenaline_shot": ("Adrenaline Shot", "END_ROD", "uncommon", 40,
+    "adrenaline_shot": ("Adrenaline Shot", "END_ROD", "uncommon", 25,
                         ["Right-click: Speed III + Jump for 6s,", "shakes off slowness."]),
     "secure_pouch": ("Secure Pouch", "RABBIT_HIDE", "epic", 1500,
                      ["Carry it: on a Red Zone death you keep", "this pouch and your hotbar slot 9."]),

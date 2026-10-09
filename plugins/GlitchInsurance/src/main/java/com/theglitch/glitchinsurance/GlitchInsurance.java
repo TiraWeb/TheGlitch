@@ -152,6 +152,7 @@ public final class GlitchInsurance extends JavaPlugin {
                     "<seconds>", String.valueOf(manager.getCooldownRemaining(player.getUniqueId()))));
             case AIR -> player.sendMessage(getComponent("hold-item"));
             case NO_ECONOMY -> player.sendMessage(Component.text("Economy unavailable — try again later.", NamedTextColor.RED));
+            case NOT_INSURABLE -> player.sendMessage(Component.text("Tutorial items can't be insured — they go back at the end.", NamedTextColor.RED));
         }
         return false;
     }

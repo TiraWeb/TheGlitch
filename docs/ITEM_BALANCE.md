@@ -180,7 +180,38 @@ Per-slot identity multipliers (helmet speed ×2.0, chestplate HP ×2.0,
 leggings armor ×1.5, boots speed ×1.5) reshape new rolls only; existing items
 keep their current stats.
 
-## 8. Future knobs (not in this pass)
+## 8. Arbitrage audit (2026-10-09)
+
+Rule: nothing bought in the Bazaar may turn into more shards than it cost —
+whether by selling it back, crafting it into something else, or identifying it.
+The earlier passes compared outputs to their *sell* inputs and never to Bazaar
+*buy* prices. In the meantime, roll-based gear values (§3) had lifted identify
+EV well above the fee. Re-check these rows after any price change:
+
+| Loop | Before (cost → EV out) | Fix | After |
+|---|---|---|---|
+| Buy Rare rift + identify → sell gear | 210 → ~187 (max luck ~217) | buy 150 → 190 | 250 → ≤217 |
+| Buy Epic rift + identify → sell gear | 750 → ~1025 (**+275**) | buy 500 → 1100 | 1350 → ≤1133 |
+| Buy Legendary rift + identify → sell gear | 2300 → ~5425 (**+3125**) | buy 1500 → 6000 | 6800 → ≤5845 |
+| Bazaar mats → Ward Salve → sell | 35 → 50 | sell 50 → 25 | 35 → 25 |
+| Bazaar mats → Adrenaline Shot ×2 → sell | 55 → 80 | sell 40 → 25 each | 55 → 50 |
+| Bazaar mats → Frag Grenade ×2 → sell | 54 → 80 | sell 40 → 25 each | 54 → 50 |
+| Bazaar mats → Smoke Grenade ×2 → sell | 41 → 60 | sell 30 → 18 each | 41 → 36 |
+
+"Max luck" means 8 Residual stacks × 5% = 40% for +1 star per stat. Identifying
+*looted* rifts still pays at Epic/Legendary, which is the intended reward for
+finding them. Crafting from *looted* materials still adds value (the outputs are
+worth more than the materials' sell prices), and the gear vendor (1.75× sell
+value) and every Bazaar line (sell < buy) were already fine.
+
+Also closed in this audit (not prices): selling, storing, recycling or insuring
+lent tutorial items; free dungeon keys on tutorial replays (+400 shards and a
+vault key per replay) and lent keys opening party runs; real loot from the
+tutorial's Crawlers (now `TutorialCrawler`, which drops nothing); kill bounty for
+passive mobs (breed-and-kill); and a dungeon-key refund that a queued party could
+collect while still getting in.
+
+## 9. Future knobs (not in this pass)
 
 - Mob HP/damage scaling per zone (GAME_DESIGN §2) once MythicMobs tuning lands.
 - Per-archetype roll range skew (e.g. staff higher damage% range, lower stars).

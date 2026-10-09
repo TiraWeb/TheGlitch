@@ -59,7 +59,7 @@ shops:
   alchemy:     # stock: Healing Potion, Ward Salve [NEW], Aether Tonic [NEW], Corrupted Heal, Rift Attunement Pack [was Rift Reveal Pack], Void Infusion
     stock:
       healing_potion:    { slot: 0, buy: 20,   sell: 12 }
-      ward_salve:        { slot: 1, buy: 100,  sell: 50 }   # [NEW] 2026-09-02
+      ward_salve:        { slot: 1, buy: 100,  sell: 25 }   # [NEW] 2026-09-02; sell 50 → 25 2026-10-09 (craft arbitrage)
       aether_tonic:      { slot: 2, buy: 70,   sell: 35 }   # [NEW] 2026-09-02
       corrupted_heal:    { slot: 3, buy: 250,  sell: 150 }
       rift_reveal_pack:  { slot: 4, buy: 300,  sell: 150 }  # Rift Attunement Pack [was Rift Reveal Pack]

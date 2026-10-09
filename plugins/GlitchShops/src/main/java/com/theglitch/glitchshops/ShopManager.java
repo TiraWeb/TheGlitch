@@ -1,6 +1,7 @@
 package com.theglitch.glitchshops;
 
 import com.theglitch.common.NexoUtil;
+import com.theglitch.common.TutorialItems;
 import com.theglitch.glitchitems.GearRolls;
 import com.theglitch.glitchitems.GlitchItems;
 import org.bukkit.NamespacedKey;
@@ -320,6 +321,8 @@ public final class ShopManager {
         if (item == null || item.getType().isAir()) {
             return null;
         }
+        // Lent tutorial items go back at the end of the tutorial — never worth shards
+        if (TutorialItems.isTutorial(item)) return null;
         String id = nexoId(item);
         if (id != null && sellPrices.containsKey(id)) {
             return sellPrices.get(id);

@@ -412,13 +412,15 @@ public final class ShopGUI implements Listener {
             return;
         }
 
+        // Another listener already refused this click (e.g. a lent tutorial item): never sell it
+        boolean vetoed = event.isCancelled();
         event.setCancelled(true);
 
         if (event.getClickedInventory() == null) return;
 
         if (event.getClickedInventory() == event.getView().getTopInventory()) {
             handleTopClick(player, event.getRawSlot(), event.getClick(), session);
-        } else if (session.sellMode()) {
+        } else if (session.sellMode() && !vetoed) {
             handleSellClick(player, event.getSlot(), event.getCurrentItem(), event.getClick());
         }
     }

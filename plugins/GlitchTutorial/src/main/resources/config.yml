@@ -139,7 +139,8 @@ crate-loot:
 rogue-drop: [unstable_rift_uncommon:1, coolant_cell:2]
 
 mobs:
-  type: CorruptedCrawler
+  # TutorialCrawler = CorruptedCrawler without drops (replays must not farm loot)
+  type: TutorialCrawler
   count: 3
 rogue:
   # /bots tutorial spawns a weak rogue that only targets this player
@@ -184,6 +185,8 @@ dialogue:
     - "Dungeons are private, keep your inventory, and the boss drops proper loot. Go get him."
   dungeon-retry:
     - "Didn't make it? Here's another key — try again, or <yellow>/tutorial skip</yellow> if you've had enough."
+  dungeon-replay:
+    - "You've beaten a dungeon with me before — the free key was a one-time thing. Keys are in the <gold>Grand Bazaar</gold> (Keys tab), then <yellow>/dungeons</yellow>."
   done:
     - "That's it, <player>. You know the loop: raid, loot, extract, repeat — and don't trust anyone."
     - "Here's <aqua><reward> Shards</aqua> to get you started. See you in the Glitch."

@@ -1,0 +1,41 @@
+# The Glitch — MythicMobs: Tutorial Crawler
+# The new-player tutorial's Corrupted Crawler (GlitchTutorial mobs.type). Identical
+# to CorruptedCrawler except it drops nothing: the tutorial can be replayed, and the
+# real Crawler's shards + rune fragments made every replay a free loot run.
+# Keep the two in sync when the Crawler changes.
+
+TutorialCrawler:
+  Type: ZOMBIE
+  Display: '<green>Corrupted Crawler'
+  Health: 24
+  Damage: 3
+  AITargetSelectors:
+    - clear
+    - players
+  Options:
+    MovementSpeed: 0.25
+    Silent: true
+    AlwaysShowName: true
+    Persistent: false
+    Despawn: true
+    FollowRange: 20
+    KnockbackResistance: 0.4
+    PreventOtherDrops: true
+    PreventItemPickup: true
+    PreventSunburn: true
+    PreventRandomEquipment: true
+    PreventJockeyMounts: true
+    PreventBlockDestruction: true
+    ScoreboardTags: [res_hollow]
+  Skills:
+    - model{mid=voids_ghost;usm=true} @self ~onSpawn
+    - model{mid=voids_ghost;usm=true} @self ~onLoad
+    - scale{s=0.85} @self ~onSpawn
+    - scale{s=0.85} @self ~onLoad
+    - cancelevent{sync=true} @self ~onAttack
+    - skill{s=CorruptedCrawler_Attack} @target ~onAttack
+    - effect:sound{s=entity.breeze.whirl;v=0.5;p=0.65} @self ~onTimer:20 ?moving
+    - effect:sound{s=entity.strider.ambient;v=0.8;p=0.8} @self ~onTimer:150 0.4
+    - effect:sound{s=entity.strider.hurt;v=0.8;p=0.8} @self ~onDamaged 0.4
+    - effect:particles{particle=falling_dust;m=GOLD_BLOCK;a=4;hS=0.5;vS=2.5} @self ~onDamaged 0.4
+    - effect:sound{s=entity.strider.death;v=0.85;p=0.3} @self ~onDeath 1
